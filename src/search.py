@@ -71,30 +71,43 @@ class VaultSearcher:
         
         limit = limit or config.DEFAULT_SEARCH_LIMIT
         
-        # Build where filter
-        where_filter = self._build_filter(tags, folder, date_from, date_to)
+        # Build where filter (folder filtering done post-query)
+        where_filter = self._build_filter(tags, None, date_from, date_to)
         
         # Generate query embedding
         query_embedding = self.generate_embedding(query)
         
+        # Query more results if we need to filter by folder
+        query_limit = limit * 3 if folder else limit
+        
         # Search
         results = self.collection.query(
             query_embeddings=[query_embedding],
-            n_results=limit,
+            n_results=query_limit,
             where=where_filter if where_filter else None,
             include=['documents', 'metadatas', 'distances']
         )
         
-        # Format results
+        # Format results with folder filtering
         formatted = []
         if results['ids'] and results['ids'][0]:
             for i in range(len(results['ids'][0])):
+                metadata = self._parse_metadata(results['metadatas'][0][i])
+                
+                # Apply folder filter post-query (ChromaDB doesn't support substring matching)
+                if folder and folder not in metadata.get('file_path', ''):
+                    continue
+                
                 formatted.append({
                     'id': results['ids'][0][i],
                     'content': results['documents'][0][i],
-                    'metadata': self._parse_metadata(results['metadatas'][0][i]),
+                    'metadata': metadata,
                     'score': 1 - results['distances'][0][i]  # Convert distance to similarity
                 })
+                
+                # Stop once we have enough results
+                if len(formatted) >= limit:
+                    break
         
         return formatted
     
@@ -247,10 +260,8 @@ class VaultSearcher:
                      date_from: str = None, date_to: str = None) -> Optional[Dict]:
         """Build ChromaDB where filter"""
         # Note: ChromaDB has limited filtering support
-        # We can only do exact matches, not complex queries
-        
-        if folder:
-            return {"file_path": {"$contains": folder}}
+        # We can only do exact matches ($eq), not substring matching ($contains)
+        # Folder filtering is done post-query in search()
         
         # Note: Tag filtering would require scanning JSON in metadata
         # For now, we'll filter tags post-query in search()

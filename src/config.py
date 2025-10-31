@@ -23,6 +23,11 @@ BATCH_SIZE = 10  # Number of documents to embed at once
 DEFAULT_SEARCH_LIMIT = 10
 MAX_CONTEXT_LENGTH = 8000  # Characters for RAG context
 
+# Agentic Chunking Configuration
+AGENTIC_CHUNKING_ENABLED = os.getenv("AGENTIC_CHUNKING", "true").lower() == "true"
+AGENTIC_TARGET_CHUNK_SIZE = int(os.getenv("AGENTIC_CHUNK_SIZE", str(CHUNK_SIZE)))
+AGENTIC_MAX_CHUNK_SIZE = int(os.getenv("AGENTIC_MAX_CHUNK_SIZE", str(int(CHUNK_SIZE * 1.5))))
+
 # ChromaDB Configuration
 COLLECTION_NAME = "markdown_vault"
 CHROMA_DB_PATH = INDICES_PATH / "chromadb"

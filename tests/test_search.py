@@ -12,96 +12,67 @@ import config
 class TestVaultSearcher:
     """Test VaultSearcher class"""
     
-    @pytest.mark.skipif(
-        not Path("/workspace/indices").exists(),
-        reason="Requires Docker environment with indexed vault"
-    )
-    def test_init(self, temp_indices, monkeypatch):
+    def test_init(self):
         """Test searcher initialization"""
-        monkeypatch.setattr(config, "INDICES_PATH", str(temp_indices))
-        
-        try:
-            searcher = VaultSearcher()
-            assert searcher is not None
-        except Exception as e:
-            pytest.skip(f"ChromaDB not initialized: {e}")
+        searcher = VaultSearcher()
+        assert searcher is not None
+        assert searcher.collection is not None
     
-    @pytest.mark.skipif(
-        not Path("/workspace/indices").exists(),
-        reason="Requires Docker environment with indexed vault"
-    )
     def test_search_basic(self):
         """Test basic search functionality"""
-        try:
-            searcher = VaultSearcher()
-            results = searcher.search("test query", limit=5)
-            
-            assert isinstance(results, list)
-            assert len(results) <= 5
-            
-            if len(results) > 0:
-                result = results[0]
-                assert "content" in result
-                assert "metadata" in result
-                assert "score" in result
-        except Exception as e:
-            pytest.skip(f"Search not available: {e}")
+        searcher = VaultSearcher()
+        results = searcher.search("AI machine learning neural networks", limit=5)
+        
+        assert isinstance(results, list)
+        assert len(results) > 0, "Search should return results from indexed vault"
+        assert len(results) <= 5
+        
+        result = results[0]
+        assert "content" in result
+        assert "metadata" in result
+        assert "score" in result
     
-    @pytest.mark.skipif(
-        not Path("/workspace/indices").exists(),
-        reason="Requires Docker environment with indexed vault"
-    )
-    def test_search_with_filters(self):
-        """Test search with metadata filters"""
-        try:
-            searcher = VaultSearcher()
-            
-            # Search with tag filter
-            results = searcher.search(
-                "test query",
-                limit=5,
-                filters={"tags": {"$contains": "test"}}
-            )
-            
-            assert isinstance(results, list)
-        except Exception as e:
-            pytest.skip(f"Search not available: {e}")
+    def test_search_with_folder_filter(self):
+        """Test search with folder filter"""
+        searcher = VaultSearcher()
+        
+        # Test folder filter (may return empty if folder doesn't exist)
+        results = searcher.search(
+            "AI",
+            limit=5,
+            folder="Generative Artificial Intelligence - Blue Belt"
+        )
+        
+        assert isinstance(results, list)
+        # If results exist, verify they're from the correct folder
+        for r in results:
+            assert "Generative Artificial Intelligence - Blue Belt" in r["metadata"]["file_path"]
     
-    @pytest.mark.skipif(
-        not Path("/workspace/indices").exists(),
-        reason="Requires Docker environment with indexed vault"
-    )
-    def test_answer_question(self):
-        """Test RAG question answering"""
-        try:
-            searcher = VaultSearcher()
-            
-            answer = searcher.answer_question(
-                "What is this vault about?",
-                num_contexts=3
-            )
-            
-            assert isinstance(answer, dict)
-            assert "answer" in answer
-            assert "sources" in answer
-            assert "contexts" in answer
-        except Exception as e:
-            pytest.skip(f"Q&A not available: {e}")
+    def test_generate_rag_context(self):
+        """Test RAG context generation"""
+        searcher = VaultSearcher()
+        
+        context = searcher.generate_rag_context(
+            "What is artificial intelligence?",
+            max_length=1000
+        )
+        
+        assert isinstance(context, str)
+        assert len(context) > 0
+        assert len(context) <= 1000
     
-    @pytest.mark.skipif(
-        not Path("/workspace/indices").exists(),
-        reason="Requires Docker environment with indexed vault"
-    )
-    def test_get_stats(self):
-        """Test getting index statistics"""
-        try:
-            searcher = VaultSearcher()
-            stats = searcher.get_stats()
-            
-            assert isinstance(stats, dict)
-            assert "total_chunks" in stats
-            assert "unique_files" in stats
-        except Exception as e:
-            pytest.skip(f"Stats not available: {e}")
+    def test_collection_stats(self):
+        """Test getting collection statistics"""
+        searcher = VaultSearcher()
+        
+        # Verify collection has data
+        count = searcher.collection.count()
+        assert count > 0, "Collection should have indexed documents"
+        
+        # Peek at some data
+        sample = searcher.collection.peek(limit=1)
+        assert len(sample['ids']) > 0
+        assert len(sample['documents']) > 0
+        assert len(sample['metadatas']) > 0
 
 

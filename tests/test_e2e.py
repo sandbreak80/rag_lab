@@ -12,10 +12,6 @@ from search import VaultSearcher
 import config
 
 
-@pytest.mark.skipif(
-    not Path("/workspace/indices").exists(),
-    reason="Requires Docker environment with Ollama"
-)
 class TestEndToEnd:
     """End-to-end integration tests"""
     
@@ -65,8 +61,8 @@ It's useful for development and deployment.
             indexer = VaultIndexer()
             stats = indexer.index_vault(force_reindex=True)
             
-            assert stats["files"] == 3
-            assert stats["chunks"] > 0
+            assert stats["files_processed"] == 3
+            assert stats["chunks_created"] > 0
             assert stats["errors"] == 0
             
             # SEARCH: Search for content
@@ -87,25 +83,13 @@ It's useful for development and deployment.
             assert len(results) > 0
             assert any("docker_note" in r["metadata"]["file_name"] for r in results)
             
-            # Q&A: Answer a question
-            answer_result = searcher.answer_question(
-                "What is Python used for?",
-                num_contexts=2
-            )
+            # RAG Context: Generate context for a question
+            context = searcher.generate_rag_context("What is Python used for?", max_length=1000)
+            assert len(context) > 0
+            assert "python" in context.lower() or "programming" in context.lower()
             
-            assert "answer" in answer_result
-            assert "sources" in answer_result
-            assert len(answer_result["sources"]) > 0
-            assert "python" in answer_result["answer"].lower() or \
-                   "programming" in answer_result["answer"].lower()
-            
-            # Get stats
-            stats = searcher.get_stats()
-            assert stats["total_chunks"] > 0
-            assert stats["unique_files"] == 3
-            
-        except Exception as e:
-            pytest.skip(f"E2E test failed (Ollama may not be available): {e}")
+            # Verify collection stats
+            assert searcher.collection.count() > 0
         
         finally:
             # Restore original config
@@ -116,42 +100,44 @@ It's useful for development and deployment.
             shutil.rmtree(vault_dir)
             shutil.rmtree(indices_dir)
     
-    def test_incremental_indexing(self):
-        """Test that unchanged files are skipped on re-index"""
+    def test_force_reindex(self):
+        """Test force re-indexing"""
         vault_dir = tempfile.mkdtemp()
         vault_path = Path(vault_dir)
         indices_dir = tempfile.mkdtemp()
         
-        (vault_path / "test.md").write_text("# Test\n\nContent")
+        (vault_path / "test.md").write_text("# Test\n\nContent for testing")
+        (vault_path / "test2.md").write_text("# Another Test\n\nMore content")
         
         try:
             original_vault = config.VAULT_PATH
             original_indices = config.INDICES_PATH
+            original_collection = config.COLLECTION_NAME
             
             config.VAULT_PATH = str(vault_path)
             config.INDICES_PATH = str(indices_dir)
+            config.COLLECTION_NAME = "test_force_reindex"  # Use unique collection
             
             # First index
             indexer = VaultIndexer()
-            stats1 = indexer.index_vault(force_reindex=False)
+            stats1 = indexer.index_vault(force_reindex=True)
             
-            assert stats1["files"] == 1
+            assert stats1["files_processed"] == 2
+            assert stats1["chunks_created"] > 0
             
-            # Re-index without changes (should skip)
-            stats2 = indexer.index_vault(force_reindex=False)
+            # Get initial count
+            initial_count = indexer.collection.count()
+            assert initial_count > 0
             
-            assert stats2["skipped"] == 1  # File should be skipped
+            # Force re-index (should delete and rebuild)
+            stats2 = indexer.index_vault(force_reindex=True)
             
-            # Modify file
-            (vault_path / "test.md").write_text("# Test\n\nModified content")
+            assert stats2["files_processed"] == 2
+            assert stats2["chunks_created"] > 0
             
-            # Re-index (should process modified file)
-            stats3 = indexer.index_vault(force_reindex=False)
-            
-            assert stats3["files"] == 1  # Should process the changed file
-            
-        except Exception as e:
-            pytest.skip(f"Incremental indexing test failed: {e}")
+            # Count should be the same (rebuilt from scratch)
+            final_count = indexer.collection.count()
+            assert final_count == initial_count
         
         finally:
             config.VAULT_PATH = original_vault
@@ -182,10 +168,7 @@ It's useful for development and deployment.
             stats = indexer.index_vault(force_reindex=True)
             
             # Should handle errors gracefully
-            assert stats["files"] >= 1  # At least the valid file
-            
-        except Exception as e:
-            pytest.skip(f"Error handling test failed: {e}")
+            assert stats["files_processed"] >= 1  # At least the valid file
         
         finally:
             config.VAULT_PATH = original_vault

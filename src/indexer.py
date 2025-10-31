@@ -10,6 +10,7 @@ import chromadb
 from chromadb.config import Settings
 
 from parser import MarkdownParser
+from agentic_chunker import AgenticChunker
 import config
 
 
@@ -20,6 +21,17 @@ class VaultIndexer:
         self.vault_path = Path(vault_path or config.VAULT_PATH)
         self.indices_path = Path(config.INDICES_PATH)
         self.parser = MarkdownParser()
+        
+        # Initialize agentic chunker if enabled
+        if config.AGENTIC_CHUNKING_ENABLED:
+            self.agentic_chunker = AgenticChunker(
+                target_chunk_size=config.AGENTIC_TARGET_CHUNK_SIZE,
+                max_chunk_size=config.AGENTIC_MAX_CHUNK_SIZE
+            )
+            print(f"🤖 Agentic chunking: ENABLED (target={config.AGENTIC_TARGET_CHUNK_SIZE}, max={config.AGENTIC_MAX_CHUNK_SIZE})")
+        else:
+            self.agentic_chunker = None
+            print(f"📏 Simple chunking: ENABLED (size={config.CHUNK_SIZE}, overlap={config.CHUNK_OVERLAP})")
         
         # Initialize ChromaDB
         self.client = chromadb.PersistentClient(
@@ -115,18 +127,32 @@ class VaultIndexer:
                     print(f"    ⏭️  Skipped (empty)")
                     continue
                 
-                # Chunk content
-                chunks = self.parser.chunk_content(
-                    parsed['content'],
-                    chunk_size=config.CHUNK_SIZE,
-                    overlap=config.CHUNK_OVERLAP
-                )
-                print(f"    📦 {len(chunks)} chunks")
-                
-                # Index each chunk
-                for chunk_idx, chunk in enumerate(chunks):
-                    self._index_chunk(parsed, chunk, chunk_idx, len(chunks))
-                    stats['chunks_created'] += 1
+                # Chunk content (agentic or simple)
+                if self.agentic_chunker:
+                    # Use agentic chunking
+                    chunk_objects = self.agentic_chunker.chunk_markdown(
+                        parsed['content'],
+                        parsed
+                    )
+                    print(f"    📦 {len(chunk_objects)} chunks (agentic)")
+                    
+                    # Index each chunk
+                    for chunk_obj in chunk_objects:
+                        self._index_agentic_chunk(parsed, chunk_obj)
+                        stats['chunks_created'] += 1
+                else:
+                    # Use simple chunking
+                    chunks = self.parser.chunk_content(
+                        parsed['content'],
+                        chunk_size=config.CHUNK_SIZE,
+                        overlap=config.CHUNK_OVERLAP
+                    )
+                    print(f"    📦 {len(chunks)} chunks (simple)")
+                    
+                    # Index each chunk
+                    for chunk_idx, chunk in enumerate(chunks):
+                        self._index_chunk(parsed, chunk, chunk_idx, len(chunks))
+                        stats['chunks_created'] += 1
                 
                 stats['files_processed'] += 1
                 print(f"    ✅ Indexed")
@@ -154,9 +180,59 @@ class VaultIndexer:
         stats['time'] = elapsed
         return stats
     
+    def _index_agentic_chunk(self, parsed: Dict[str, Any], chunk_obj):
+        """Index a single agentic chunk"""
+        # ChunkWithContext has: text, metadata (dict), semantic_units (list)
+        chunk_meta = chunk_obj.metadata if isinstance(chunk_obj.metadata, dict) else {}
+        
+        # Generate unique ID
+        chunk_idx = chunk_meta.get('chunk_index', 0)
+        doc_id = f"{Path(parsed['file_path']).stem}_{chunk_idx}"
+        
+        # Prepare metadata (combine parsed metadata with chunk metadata)
+        metadata = {
+            'file_path': parsed['file_path'],
+            'file_name': parsed['file_name'],
+            'title': parsed['title'],
+            'chunk_index': chunk_idx,
+            'modified_time': parsed['modified_time'],
+            'chunking_method': 'agentic',
+        }
+        
+        # Add agentic chunk metadata
+        if 'sections' in chunk_meta:
+            sections = chunk_meta['sections']
+            if isinstance(sections, list):
+                metadata['sections'] = json.dumps(sections)
+        if 'unit_types' in chunk_meta:
+            unit_types = chunk_meta['unit_types']
+            if isinstance(unit_types, list):
+                metadata['unit_types'] = json.dumps(unit_types)
+        if 'num_units' in chunk_meta:
+            metadata['num_units'] = chunk_meta['num_units']
+        
+        # Add tags as metadata
+        if parsed.get('tags'):
+            metadata['tags'] = json.dumps(parsed['tags'])
+        
+        # Add wikilinks
+        if parsed.get('wikilinks'):
+            metadata['wikilinks'] = json.dumps(parsed['wikilinks'])
+        
+        # Generate embedding
+        embedding = self.generate_embedding(chunk_obj.text)
+        
+        # Add to collection
+        self.collection.add(
+            ids=[doc_id],
+            documents=[chunk_obj.text],
+            metadatas=[metadata],
+            embeddings=[embedding]
+        )
+    
     def _index_chunk(self, parsed: Dict[str, Any], chunk: str, 
                      chunk_idx: int, total_chunks: int):
-        """Index a single chunk"""
+        """Index a single chunk (simple chunking)"""
         # Generate unique ID
         doc_id = f"{Path(parsed['file_path']).stem}_{chunk_idx}"
         
@@ -168,6 +244,7 @@ class VaultIndexer:
             'chunk_index': chunk_idx,
             'total_chunks': total_chunks,
             'modified_time': parsed['modified_time'],
+            'chunking_method': 'simple',
         }
         
         # Add tags as metadata

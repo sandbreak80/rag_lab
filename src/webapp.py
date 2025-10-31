@@ -5,11 +5,22 @@ Simple web frontend for RAG Q&A
 from flask import Flask, render_template, request, jsonify, stream_with_context, Response
 import requests
 from search import VaultSearcher
+from advanced_search import AdvancedSearcher
 import config
 import json
 
 app = Flask(__name__)
-searcher = VaultSearcher()
+# Use advanced search if available, fall back to vector search
+try:
+    searcher = AdvancedSearcher()
+    search_mode = 'advanced'
+except Exception as e:
+    print(f"⚠️  Advanced search failed to initialize: {e}")
+    print(f"   Falling back to vector search only")
+    searcher = VaultSearcher()
+    search_mode = 'vector'
+
+print(f"🔍 Search mode: {search_mode}")
 
 
 @app.route('/')
@@ -21,15 +32,35 @@ def index():
 @app.route('/api/stats')
 def stats():
     """Get vault statistics"""
-    if not searcher.collection:
-        return jsonify({'error': 'No index found'}), 500
-    
-    return jsonify({
-        'total_chunks': searcher.collection.count(),
-        'embedding_model': config.EMBEDDING_MODEL,
-        'chat_model': config.CHAT_MODEL,
-        'vault_path': str(config.VAULT_PATH)
-    })
+    try:
+        # Get collection from searcher (works for both VaultSearcher and AdvancedSearcher)
+        collection = None
+        
+        if hasattr(searcher, 'collection'):
+            # VaultSearcher has direct collection
+            collection = searcher.collection
+        elif hasattr(searcher, 'hybrid_searcher'):
+            # AdvancedSearcher -> HybridSearcher -> VaultSearcher -> collection
+            collection = searcher.hybrid_searcher.vector_searcher.collection
+        elif hasattr(searcher, 'vector_searcher'):
+            # HybridSearcher -> VaultSearcher -> collection
+            collection = searcher.vector_searcher.collection
+        
+        if not collection:
+            return jsonify({'error': 'No index found'}), 500
+        
+        return jsonify({
+            'total_chunks': collection.count(),
+            'embedding_model': config.EMBEDDING_MODEL,
+            'chat_model': config.CHAT_MODEL,
+            'vault_path': str(config.VAULT_PATH),
+            'search_mode': search_mode
+        })
+    except Exception as e:
+        print(f"❌ Stats error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/search', methods=['POST'])
@@ -43,7 +74,17 @@ def search():
         return jsonify({'error': 'Query is required'}), 400
     
     try:
-        results = searcher.search(query, limit=limit)
+        # Use advanced search if available
+        if search_mode == 'advanced':
+            results = searcher.search(
+                query, 
+                limit=limit,
+                expand_query=True,
+                use_graph=True,
+                rerank=False  # Disable LLM re-ranking (too slow)
+            )
+        else:
+            results = searcher.search(query, limit=limit)
         
         # Format results
         formatted_results = []
@@ -117,7 +158,19 @@ Answer:"""
         def generate():
             try:
                 # Send status update
-                yield json.dumps({'type': 'status', 'message': '🔍 Searching vault...'}) + '\n'
+                yield json.dumps({'type': 'status', 'message': f'🔍 Searching vault ({search_mode})...'}) + '\n'
+                
+                # Perform search
+                if search_mode == 'advanced':
+                    results = searcher.search(
+                        question,
+                        limit=num_contexts,
+                        expand_query=True,
+                        use_graph=True,
+                        rerank=False  # Disable LLM re-ranking (too slow)
+                    )
+                else:
+                    results = searcher.search(question, limit=num_contexts)
                 
                 # Send another status
                 yield json.dumps({'type': 'status', 'message': '📝 Context retrieved. Generating answer...'}) + '\n'
