@@ -4,6 +4,9 @@ __pycache__/
 *$py.class
 *.so
 .Python
+env/
+venv/
+ENV/
 build/
 develop-eggs/
 dist/
@@ -19,69 +22,34 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
-# Virtual environments (SHOULD NOT EXIST - Docker only!)
-venv/
-ENV/
-env/
-.venv/
-
-# IDEs
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-.idea/
-*.swp
-*.swo
-*~
+MANIFEST
 
 # Testing
 .pytest_cache/
 .coverage
 htmlcov/
 .tox/
-.hypothesis/
 
-# ⚠️ IMPORTANT: Exclude ALL personal data and RAG content
-# Indices contain your personal notes embeddings - NEVER commit!
-indices/
-!indices/.gitkeep
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# Evaluation results may contain snippets from your notes
-**/evaluation_results.json
-
-# Environment variables and local config
-.env
-.env.local
-docker-compose.override.yml
-
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 
+# Project specific
+indices/
+*.pkl
+*.db
+*.sqlite
+
+# Docker
+.env.local
+docker-compose.override.yml
+
 # Logs
 *.log
-logs/
-
-# Temporary files
-*.tmp
-*.temp
-.cache/
-
-# Jupyter
-.ipynb_checkpoints/
-*.ipynb
-
-# MyPy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Profiling
-*.prof
-*.stats
-
-
-
