@@ -1,0 +1,96 @@
+{
+  "name": "Markdown RAG MCP Dev Container",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "markdown-rag-mcp",
+  "workspaceFolder": "/workspace",
+
+  // Features to install
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "installOhMyZsh": true,
+      "configureZshAsDefaultShell": true
+    },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+
+  // VS Code extensions to install in container
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // Python development
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "ms-python.pylint",
+        
+        // Docker
+        "ms-azuretools.vscode-docker",
+        
+        // Markdown
+        "yzhang.markdown-all-in-one",
+        "DavidAnson.vscode-markdownlint",
+        
+        // Git
+        "eamodio.gitlens",
+        
+        // General productivity
+        "esbenp.prettier-vscode",
+        "streetsidesoftware.code-spell-checker",
+        "usernamehw.errorlens"
+      ],
+      "settings": {
+        // Python settings
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.formatting.provider": "black",
+        "python.formatting.blackArgs": ["--line-length", "100"],
+        "[python]": {
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+          }
+        },
+        
+        // Editor settings
+        "editor.formatOnSave": true,
+        "editor.rulers": [100],
+        "editor.tabSize": 4,
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true,
+        
+        // Terminal
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        
+        // Git
+        "git.autofetch": true,
+        "git.confirmSync": false,
+        
+        // Docker enforcement
+        "python.terminal.activateEnvironment": false
+      }
+    }
+  },
+
+  // Mount additional volumes at runtime
+  "mounts": [
+    // SSH keys for git (optional)
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,readonly,type=bind,consistency=cached"
+  ],
+
+  // Ports to forward
+  "forwardPorts": [8000],
+
+  // Post-create commands
+  "postCreateCommand": "pip install -e . && echo '✅ Dev container ready!'",
+
+  // User settings
+  "remoteUser": "root",
+  
+  // Keep container running
+  "shutdownAction": "stopCompose"
+}
+
+
+

@@ -1,0 +1,11 @@
+# Example local configuration
+# Copy this to docker-compose.override.yml and customize
+
+version: '3.8'
+
+services:
+  markdown-rag-mcp:
+    volumes:
+      # CHANGE THIS to your vault path
+      - /path/to/your/vault:/vault:ro
+

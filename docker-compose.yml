@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  markdown-rag-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: markdown-rag-mcp
+    volumes:
+      # Mount project code
+      - .:/workspace
+      # Mount your markdown vault (read-only for safety)
+      # CHANGE THIS to your vault path or use docker-compose.override.yml
+      - ${VAULT_PATH:-/path/to/your/vault}:/vault:ro
+      # Persistent indices
+      - markdown-rag-indices:/workspace/indices
+    ports:
+      - "5555:5555"  # Web UI
+    environment:
+      - VAULT_PATH=/vault
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - EMBEDDING_MODEL=nomic-embed-text
+      - CHAT_MODEL=llama3.2:3b  # Lighter/faster model for web UI
+    working_dir: /workspace
+    command: sleep infinity  # Keep container running for development
+    stdin_open: true
+    tty: true
+
+volumes:
+  markdown-rag-indices:
+    name: markdown-rag-indices
+
+
+
