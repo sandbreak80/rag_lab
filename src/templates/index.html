@@ -1514,26 +1514,32 @@
             </div>
             <!-- End TAB 1: Chat -->
 
-            <!-- TAB 2: Settings -->
+            <!-- TAB 2: Documents -->
+            <div class="tab-content" id="tab-documents">
+                <div id="documents-tab-container"></div>
+            </div>
+            <!-- End TAB 2: Documents -->
+
+            <!-- TAB 3: Settings -->
             <div class="tab-content" id="tab-settings">
                 <!-- Settings Panel Content (moved here) -->
                 <div id="settings-tab-container"></div>
             </div>
-            <!-- End TAB 2: Settings -->
+            <!-- End TAB 3: Settings -->
 
-            <!-- TAB 3: Metrics -->
+            <!-- TAB 4: Metrics -->
             <div class="tab-content" id="tab-metrics">
                 <!-- Metrics Dashboard Content (moved here) -->
                 <div id="metrics-tab-container"></div>
             </div>
-            <!-- End TAB 3: Metrics -->
+            <!-- End TAB 4: Metrics -->
 
-            <!-- TAB 4: Lab Guide -->
+            <!-- TAB 5: Lab Guide -->
             <div class="tab-content" id="tab-lab">
                 <!-- Lab Guide Content (moved here) -->
                 <div id="lab-tab-container"></div>
             </div>
-            <!-- End TAB 4: Lab Guide -->
+            <!-- End TAB 5: Lab Guide -->
 
         </div>
         <!-- End Tab Content Wrapper -->
@@ -1625,6 +1631,16 @@
             const settingsPanel = document.getElementById('settingsPanel');
             const metricsDashboard = document.getElementById('metricsDashboard');
             const labGuidePanel = document.getElementById('labGuidePanel');
+            const uploadSection = document.querySelector('.upload-section');
+
+            // Move upload section to Documents tab
+            if (uploadSection) {
+                const documentsContainer = document.getElementById('documents-tab-container');
+                if (documentsContainer) {
+                    documentsContainer.appendChild(uploadSection);
+                    uploadSection.style.display = 'block';
+                }
+            }
 
             if (settingsPanel) {
                 const settingsContainer = document.getElementById('settings-tab-container');
