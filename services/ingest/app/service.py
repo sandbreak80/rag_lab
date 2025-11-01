@@ -20,6 +20,7 @@ sys.path.insert(1, '/workspace/src')
 from config import (
     MAX_UPLOAD_SIZE, UPLOAD_FOLDER, SUPPORTED_EXTENSIONS,
     DOCLING_SERVICE_URL, EMBEDDING_SERVICE_URL, VECTOR_DB_URL,
+    KNOWLEDGE_GRAPH_URL,
     AGENTIC_CHUNKING_ENABLED, AGENTIC_TARGET_CHUNK_SIZE, AGENTIC_MAX_CHUNK_SIZE,
     CHUNK_SIZE, CHUNK_OVERLAP, SERVICE_PORT
 )
@@ -256,6 +257,42 @@ def store_in_vector_db(chunks: List[Dict], metadata: Dict) -> Dict:
 
     return response.json()
 
+def add_to_knowledge_graph(metadata: Dict) -> Dict:
+    """Add document and entities to knowledge graph"""
+    try:
+        # Prepare document node
+        doc_id = metadata.get('file_name', 'unknown')
+        doc_title = metadata.get('title', doc_id)
+        
+        # Extract entities if present
+        entities = metadata.get('entities', {})
+        
+        # Build request payload
+        payload = {
+            'document_id': doc_id,
+            'document_title': doc_title,
+            'tags': metadata.get('tags', []),
+            'wikilinks': metadata.get('wikilinks', []),
+            'entities': entities
+        }
+        
+        # Send to knowledge graph service
+        response = requests.post(
+            f"{KNOWLEDGE_GRAPH_URL}/add_document",
+            json=payload,
+            timeout=30
+        )
+        response.raise_for_status()
+        
+        result = response.json()
+        print(f"   Added to knowledge graph: {result.get('nodes_created', 0)} nodes, {result.get('edges_created', 0)} edges")
+        return result
+        
+    except Exception as e:
+        print(f"   Warning: Failed to add to knowledge graph: {e}")
+        # Don't fail the whole upload if KG fails
+        return {'success': False, 'error': str(e)}
+
 @app.route('/upload', methods=['POST'])
 @timed(metrics, 'upload_process')
 def upload_file():
@@ -345,6 +382,12 @@ def upload_file():
         metrics.increment('storage_started')
         store_result = store_in_vector_db(chunks, metadata)
         metrics.increment('storage_completed')
+
+        # Step 5: Add to knowledge graph
+        if metadata.get('entities') or metadata.get('tags') or metadata.get('wikilinks'):
+            kg_result = add_to_knowledge_graph(metadata)
+            if kg_result.get('success', False):
+                metrics.increment('knowledge_graph_updates')
 
         # Cleanup uploaded file (optional, keep for debugging)
         # file_path.unlink()

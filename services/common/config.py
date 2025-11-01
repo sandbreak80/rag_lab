@@ -13,6 +13,9 @@ DOCLING_SERVICE_URL = os.getenv("DOCLING_SERVICE_URL", "http://docling-service:8
 VECTOR_DB_URL = os.getenv("VECTOR_DB_URL", "http://vector-db:8005")
 EMBEDDING_SERVICE_URL = os.getenv("EMBEDDING_SERVICE_URL", "http://embedding-service:8006")
 GRAPH_SERVICE_URL = os.getenv("GRAPH_SERVICE_URL", "http://graph-service:8007")
+KNOWLEDGE_GRAPH_URL = os.getenv("KNOWLEDGE_GRAPH_URL", "http://knowledge-graph:8007")  # Alias for graph service
+RERANKER_SERVICE_URL = os.getenv("RERANKER_SERVICE_URL", "http://reranker:8008")
+WEB_SEARCH_URL = os.getenv("WEB_SEARCH_URL", "http://web-search:8009")
 LLM_SERVICE_URL = os.getenv("LLM_SERVICE_URL", "http://llm-service:11434")
 
 # Ollama Configuration (for services that need it directly)

@@ -25,7 +25,7 @@ def test_service_health(service_name, url):
     print(f"\n{'='*60}")
     print(f"🏥 Testing {service_name.upper()} Health")
     print(f"{'='*60}")
-    
+
     try:
         response = requests.get(f"{url}/health", timeout=5)
         if response.status_code == 200:
@@ -49,7 +49,7 @@ def test_vector_db():
     print(f"\n{'='*60}")
     print(f"🗄️  Testing Vector DB (ChromaDB)")
     print(f"{'='*60}")
-    
+
     try:
         # Test health endpoint
         response = requests.get(f"{SERVICES['vector_db']}/health", timeout=5)
@@ -61,7 +61,7 @@ def test_vector_db():
         else:
             print(f"❌ Vector DB returned {response.status_code}")
             return False, None
-            
+
     except Exception as e:
         print(f"❌ Vector DB Error: {e}")
         return False, None
@@ -71,9 +71,9 @@ def test_search_service():
     print(f"\n{'='*60}")
     print(f"🔍 Testing Search Service")
     print(f"{'='*60}")
-    
+
     results = {}
-    
+
     # Test vector search
     try:
         response = requests.post(
@@ -91,7 +91,7 @@ def test_search_service():
     except Exception as e:
         print(f"❌ Vector Search error: {e}")
         results['vector'] = False
-    
+
     # Test BM25 search
     try:
         response = requests.post(
@@ -109,7 +109,7 @@ def test_search_service():
     except Exception as e:
         print(f"❌ BM25 Search error: {e}")
         results['bm25'] = False
-    
+
     # Test hybrid search
     try:
         response = requests.post(
@@ -127,7 +127,7 @@ def test_search_service():
     except Exception as e:
         print(f"❌ Hybrid Search error: {e}")
         results['hybrid'] = False
-    
+
     # Test query expansion
     try:
         response = requests.post(
@@ -145,7 +145,7 @@ def test_search_service():
     except Exception as e:
         print(f"❌ Query Expansion error: {e}")
         results['query_expansion'] = False
-    
+
     return results
 
 def test_knowledge_graph():
@@ -153,7 +153,7 @@ def test_knowledge_graph():
     print(f"\n{'='*60}")
     print(f"🕸️  Testing Knowledge Graph")
     print(f"{'='*60}")
-    
+
     try:
         # Get graph stats
         response = requests.get(f"{SERVICES['knowledge_graph']}/metrics", timeout=5)
@@ -175,14 +175,14 @@ def test_web_search():
     print(f"\n{'='*60}")
     print(f"🌐 Testing Web Search")
     print(f"{'='*60}")
-    
+
     try:
         response = requests.post(
             f"{SERVICES['web_search']}/search",
             json={"query": "RAG system architecture", "max_results": 3},
             timeout=15
         )
-        
+
         if response.status_code == 200:
             data = response.json()
             print(f"✅ Web Search Working")
@@ -202,34 +202,34 @@ def main():
     print("🚀 RAG BACKEND VALIDATION SUITE")
     print("="*60)
     print(f"Time: {time.strftime('%Y-%m-%d %H:%M:%S')}")
-    
+
     results = {
         'services_up': {},
         'functionality': {}
     }
-    
+
     # Test all service health
     for service_name, url in SERVICES.items():
         is_up, data = test_service_health(service_name, url)
         results['services_up'][service_name] = is_up
-    
+
     # Test specific functionality
     results['functionality']['vector_db'] = test_vector_db()[0]
     results['functionality']['search'] = test_search_service()
     results['functionality']['knowledge_graph'] = test_knowledge_graph()[0]
     results['functionality']['web_search'] = test_web_search()[0]
-    
+
     # Summary
     print(f"\n{'='*60}")
     print("📊 VALIDATION SUMMARY")
     print(f"{'='*60}")
-    
+
     services_up = sum(1 for v in results['services_up'].values() if v)
     print(f"\n🏥 Services Health: {services_up}/{len(SERVICES)} UP")
     for service, is_up in results['services_up'].items():
         status = "✅" if is_up else "❌"
         print(f"   {status} {service}")
-    
+
     print(f"\n🔧 Functionality Tests:")
     for feature, result in results['functionality'].items():
         if isinstance(result, dict):
@@ -239,9 +239,9 @@ def main():
         else:
             status = "✅" if result else "❌"
             print(f"   {status} {feature}")
-    
+
     print(f"\n{'='*60}")
-    
+
     return results
 
 if __name__ == "__main__":

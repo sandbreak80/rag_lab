@@ -184,6 +184,83 @@ def add_edge():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/add_document', methods=['POST'])
+@timed(metrics, 'add_document')
+def add_document():
+    """Add a document with entities to the knowledge graph"""
+    try:
+        if not kg:
+            return jsonify({'error': 'Knowledge graph not available'}), 503
+
+        data = request.json
+        doc_id = data.get('document_id', '')
+        doc_title = data.get('document_title', doc_id)
+        tags = data.get('tags', [])
+        wikilinks = data.get('wikilinks', [])
+        entities = data.get('entities', {})
+
+        if not doc_id:
+            return jsonify({'error': 'document_id required'}), 400
+
+        nodes_created = 0
+        edges_created = 0
+
+        # Add document node
+        if doc_id not in kg.graph:
+            kg.graph.add_node(doc_id, type='document', title=doc_title)
+            nodes_created += 1
+            metrics.increment('nodes_added')
+
+        # Add tag nodes and edges
+        for tag in tags:
+            tag_node = f"tag:{tag}"
+            if tag_node not in kg.graph:
+                kg.graph.add_node(tag_node, type='tag', title=tag)
+                nodes_created += 1
+                metrics.increment('nodes_added')
+            
+            kg.graph.add_edge(doc_id, tag_node, type='has_tag')
+            edges_created += 1
+            metrics.increment('edges_added')
+
+        # Add wikilink edges (if target exists)
+        for link in wikilinks:
+            target_file = f"{link}.md" if not link.endswith('.md') else link
+            if target_file in kg.graph:
+                kg.graph.add_edge(doc_id, target_file, type='links_to')
+                edges_created += 1
+                metrics.increment('edges_added')
+
+        # Add entity nodes and edges
+        for entity_type, entity_list in entities.items():
+            for entity in entity_list:
+                entity_node = f"{entity_type}:{entity}"
+                if entity_node not in kg.graph:
+                    kg.graph.add_node(entity_node, type=entity_type, title=entity)
+                    nodes_created += 1
+                    metrics.increment('nodes_added')
+                
+                kg.graph.add_edge(doc_id, entity_node, type='mentions')
+                edges_created += 1
+                metrics.increment('edges_added')
+
+        # Save graph after updates
+        kg.save(kg_path)
+        metrics.increment('saves')
+
+        return jsonify({
+            'success': True,
+            'document_id': doc_id,
+            'nodes_created': nodes_created,
+            'edges_created': edges_created
+        })
+
+    except Exception as e:
+        metrics.increment('add_document_errors')
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/save', methods=['POST'])
 def save_graph():
     """Save knowledge graph to disk"""
