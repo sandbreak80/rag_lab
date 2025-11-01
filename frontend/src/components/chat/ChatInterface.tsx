@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useConfigStore } from '../../stores/configStore';
@@ -13,24 +13,58 @@ export function ChatInterface() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Use stable selector - don't call getConfig() directly
-  const config = useConfigStore((state) => ({
-    model: state.model,
-    temperature: state.temperature,
-    topK: state.topK,
-    contextWindow: state.contextWindow,
-    useQueryExpansion: state.useQueryExpansion,
-    useBM25: state.useBM25,
-    useHybrid: state.useHybrid,
-    useGraph: state.useGraph,
-    useReranking: state.useReranking,
-    useWebSearch: state.useWebSearch,
-    useAgenticChunking: state.useAgenticChunking,
-    webSearchDocs: state.webSearchDocs,
-    webSearchPages: state.webSearchPages,
-    rerankTopK: state.rerankTopK,
-    metadataFilters: state.metadataFilters,
-  }));
+  // Select individual properties to avoid creating new objects
+  const model = useConfigStore((state) => state.model);
+  const temperature = useConfigStore((state) => state.temperature);
+  const topK = useConfigStore((state) => state.topK);
+  const contextWindow = useConfigStore((state) => state.contextWindow);
+  const useQueryExpansion = useConfigStore((state) => state.useQueryExpansion);
+  const useBM25 = useConfigStore((state) => state.useBM25);
+  const useHybrid = useConfigStore((state) => state.useHybrid);
+  const useGraph = useConfigStore((state) => state.useGraph);
+  const useReranking = useConfigStore((state) => state.useReranking);
+  const useWebSearch = useConfigStore((state) => state.useWebSearch);
+  const useAgenticChunking = useConfigStore((state) => state.useAgenticChunking);
+  const webSearchDocs = useConfigStore((state) => state.webSearchDocs);
+  const webSearchPages = useConfigStore((state) => state.webSearchPages);
+  const rerankTopK = useConfigStore((state) => state.rerankTopK);
+  const metadataFilters = useConfigStore((state) => state.metadataFilters);
+
+  // Memoize config object - only recreates when values actually change
+  const config = useMemo(() => ({
+    model,
+    temperature,
+    topK,
+    contextWindow,
+    useQueryExpansion,
+    useBM25,
+    useHybrid,
+    useGraph,
+    useReranking,
+    useWebSearch,
+    useAgenticChunking,
+    webSearchDocs,
+    webSearchPages,
+    rerankTopK,
+    metadataFilters,
+  }), [
+    model,
+    temperature,
+    topK,
+    contextWindow,
+    useQueryExpansion,
+    useBM25,
+    useHybrid,
+    useGraph,
+    useReranking,
+    useWebSearch,
+    useAgenticChunking,
+    webSearchDocs,
+    webSearchPages,
+    rerankTopK,
+    metadataFilters,
+  ]);
+
   const addMetric = useMetricsStore((state) => state.addQuery);
 
   const scrollToBottom = () => {

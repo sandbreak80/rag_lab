@@ -13,7 +13,7 @@ def get_stats():
     """Get system statistics"""
     try:
         vector_db_url = os.getenv('VECTOR_DB_URL', 'http://vector-db:8005')
-        
+
         # Get chunk count from vector DB
         try:
             response = requests.get(f"{vector_db_url}/stats", timeout=5)
@@ -24,17 +24,17 @@ def get_stats():
                 chunk_count = 0
         except:
             chunk_count = 0
-        
+
         # Get model info from Ollama
         ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://host.docker.internal:11434')
         current_model = os.getenv('CHAT_MODEL', 'llama3.2:3b')
-        
+
         return jsonify({
             'chunk_count': chunk_count,
             'current_model': current_model,
             'status': 'ok'
         })
-    
+
     except Exception as e:
         return jsonify({
             'chunk_count': 0,
