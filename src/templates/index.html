@@ -909,7 +909,7 @@
                     <span id="metricsToggleText">Show Details</span>
                 </button>
             </div>
-            
+
             <!-- Key Metrics Grid -->
             <div class="metrics-grid">
                 <div class="metric-card">
@@ -933,13 +933,13 @@
                     <span class="subtitle">estimated</span>
                 </div>
             </div>
-            
+
             <!-- Detailed Metrics (Collapsible) -->
             <div id="metricsDetails" style="display: none;">
                 <!-- Latency Breakdown -->
                 <div class="latency-breakdown">
                     <h4>⏱️ Latency Breakdown</h4>
-                    
+
                     <div class="latency-bar-container">
                         <div class="latency-bar-label">
                             <div>
@@ -952,7 +952,7 @@
                             <div class="latency-bar-fill" id="bar-expansion" style="width: 0%"></div>
                         </div>
                     </div>
-                    
+
                     <div class="latency-bar-container">
                         <div class="latency-bar-label">
                             <div>
@@ -965,7 +965,7 @@
                             <div class="latency-bar-fill" id="bar-vector" style="width: 0%"></div>
                         </div>
                     </div>
-                    
+
                     <div class="latency-bar-container">
                         <div class="latency-bar-label">
                             <div>
@@ -978,7 +978,7 @@
                             <div class="latency-bar-fill" id="bar-bm25" style="width: 0%"></div>
                         </div>
                     </div>
-                    
+
                     <div class="latency-bar-container">
                         <div class="latency-bar-label">
                             <div>
@@ -991,7 +991,7 @@
                             <div class="latency-bar-fill" id="bar-fusion" style="width: 0%"></div>
                         </div>
                     </div>
-                    
+
                     <div class="latency-bar-container">
                         <div class="latency-bar-label">
                             <div>
@@ -1004,7 +1004,7 @@
                             <div class="latency-bar-fill" id="bar-graph" style="width: 0%"></div>
                         </div>
                     </div>
-                    
+
                     <div class="latency-bar-container">
                         <div class="latency-bar-label">
                             <div>
@@ -1018,7 +1018,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Component Status -->
                 <div class="component-status">
                     <h4>🔧 Active Components</h4>
@@ -1265,16 +1265,16 @@
             // You can implement a toast notification here
             console.log(`${type === 'success' ? '✅' : 'ℹ️'} ${message}`);
         }
-        
+
         // ====================================
         // METRICS DASHBOARD
         // ====================================
-        
+
         // Toggle metrics details
         function toggleMetricsDetails() {
             const details = document.getElementById('metricsDetails');
             const toggleText = document.getElementById('metricsToggleText');
-            
+
             if (details.style.display === 'none') {
                 details.style.display = 'block';
                 toggleText.textContent = 'Hide Details';
@@ -1283,32 +1283,32 @@
                 toggleText.textContent = 'Show Details';
             }
         }
-        
+
         // Update metrics display
         function updateMetrics(metrics) {
             if (!metrics) return;
-            
+
             console.log('📊 Updating metrics:', metrics);
-            
+
             // Show dashboard
             const dashboard = document.getElementById('metricsDashboard');
             dashboard.classList.add('visible');
-            
+
             // Update key metrics
-            document.getElementById('metric-latency').textContent = 
+            document.getElementById('metric-latency').textContent =
                 metrics.total_latency_ms ? `${Math.round(metrics.total_latency_ms)}ms` : '--';
-            document.getElementById('metric-results').textContent = 
+            document.getElementById('metric-results').textContent =
                 metrics.vector_results_count || '--';
-            document.getElementById('metric-method').textContent = 
+            document.getElementById('metric-method').textContent =
                 metrics.method || '--';
-            
+
             // Estimate precision based on method
             let precision = '--';
             if (metrics.method === 'hybrid') precision = '85-90%';
             else if (metrics.method === 'vector_only') precision = '70-75%';
             if (metrics.reranking_success) precision = '95-98%';
             document.getElementById('metric-precision').textContent = precision;
-            
+
             // Update latency breakdown
             if (metrics.breakdown_percent) {
                 updateLatencyBar('expansion', metrics.query_expansion_ms, metrics.breakdown_percent.query_expansion);
@@ -1318,7 +1318,7 @@
                 updateLatencyBar('graph', metrics.graph_enhancement_ms, metrics.breakdown_percent.graph);
                 updateLatencyBar('reranking', metrics.reranking_ms, metrics.breakdown_percent.reranking);
             }
-            
+
             // Update component status
             updateComponentStatus('expansion', metrics.query_expanded || false);
             updateComponentStatus('bm25', metrics.bm25_results_count > 0);
@@ -1326,17 +1326,17 @@
             updateComponentStatus('graph', metrics.graph_docs_added > 0);
             updateComponentStatus('reranking', metrics.reranking_success || false);
         }
-        
+
         // Update latency bar
         function updateLatencyBar(component, timeMs, percent) {
             const time = Math.round(timeMs || 0);
             const pct = Math.round(percent || 0);
-            
+
             document.getElementById(`time-${component}`).textContent = `${time}ms`;
             document.getElementById(`percent-${component}`).textContent = `(${pct}%)`;
             document.getElementById(`bar-${component}`).style.width = `${pct}%`;
         }
-        
+
         // Update component status dot
         function updateComponentStatus(component, isActive) {
             const dot = document.getElementById(`status-${component}`);
@@ -1344,7 +1344,7 @@
                 dot.className = `status-dot ${isActive ? 'active' : 'inactive'}`;
             }
         }
-        
+
         // ====================================
         // ORIGINAL CODE (EXISTING)
         // ====================================
@@ -1466,19 +1466,19 @@
                             config: currentConfig
                         })
                     });
-                    
+
                     if (searchResponse.ok) {
                         const searchData = await searchResponse.json();
                         searchMetrics = searchData.metrics;
                         console.log('📊 Captured search metrics:', searchMetrics);
-                        
+
                         // Update metrics display
                         updateMetrics(searchMetrics);
                     }
                 } catch (e) {
                     console.error('Failed to capture metrics:', e);
                 }
-                
+
                 // Step 2: Continue with chat as normal
                 const response = await fetch('/api/chat', {
                     method: 'POST',

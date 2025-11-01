@@ -326,15 +326,15 @@
         width: 100%;
         right: -100%;
     }
-    
+
     .lab-guide-panel.open {
         right: 0;
     }
-    
+
     .lab-guide-panel.open ~ .lab-guide-toggle {
         right: calc(100% - 76px);
     }
-    
+
     .lab-actions {
         grid-template-columns: 1fr;
     }
