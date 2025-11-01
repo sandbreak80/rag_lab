@@ -263,10 +263,10 @@ def add_to_knowledge_graph(metadata: Dict) -> Dict:
         # Prepare document node
         doc_id = metadata.get('file_name', 'unknown')
         doc_title = metadata.get('title', doc_id)
-        
+
         # Extract entities if present
         entities = metadata.get('entities', {})
-        
+
         # Build request payload
         payload = {
             'document_id': doc_id,
@@ -275,7 +275,7 @@ def add_to_knowledge_graph(metadata: Dict) -> Dict:
             'wikilinks': metadata.get('wikilinks', []),
             'entities': entities
         }
-        
+
         # Send to knowledge graph service
         response = requests.post(
             f"{KNOWLEDGE_GRAPH_URL}/add_document",
@@ -283,11 +283,11 @@ def add_to_knowledge_graph(metadata: Dict) -> Dict:
             timeout=30
         )
         response.raise_for_status()
-        
+
         result = response.json()
         print(f"   Added to knowledge graph: {result.get('nodes_created', 0)} nodes, {result.get('edges_created', 0)} edges")
         return result
-        
+
     except Exception as e:
         print(f"   Warning: Failed to add to knowledge graph: {e}")
         # Don't fail the whole upload if KG fails

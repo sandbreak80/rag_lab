@@ -817,6 +817,33 @@
                 </label>
                 <input type="checkbox" id="use-web-search" onchange="updateConfig()">
             </div>
+            
+            <div class="setting-item">
+                <label for="web-search-docs">
+                    Web Search: Max Results
+                    <span class="setting-value" id="web-docs-value">5</span>
+                </label>
+                <input type="range" id="web-search-docs" min="1" max="10" value="5" 
+                       oninput="document.getElementById('web-docs-value').textContent = this.value; updateConfig();">
+            </div>
+            
+            <div class="setting-item">
+                <label for="web-search-pages">
+                    Web Search: Pages Per Result
+                    <span class="setting-value" id="web-pages-value">1</span>
+                </label>
+                <input type="range" id="web-search-pages" min="1" max="3" value="1" 
+                       oninput="document.getElementById('web-pages-value').textContent = this.value; updateConfig();">
+            </div>
+            
+            <div class="setting-item">
+                <label for="rerank-top-k">
+                    Reranker: Top-K
+                    <span class="setting-value" id="rerank-k-value">10</span>
+                </label>
+                <input type="range" id="rerank-top-k" min="5" max="20" value="10" 
+                       oninput="document.getElementById('rerank-k-value').textContent = this.value; updateConfig();">
+            </div>
         </div>
 
         <!-- Search Parameters -->
@@ -1763,7 +1790,10 @@
                 use_graph: document.getElementById('use-graph').checked,
                 use_reranking: document.getElementById('use-reranking').checked,
                 use_web_search: document.getElementById('use-web-search').checked,
-                top_k: parseInt(document.getElementById('top-k').value)
+                top_k: parseInt(document.getElementById('top-k').value),
+                web_search_docs: parseInt(document.getElementById('web-search-docs')?.value || 5),
+                web_search_pages: parseInt(document.getElementById('web-search-pages')?.value || 1),
+                rerank_top_k: parseInt(document.getElementById('rerank-top-k')?.value || 10)
             };
 
             currentLLMConfig = {
@@ -1772,6 +1802,16 @@
                 max_tokens: parseInt(document.getElementById('max-tokens').value),
                 context_window: parseInt(document.getElementById('context-window').value)
             };
+
+            // Update model name in header
+            const modelSelect = document.getElementById('llm-model');
+            if (modelSelect) {
+                const modelText = modelSelect.options[modelSelect.selectedIndex].text;
+                const modelNameEl = document.getElementById('model-name');
+                if (modelNameEl) {
+                    modelNameEl.textContent = modelText;
+                }
+            }
 
             console.log('⚙️  Config updated:', currentConfig);
 

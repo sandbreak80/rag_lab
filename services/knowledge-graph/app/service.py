@@ -218,7 +218,7 @@ def add_document():
                 kg.graph.add_node(tag_node, type='tag', title=tag)
                 nodes_created += 1
                 metrics.increment('nodes_added')
-            
+
             kg.graph.add_edge(doc_id, tag_node, type='has_tag')
             edges_created += 1
             metrics.increment('edges_added')
@@ -239,7 +239,7 @@ def add_document():
                     kg.graph.add_node(entity_node, type=entity_type, title=entity)
                     nodes_created += 1
                     metrics.increment('nodes_added')
-                
+
                 kg.graph.add_edge(doc_id, entity_node, type='mentions')
                 edges_created += 1
                 metrics.increment('edges_added')
