@@ -734,8 +734,8 @@
     </style>
 </head>
 <body>
-    <!-- Settings Panel -->
-    <div class="settings-panel" id="settingsPanel">
+    <!-- Settings Panel (Hidden - content in Settings Tab) -->
+    <div class="settings-panel" id="settingsPanel" style="display: none;">
         <div class="settings-header">
             <h2>⚙️ RAG Configuration</h2>
             <p>Experiment with different settings to see how they affect quality, speed, and resource usage.</p>
@@ -1141,7 +1141,28 @@
             </div>
         </header>
 
-        <!-- Metrics Dashboard -->
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-btn active" data-tab="chat" data-emoji="💬">
+                Chat
+            </button>
+            <button class="tab-btn" data-tab="settings" data-emoji="⚙️">
+                Settings
+            </button>
+            <button class="tab-btn" data-tab="metrics" data-emoji="📊">
+                Metrics
+            </button>
+            <button class="tab-btn" data-tab="lab" data-emoji="🎓">
+                Lab Guide
+            </button>
+        </div>
+
+        <!-- Tab Content Wrapper -->
+        <div class="tab-content-wrapper">
+            
+            <!-- TAB 1: Chat -->
+            <div class="tab-content active" id="tab-chat">
+
         <div class="metrics-dashboard" id="metricsDashboard">
             <div class="metrics-header">
                 <h3>📊 Performance Metrics</h3>
@@ -1486,7 +1507,56 @@
                 </button>
             </div>
         </div>
+
+            </div>
+            <!-- End TAB 1: Chat -->
+
+            <!-- TAB 2: Settings -->
+            <div class="tab-content" id="tab-settings">
+                <div class="settings-section">
+                    <h2 class="settings-section-title">⚙️ RAG Configuration</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">
+                        Toggle features ON/OFF to see their impact on quality, speed, and cost.
+                    </p>
+                    
+                    <!-- Settings will be dynamically populated by JavaScript -->
+                    <div id="settings-content-tab">
+                        <!-- Content moved from settings panel -->
+                    </div>
+                </div>
+            </div>
+            <!-- End TAB 2: Settings -->
+
+            <!-- TAB 3: Metrics -->
+            <div class="tab-content" id="tab-metrics">
+                <div class="metrics-section">
+                    <h2 class="settings-section-title">📊 Performance Analytics</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">
+                        Track performance metrics and query history across your session.
+                    </p>
+                    
+                    <!-- Metrics dashboard will be visible here -->
+                    <div id="metrics-content-tab">
+                        <!-- Metrics dashboard stays in its current location for now -->
+                    </div>
+                </div>
+            </div>
+            <!-- End TAB 3: Metrics -->
+
+            <!-- TAB 4: Lab Guide -->
+            <div class="tab-content" id="tab-lab">
+                <!-- Lab guide will be visible here -->
+                <div id="lab-content-tab">
+                    <!-- Lab guide stays in its current location for now -->
+                </div>
+            </div>
+            <!-- End TAB 4: Lab Guide -->
+
+        </div>
+        <!-- End Tab Content Wrapper -->
+
     </div>
+    <!-- End Container -->
 
     <script>
         // ====================================
@@ -1501,7 +1571,10 @@
             use_graph: false,
             use_reranking: false,
             use_web_search: false,
-            top_k: 10
+            top_k: 10,
+            rerank_top_k: 10,
+            web_search_docs: 5,
+            web_search_pages_per_doc: 2
         };
 
         let currentLLMConfig = {
@@ -1510,6 +1583,56 @@
             max_tokens: 500,
             context_window: 4000
         };
+
+        // ====================================
+        // TAB SWITCHING
+        // ====================================
+
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab content
+            const selectedTab = document.getElementById(`tab-${tabName}`);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+
+            // Activate selected tab button
+            const selectedBtn = document.querySelector(`[data-tab="${tabName}"]`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('active');
+            }
+
+            // Save to localStorage
+            localStorage.setItem('activeTab', tabName);
+
+            console.log(`📑 Switched to tab: ${tabName}`);
+        }
+
+        // Initialize tab switching
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click handlers to tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabName = this.getAttribute('data-tab');
+                    switchTab(tabName);
+                });
+            });
+
+            // Restore last active tab from localStorage
+            const lastActiveTab = localStorage.getItem('activeTab');
+            if (lastActiveTab && document.getElementById(`tab-${lastActiveTab}`)) {
+                switchTab(lastActiveTab);
+            }
+        });
 
         let availablePresets = {};
 

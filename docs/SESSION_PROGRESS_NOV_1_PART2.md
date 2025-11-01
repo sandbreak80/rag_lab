@@ -169,27 +169,27 @@ Student learns: How to have effective customer conversations
 ## 💡 Strategic Insights from Today
 
 ### 1. Self-Referential Learning
-**What:** Lab ingests its own documentation and uses it to teach students  
-**Why it matters:** Validates RAG works (if it can teach itself, it works!)  
+**What:** Lab ingests its own documentation and uses it to teach students
+**Why it matters:** Validates RAG works (if it can teach itself, it works!)
 **Impact:** Students can ask the lab ANY question about AI, Splunk, sales, ROI, etc.
 
 ### 2. Triple Value Proposition
-**Layer 1:** Learn AI & RAG (educational)  
-**Layer 2:** See Splunk monitoring live (product demo)  
+**Layer 1:** Learn AI & RAG (educational)
+**Layer 2:** See Splunk monitoring live (product demo)
 **Layer 3:** AI development case study (meta-narrative)
 
 **Result:** Lab is 10x more valuable than originally scoped
 
 ### 3. Field Enablement Content
-**Discovery questions:** How to qualify AI opportunities  
-**Objection handling:** How to overcome price/competitive concerns  
-**ROI calculator:** How to justify Splunk investment  
+**Discovery questions:** How to qualify AI opportunities
+**Objection handling:** How to overcome price/competitive concerns
+**ROI calculator:** How to justify Splunk investment
 
 **Impact:** Field teams can now confidently sell Splunk AI Observability
 
 ### 4. Full-Stack Observability Vision
-**Phase 5 Roadmap:** Monitor app + containers + GPU + OS  
-**Customer value:** From "what's wrong?" to "here's why and how to fix" in 30 seconds  
+**Phase 5 Roadmap:** Monitor app + containers + GPU + OS
+**Customer value:** From "what's wrong?" to "here's why and how to fix" in 30 seconds
 **ROI:** 10-15x on Observability Cloud license
 
 ---
@@ -225,10 +225,10 @@ Student learns: How to have effective customer conversations
 
 ## 🎯 Session End Status
 
-**Time:** Evening (November 1, 2025)  
-**Energy:** High (making great progress!)  
-**Blockers:** None (clear path forward)  
-**Momentum:** Strong (CSS done, config done, plan clear)  
+**Time:** Evening (November 1, 2025)
+**Energy:** High (making great progress!)
+**Blockers:** None (clear path forward)
+**Momentum:** Strong (CSS done, config done, plan clear)
 **Next:** HTML restructure for tabs (big task, but well-planned)
 
 **Ready to continue when user approves!** 🚀
