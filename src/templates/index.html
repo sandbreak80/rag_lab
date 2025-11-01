@@ -918,8 +918,8 @@
         ⚙️
     </button>
 
-    <!-- Lab Guide Panel -->
-    <div class="lab-guide-panel" id="labGuidePanel">
+    <!-- Lab Guide Panel (will be moved into tab by JavaScript) -->
+    <div class="lab-guide-panel" id="labGuidePanel" style="display: none;">
         <div class="lab-guide-header">
             <h2>🎓 Educational RAG Lab</h2>
             <p class="subtitle">Master Enterprise AI & RAG - Learn by doing!</p>
@@ -1462,7 +1462,7 @@
             <!-- TAB 1: Chat -->
             <div class="tab-content active" id="tab-chat">
 
-        <div class="metrics-dashboard" id="metricsDashboard">
+        <div class="metrics-dashboard" id="metricsDashboard" style="display: none;">
             <div class="metrics-header">
                 <h3>📊 Performance Metrics</h3>
                 <button class="metrics-toggle" onclick="toggleMetricsDetails()">
@@ -2751,15 +2751,15 @@
         function loadDocumentsList(stats) {
             const docsList = document.getElementById('documents-list');
             if (!docsList) return;
-            
+
             const docs = stats.documents || [];
-            
+
             // Filter out system/seeded documents - keep only user uploads
             const filteredDocs = docs.filter(d => {
                 const lower = d.toLowerCase();
                 // Exclude all system, lab, and seeded documents
-                return !d.includes('_SUMMARY') && 
-                       !d.includes('lab/') && 
+                return !d.includes('_SUMMARY') &&
+                       !d.includes('lab/') &&
                        !d.includes('docs/') &&
                        !d.includes('LAB_') &&
                        !d.includes('AI_FUNDAMENTALS') &&
@@ -2770,7 +2770,7 @@
                        !lower.includes('.md') ||
                        (lower.includes('.pdf') || lower.includes('.docx') || lower.includes('.pptx') || lower.includes('.xlsx') || lower.includes('.txt') || lower.includes('.rtf'));
             });
-            
+
             if (filteredDocs.length === 0) {
                 docsList.innerHTML = `
                     <div style="text-align: center; padding: 40px;">
@@ -2781,7 +2781,7 @@
                 `;
                 return;
             }
-            
+
             docsList.innerHTML = filteredDocs.map((doc, i) => {
                 // Determine file icon based on extension
                 let icon = '📄';
@@ -2790,7 +2790,7 @@
                 else if (doc.endsWith('.xlsx') || doc.endsWith('.xls')) icon = '📊';
                 else if (doc.endsWith('.pptx') || doc.endsWith('.ppt')) icon = '📙';
                 else if (doc.endsWith('.txt')) icon = '📝';
-                
+
                 return `
                     <div class="document-item" style="padding: 15px; margin: 10px 0; background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border);">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
