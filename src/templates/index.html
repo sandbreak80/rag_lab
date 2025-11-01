@@ -1513,42 +1513,22 @@
 
             <!-- TAB 2: Settings -->
             <div class="tab-content" id="tab-settings">
-                <div class="settings-section">
-                    <h2 class="settings-section-title">⚙️ RAG Configuration</h2>
-                    <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">
-                        Toggle features ON/OFF to see their impact on quality, speed, and cost.
-                    </p>
-
-                    <!-- Settings will be dynamically populated by JavaScript -->
-                    <div id="settings-content-tab">
-                        <!-- Content moved from settings panel -->
-                    </div>
-                </div>
+                <!-- Settings Panel Content (moved here) -->
+                <div id="settings-tab-container"></div>
             </div>
             <!-- End TAB 2: Settings -->
 
             <!-- TAB 3: Metrics -->
             <div class="tab-content" id="tab-metrics">
-                <div class="metrics-section">
-                    <h2 class="settings-section-title">📊 Performance Analytics</h2>
-                    <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">
-                        Track performance metrics and query history across your session.
-                    </p>
-
-                    <!-- Metrics dashboard will be visible here -->
-                    <div id="metrics-content-tab">
-                        <!-- Metrics dashboard stays in its current location for now -->
-                    </div>
-                </div>
+                <!-- Metrics Dashboard Content (moved here) -->
+                <div id="metrics-tab-container"></div>
             </div>
             <!-- End TAB 3: Metrics -->
 
             <!-- TAB 4: Lab Guide -->
             <div class="tab-content" id="tab-lab">
-                <!-- Lab guide will be visible here -->
-                <div id="lab-content-tab">
-                    <!-- Lab guide stays in its current location for now -->
-                </div>
+                <!-- Lab Guide Content (moved here) -->
+                <div id="lab-tab-container"></div>
             </div>
             <!-- End TAB 4: Lab Guide -->
 
@@ -1611,6 +1591,25 @@
                 selectedBtn.classList.add('active');
             }
 
+            // Show/hide panels based on tab
+            const settingsPanel = document.getElementById('settingsPanel');
+            const metricsDashboard = document.getElementById('metricsDashboard');
+            const labGuidePanel = document.getElementById('labGuidePanel');
+
+            // Hide all panels first
+            if (settingsPanel) settingsPanel.style.display = 'none';
+            if (metricsDashboard) metricsDashboard.style.display = 'none';
+            if (labGuidePanel) labGuidePanel.style.display = 'none';
+
+            // Show the right panel for the tab
+            if (tabName === 'settings' && settingsPanel) {
+                settingsPanel.style.display = 'block';
+            } else if (tabName === 'metrics' && metricsDashboard) {
+                metricsDashboard.style.display = 'block';
+            } else if (tabName === 'lab' && labGuidePanel) {
+                labGuidePanel.style.display = 'block';
+            }
+
             // Save to localStorage
             localStorage.setItem('activeTab', tabName);
 
@@ -1619,6 +1618,33 @@
 
         // Initialize tab switching
         document.addEventListener('DOMContentLoaded', function() {
+            // Move panels into their tab containers
+            const settingsPanel = document.getElementById('settingsPanel');
+            const metricsDashboard = document.getElementById('metricsDashboard');
+            const labGuidePanel = document.getElementById('labGuidePanel');
+
+            if (settingsPanel) {
+                const settingsContainer = document.getElementById('settings-tab-container');
+                if (settingsContainer) {
+                    settingsContainer.appendChild(settingsPanel);
+                    settingsPanel.style.display = 'block';  // Show it now that it's in the right place
+                }
+            }
+
+            if (metricsDashboard) {
+                const metricsContainer = document.getElementById('metrics-tab-container');
+                if (metricsContainer) {
+                    metricsContainer.appendChild(metricsDashboard);
+                }
+            }
+
+            if (labGuidePanel) {
+                const labContainer = document.getElementById('lab-tab-container');
+                if (labContainer) {
+                    labContainer.appendChild(labGuidePanel);
+                }
+            }
+
             // Add click handlers to tab buttons
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -1631,6 +1657,9 @@
             const lastActiveTab = localStorage.getItem('activeTab');
             if (lastActiveTab && document.getElementById(`tab-${lastActiveTab}`)) {
                 switchTab(lastActiveTab);
+            } else {
+                // Default to chat tab and ensure panels are hidden
+                switchTab('chat');
             }
         });
 
