@@ -469,8 +469,194 @@ Sections:
 
 ### Phase 2I: Infrastructure Monitoring Dashboards (3-5 hours)
 **Priority:** MEDIUM (Future State - Roadmap)
+**Integration:** Splunk Observability Cloud + Splunk AI/LLM Monitoring
 
 **Note:** This is a future enhancement, documented for roadmap
+
+**Splunk Integration Strategy:**
+
+Future state will use **Splunk Observability Cloud** and **Splunk AI/LLM Observability** to monitor the entire RAG stack:
+
+References:
+- [LLM Observability Explained: Prevent Hallucinations, Manage Drift, Control Costs](https://www.splunk.com/en_us/blog/learn/llm-observability.html)
+- [How We Built End-to-End LLM Observability with Splunk and RAG](https://www.splunk.com/en_us/blog/artificial-intelligence/how-we-built-end-to-end-llm-observability-with-splunk-and-rag.html)
+
+**Key Splunk LLM Observability Signals:**
+
+1. **Trust (Groundedness)**
+   - Groundedness Score: Alignment with trusted documents
+   - Factuality Check Rate: Frequency of verification
+   - Moderation Flags: Response quality checks
+   - **Our RAG Pipeline**: Source attribution, document citations
+
+2. **Cost (Cost-per-Answer)**
+   - Cost-per-Answer: Average cost per response
+   - Token Utilization Rate: Input/output token analysis
+   - Budget Adherence: Spending vs. budget
+   - **Our Tracking**: Prompt tokens, completion tokens, inference time
+
+3. **User Experience (p95 Latency)**
+   - p95 Latency: 95th percentile response times
+   - Error Rate: Failures and timeouts
+   - User Feedback Scores: Satisfaction ratings
+   - **Our Metrics**: Component-level latency breakdown
+
+**Splunk Monitoring for RAG Pipeline:**
+
+```
+User Query → Prompt Processing → Document Retrieval → 
+Context Assembly → Generation → Quality Validation
+     ↓              ↓                ↓                ↓
+ [Splunk APM] [Splunk Logs] [Splunk Metrics] [Splunk AI Observability]
+```
+
+**What Splunk Tracks:**
+
+**Phase 1: Pre-Processing**
+- Prompt engineering effectiveness
+- Query expansion quality
+- Input validation
+
+**Phase 2: Retrieval (RAG-specific)**
+- Vector search latency
+- BM25 search performance
+- Hybrid fusion effectiveness
+- Retrieved document relevance
+- Top-K result quality
+
+**Phase 3: Context Assembly**
+- Chunk selection quality
+- Context window utilization
+- Token budget management
+
+**Phase 4: Generation**
+- LLM inference time
+- Token generation rate (tokens/s)
+- Model performance by size (1B vs 3B vs 8B)
+- GPU utilization
+
+**Phase 5: Post-Processing**
+- Re-ranking latency
+- Knowledge graph enhancement
+- Final response assembly
+
+**Phase 6: Quality Validation**
+- Hallucination detection
+- Groundedness scoring
+- Source verification
+- Moderation checks
+
+**Splunk Integration Points:**
+
+```python
+# OpenTelemetry instrumentation for Splunk
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+# Configure Splunk endpoint
+tracer_provider = TracerProvider()
+otlp_exporter = OTLPSpanExporter(
+    endpoint="https://ingest.us0.signalfx.com",
+    headers={"X-SF-TOKEN": "YOUR_SPLUNK_TOKEN"}
+)
+tracer_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
+trace.set_tracer_provider(tracer_provider)
+
+# Instrument RAG pipeline
+tracer = trace.get_tracer(__name__)
+
+with tracer.start_as_current_span("rag_query") as span:
+    span.set_attribute("query", query_text)
+    span.set_attribute("user_id", user_id)
+    
+    with tracer.start_as_current_span("retrieval"):
+        # Vector + BM25 search
+        span.set_attribute("retrieval.method", "hybrid")
+        span.set_attribute("retrieval.top_k", top_k)
+        results = search(query)
+        span.set_attribute("retrieval.results_count", len(results))
+    
+    with tracer.start_as_current_span("generation"):
+        span.set_attribute("llm.model", "llama3.2:3b")
+        span.set_attribute("llm.temperature", 0.5)
+        response = llm.generate(context)
+        span.set_attribute("llm.prompt_tokens", prompt_tokens)
+        span.set_attribute("llm.completion_tokens", completion_tokens)
+        span.set_attribute("llm.total_tokens", total_tokens)
+    
+    with tracer.start_as_current_span("quality_check"):
+        groundedness_score = check_groundedness(response, results)
+        span.set_attribute("quality.groundedness", groundedness_score)
+```
+
+**Splunk Dashboards for RAG:**
+
+1. **LLM Performance Dashboard**
+   - Query volume over time
+   - p50, p95, p99 latency
+   - Error rates
+   - Cost per query
+   - Token usage trends
+
+2. **RAG Pipeline Health**
+   - Retrieval accuracy (precision/recall)
+   - Hybrid search effectiveness
+   - Re-ranking impact
+   - Knowledge graph coverage
+   - BM25 index freshness
+
+3. **Model Comparison**
+   - 1B vs 3B vs 8B performance
+   - Quality vs latency trade-offs
+   - Cost per model
+   - GPU utilization by model
+
+4. **Groundedness & Trust**
+   - Hallucination rate
+   - Source citation accuracy
+   - Moderation flags
+   - User feedback correlation
+
+5. **Cost Optimization**
+   - Token usage by component
+   - Most expensive queries
+   - Optimization opportunities
+   - Budget tracking
+
+**Enterprise Value Proposition:**
+
+*"Monitor your entire RAG pipeline with Splunk - from query to answer. Track groundedness, control costs, and ensure every response is trustworthy. See exactly where latency occurs and optimize each component independently."*
+
+**Splunk Integration Benefits:**
+
+✅ **End-to-end visibility**: Query → Retrieval → Generation → Response  
+✅ **RAG-specific metrics**: Retrieval quality, groundedness, source accuracy  
+✅ **Cost tracking**: Token usage, model costs, infrastructure spend  
+✅ **Performance optimization**: Identify bottlenecks in hybrid search, reranking  
+✅ **Compliance**: Audit trails, data lineage, response provenance  
+✅ **Alerting**: Anomaly detection, hallucination spikes, cost overruns  
+
+**Demo Value:**
+
+This lab becomes a **live demonstration** of:
+- How to build production RAG systems
+- How to instrument RAG with Splunk
+- What to monitor in RAG pipelines
+- How Splunk provides LLM observability
+
+**Field Team Messaging:**
+
+*"This isn't just a RAG lab - it's a reference architecture for production LLM deployments. Every component is instrumented for Splunk, showing customers exactly what to monitor when they deploy AI at scale."*
+
+**Implementation Priority:**
+
+- **Phase 2I (Infrastructure Monitoring)**: Build basic metrics collection
+- **Phase 2I+ (Splunk Integration)**: Add OpenTelemetry + Splunk exporters
+- **Production**: Full Splunk Observability Cloud integration
+
+This positions the lab as a **Splunk AI Observability showcase**!
 
 1. **System Monitoring Service**
    - Create `services/system-monitor/`
