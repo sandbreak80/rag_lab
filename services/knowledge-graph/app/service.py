@@ -204,19 +204,19 @@ def save_graph():
 def build_graph():
     """Build knowledge graph from vector database"""
     global kg
-    
+
     try:
         print("🔨 Building knowledge graph...")
-        
+
         if not KG_AVAILABLE:
             return jsonify({'error': 'Knowledge graph module not available'}), 503
-        
+
         # Get vector DB URL from environment
         vector_db_url = os.getenv('VECTOR_DB_URL', 'http://vector-db:8005')
-        
+
         # Create new graph
         kg = KnowledgeGraph()
-        
+
         # Build from vector database
         # Get all documents
         import requests
@@ -227,33 +227,33 @@ def build_graph():
         )
         response.raise_for_status()
         data = response.json()
-        
+
         documents = data.get('documents', [])
         metadatas = data.get('metadatas', [])
-        
+
         if not metadatas:
             return jsonify({
                 'success': False,
                 'message': 'No metadata in vector database'
             }), 400
-        
+
         print(f"📚 Processing {len(metadatas)} documents...")
-        
+
         # Track files and relationships
         files_by_name = {}
         folders = set()
         tags_by_doc = {}
-        
+
         # Step 1: Add document nodes
         for metadata in metadatas:
             file_name = metadata.get('file_name', '')
             if not file_name:
                 continue
-                
+
             if file_name not in files_by_name:
                 file_path = metadata.get('file_path', '')
                 title = metadata.get('title', file_name)
-                
+
                 # Add document node
                 kg.graph.add_node(
                     file_name,
@@ -262,12 +262,12 @@ def build_graph():
                     file_path=file_path
                 )
                 files_by_name[file_name] = file_path
-                
+
                 # Track folder
                 if '/' in file_path:
                     folder = '/'.join(file_path.split('/')[:-1])
                     folders.add(folder)
-                
+
                 # Track tags
                 tags_str = metadata.get('tags', '[]')
                 try:
@@ -277,9 +277,9 @@ def build_graph():
                         tags_by_doc[file_name] = tags
                 except:
                     pass
-        
+
         print(f"  Added {len(files_by_name)} document nodes")
-        
+
         # Step 2: Add folder nodes
         for folder in folders:
             if folder and folder not in kg.graph:
@@ -288,76 +288,76 @@ def build_graph():
                     type='folder',
                     title=folder.split('/')[-1]
                 )
-        
+
         print(f"  Added {len(folders)} folder nodes")
-        
+
         # Step 3: Add folder-document edges
         edge_count = 0
         for metadata in metadatas:
             file_path = metadata.get('file_path', '')
             file_name = metadata.get('file_name', '')
-            
+
             if file_name and '/' in file_path:
                 folder = '/'.join(file_path.split('/')[:-1])
                 if folder in kg.graph and file_name in kg.graph:
                     kg.graph.add_edge(folder, file_name, relation='contains')
                     edge_count += 1
-        
+
         print(f"  Added {edge_count} folder containment edges")
-        
+
         # Step 4: Add wikilink edges
         wikilink_count = 0
         for metadata in metadatas:
             file_name = metadata.get('file_name', '')
             wikilinks_str = metadata.get('wikilinks', '[]')
-            
+
             try:
                 import json
                 wikilinks = json.loads(wikilinks_str) if isinstance(wikilinks_str, str) else wikilinks_str
             except:
                 wikilinks = []
-            
+
             for link in wikilinks:
                 # Try to find target file
                 target_file = None
-                
+
                 # Try exact match
                 if f"{link}.md" in files_by_name:
                     target_file = f"{link}.md"
                 elif link in files_by_name:
                     target_file = link
-                
+
                 if target_file and target_file in kg.graph and file_name in kg.graph:
                     kg.graph.add_edge(file_name, target_file, relation='links_to')
                     wikilink_count += 1
-        
+
         print(f"  Added {wikilink_count} wikilink edges")
-        
+
         # Step 5: Add tag nodes and edges
         tag_nodes = set()
         tag_edge_count = 0
-        
+
         for file_name, tags in tags_by_doc.items():
             for tag in tags:
                 tag_node = f"tag:{tag}"
-                
+
                 # Add tag node
                 if tag_node not in kg.graph:
                     kg.graph.add_node(tag_node, type='tag', title=tag)
                     tag_nodes.add(tag_node)
-                
+
                 # Add edge
                 if file_name in kg.graph:
                     kg.graph.add_edge(file_name, tag_node, relation='has_tag')
                     tag_edge_count += 1
-        
+
         print(f"  Added {len(tag_nodes)} tag nodes, {tag_edge_count} tag edges")
-        
+
         # Save graph
         kg.save(kg_path)
-        
+
         metrics.increment('builds')
-        
+
         stats = {
             'nodes': len(kg.graph.nodes()),
             'edges': len(kg.graph.edges()),
@@ -365,15 +365,15 @@ def build_graph():
             'folders': len(folders),
             'tags': len(tag_nodes)
         }
-        
+
         print("✅ Knowledge graph built successfully!")
         print(f"   Nodes: {stats['nodes']}, Edges: {stats['edges']}")
-        
+
         return jsonify({
             'success': True,
             'stats': stats
         })
-        
+
     except Exception as e:
         metrics.increment('build_errors')
         import traceback

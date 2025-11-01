@@ -1,0 +1,231 @@
+{
+  "metadata": {
+    "name": "RAG Lab Evaluation Dataset",
+    "description": "Test questions for measuring RAG performance across different difficulty levels",
+    "version": "1.0",
+    "created": "2025-11-01",
+    "total_questions": 20
+  },
+  "questions": [
+    {
+      "id": "q01",
+      "query": "What is vector search?",
+      "difficulty": "basic",
+      "type": "definitional",
+      "relevant_docs": ["vector_search.md", "embeddings.md", "RAG_DEEP_DIVE.md"],
+      "expected_concepts": ["embeddings", "similarity", "cosine", "dense vectors"],
+      "expected_answer_keywords": ["semantic", "numerical representation", "similarity"],
+      "ground_truth": "Vector search uses dense numerical representations (embeddings) to find semantically similar documents using cosine similarity or other distance metrics."
+    },
+    {
+      "id": "q02",
+      "query": "How does hybrid search improve retrieval?",
+      "difficulty": "intermediate",
+      "type": "conceptual",
+      "relevant_docs": ["RAG_DEEP_DIVE.md", "PROJECT_SUMMARY.md"],
+      "expected_concepts": ["BM25", "vector search", "fusion", "reciprocal rank"],
+      "expected_answer_keywords": ["keyword", "semantic", "combines", "best of both"],
+      "ground_truth": "Hybrid search combines vector search (semantic) with BM25 (keyword) using Reciprocal Rank Fusion, achieving better recall by capturing both meaning and exact term matches."
+    },
+    {
+      "id": "q03",
+      "query": "What is agentic chunking?",
+      "difficulty": "basic",
+      "type": "definitional",
+      "relevant_docs": ["AGENTIC_CHUNKING_COMPLETE.md", "PROJECT_SUMMARY.md"],
+      "expected_concepts": ["LLM", "semantic boundaries", "document structure"],
+      "expected_answer_keywords": ["intelligent", "boundaries", "structure", "semantic"],
+      "ground_truth": "Agentic chunking uses LLM analysis to create intelligent semantic boundaries in documents, respecting structure like headings, code blocks, and lists rather than using fixed-size chunks."
+    },
+    {
+      "id": "q04",
+      "query": "Why use knowledge graphs in RAG?",
+      "difficulty": "intermediate",
+      "type": "conceptual",
+      "relevant_docs": ["IMPLEMENTATION_COMPLETE.md", "PROJECT_SUMMARY.md"],
+      "expected_concepts": ["relationships", "wikilinks", "tags", "multi-hop"],
+      "expected_answer_keywords": ["related documents", "connections", "relationships"],
+      "ground_truth": "Knowledge graphs connect documents through wikilinks, tags, and folders, enabling multi-hop queries and discovering related documents that aren't semantically similar but are contextually connected."
+    },
+    {
+      "id": "q05",
+      "query": "What are the trade-offs of LLM re-ranking?",
+      "difficulty": "advanced",
+      "type": "analysis",
+      "relevant_docs": ["IMPLEMENTATION_COMPLETE.md", "PROJECT_SUMMARY.md"],
+      "expected_concepts": ["precision", "latency", "compute", "relevance"],
+      "expected_answer_keywords": ["slow", "accurate", "2000ms", "precision"],
+      "ground_truth": "LLM re-ranking improves precision by 10-15% but adds ~2000ms latency and high compute cost. Best for critical queries with low QPS, not real-time systems."
+    },
+    {
+      "id": "q06",
+      "query": "How does query expansion work?",
+      "difficulty": "basic",
+      "type": "definitional",
+      "relevant_docs": ["PROJECT_SUMMARY.md", "IMPLEMENTATION_COMPLETE.md"],
+      "expected_concepts": ["synonyms", "related terms", "recall"],
+      "expected_answer_keywords": ["synonyms", "expand", "additional terms"],
+      "ground_truth": "Query expansion adds synonyms and related terms to the original query, improving recall by ~5% with minimal latency cost (~10ms)."
+    },
+    {
+      "id": "q07",
+      "query": "What embedding model does this RAG system use?",
+      "difficulty": "basic",
+      "type": "factual",
+      "relevant_docs": ["PROJECT_SUMMARY.md", "FRESH_BUILD_VALIDATION.md"],
+      "expected_concepts": ["nomic-embed-text", "768 dimensions"],
+      "expected_answer_keywords": ["nomic-embed-text", "embedding", "model"],
+      "ground_truth": "The system uses nomic-embed-text, a 768-dimensional embedding model that balances quality and speed."
+    },
+    {
+      "id": "q08",
+      "query": "What document types can be uploaded to the system?",
+      "difficulty": "basic",
+      "type": "factual",
+      "relevant_docs": ["FILE_UPLOAD_FEATURE.md", "FRESH_BUILD_VALIDATION.md"],
+      "expected_concepts": ["PDF", "Office", "Markdown", "text formats"],
+      "expected_answer_keywords": ["PDF", "Word", "Excel", "PowerPoint", "Markdown", "text"],
+      "ground_truth": "The system supports PDF, Microsoft Office formats (Word, Excel, PowerPoint), Markdown, plain text, and RTF files up to 50MB."
+    },
+    {
+      "id": "q09",
+      "query": "How many microservices are in the RAG Lab system?",
+      "difficulty": "basic",
+      "type": "factual",
+      "relevant_docs": ["FRESH_BUILD_VALIDATION.md", "MICROSERVICES_README.md"],
+      "expected_concepts": ["11 services", "microservices", "architecture"],
+      "expected_answer_keywords": ["11", "services", "microservices"],
+      "ground_truth": "The system has 11 microservices: webapp, ingest, search, chat, docling, vector-db, embedding, knowledge-graph, reranker, api-gateway, and playwright-tests."
+    },
+    {
+      "id": "q10",
+      "query": "What is the expected latency for hybrid search?",
+      "difficulty": "intermediate",
+      "type": "factual",
+      "relevant_docs": ["PROJECT_SUMMARY.md", "FRESH_BUILD_VALIDATION.md"],
+      "expected_concepts": ["100ms", "latency", "performance"],
+      "expected_answer_keywords": ["100", "milliseconds", "fast"],
+      "ground_truth": "Hybrid search (vector + BM25) typically takes ~100ms, with vector search at 20ms, BM25 at 15ms, and fusion at 10ms."
+    },
+    {
+      "id": "q11",
+      "query": "How does BM25 differ from vector search?",
+      "difficulty": "intermediate",
+      "type": "comparison",
+      "relevant_docs": ["RAG_DEEP_DIVE.md", "PROJECT_SUMMARY.md"],
+      "expected_concepts": ["keyword", "semantic", "TF-IDF", "embeddings"],
+      "expected_answer_keywords": ["keyword", "semantic", "statistical", "meaning"],
+      "ground_truth": "BM25 is statistical keyword matching based on term frequency, while vector search uses semantic embeddings to find meaning-based similarities. BM25 excels at exact matches, vector search at conceptual similarity."
+    },
+    {
+      "id": "q12",
+      "query": "What is entity extraction used for?",
+      "difficulty": "intermediate",
+      "type": "conceptual",
+      "relevant_docs": ["FRESH_BUILD_VALIDATION.md", "IMPLEMENTATION_COMPLETE.md"],
+      "expected_concepts": ["metadata", "concepts", "filtering", "key terms"],
+      "expected_answer_keywords": ["extract", "entities", "metadata", "concepts"],
+      "ground_truth": "Entity extraction identifies key concepts, technologies, and proper nouns from documents, enriching metadata for better filtering and search."
+    },
+    {
+      "id": "q13",
+      "query": "Which RAG features provide the best recall improvement?",
+      "difficulty": "advanced",
+      "type": "analysis",
+      "relevant_docs": ["PROJECT_SUMMARY.md", "LAB_OBJECTIVES.md"],
+      "expected_concepts": ["hybrid search", "query expansion", "knowledge graph"],
+      "expected_answer_keywords": ["hybrid", "20%", "BM25", "query expansion"],
+      "ground_truth": "Hybrid search provides the largest recall boost at +20%, followed by agentic chunking (+15%), query expansion (+5%), and knowledge graph (+5% for multi-hop)."
+    },
+    {
+      "id": "q14",
+      "query": "How is precision different from recall?",
+      "difficulty": "basic",
+      "type": "definitional",
+      "relevant_docs": ["LAB_OBJECTIVES.md", "examples/evaluate_rag.py"],
+      "expected_concepts": ["relevance", "retrieved", "false positives", "false negatives"],
+      "expected_answer_keywords": ["relevant", "retrieved", "accuracy"],
+      "ground_truth": "Precision measures what percentage of retrieved documents are relevant (accuracy), while recall measures what percentage of relevant documents were retrieved (completeness)."
+    },
+    {
+      "id": "q15",
+      "query": "What LLM models are available in the system?",
+      "difficulty": "basic",
+      "type": "factual",
+      "relevant_docs": ["LAB_OBJECTIVES.md", "PROJECT_SUMMARY.md"],
+      "expected_concepts": ["llama3.2", "1b", "3b", "8b", "Ollama"],
+      "expected_answer_keywords": ["llama", "3.2", "1b", "3b", "8b"],
+      "ground_truth": "The system supports Llama 3.2 models in three sizes: 1B (fast), 3B (balanced), and 8B (accurate)."
+    },
+    {
+      "id": "q16",
+      "query": "What is Reciprocal Rank Fusion?",
+      "difficulty": "advanced",
+      "type": "definitional",
+      "relevant_docs": ["RAG_DEEP_DIVE.md", "PROJECT_SUMMARY.md"],
+      "expected_concepts": ["fusion", "ranking", "hybrid search", "combining results"],
+      "expected_answer_keywords": ["combine", "rank", "fusion", "merge"],
+      "ground_truth": "Reciprocal Rank Fusion (RRF) is a method for combining ranked lists from multiple search methods, giving higher scores to documents that rank well across all methods."
+    },
+    {
+      "id": "q17",
+      "query": "Why was this RAG system built with AI coding tools?",
+      "difficulty": "intermediate",
+      "type": "conceptual",
+      "relevant_docs": ["LAB_OBJECTIVES.md"],
+      "expected_concepts": ["Cursor", "VS Code", "AI assistant", "demonstration"],
+      "expected_answer_keywords": ["AI", "tools", "Cursor", "demonstrate", "educational"],
+      "ground_truth": "The system was built with AI coding tools (Cursor/VS Code) to demonstrate modern development practices and show students what's possible with AI-assisted programming."
+    },
+    {
+      "id": "q18",
+      "query": "What ports do the main services use?",
+      "difficulty": "intermediate",
+      "type": "factual",
+      "relevant_docs": ["FRESH_BUILD_VALIDATION.md", "MICROSERVICES_README.md"],
+      "expected_concepts": ["ports", "5555", "8001-8008"],
+      "expected_answer_keywords": ["5555", "8001", "8002", "ports"],
+      "ground_truth": "Main services use: webapp (5555), ingest (8001), search (8002), chat (8003), docling (8004), vector-db (8005), embedding (8006), knowledge-graph (8007), reranker (8008)."
+    },
+    {
+      "id": "q19",
+      "query": "How long does it take to rebuild the entire system from scratch?",
+      "difficulty": "basic",
+      "type": "factual",
+      "relevant_docs": ["FRESH_BUILD_VALIDATION.md"],
+      "expected_concepts": ["50 seconds", "rebuild", "docker"],
+      "expected_answer_keywords": ["50", "seconds", "quick", "fast"],
+      "ground_truth": "A complete rebuild from scratch takes approximately 50 seconds: 30 seconds for building and 20 seconds for service startup."
+    },
+    {
+      "id": "q20",
+      "query": "What is the difference between faithfulness and answer relevance metrics?",
+      "difficulty": "advanced",
+      "type": "comparison",
+      "relevant_docs": ["LAB_OBJECTIVES.md", "docs/next_steps.md"],
+      "expected_concepts": ["grounding", "hallucination", "on-topic"],
+      "expected_answer_keywords": ["grounded", "context", "hallucination", "on-topic"],
+      "ground_truth": "Faithfulness measures whether the answer is grounded in retrieved context (no hallucinations), while answer relevance measures whether the answer addresses the query (on-topic). An answer can be faithful but not relevant, or relevant but unfaithful."
+    }
+  ],
+  "evaluation_guidelines": {
+    "relevance_threshold": 0.6,
+    "precision_target": 0.90,
+    "recall_target": 0.85,
+    "mrr_target": 0.80,
+    "ndcg_target": 0.80
+  },
+  "difficulty_distribution": {
+    "basic": 8,
+    "intermediate": 8,
+    "advanced": 4
+  },
+  "question_types": {
+    "definitional": 6,
+    "factual": 6,
+    "conceptual": 5,
+    "comparison": 2,
+    "analysis": 1
+  }
+}
+

@@ -55,7 +55,7 @@ def get_metrics():
 def rerank():
     """
     Re-rank search results using LLM relevance scoring
-    
+
     Body:
     {
         "query": "search query",
@@ -70,7 +70,7 @@ def rerank():
         "limit": 10,
         "model": "llama3.2:3b"  # optional
     }
-    
+
     Returns:
     {
         "results": [...],  # Re-ranked results
@@ -83,17 +83,17 @@ def rerank():
         results = data.get('results', [])
         limit = data.get('limit', 10)
         model = data.get('model', CHAT_MODEL)
-        
+
         if not query:
             return jsonify({'error': 'query required'}), 400
-        
+
         if not results:
             return jsonify({'error': 'results required'}), 400
-        
+
         metrics.increment('rerank_requests')
-        
+
         print(f"🔄 Re-ranking {len(results)} results for query: {query[:50]}...")
-        
+
         # Score each result
         scored_results = []
         for result in results:
@@ -101,37 +101,37 @@ def rerank():
             metadata = result.get('metadata', {})
             title = metadata.get('title', metadata.get('file_name', 'Unknown'))
             original_score = result.get('score', 0)
-            
+
             # Truncate content for efficiency
             content_preview = content[:500] if len(content) > 500 else content
-            
+
             # Score relevance with LLM
             llm_score = score_relevance(query, title, content_preview, model)
-            
+
             # Combine scores (60% hybrid search, 40% LLM)
             final_score = (original_score * 0.6) + (llm_score * 0.4)
-            
+
             result['llm_relevance'] = llm_score
             result['final_score'] = final_score
             result['original_score'] = original_score
-            
+
             scored_results.append(result)
-        
+
         # Sort by final score
         scored_results.sort(key=lambda x: x['final_score'], reverse=True)
-        
+
         # Return top N
         reranked = scored_results[:limit]
-        
+
         metrics.increment('rerank_success')
-        
+
         print(f"✅ Re-ranked to {len(reranked)} results")
-        
+
         return jsonify({
             'results': reranked,
             'count': len(reranked)
         })
-    
+
     except Exception as e:
         metrics.increment('rerank_errors')
         import traceback
@@ -141,7 +141,7 @@ def rerank():
 def score_relevance(query: str, title: str, content: str, model: str) -> float:
     """
     Score relevance using LLM
-    
+
     Returns score between 0.0 and 1.0
     """
     prompt = f"""Rate the relevance of this document to the query on a scale of 0.0 to 1.0.
@@ -155,7 +155,7 @@ Provide ONLY a number between 0.0 (not relevant) and 1.0 (very relevant).
 Do not explain, just provide the number.
 
 Relevance Score:"""
-    
+
     try:
         response = requests.post(
             f"{OLLAMA_BASE_URL}/api/generate",
@@ -170,11 +170,11 @@ Relevance Score:"""
             },
             timeout=30  # Longer timeout for generation
         )
-        
+
         if response.status_code == 200:
             result = response.json()
             score_text = result.get('response', '0.5').strip()
-            
+
             # Extract number from response
             import re
             numbers = re.findall(r'0\.\d+|1\.0|0|1', score_text)
@@ -182,10 +182,10 @@ Relevance Score:"""
                 score = float(numbers[0])
                 # Clamp to [0, 1]
                 return max(0.0, min(1.0, score))
-        
+
         # Default to neutral score if failed
         return 0.5
-        
+
     except Exception as e:
         print(f"⚠️  LLM scoring failed: {e}")
         return 0.5
@@ -195,7 +195,7 @@ if __name__ == '__main__':
     print(f"   Model: {CHAT_MODEL}")
     print(f"   Ollama: {OLLAMA_BASE_URL}")
     print(f"   ⚠️  This service adds ~2000ms latency but improves precision by ~10%")
-    
+
     # Start server
     app.run(host='0.0.0.0', port=SERVICE_PORT, debug=False)
 

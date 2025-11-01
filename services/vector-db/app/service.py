@@ -219,7 +219,7 @@ def delete_documents():
 def get_all_documents():
     """
     Get all documents from the collection
-    
+
     Returns:
     {
         "documents": [...],
@@ -230,7 +230,7 @@ def get_all_documents():
     try:
         # Get all documents
         result = collection.get(include=['documents', 'metadatas'])
-        
+
         return jsonify({
             'documents': result['documents'],
             'metadatas': result['metadatas'],

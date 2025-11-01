@@ -49,10 +49,10 @@ def parse_with_docling(pdf_path: Path) -> dict:
     try:
         print(f"🔍 Starting docling parse of: {pdf_path}")
         print(f"📏 File size: {pdf_path.stat().st_size / (1024*1024):.2f} MB")
-        
+
         converter = DocumentConverter()
         print("✅ DocumentConverter created")
-        
+
         result = converter.convert(str(pdf_path))
         print("✅ Conversion complete")
 

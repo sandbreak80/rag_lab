@@ -451,7 +451,7 @@ def bm25_search_internal(query: str, limit: int) -> List[Dict]:
 def search():
     """
     Advanced search with query expansion and hybrid search
-    
+
     Body:
     {
         "query": "search text",
@@ -468,24 +468,24 @@ def search():
         expand = data.get('expand_query', True)
         use_graph = data.get('use_graph', False)
         use_reranking = data.get('use_reranking', False)
-        
+
         if not query:
             return jsonify({'error': 'query required'}), 400
-        
+
         # Step 1: Query Expansion
         original_query = query
         if expand and query_expander:
             query = query_expander.expand_with_context(query)
             print(f"📝 Query expanded: '{original_query}' → '{query}'")
             metrics.increment('queries_expanded')
-        
+
         # Step 2: Hybrid Search
         # Use hybrid if BM25 available, otherwise vector
         if bm25_index:
             # Perform both searches
             vector_results = vector_search_internal(query, limit * 2)
             bm25_results = bm25_search_internal(query, limit * 2)
-            
+
             # Fuse results
             fused = reciprocal_rank_fusion([vector_results, bm25_results])
             fused = fused[:limit * 2]  # Keep extra for graph/reranking
@@ -493,7 +493,7 @@ def search():
         else:
             fused = vector_search_internal(query, limit * 2)
             method = 'vector_only'
-        
+
         # Step 3: Knowledge Graph Enhancement (optional)
         if use_graph and fused:
             kg_url = os.getenv('KNOWLEDGE_GRAPH_URL', 'http://knowledge-graph:8007')
@@ -511,7 +511,7 @@ def search():
                         if response.status_code == 200:
                             related = response.json().get('related', [])
                             related_docs.update(related)
-                
+
                 # Add related documents (with lower scores)
                 existing_ids = {r.get('metadata', {}).get('file_name', '') for r in fused}
                 for doc_id in related_docs:
@@ -530,13 +530,13 @@ def search():
                                 result['score'] = result.get('score', 0) * 0.5  # Lower score
                                 result['source'] = 'knowledge_graph'
                                 fused.append(result)
-                
+
                 print(f"🕸️  Graph enhanced to {len(fused)} results")
                 metrics.increment('graph_enhancements')
             except Exception as e:
                 print(f"⚠️  Knowledge graph enhancement failed: {e}")
                 metrics.increment('graph_enhancement_errors')
-        
+
         # Step 4: LLM Re-ranking (optional, slow)
         if use_reranking and fused:
             reranker_url = os.getenv('RERANKER_URL', 'http://reranker:8008')
@@ -561,12 +561,12 @@ def search():
             except Exception as e:
                 print(f"⚠️  Re-ranking failed: {e}")
                 metrics.increment('reranking_errors')
-        
+
         # Final limit
         final_results = fused[:limit]
-        
+
         metrics.increment('search_success')
-        
+
         return jsonify({
             'results': final_results,
             'count': len(final_results),
@@ -576,7 +576,7 @@ def search():
             'used_graph': use_graph,
             'used_reranking': use_reranking
         })
-            
+
     except Exception as e:
         metrics.increment('search_errors')
         import traceback

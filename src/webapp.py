@@ -280,18 +280,18 @@ def upload_file():
     try:
         if 'file' not in request.files:
             return jsonify({'error': 'No file provided', 'success': False}), 400
-        
+
         file = request.files['file']
         if file.filename == '':
             return jsonify({'error': 'No file selected', 'success': False}), 400
-        
+
         # Forward to ingest service
         ingest_url = os.getenv('INGEST_SERVICE_URL', 'http://ingest-service:8001')
-        
+
         try:
             files = {'file': (file.filename, file.stream, file.content_type)}
             response = requests.post(f"{ingest_url}/upload", files=files, timeout=300)
-            
+
             if response.status_code == 200:
                 result = response.json()
                 return jsonify(result)
@@ -302,7 +302,7 @@ def upload_file():
             return jsonify({'error': 'Upload timeout - file may be too large or processing is slow', 'success': False}), 504
         except Exception as e:
             return jsonify({'error': f'Error contacting ingest service: {str(e)}', 'success': False}), 500
-            
+
     except Exception as e:
         return jsonify({'error': str(e), 'success': False}), 500
 
