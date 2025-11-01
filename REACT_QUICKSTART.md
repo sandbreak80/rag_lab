@@ -4,7 +4,7 @@
 
 The RAG Lab now has a **modern React + TypeScript frontend** with:
 - 🎨 Beautiful, professional UI
-- ⚡ Lightning-fast performance  
+- ⚡ Lightning-fast performance
 - 🧩 Component-based architecture
 - 🔒 Type-safe with TypeScript
 - 📦 Production-ready Docker setup

@@ -137,27 +137,6 @@ services:
       - chat-service
       - vector-db
 
-  # Web UI (existing container)
-  web-ui:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: rag-web-ui
-    networks:
-      - rag-network
-    ports:
-      - "5555:5555"
-    volumes:
-      - .:/workspace
-      - ${VAULT_PATH:-/tmp}:/vault:ro
-    environment:
-      - VAULT_PATH=/vault
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
-      - EMBEDDING_MODEL=nomic-embed-text
-      - CHAT_MODEL=llama3.2:3b
-    command: python /workspace/src/webapp.py
-    working_dir: /workspace
-
   # Docling Service (PDF Processing)
   docling-service:
     image: python:3.11-slim
@@ -262,12 +241,12 @@ services:
       - ./screenshots:/screenshots
     working_dir: /tests
     environment:
-      - BASE_URL=http://rag-web-ui:5555
+      - BASE_URL=http://frontend:80
       - PYTHONUNBUFFERED=1
     command: bash -c "pip install -q pytest pytest-playwright && python -m pytest test_ui_playwright.py -v -s --tb=short"
     depends_on:
-      - web-ui
-      - api-gateway
+      - frontend
+      - web-api
 
   # SearXNG Web Search Service
   searxng:
