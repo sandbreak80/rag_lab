@@ -1,0 +1,265 @@
+version: '3.8'
+
+# Microservices Architecture for RAG Lab
+# Breaks monolithic container into specialized services for better observability
+
+networks:
+  rag-network:
+    driver: bridge
+    name: rag-network
+
+volumes:
+  chromadb-data:
+    name: rag-chromadb-data
+  uploads:
+    name: rag-uploads
+  indices:
+    name: rag-indices
+  ollama-models:
+    name: rag-ollama-models
+
+services:
+  # ========================================
+  # Core Infrastructure
+  # ========================================
+
+  # Ollama LLM Service
+  llm-service:
+    image: ollama/ollama:latest
+    container_name: rag-llm-service
+    networks:
+      - rag-network
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Vector Database Service
+  vector-db:
+    build:
+      context: ./services
+      dockerfile: vector-db/Dockerfile
+    container_name: rag-vector-db
+    networks:
+      - rag-network
+    ports:
+      - "8005:8005"
+    volumes:
+      - chromadb-data:/chroma/chroma
+    environment:
+      - SERVICE_NAME=vector-db
+      - SERVICE_PORT=8005
+      - COLLECTION_NAME=markdown_vault
+      - CHROMA_DB_PATH=/chroma/chroma
+      - EMBEDDING_MODEL=nomic-embed-text
+    depends_on:
+      - llm-service
+
+  # ========================================
+  # Processing Services
+  # ========================================
+
+  # Embedding Service
+  embedding-service:
+    build:
+      context: ./services
+      dockerfile: embedding/Dockerfile
+    container_name: rag-embedding-service
+    networks:
+      - rag-network
+    ports:
+      - "8006:8006"
+    environment:
+      - SERVICE_NAME=embedding-service
+      - SERVICE_PORT=8006
+      - LLM_SERVICE_URL=http://llm-service:11434
+      - EMBEDDING_MODEL=nomic-embed-text
+    depends_on:
+      - llm-service
+
+  # Docling PDF Parsing Service
+  docling-service:
+    build:
+      context: ./services
+      dockerfile: docling/Dockerfile
+    container_name: rag-docling-service
+    networks:
+      - rag-network
+    ports:
+      - "8004:8004"
+    environment:
+      - SERVICE_NAME=docling-service
+      - SERVICE_PORT=8004
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+
+  # ========================================
+  # Business Logic Services
+  # ========================================
+
+  # Ingest Service
+  ingest-service:
+    build:
+      context: .
+      dockerfile: services/ingest/Dockerfile
+    container_name: rag-ingest-service
+    networks:
+      - rag-network
+    ports:
+      - "8001:8001"
+    volumes:
+      - uploads:/uploads
+    environment:
+      - SERVICE_NAME=ingest-service
+      - SERVICE_PORT=8001
+      - DOCLING_SERVICE_URL=http://docling-service:8004
+      - EMBEDDING_SERVICE_URL=http://embedding-service:8006
+      - VECTOR_DB_URL=http://vector-db:8005
+      - GRAPH_SERVICE_URL=http://graph-service:8007
+      - UPLOAD_FOLDER=/uploads
+      - MAX_UPLOAD_SIZE=52428800
+      - AGENTIC_CHUNKING=true
+      - CHUNK_SIZE=1000
+      - CHUNK_OVERLAP=200
+    depends_on:
+      - docling-service
+      - embedding-service
+      - vector-db
+
+  # Search Service
+  search-service:
+    build:
+      context: ./services
+      dockerfile: search/Dockerfile
+    container_name: rag-search-service
+    networks:
+      - rag-network
+    ports:
+      - "8002:8002"
+    volumes:
+      - indices:/indices
+    environment:
+      - SERVICE_NAME=search-service
+      - SERVICE_PORT=8002
+      - VECTOR_DB_URL=http://vector-db:8005
+      - EMBEDDING_SERVICE_URL=http://embedding-service:8006
+      - GRAPH_SERVICE_URL=http://graph-service:8007
+      - DEFAULT_SEARCH_LIMIT=10
+    depends_on:
+      - vector-db
+      - embedding-service
+
+  # Knowledge Graph Service (optional - using existing code for now)
+  graph-service:
+    build:
+      context: .
+      dockerfile: services/knowledge-graph/Dockerfile
+    container_name: rag-graph-service
+    networks:
+      - rag-network
+    ports:
+      - "8007:8007"
+    volumes:
+      - indices:/indices
+    environment:
+      - SERVICE_NAME=graph-service
+      - SERVICE_PORT=8007
+
+  # Chat Service
+  chat-service:
+    build:
+      context: ./services
+      dockerfile: chat/Dockerfile
+    container_name: rag-chat-service
+    networks:
+      - rag-network
+    ports:
+      - "8003:8003"
+    environment:
+      - SERVICE_NAME=chat-service
+      - SERVICE_PORT=8003
+      - SEARCH_SERVICE_URL=http://search-service:8002
+      - LLM_SERVICE_URL=http://llm-service:11434
+      - CHAT_MODEL=llama3.2:3b
+    depends_on:
+      - search-service
+      - llm-service
+
+  # ========================================
+  # Gateway & UI
+  # ========================================
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./services
+      dockerfile: api-gateway/Dockerfile
+    container_name: rag-api-gateway
+    networks:
+      - rag-network
+    ports:
+      - "8000:8000"
+    environment:
+      - SERVICE_NAME=api-gateway
+      - SERVICE_PORT=8000
+      - INGEST_SERVICE_URL=http://ingest-service:8001
+      - SEARCH_SERVICE_URL=http://search-service:8002
+      - CHAT_SERVICE_URL=http://chat-service:8003
+      - DOCLING_SERVICE_URL=http://docling-service:8004
+      - VECTOR_DB_URL=http://vector-db:8005
+      - EMBEDDING_SERVICE_URL=http://embedding-service:8006
+      - GRAPH_SERVICE_URL=http://graph-service:8007
+    depends_on:
+      - ingest-service
+      - search-service
+      - chat-service
+      - vector-db
+
+  # Web UI (uses existing webapp.py for now)
+  web-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag-web-ui
+    networks:
+      - rag-network
+    ports:
+      - "5555:5555"
+    volumes:
+      - .:/workspace
+      - ${VAULT_PATH:-/tmp}:/vault:ro
+    environment:
+      - VAULT_PATH=/vault
+      - OLLAMA_BASE_URL=http://llm-service:11434
+      - EMBEDDING_MODEL=nomic-embed-text
+      - CHAT_MODEL=llama3.2:3b
+      # Point to API Gateway
+      - API_GATEWAY_URL=http://api-gateway:8000
+    command: python /workspace/src/webapp.py
+    depends_on:
+      - api-gateway
+    working_dir: /workspace
+
+# ========================================
+# Scaling Configuration
+# ========================================
+# To scale services:
+#   docker-compose -f docker-compose.microservices.yml up --scale embedding-service=3
+#   docker-compose -f docker-compose.microservices.yml up --scale ingest-service=2
+

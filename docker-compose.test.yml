@@ -1,0 +1,271 @@
+version: '3.8'
+
+# Simplified Microservices for Testing
+# Only core services initially
+
+networks:
+  rag-network:
+    driver: bridge
+
+volumes:
+  chromadb-data:
+  ollama-models:
+  uploads:
+  indices:
+
+services:
+  # Note: Using local Ollama at host.docker.internal:11434
+
+  # Vector Database Service (standalone Python)
+  vector-db:
+    image: python:3.11-slim
+    container_name: rag-vector-db
+    networks:
+      - rag-network
+    ports:
+      - "8005:8005"
+    volumes:
+      - chromadb-data:/chroma/chroma
+      - ./services/vector-db/app:/app
+      - ./services/common:/workspace/services/common
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=vector-db
+      - SERVICE_PORT=8005
+      - COLLECTION_NAME=markdown_vault
+      - CHROMA_DB_PATH=/chroma/chroma
+      - EMBEDDING_MODEL=nomic-embed-text
+      - PYTHONPATH=/workspace
+    command: bash -c "pip install -q chromadb flask requests && python service.py"
+
+  # Embedding Service (standalone Python)
+  embedding-service:
+    image: python:3.11-slim
+    container_name: rag-embedding-service
+    networks:
+      - rag-network
+    ports:
+      - "8006:8006"
+    volumes:
+      - ./services/embedding/app:/app
+      - ./services/common:/workspace/services/common
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=embedding-service
+      - SERVICE_PORT=8006
+      - LLM_SERVICE_URL=http://host.docker.internal:11434
+      - EMBEDDING_MODEL=nomic-embed-text
+      - PYTHONPATH=/workspace
+    command: bash -c "pip install -q flask requests && python service.py"
+
+  # Search Service (standalone Python)
+  search-service:
+    image: python:3.11-slim
+    container_name: rag-search-service
+    networks:
+      - rag-network
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./services/search/app:/app
+      - ./services/common:/workspace/services/common
+      - ./src:/workspace/src
+      - ./indices:/indices
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=search-service
+      - SERVICE_PORT=8002
+      - VECTOR_DB_URL=http://vector-db:8005
+      - EMBEDDING_SERVICE_URL=http://embedding-service:8006
+      - KNOWLEDGE_GRAPH_URL=http://knowledge-graph:8007
+      - RERANKER_URL=http://reranker:8008
+      - DEFAULT_SEARCH_LIMIT=10
+      - PYTHONPATH=/workspace
+    command: bash -c "pip install -q flask requests rank-bm25 && python service.py"
+    depends_on:
+      - vector-db
+      - embedding-service
+      - knowledge-graph
+      - reranker
+
+  # Chat Service (standalone Python)
+  chat-service:
+    image: python:3.11-slim
+    container_name: rag-chat-service
+    networks:
+      - rag-network
+    ports:
+      - "8003:8003"
+    volumes:
+      - ./services/chat/app:/app
+      - ./services/common:/workspace/services/common
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=chat-service
+      - SERVICE_PORT=8003
+      - SEARCH_SERVICE_URL=http://search-service:8002
+      - LLM_SERVICE_URL=http://host.docker.internal:11434
+      - CHAT_MODEL=llama3.2:3b
+      - PYTHONPATH=/workspace
+    command: bash -c "pip install -q flask requests && python service.py"
+    depends_on:
+      - search-service
+
+  # API Gateway (standalone Python)
+  api-gateway:
+    image: python:3.11-slim
+    container_name: rag-api-gateway
+    networks:
+      - rag-network
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./services/api-gateway/app:/app
+      - ./services/common:/workspace/services/common
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=api-gateway
+      - SERVICE_PORT=8000
+      - SEARCH_SERVICE_URL=http://search-service:8002
+      - CHAT_SERVICE_URL=http://chat-service:8003
+      - VECTOR_DB_URL=http://vector-db:8005
+      - EMBEDDING_SERVICE_URL=http://embedding-service:8006
+      - PYTHONPATH=/workspace
+    command: bash -c "pip install -q flask flask-cors requests && python service.py"
+    depends_on:
+      - search-service
+      - chat-service
+      - vector-db
+
+  # Web UI (existing container)
+  web-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag-web-ui
+    networks:
+      - rag-network
+    ports:
+      - "5555:5555"
+    volumes:
+      - .:/workspace
+      - ${VAULT_PATH:-/tmp}:/vault:ro
+    environment:
+      - VAULT_PATH=/vault
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - EMBEDDING_MODEL=nomic-embed-text
+      - CHAT_MODEL=llama3.2:3b
+    command: python /workspace/src/webapp.py
+    working_dir: /workspace
+
+  # Docling Service (PDF Processing)
+  docling-service:
+    image: python:3.11-slim
+    container_name: rag-docling-service
+    networks:
+      - rag-network
+    ports:
+      - "8004:8004"
+    volumes:
+      - ./services/docling/app:/app
+      - ./services/common:/workspace/services/common
+      - uploads:/uploads
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=docling-service
+      - SERVICE_PORT=8004
+      - PYTHONPATH=/workspace
+    command: bash -c "apt-get update -qq && apt-get install -y -qq poppler-utils tesseract-ocr && pip install -q flask requests docling && python service.py"
+
+  # Ingest Service (Document Ingestion)
+  ingest-service:
+    image: python:3.11-slim
+    container_name: rag-ingest-service
+    networks:
+      - rag-network
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./services/ingest/app:/app
+      - ./services/common:/workspace/services/common
+      - ./src:/workspace/src
+      - uploads:/uploads
+      - indices:/indices
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=ingest-service
+      - SERVICE_PORT=8001
+      - DOCLING_SERVICE_URL=http://docling-service:8004
+      - EMBEDDING_SERVICE_URL=http://embedding-service:8006
+      - VECTOR_DB_URL=http://vector-db:8005
+      - PYTHONPATH=/workspace
+      - UPLOAD_FOLDER=/uploads
+    command: bash -c "pip install -q flask requests chromadb ollama pyyaml && python service.py"
+    depends_on:
+      - docling-service
+      - embedding-service
+      - vector-db
+
+  # Knowledge Graph Service
+  knowledge-graph:
+    image: python:3.11-slim
+    container_name: rag-knowledge-graph
+    networks:
+      - rag-network
+    ports:
+      - "8007:8007"
+    volumes:
+      - ./services/knowledge-graph/app:/app
+      - ./services/common:/workspace/services/common
+      - ./src:/workspace/src
+      - ./indices:/indices
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=knowledge-graph
+      - SERVICE_PORT=8007
+      - VECTOR_DB_URL=http://vector-db:8005
+      - PYTHONPATH=/workspace
+    command: bash -c "pip install -q flask requests networkx chromadb && python service.py"
+    depends_on:
+      - vector-db
+
+  # Re-ranking Service (optional, adds latency but improves precision)
+  reranker:
+    image: python:3.11-slim
+    container_name: rag-reranker
+    networks:
+      - rag-network
+    ports:
+      - "8008:8008"
+    volumes:
+      - ./services/reranker/app:/app
+      - ./services/common:/workspace/services/common
+      - ./src:/workspace/src
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=reranker-service
+      - SERVICE_PORT=8008
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - CHAT_MODEL=llama3.2:3b
+      - PYTHONPATH=/workspace
+    command: bash -c "pip install -q flask requests && python service.py"
+
+  # Playwright Testing Service
+  playwright-tests:
+    image: mcr.microsoft.com/playwright/python:v1.55.0-jammy
+    container_name: rag-playwright-tests
+    networks:
+      - rag-network
+    volumes:
+      - ./tests:/tests
+      - ./test-results:/test-results
+      - ./screenshots:/screenshots
+    working_dir: /tests
+    environment:
+      - BASE_URL=http://rag-web-ui:5555
+      - PYTHONUNBUFFERED=1
+    command: bash -c "pip install -q pytest pytest-playwright && python -m pytest test_ui_playwright.py -v -s --tb=short"
+    depends_on:
+      - web-ui
+      - api-gateway
+

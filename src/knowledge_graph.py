@@ -60,6 +60,17 @@ class KnowledgeGraph:
             pickle.dump({'graph': self.graph}, f)
         print(f"💾 Saved knowledge graph: {self.graph.number_of_nodes()} nodes, {self.graph.number_of_edges()} edges")
     
+    def load(self, path: Path):
+        """Public method to load graph from custom path"""
+        self.graph_path = path
+        self._load_graph()
+    
+    def save(self, path: Path = None):
+        """Public method to save graph to custom path"""
+        if path:
+            self.graph_path = path
+        self._save_graph()
+    
     def build_graph(self):
         """Build knowledge graph from ChromaDB collection"""
         print("\n🔨 Building Knowledge Graph...")
