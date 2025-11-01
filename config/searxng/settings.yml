@@ -3,7 +3,7 @@ use_default_settings: true
 server:
   secret_key: "educational_rag_lab_secret_key_change_in_production"
   bind_address: "0.0.0.0:8080"
-  
+
 search:
   safe_search: 0
   autocomplete: ""
@@ -20,11 +20,11 @@ engines:
     disabled: false
   - name: stackoverflow
     disabled: false
-    
+
 ui:
   static_use_hash: true
   infinite_scroll: false
-  
+
 outgoing:
   request_timeout: 10.0
   max_request_timeout: 15.0

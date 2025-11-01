@@ -33,7 +33,7 @@ def health_check():
         searxng_healthy = response.status_code == 200
     except:
         searxng_healthy = False
-    
+
     return jsonify({
         'status': 'healthy' if searxng_healthy else 'degraded',
         'service': 'web-search-service',
@@ -51,14 +51,14 @@ def get_metrics():
 def web_search():
     """
     Perform web search using SearXNG
-    
+
     Body:
     {
         "query": "search query",
         "limit": 5,
         "categories": ["general", "science", "news"]
     }
-    
+
     Returns:
     {
         "results": [
@@ -81,13 +81,13 @@ def web_search():
         query = data.get('query', '')
         limit = data.get('limit', 5)
         categories = data.get('categories', 'general')
-        
+
         if not query:
             return jsonify({'error': 'query required'}), 400
-        
+
         metrics.increment('search_requests')
         start_time = time.time()
-        
+
         # Query SearXNG
         search_url = f"{SEARXNG_URL}/search"
         params = {
@@ -96,25 +96,25 @@ def web_search():
             'categories': categories,
             'pageno': 1
         }
-        
+
         print(f"🌐 Searching web for: '{query}'")
-        
+
         response = requests.get(search_url, params=params, timeout=15)
         response.raise_for_status()
-        
+
         search_data = response.json()
         raw_results = search_data.get('results', [])
-        
+
         # Process and format results
         results = []
         total_pages = 0
-        
+
         for item in raw_results[:limit]:
             # Estimate pages from content length
             content = item.get('content', '')
             estimated_pages = max(1, len(content) // 3000)
             total_pages += estimated_pages
-            
+
             result = {
                 'title': item.get('title', ''),
                 'url': item.get('url', ''),
@@ -125,15 +125,15 @@ def web_search():
                 'category': item.get('category', 'general')
             }
             results.append(result)
-        
+
         latency_ms = round((time.time() - start_time) * 1000, 2)
         avg_pages = round(total_pages / len(results), 2) if results else 0
-        
+
         metrics.increment('successful_searches')
         metrics.set_gauge('last_search_latency_ms', latency_ms)
-        
+
         print(f"✅ Found {len(results)} web results in {latency_ms}ms")
-        
+
         return jsonify({
             'results': results,
             'count': len(results),
@@ -143,7 +143,7 @@ def web_search():
             'query': query,
             'engines_used': list(set(r['engine'] for r in results))
         })
-        
+
     except requests.exceptions.Timeout:
         metrics.increment('search_timeouts')
         return jsonify({'error': 'Web search timeout'}), 504
@@ -160,6 +160,6 @@ if __name__ == '__main__':
     print("🚀 Web Search Service starting...")
     print(f"🌐 SearXNG URL: {SEARXNG_URL}")
     print(f"📡 Listening on port {SERVICE_PORT}")
-    
+
     app.run(host='0.0.0.0', port=SERVICE_PORT, debug=False)
 
