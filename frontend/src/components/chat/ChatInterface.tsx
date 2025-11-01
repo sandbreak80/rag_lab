@@ -13,7 +13,24 @@ export function ChatInterface() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const config = useConfigStore((state) => state.getConfig());
+  // Use stable selector - don't call getConfig() directly
+  const config = useConfigStore((state) => ({
+    model: state.model,
+    temperature: state.temperature,
+    topK: state.topK,
+    contextWindow: state.contextWindow,
+    useQueryExpansion: state.useQueryExpansion,
+    useBM25: state.useBM25,
+    useHybrid: state.useHybrid,
+    useGraph: state.useGraph,
+    useReranking: state.useReranking,
+    useWebSearch: state.useWebSearch,
+    useAgenticChunking: state.useAgenticChunking,
+    webSearchDocs: state.webSearchDocs,
+    webSearchPages: state.webSearchPages,
+    rerankTopK: state.rerankTopK,
+    metadataFilters: state.metadataFilters,
+  }));
   const addMetric = useMetricsStore((state) => state.addQuery);
 
   const scrollToBottom = () => {
