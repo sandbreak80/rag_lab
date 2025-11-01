@@ -314,11 +314,11 @@
     .comparison-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .comparison-modal {
         padding: 20px;
     }
-    
+
     .comparison-actions {
         flex-direction: column;
     }

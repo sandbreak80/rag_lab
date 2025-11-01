@@ -808,6 +808,14 @@
                 </label>
                 <input type="checkbox" id="use-reranking" onchange="updateConfig()">
             </div>
+            
+            <div class="toggle-item">
+                <label for="use-web-search">
+                    Web Search (SearXNG)
+                    <span class="impact-badge warning">+5 docs, +500-1000ms</span>
+                </label>
+                <input type="checkbox" id="use-web-search" onchange="updateConfig()">
+            </div>
         </div>
 
         <!-- Search Parameters -->
@@ -1276,7 +1284,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Comparison Button -->
                 <button class="comparison-btn" onclick="openComparison()" style="width: 100%;">
                     ⚖️ Compare Configurations
@@ -1291,14 +1299,14 @@
                     <h2>⚖️ A/B Configuration Comparison</h2>
                     <button class="comparison-close-btn" onclick="closeComparison()">×</button>
                 </div>
-                
+
                 <div class="comparison-summary" id="comparisonSummary">
                     <h3>📊 Key Insights</h3>
                     <ul class="comparison-summary-list" id="comparisonInsights">
                         <li>Configure settings and run a query to see comparison</li>
                     </ul>
                 </div>
-                
+
                 <div class="comparison-grid">
                     <!-- Configuration A (Current) -->
                     <div class="comparison-column">
@@ -1306,115 +1314,115 @@
                             <div class="comparison-column-title">Configuration A</div>
                             <div class="comparison-column-subtitle">Current Settings</div>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">Total Latency</span>
                             <span class="comparison-metric-value" id="comp-a-latency">--<span class="comparison-metric-unit">ms</span></span>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">Results Found</span>
                             <span class="comparison-metric-value" id="comp-a-results">--</span>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">Search Method</span>
                             <span class="comparison-metric-value" id="comp-a-method">--</span>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">Precision</span>
                             <span class="comparison-metric-value" id="comp-a-precision">--<span class="comparison-metric-unit">%</span></span>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">Query Expansion</span>
                             <span class="comparison-metric-value" id="comp-a-expansion">--<span class="comparison-metric-unit">ms</span></span>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">Vector Search</span>
                             <span class="comparison-metric-value" id="comp-a-vector">--<span class="comparison-metric-unit">ms</span></span>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">BM25 Search</span>
                             <span class="comparison-metric-value" id="comp-a-bm25">--<span class="comparison-metric-unit">ms</span></span>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">Knowledge Graph</span>
                             <span class="comparison-metric-value" id="comp-a-graph">--<span class="comparison-metric-unit">ms</span></span>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">LLM Re-ranking</span>
                             <span class="comparison-metric-value" id="comp-a-reranking">--<span class="comparison-metric-unit">ms</span></span>
                         </div>
-                        
+
                         <div style="text-align: center;">
                             <div class="winner-badge" id="comp-a-winner" style="display: none;">🏆 Winner</div>
                         </div>
                     </div>
-                    
+
                     <!-- Configuration B (Previous/Comparison) -->
                     <div class="comparison-column">
                         <div class="comparison-column-header">
                             <div class="comparison-column-title">Configuration B</div>
                             <div class="comparison-column-subtitle">Previous Query</div>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">Total Latency</span>
                             <span class="comparison-metric-value" id="comp-b-latency">--<span class="comparison-metric-unit">ms</span></span>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">Results Found</span>
                             <span class="comparison-metric-value" id="comp-b-results">--</span>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">Search Method</span>
                             <span class="comparison-metric-value" id="comp-b-method">--</span>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">Precision</span>
                             <span class="comparison-metric-value" id="comp-b-precision">--<span class="comparison-metric-unit">%</span></span>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">Query Expansion</span>
                             <span class="comparison-metric-value" id="comp-b-expansion">--<span class="comparison-metric-unit">ms</span></span>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">Vector Search</span>
                             <span class="comparison-metric-value" id="comp-b-vector">--<span class="comparison-metric-unit">ms</span></span>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">BM25 Search</span>
                             <span class="comparison-metric-value" id="comp-b-bm25">--<span class="comparison-metric-unit">ms</span></span>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">Knowledge Graph</span>
                             <span class="comparison-metric-value" id="comp-b-graph">--<span class="comparison-metric-unit">ms</span></span>
                         </div>
-                        
+
                         <div class="comparison-metric-row">
                             <span class="comparison-metric-label">LLM Re-ranking</span>
                             <span class="comparison-metric-value" id="comp-b-reranking">--<span class="comparison-metric-unit">ms</span></span>
                         </div>
-                        
+
                         <div style="text-align: center;">
                             <div class="winner-badge" id="comp-b-winner" style="display: none;">🏆 Winner</div>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="comparison-actions">
                     <button class="comparison-action-btn" onclick="useConfigA()">Use Config A</button>
                     <button class="comparison-action-btn" onclick="useConfigB()">Use Config B</button>
@@ -1491,6 +1499,7 @@
             use_hybrid: true,
             use_graph: false,
             use_reranking: false,
+            use_web_search: false,
             top_k: 10
         };
 
@@ -1582,6 +1591,7 @@
                 use_hybrid: document.getElementById('use-hybrid').checked,
                 use_graph: document.getElementById('use-graph').checked,
                 use_reranking: document.getElementById('use-reranking').checked,
+                use_web_search: document.getElementById('use-web-search').checked,
                 top_k: parseInt(document.getElementById('top-k').value)
             };
 
@@ -1662,12 +1672,12 @@
         // Update metrics display
         function updateMetrics(metrics) {
             if (!metrics) return;
-            
+
             console.log('📊 Updating metrics:', metrics);
-            
+
             // Save for comparison
             saveMetricsForComparison(metrics);
-            
+
             // Show dashboard
             const dashboard = document.getElementById('metricsDashboard');
             dashboard.classList.add('visible');
@@ -1824,7 +1834,7 @@
                     completed: [],
                     total: 6
                 };
-                
+
                 // Remove completed class from all sections
                 for (let i = 1; i <= 6; i++) {
                     const section = document.getElementById(`lab-section-${i}`);
@@ -1832,24 +1842,24 @@
                         section.classList.remove('completed');
                     }
                 }
-                
+
                 updateLabProgress();
                 saveLabProgress();
                 showNotification('Lab progress reset!', 'info');
             }
         }
-        
+
         // ====================================
         // COMPARISON MODE
         // ====================================
-        
+
         let comparisonData = {
             configA: null,
             configB: null,
             metricsA: null,
             metricsB: null
         };
-        
+
         // Open comparison modal
         function openComparison() {
             // Use current metrics as config A
@@ -1857,7 +1867,7 @@
                 comparisonData.metricsA = lastMetrics;
                 comparisonData.configA = {...currentConfig};
             }
-            
+
             // Use previous metrics as config B (if available)
             if (!comparisonData.metricsB) {
                 // Check localStorage for previous metrics
@@ -1870,24 +1880,24 @@
                     console.error('Error loading previous metrics:', e);
                 }
             }
-            
+
             // Populate comparison data
             populateComparison();
-            
+
             // Show modal
             document.getElementById('comparisonModal').classList.add('active');
         }
-        
+
         // Close comparison modal
         function closeComparison() {
             document.getElementById('comparisonModal').classList.remove('active');
         }
-        
+
         // Populate comparison UI
         function populateComparison() {
             const metricsA = comparisonData.metricsA;
             const metricsB = comparisonData.metricsB;
-            
+
             if (metricsA) {
                 document.getElementById('comp-a-latency').textContent = Math.round(metricsA.total_latency_ms || 0);
                 document.getElementById('comp-a-results').textContent = metricsA.vector_results_count || 0;
@@ -1899,7 +1909,7 @@
                 document.getElementById('comp-a-graph').textContent = Math.round(metricsA.graph_enhancement_ms || 0);
                 document.getElementById('comp-a-reranking').textContent = Math.round(metricsA.reranking_ms || 0);
             }
-            
+
             if (metricsB) {
                 document.getElementById('comp-b-latency').textContent = Math.round(metricsB.total_latency_ms || 0);
                 document.getElementById('comp-b-results').textContent = metricsB.vector_results_count || 0;
@@ -1911,13 +1921,13 @@
                 document.getElementById('comp-b-graph').textContent = Math.round(metricsB.graph_enhancement_ms || 0);
                 document.getElementById('comp-b-reranking').textContent = Math.round(metricsB.reranking_ms || 0);
             }
-            
+
             // Determine winner and generate insights
             if (metricsA && metricsB) {
                 generateComparisonInsights(metricsA, metricsB);
             }
         }
-        
+
         // Estimate precision from metrics
         function estimatePrecision(metrics) {
             let precision = '--';
@@ -1926,12 +1936,12 @@
             if (metrics.reranking_success) precision = '95-98';
             return precision;
         }
-        
+
         // Generate comparison insights
         function generateComparisonInsights(metricsA, metricsB) {
             const insights = [];
             const insightsList = document.getElementById('comparisonInsights');
-            
+
             // Latency comparison
             const latencyDiff = metricsA.total_latency_ms - metricsB.total_latency_ms;
             if (Math.abs(latencyDiff) > 10) {
@@ -1949,18 +1959,18 @@
                 document.getElementById('comp-a-winner').style.display = 'none';
                 document.getElementById('comp-b-winner').style.display = 'none';
             }
-            
+
             // Method comparison
             if (metricsA.method !== metricsB.method) {
                 insights.push(`Config A uses ${metricsA.method}, Config B uses ${metricsB.method}`);
             }
-            
+
             // Results comparison
             const resultsDiff = metricsA.vector_results_count - metricsB.vector_results_count;
             if (resultsDiff !== 0) {
                 insights.push(`Config A returns ${resultsDiff > 0 ? resultsDiff + ' more' : Math.abs(resultsDiff) + ' fewer'} results`);
             }
-            
+
             // Component differences
             if ((metricsA.bm25_search_ms > 0) !== (metricsB.bm25_search_ms > 0)) {
                 insights.push(`BM25 search is ${metricsA.bm25_search_ms > 0 ? 'enabled in A' : 'enabled in B'}`);
@@ -1971,11 +1981,11 @@
             if ((metricsA.reranking_ms > 0) !== (metricsB.reranking_ms > 0)) {
                 insights.push(`LLM Re-ranking is ${metricsA.reranking_ms > 0 ? 'enabled in A' : 'enabled in B'}`);
             }
-            
+
             // Update insights list
             insightsList.innerHTML = insights.map(i => `<li>${i}</li>`).join('');
         }
-        
+
         // Use Configuration A
         function useConfigA() {
             if (comparisonData.configA) {
@@ -1984,7 +1994,7 @@
                 showNotification('Switched to Configuration A', 'success');
             }
         }
-        
+
         // Use Configuration B
         function useConfigB() {
             if (comparisonData.configB) {
@@ -1993,7 +2003,7 @@
                 showNotification('Switched to Configuration B', 'success');
             }
         }
-        
+
         // Apply a configuration to the UI
         function applyConfiguration(config) {
             document.getElementById('use-query-expansion').checked = config.use_query_expansion;
@@ -2003,10 +2013,10 @@
             document.getElementById('use-reranking').checked = config.use_reranking;
             document.getElementById('top-k').value = config.top_k;
             document.getElementById('topk-value').textContent = config.top_k;
-            
+
             updateConfig();
         }
-        
+
         // Store current metrics for comparison (called after each query)
         let lastMetrics = null;
         function saveMetricsForComparison(metrics) {
@@ -2021,7 +2031,7 @@
             comparisonData.metricsA = metrics;
             comparisonData.configA = {...currentConfig};
         }
-        
+
         // ====================================
         // ORIGINAL CODE (EXISTING)
         // ====================================

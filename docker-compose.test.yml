@@ -269,3 +269,38 @@ services:
       - web-ui
       - api-gateway
 
+  # SearXNG Web Search Service
+  searxng:
+    image: searxng/searxng:latest
+    container_name: rag-searxng
+    networks:
+      - rag-network
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config/searxng:/etc/searxng:ro
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8080/
+    restart: unless-stopped
+
+  # Web Search Service (wrapper for SearXNG)
+  web-search:
+    image: python:3.11-slim
+    container_name: rag-web-search
+    networks:
+      - rag-network
+    ports:
+      - "8009:8009"
+    volumes:
+      - ./services/web-search/app:/app
+      - ./services/common:/workspace/services/common
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=web-search
+      - SERVICE_PORT=8009
+      - SEARXNG_URL=http://searxng:8080
+      - PYTHONPATH=/workspace
+    command: bash -c "pip install -q flask requests && python service.py"
+    depends_on:
+      - searxng
+
