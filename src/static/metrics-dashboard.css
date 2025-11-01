@@ -1,0 +1,324 @@
+/* ====================================
+   METRICS DASHBOARD
+   ==================================== */
+
+/* Metrics Container */
+.metrics-dashboard {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    display: none; /* Hidden by default, shown after first query */
+}
+
+.metrics-dashboard.visible {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.metrics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.metrics-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.metrics-toggle {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.metrics-toggle:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+/* Metrics Grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.metric-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-primary);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.2);
+}
+
+.metric-card .label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.metric-card .value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.metric-card .subtitle {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.metric-card .trend {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 14px;
+}
+
+.metric-card .trend.up {
+    color: #10b981;
+}
+
+.metric-card .trend.down {
+    color: #ef4444;
+}
+
+/* Latency Breakdown */
+.latency-breakdown {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.latency-breakdown h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-primary);
+    margin-bottom: 16px;
+}
+
+.latency-bar-container {
+    margin-bottom: 12px;
+}
+
+.latency-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.latency-bar-label .name {
+    font-weight: 500;
+}
+
+.latency-bar-label .time {
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+.latency-bar-label .percent {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.latency-bar-bg {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.latency-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+/* Component Status */
+.component-status {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.component-status h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-primary);
+    margin-bottom: 16px;
+}
+
+.component-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+}
+
+.component-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 8px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+}
+
+.component-item .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.component-item .status-dot.active {
+    background: #10b981;
+    box-shadow: 0 0 8px #10b981;
+}
+
+.component-item .status-dot.inactive {
+    background: #64748b;
+}
+
+/* Comparison Mode */
+.comparison-mode {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 20px;
+    display: none;
+}
+
+.comparison-mode.visible {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+.comparison-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.comparison-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.comparison-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.comparison-column {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.comparison-column h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent-primary);
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.comparison-metric {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.comparison-metric:last-child {
+    border-bottom: none;
+}
+
+.comparison-metric .label {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.comparison-metric .value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.comparison-metric .diff {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.comparison-metric .diff.positive {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.comparison-metric .diff.negative {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .comparison-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .component-list {
+        grid-template-columns: 1fr;
+    }
+}
+

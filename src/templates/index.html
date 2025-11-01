@@ -16,9 +16,10 @@
     <!-- Highlight.js for Code Syntax -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    
+
     <!-- Settings Panel Styles -->
     <link rel="stylesheet" href="/static/settings-panel.css">
+    <link rel="stylesheet" href="/static/metrics-dashboard.css">
 
     <style>
         :root {
@@ -736,7 +737,7 @@
             <h2>⚙️ RAG Configuration</h2>
             <p>Experiment with different settings to see how they affect quality, speed, and resource usage.</p>
         </div>
-        
+
         <!-- Quick Presets -->
         <div class="settings-section">
             <h3>⚡ Quick Presets</h3>
@@ -761,11 +762,11 @@
                 </button>
             </div>
         </div>
-        
+
         <!-- RAG Pipeline Toggles -->
         <div class="settings-section">
             <h3>🔧 RAG Pipeline</h3>
-            
+
             <div class="toggle-item">
                 <label for="use-query-expansion">
                     Query Expansion
@@ -773,7 +774,7 @@
                 </label>
                 <input type="checkbox" id="use-query-expansion" checked onchange="updateConfig()">
             </div>
-            
+
             <div class="toggle-item">
                 <label for="use-bm25">
                     BM25 Keyword Search
@@ -781,7 +782,7 @@
                 </label>
                 <input type="checkbox" id="use-bm25" checked onchange="updateConfig()">
             </div>
-            
+
             <div class="toggle-item">
                 <label for="use-hybrid">
                     Hybrid Fusion
@@ -789,7 +790,7 @@
                 </label>
                 <input type="checkbox" id="use-hybrid" checked onchange="updateConfig()">
             </div>
-            
+
             <div class="toggle-item">
                 <label for="use-graph">
                     Knowledge Graph
@@ -797,7 +798,7 @@
                 </label>
                 <input type="checkbox" id="use-graph" onchange="updateConfig()">
             </div>
-            
+
             <div class="toggle-item">
                 <label for="use-reranking">
                     LLM Re-ranking
@@ -806,11 +807,11 @@
                 <input type="checkbox" id="use-reranking" onchange="updateConfig()">
             </div>
         </div>
-        
+
         <!-- Search Parameters -->
         <div class="settings-section">
             <h3>🎯 Search Parameters</h3>
-            
+
             <div class="setting-item">
                 <label>
                     Top-K Results: <span class="slider-value" id="topk-value">10</span>
@@ -818,11 +819,11 @@
                 <input type="range" id="top-k" min="1" max="20" value="10" oninput="document.getElementById('topk-value').textContent = this.value; updateConfig()">
             </div>
         </div>
-        
+
         <!-- LLM Configuration -->
         <div class="settings-section">
             <h3>🤖 LLM Settings</h3>
-            
+
             <div class="setting-item">
                 <label for="llm-model">Model</label>
                 <select id="llm-model" onchange="updateConfig()">
@@ -831,21 +832,21 @@
                     <option value="llama3.2:8b">Llama 3.2 8B (Accurate)</option>
                 </select>
             </div>
-            
+
             <div class="setting-item">
                 <label>
                     Temperature: <span class="slider-value" id="temp-value">0.5</span>
                 </label>
                 <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.5" oninput="document.getElementById('temp-value').textContent = this.value; updateConfig()">
             </div>
-            
+
             <div class="setting-item">
                 <label>
                     Max Tokens: <span class="slider-value" id="tokens-value">500</span>
                 </label>
                 <input type="range" id="max-tokens" min="100" max="2000" step="100" value="500" oninput="document.getElementById('tokens-value').textContent = this.value; updateConfig()">
             </div>
-            
+
             <div class="setting-item">
                 <label>
                     Context Window: <span class="slider-value" id="context-value">4000</span>
@@ -853,7 +854,7 @@
                 <input type="range" id="context-window" min="1000" max="8000" step="1000" value="4000" oninput="document.getElementById('context-value').textContent = this.value; updateConfig()">
             </div>
         </div>
-        
+
         <!-- Current Metrics Preview -->
         <div class="settings-section">
             <h3>📊 Expected Performance</h3>
@@ -873,12 +874,12 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Settings Toggle Button -->
     <button class="settings-toggle" id="settingsToggle" onclick="toggleSettings()">
         ⚙️
     </button>
-    
+
     <div class="container">
         <header>
             <div class="header-content">
@@ -899,6 +900,153 @@
                 <button class="folder-btn active" data-folder="">🌐 All Folders</button>
             </div>
         </header>
+
+        <!-- Metrics Dashboard -->
+        <div class="metrics-dashboard" id="metricsDashboard">
+            <div class="metrics-header">
+                <h3>📊 Performance Metrics</h3>
+                <button class="metrics-toggle" onclick="toggleMetricsDetails()">
+                    <span id="metricsToggleText">Show Details</span>
+                </button>
+            </div>
+            
+            <!-- Key Metrics Grid -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <span class="label">Total Latency</span>
+                    <span class="value" id="metric-latency">--</span>
+                    <span class="subtitle">milliseconds</span>
+                </div>
+                <div class="metric-card">
+                    <span class="label">Results Found</span>
+                    <span class="value" id="metric-results">--</span>
+                    <span class="subtitle">documents</span>
+                </div>
+                <div class="metric-card">
+                    <span class="label">Search Method</span>
+                    <span class="value" id="metric-method">--</span>
+                    <span class="subtitle">algorithm</span>
+                </div>
+                <div class="metric-card">
+                    <span class="label">Precision</span>
+                    <span class="value" id="metric-precision">--</span>
+                    <span class="subtitle">estimated</span>
+                </div>
+            </div>
+            
+            <!-- Detailed Metrics (Collapsible) -->
+            <div id="metricsDetails" style="display: none;">
+                <!-- Latency Breakdown -->
+                <div class="latency-breakdown">
+                    <h4>⏱️ Latency Breakdown</h4>
+                    
+                    <div class="latency-bar-container">
+                        <div class="latency-bar-label">
+                            <div>
+                                <span class="name">Query Expansion</span>
+                                <span class="percent" id="percent-expansion">(0%)</span>
+                            </div>
+                            <span class="time" id="time-expansion">0ms</span>
+                        </div>
+                        <div class="latency-bar-bg">
+                            <div class="latency-bar-fill" id="bar-expansion" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="latency-bar-container">
+                        <div class="latency-bar-label">
+                            <div>
+                                <span class="name">Vector Search</span>
+                                <span class="percent" id="percent-vector">(0%)</span>
+                            </div>
+                            <span class="time" id="time-vector">0ms</span>
+                        </div>
+                        <div class="latency-bar-bg">
+                            <div class="latency-bar-fill" id="bar-vector" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="latency-bar-container">
+                        <div class="latency-bar-label">
+                            <div>
+                                <span class="name">BM25 Search</span>
+                                <span class="percent" id="percent-bm25">(0%)</span>
+                            </div>
+                            <span class="time" id="time-bm25">0ms</span>
+                        </div>
+                        <div class="latency-bar-bg">
+                            <div class="latency-bar-fill" id="bar-bm25" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="latency-bar-container">
+                        <div class="latency-bar-label">
+                            <div>
+                                <span class="name">Fusion</span>
+                                <span class="percent" id="percent-fusion">(0%)</span>
+                            </div>
+                            <span class="time" id="time-fusion">0ms</span>
+                        </div>
+                        <div class="latency-bar-bg">
+                            <div class="latency-bar-fill" id="bar-fusion" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="latency-bar-container">
+                        <div class="latency-bar-label">
+                            <div>
+                                <span class="name">Knowledge Graph</span>
+                                <span class="percent" id="percent-graph">(0%)</span>
+                            </div>
+                            <span class="time" id="time-graph">0ms</span>
+                        </div>
+                        <div class="latency-bar-bg">
+                            <div class="latency-bar-fill" id="bar-graph" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="latency-bar-container">
+                        <div class="latency-bar-label">
+                            <div>
+                                <span class="name">LLM Re-ranking</span>
+                                <span class="percent" id="percent-reranking">(0%)</span>
+                            </div>
+                            <span class="time" id="time-reranking">0ms</span>
+                        </div>
+                        <div class="latency-bar-bg">
+                            <div class="latency-bar-fill" id="bar-reranking" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Component Status -->
+                <div class="component-status">
+                    <h4>🔧 Active Components</h4>
+                    <div class="component-list">
+                        <div class="component-item">
+                            <span class="status-dot" id="status-expansion"></span>
+                            <span>Query Expansion</span>
+                        </div>
+                        <div class="component-item">
+                            <span class="status-dot" id="status-bm25"></span>
+                            <span>BM25 Search</span>
+                        </div>
+                        <div class="component-item">
+                            <span class="status-dot" id="status-hybrid"></span>
+                            <span>Hybrid Fusion</span>
+                        </div>
+                        <div class="component-item">
+                            <span class="status-dot" id="status-graph"></span>
+                            <span>Knowledge Graph</span>
+                        </div>
+                        <div class="component-item">
+                            <span class="status-dot" id="status-reranking"></span>
+                            <span>LLM Re-ranking</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- File Upload Section -->
         <div class="upload-section">
@@ -960,7 +1108,7 @@
         // ====================================
         // SETTINGS PANEL & CONFIGURATION
         // ====================================
-        
+
         // Current configuration state
         let currentConfig = {
             use_query_expansion: true,
@@ -970,22 +1118,22 @@
             use_reranking: false,
             top_k: 10
         };
-        
+
         let currentLLMConfig = {
             model: 'llama3.2:3b',
             temperature: 0.5,
             max_tokens: 500,
             context_window: 4000
         };
-        
+
         let availablePresets = {};
-        
+
         // Toggle settings panel
         function toggleSettings() {
             const panel = document.getElementById('settingsPanel');
             panel.classList.toggle('open');
         }
-        
+
         // Load presets from API
         function loadPresetsFromAPI() {
             fetch('/api/presets')
@@ -998,7 +1146,7 @@
                     console.error('❌ Error loading presets:', error);
                 });
         }
-        
+
         // Load a specific preset
         function loadPreset(presetName) {
             const preset = availablePresets[presetName];
@@ -1006,9 +1154,9 @@
                 console.error('Preset not found:', presetName);
                 return;
             }
-            
+
             console.log('📋 Loading preset:', preset.name);
-            
+
             // Apply RAG config
             if (preset.config) {
                 document.getElementById('use-query-expansion').checked = preset.config.use_query_expansion || false;
@@ -1019,7 +1167,7 @@
                 document.getElementById('top-k').value = preset.config.top_k || 10;
                 document.getElementById('topk-value').textContent = preset.config.top_k || 10;
             }
-            
+
             // Apply LLM config
             if (preset.llm_config) {
                 document.getElementById('llm-model').value = preset.llm_config.model || 'llama3.2:3b';
@@ -1030,27 +1178,27 @@
                 document.getElementById('context-window').value = preset.llm_config.context_window || 4000;
                 document.getElementById('context-value').textContent = preset.llm_config.context_window || 4000;
             }
-            
+
             // Update expected metrics
             if (preset.expected_metrics) {
                 document.getElementById('expected-precision').textContent = preset.expected_metrics.precision || 'N/A';
                 document.getElementById('expected-recall').textContent = preset.expected_metrics.recall || 'N/A';
                 document.getElementById('expected-latency').textContent = preset.expected_metrics.latency || 'N/A';
             }
-            
+
             // Highlight active preset
             document.querySelectorAll('.preset-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             event.target.classList.add('active');
-            
+
             // Update config
             updateConfig();
-            
+
             // Show notification
             showNotification(`Loaded ${preset.name} preset`, 'success');
         }
-        
+
         // Update configuration from UI
         function updateConfig() {
             currentConfig = {
@@ -1061,27 +1209,27 @@
                 use_reranking: document.getElementById('use-reranking').checked,
                 top_k: parseInt(document.getElementById('top-k').value)
             };
-            
+
             currentLLMConfig = {
                 model: document.getElementById('llm-model').value,
                 temperature: parseFloat(document.getElementById('temperature').value),
                 max_tokens: parseInt(document.getElementById('max-tokens').value),
                 context_window: parseInt(document.getElementById('context-window').value)
             };
-            
+
             console.log('⚙️  Config updated:', currentConfig);
-            
+
             // Save to localStorage
             localStorage.setItem('rag_config', JSON.stringify(currentConfig));
             localStorage.setItem('llm_config', JSON.stringify(currentLLMConfig));
         }
-        
+
         // Load saved configuration
         function loadSavedConfig() {
             try {
                 const savedConfig = localStorage.getItem('rag_config');
                 const savedLLMConfig = localStorage.getItem('llm_config');
-                
+
                 if (savedConfig) {
                     currentConfig = JSON.parse(savedConfig);
                     // Apply to UI
@@ -1093,7 +1241,7 @@
                     document.getElementById('top-k').value = currentConfig.top_k;
                     document.getElementById('topk-value').textContent = currentConfig.top_k;
                 }
-                
+
                 if (savedLLMConfig) {
                     currentLLMConfig = JSON.parse(savedLLMConfig);
                     // Apply to UI
@@ -1105,13 +1253,13 @@
                     document.getElementById('context-window').value = currentLLMConfig.context_window;
                     document.getElementById('context-value').textContent = currentLLMConfig.context_window;
                 }
-                
+
                 console.log('✅ Loaded saved configuration');
             } catch (e) {
                 console.error('❌ Error loading saved config:', e);
             }
         }
-        
+
         // Show notification
         function showNotification(message, type = 'info') {
             // You can implement a toast notification here
@@ -1119,9 +1267,88 @@
         }
         
         // ====================================
-        // ORIGINAL CODE (EXISTING)
+        // METRICS DASHBOARD
         // ====================================
         
+        // Toggle metrics details
+        function toggleMetricsDetails() {
+            const details = document.getElementById('metricsDetails');
+            const toggleText = document.getElementById('metricsToggleText');
+            
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+                toggleText.textContent = 'Hide Details';
+            } else {
+                details.style.display = 'none';
+                toggleText.textContent = 'Show Details';
+            }
+        }
+        
+        // Update metrics display
+        function updateMetrics(metrics) {
+            if (!metrics) return;
+            
+            console.log('📊 Updating metrics:', metrics);
+            
+            // Show dashboard
+            const dashboard = document.getElementById('metricsDashboard');
+            dashboard.classList.add('visible');
+            
+            // Update key metrics
+            document.getElementById('metric-latency').textContent = 
+                metrics.total_latency_ms ? `${Math.round(metrics.total_latency_ms)}ms` : '--';
+            document.getElementById('metric-results').textContent = 
+                metrics.vector_results_count || '--';
+            document.getElementById('metric-method').textContent = 
+                metrics.method || '--';
+            
+            // Estimate precision based on method
+            let precision = '--';
+            if (metrics.method === 'hybrid') precision = '85-90%';
+            else if (metrics.method === 'vector_only') precision = '70-75%';
+            if (metrics.reranking_success) precision = '95-98%';
+            document.getElementById('metric-precision').textContent = precision;
+            
+            // Update latency breakdown
+            if (metrics.breakdown_percent) {
+                updateLatencyBar('expansion', metrics.query_expansion_ms, metrics.breakdown_percent.query_expansion);
+                updateLatencyBar('vector', metrics.vector_search_ms, metrics.breakdown_percent.vector_search);
+                updateLatencyBar('bm25', metrics.bm25_search_ms, metrics.breakdown_percent.bm25_search);
+                updateLatencyBar('fusion', metrics.fusion_ms, metrics.breakdown_percent.fusion);
+                updateLatencyBar('graph', metrics.graph_enhancement_ms, metrics.breakdown_percent.graph);
+                updateLatencyBar('reranking', metrics.reranking_ms, metrics.breakdown_percent.reranking);
+            }
+            
+            // Update component status
+            updateComponentStatus('expansion', metrics.query_expanded || false);
+            updateComponentStatus('bm25', metrics.bm25_results_count > 0);
+            updateComponentStatus('hybrid', metrics.method === 'hybrid');
+            updateComponentStatus('graph', metrics.graph_docs_added > 0);
+            updateComponentStatus('reranking', metrics.reranking_success || false);
+        }
+        
+        // Update latency bar
+        function updateLatencyBar(component, timeMs, percent) {
+            const time = Math.round(timeMs || 0);
+            const pct = Math.round(percent || 0);
+            
+            document.getElementById(`time-${component}`).textContent = `${time}ms`;
+            document.getElementById(`percent-${component}`).textContent = `(${pct}%)`;
+            document.getElementById(`bar-${component}`).style.width = `${pct}%`;
+        }
+        
+        // Update component status dot
+        function updateComponentStatus(component, isActive) {
+            const dot = document.getElementById(`status-${component}`);
+            if (dot) {
+                dot.className = `status-dot ${isActive ? 'active' : 'inactive'}`;
+            }
+        }
+        
+        // ====================================
+        // ORIGINAL CODE (EXISTING)
+        // ====================================
+
         const messagesContainer = document.getElementById('messages');
         const questionInput = document.getElementById('question-input');
         const askButton = document.getElementById('ask-button');
@@ -1152,7 +1379,7 @@
         // Initialize educational features
         loadPresetsFromAPI();
         loadSavedConfig();
-        
+
         // Load stats and folders
         fetch('/api/stats')
             .then(r => r.json())
@@ -1228,6 +1455,31 @@
             scrollToBottom();
 
             try {
+                // Step 1: Get search results with metrics using current config
+                let searchMetrics = null;
+                try {
+                    const searchResponse = await fetch('http://localhost:8002/search_with_config', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            query: question,
+                            config: currentConfig
+                        })
+                    });
+                    
+                    if (searchResponse.ok) {
+                        const searchData = await searchResponse.json();
+                        searchMetrics = searchData.metrics;
+                        console.log('📊 Captured search metrics:', searchMetrics);
+                        
+                        // Update metrics display
+                        updateMetrics(searchMetrics);
+                    }
+                } catch (e) {
+                    console.error('Failed to capture metrics:', e);
+                }
+                
+                // Step 2: Continue with chat as normal
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},

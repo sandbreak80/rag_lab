@@ -337,15 +337,15 @@
         width: 100%;
         left: -100%;
     }
-    
+
     .settings-panel.open {
         left: 0;
     }
-    
+
     .settings-panel.open ~ .settings-toggle {
         left: calc(100% - 76px);
     }
-    
+
     .preset-grid {
         grid-template-columns: 1fr;
     }
