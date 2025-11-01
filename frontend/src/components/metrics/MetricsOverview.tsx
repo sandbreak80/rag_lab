@@ -1,11 +1,34 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useMetricsStore } from '../../stores/metricsStore';
 import { Card, CardContent } from '../ui/card';
 import { formatNumber, formatDuration } from '../../utils/formatting';
 import { Activity, Clock, Hash, Zap } from 'lucide-react';
 
 export function MetricsOverview() {
-  const summary = useMetricsStore((state) => state.getSummary());
+  const queries = useMetricsStore((state) => state.queries);
+
+  // Compute summary directly from queries - don't call getSummary()
+  const summary = useMemo(() => {
+    if (queries.length === 0) {
+      return {
+        total_queries: 0,
+        avg_latency_ms: 0,
+        avg_token_count: 0,
+        avg_results_count: 0,
+      };
+    }
+
+    const totalLatency = queries.reduce((sum, q) => sum + q.performance.total_latency_ms, 0);
+    const totalTokens = queries.reduce((sum, q) => sum + q.tokens.total_tokens, 0);
+    const totalResults = queries.reduce((sum, q) => sum + q.results.total_results, 0);
+
+    return {
+      total_queries: queries.length,
+      avg_latency_ms: totalLatency / queries.length,
+      avg_token_count: totalTokens / queries.length,
+      avg_results_count: totalResults / queries.length,
+    };
+  }, [queries]);
 
   const metrics = [
     {

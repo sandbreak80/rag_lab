@@ -1,13 +1,20 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useLabStore } from '../../stores/labStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { CheckCircle, Circle } from 'lucide-react';
 
 export function ProgressTracker() {
   const exercises = useLabStore((state) => state.exercises);
-  const progress = useLabStore((state) => state.getProgress());
   const markComplete = useLabStore((state) => state.markExerciseComplete);
   const markIncomplete = useLabStore((state) => state.markExerciseIncomplete);
+
+  // Compute progress directly from exercises - don't call getProgress()
+  const progress = useMemo(() => {
+    const completed = exercises.filter((ex) => ex.completed).length;
+    const total = exercises.length;
+    const percentage = total > 0 ? (completed / total) * 100 : 0;
+    return { completed, total, percentage };
+  }, [exercises]);
 
   return (
     <Card>
