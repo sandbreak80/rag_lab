@@ -960,7 +960,7 @@
                     <blockquote style="border-left: 3px solid var(--accent-primary); padding-left: 15px; margin: 15px 0; font-style: italic;">
                         "RAG allows your organization to deploy AI that's grounded in YOUR data, YOUR policies, and YOUR expertise - without expensive model retraining or data leaving your environment."
                     </blockquote>
-                    
+
                     <p><strong>The Business Problem RAG Solves:</strong></p>
                     <ul>
                         <li><strong>Generic AI Can't Help:</strong> Public LLMs don't know your products, processes, or policies</li>
@@ -1112,7 +1112,7 @@
                 <div class="lab-section-content">
                     <p><strong>What are Embeddings?</strong></p>
                     <p>Text converted into numbers (vectors) that capture semantic meaning. Similar meanings = close together in vector space.</p>
-                    
+
                     <p><strong>Example:</strong> "neural network" and "deep learning" are close together, but "banana recipe" is far away.</p>
 
                     <p><strong>Vector Search Process:</strong></p>
@@ -1830,8 +1830,81 @@
 
             <!-- TAB 4: Metrics -->
             <div class="tab-content" id="tab-metrics">
-                <!-- Metrics Dashboard Content (moved here) -->
-                <div id="metrics-tab-container"></div>
+                <h2>📊 Performance Metrics & Analysis</h2>
+                <p style="color: var(--text-muted); margin-bottom: 30px;">
+                    Track RAG pipeline performance across different configurations. Compare settings vs quality vs speed.
+                </p>
+
+                <!-- Summary Stats -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                    <div style="background: var(--bg-tertiary); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
+                        <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 5px;">Total Queries</div>
+                        <div style="font-size: 28px; font-weight: 700; color: var(--accent-primary);" id="metric-total-queries">0</div>
+                    </div>
+                    <div style="background: var(--bg-tertiary); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
+                        <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 5px;">Avg Latency</div>
+                        <div style="font-size: 28px; font-weight: 700; color: var(--accent-primary);" id="metric-avg-latency">0ms</div>
+                    </div>
+                    <div style="background: var(--bg-tertiary); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
+                        <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 5px;">Avg Results</div>
+                        <div style="font-size: 28px; font-weight: 700; color: var(--accent-primary);" id="metric-avg-results">0</div>
+                    </div>
+                    <div style="background: var(--bg-tertiary); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
+                        <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 5px;">Total Tokens</div>
+                        <div style="font-size: 28px; font-weight: 700; color: var(--accent-primary);" id="metric-total-tokens">0</div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button onclick="clearMetrics()" style="padding: 10px 20px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); cursor: pointer; font-size: 14px;">
+                        🗑️ Clear Metrics
+                    </button>
+                    <button onclick="exportMetrics()" style="padding: 10px 20px; background: var(--accent-primary); border: none; border-radius: 8px; color: white; cursor: pointer; font-size: 14px;">
+                        📥 Export CSV
+                    </button>
+                </div>
+
+                <!-- Query History Table -->
+                <div style="background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border); overflow: hidden;">
+                    <div style="padding: 15px; border-bottom: 1px solid var(--border);">
+                        <h3 style="margin: 0; font-size: 18px;">Query History</h3>
+                    </div>
+                    <div style="overflow-x: auto; max-height: 600px; overflow-y: auto;">
+                        <table id="metrics-table" style="width: 100%; border-collapse: collapse;">
+                            <thead style="background: var(--bg-secondary); position: sticky; top: 0; z-index: 10;">
+                                <tr>
+                                    <th style="padding: 12px; text-align: left; font-size: 14px; border-bottom: 1px solid var(--border);">#</th>
+                                    <th style="padding: 12px; text-align: left; font-size: 14px; border-bottom: 1px solid var(--border);">Timestamp</th>
+                                    <th style="padding: 12px; text-align: left; font-size: 14px; border-bottom: 1px solid var(--border); min-width: 200px;">Query</th>
+                                    <th style="padding: 12px; text-align: left; font-size: 14px; border-bottom: 1px solid var(--border);">Configuration</th>
+                                    <th style="padding: 12px; text-align: right; font-size: 14px; border-bottom: 1px solid var(--border);">Latency</th>
+                                    <th style="padding: 12px; text-align: right; font-size: 14px; border-bottom: 1px solid var(--border);">Results</th>
+                                    <th style="padding: 12px; text-align: right; font-size: 14px; border-bottom: 1px solid var(--border);">Tokens</th>
+                                    <th style="padding: 12px; text-align: center; font-size: 14px; border-bottom: 1px solid var(--border);">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="metrics-table-body">
+                                <tr>
+                                    <td colspan="8" style="padding: 40px; text-align: center; color: var(--text-muted);">
+                                        No queries yet. Run a query in the Chat tab to see metrics here.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Detail Modal (hidden by default) -->
+                <div id="metric-detail-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto;" onclick="closeMetricDetail(event)">
+                    <div style="max-width: 900px; margin: 50px auto; background: var(--bg-primary); border-radius: 12px; padding: 30px;" onclick="event.stopPropagation()">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 style="margin: 0;">Query Performance Details</h3>
+                            <button onclick="document.getElementById('metric-detail-modal').style.display='none'" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-muted);">×</button>
+                        </div>
+                        <div id="metric-detail-content"></div>
+                    </div>
+                </div>
             </div>
             <!-- End TAB 4: Metrics -->
 
@@ -2678,26 +2751,61 @@
         function loadDocumentsList(stats) {
             const docsList = document.getElementById('documents-list');
             if (!docsList) return;
-
+            
             const docs = stats.documents || [];
-            const filteredDocs = docs.filter(d => !d.includes('_SUMMARY') && !d.includes('lab/') && !d.includes('docs/'));
-
+            
+            // Filter out system/seeded documents - keep only user uploads
+            const filteredDocs = docs.filter(d => {
+                const lower = d.toLowerCase();
+                // Exclude all system, lab, and seeded documents
+                return !d.includes('_SUMMARY') && 
+                       !d.includes('lab/') && 
+                       !d.includes('docs/') &&
+                       !d.includes('LAB_') &&
+                       !d.includes('AI_FUNDAMENTALS') &&
+                       !d.includes('ARCHITECTURE') &&
+                       !d.includes('PERFORMANCE') &&
+                       !d.includes('RAG_') &&
+                       !lower.includes('readme') &&
+                       !lower.includes('.md') ||
+                       (lower.includes('.pdf') || lower.includes('.docx') || lower.includes('.pptx') || lower.includes('.xlsx') || lower.includes('.txt') || lower.includes('.rtf'));
+            });
+            
             if (filteredDocs.length === 0) {
-                docsList.innerHTML = '<p style="color: var(--text-muted);">No user documents uploaded yet. Upload files to get started!</p>';
+                docsList.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">📁</div>
+                        <p style="color: var(--text-muted); font-size: 16px; margin-bottom: 10px;">No user documents uploaded yet.</p>
+                        <p style="color: var(--text-muted); font-size: 14px;">Upload PDF, Word, Excel, PowerPoint, or text files to get started!</p>
+                    </div>
+                `;
                 return;
             }
-
-            docsList.innerHTML = filteredDocs.map((doc, i) => `
-                <div class="document-item" style="padding: 15px; margin: 10px 0; background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border);">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <span style="font-size: 18px; margin-right: 8px;">📄</span>
-                            <span style="font-weight: 500;">${doc}</span>
+            
+            docsList.innerHTML = filteredDocs.map((doc, i) => {
+                // Determine file icon based on extension
+                let icon = '📄';
+                if (doc.endsWith('.pdf')) icon = '📕';
+                else if (doc.endsWith('.docx') || doc.endsWith('.doc')) icon = '📘';
+                else if (doc.endsWith('.xlsx') || doc.endsWith('.xls')) icon = '📊';
+                else if (doc.endsWith('.pptx') || doc.endsWith('.ppt')) icon = '📙';
+                else if (doc.endsWith('.txt')) icon = '📝';
+                
+                return `
+                    <div class="document-item" style="padding: 15px; margin: 10px 0; background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+                                <span style="font-size: 24px;">${icon}</span>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 500; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${doc}">${doc}</div>
+                                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">User uploaded</div>
+                                </div>
+                            </div>
+                            <span style="color: var(--text-muted); font-size: 14px; padding: 4px 12px; background: var(--bg-secondary); border-radius: 12px;">#${i + 1}</span>
                         </div>
-                        <span style="color: var(--text-muted); font-size: 14px;">#${i + 1}</span>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // Handle ask button
