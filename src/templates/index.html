@@ -2399,7 +2399,7 @@
                 console.log('Stats loaded:', data);
                 document.getElementById('chunk-count').textContent = (data.total_chunks || data.indexed_chunks || 0).toLocaleString();
                 document.getElementById('model-name').textContent = data.chat_model || 'loading...';
-                
+
                 // Load documents list
                 loadDocumentsList(data);
             })
@@ -2412,15 +2412,15 @@
         function loadDocumentsList(stats) {
             const docsList = document.getElementById('documents-list');
             if (!docsList) return;
-            
+
             const docs = stats.documents || [];
             const filteredDocs = docs.filter(d => !d.includes('_SUMMARY') && !d.includes('lab/') && !d.includes('docs/'));
-            
+
             if (filteredDocs.length === 0) {
                 docsList.innerHTML = '<p style="color: var(--text-muted);">No user documents uploaded yet. Upload files to get started!</p>';
                 return;
             }
-            
+
             docsList.innerHTML = filteredDocs.map((doc, i) => `
                 <div class="document-item" style="padding: 15px; margin: 10px 0; background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
