@@ -1265,3 +1265,68 @@ User Query → DSDL Query Classifier →
 
 This positions Splunk as the ONLY vendor with a complete AI platform for enterprises.
 
+
+---
+
+### Phase 5: Full-Stack Observability with Splunk Observability Cloud
+**Timeline:** Post-Phase 2 Lab Enhancement (3-6 months)
+**Status:** Strategic roadmap - HIGH VALUE
+**Ease of Implementation:** ⚡ EASY (2-4 weeks)
+**Priority:** 🔥 VERY HIGH - Completes the observability story
+
+---
+
+#### 🎯 The Complete Observability Story
+
+**Current State:**
+- ✅ RAG metrics (groundedness, latency, cost)
+- ✅ Application metrics (query volume, response times)
+- ❌ Infrastructure metrics (CPU, RAM, disk I/O)
+- ❌ Container metrics (per-service resource usage)
+- ❌ GPU metrics (utilization, memory, temperature)
+- ❌ OS metrics (system health)
+
+**Target State with Splunk Observability Cloud:**
+- ✅ **Complete stack visibility in ONE platform**
+- ✅ **Correlation across all layers** (app → container → GPU → OS)
+- ✅ **Proactive alerting** (before users complain)
+- ✅ **Root cause analysis** (automated correlation)
+
+This closes the loop: We monitor the AI (RAG metrics), the application (services), the infrastructure (containers, GPU, OS) - **EVERYTHING in Splunk!**
+
+---
+
+**Full documentation: See above for complete Phase 5 details including:**
+- 📊 What we'll monitor (Application, Containers, GPU, OS metrics)
+- 🎓 Why this is powerful (self-demonstrating product value)
+- 💼 Customer conversation enabler (show, don't tell)
+- 🛠️ Implementation plan (OpenTelemetry, dashboards, alerts)
+- 🎓 Lab integration (Exercise 12 & 13)
+- 💰 Business value & ROI (10-15x on Observability Cloud license)
+- 🎯 Competitive positioning (only unified AI observability)
+
+**Key Value Propositions:**
+1. **Self-Evident Benefits:** Students see correlation (slow query → GPU bottleneck → root cause in 30 seconds)
+2. **Complete Story:** Application + Infrastructure + GPU in ONE dashboard
+3. **Easy to Add:** OpenTelemetry Collector + configuration (no custom code)
+4. **Massive Customer Impact:** From "what's wrong?" to "here's why and here's the fix" instantly
+
+**Implementation Timeline:** 2-4 weeks
+- Week 1: Deploy OpenTelemetry, instrument services
+- Week 2: Build dashboards, configure alerts
+- Week 3: Lab integration (exercises, documentation)
+- Week 4: Polish & launch
+
+**Success Metrics:**
+- ✅ All 10 microservices instrumented
+- ✅ 3 dashboards deployed (RAG Pipeline, Infrastructure, Cost)
+- ✅ 4+ critical alerts (latency, groundedness, GPU, container health)
+- ✅ <30 second time-to-insight (alert → root cause)
+- ✅ 100% of demos include full-stack observability
+
+**Status:** Roadmap documented - READY TO IMPLEMENT
+**Owner:** AI Enablement team
+**Strategic Importance:** 🔥 VERY HIGH - Makes lab a COMPLETE Splunk Observability Cloud showcase
+
+This is the final piece! Students see Splunk monitoring EVERYTHING - from groundedness scores to GPU temperature!
+
