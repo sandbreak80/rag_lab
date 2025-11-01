@@ -504,7 +504,7 @@ References:
 **Splunk Monitoring for RAG Pipeline:**
 
 ```
-User Query → Prompt Processing → Document Retrieval → 
+User Query → Prompt Processing → Document Retrieval →
 Context Assembly → Generation → Quality Validation
      ↓              ↓                ↓                ↓
  [Splunk APM] [Splunk Logs] [Splunk Metrics] [Splunk AI Observability]
@@ -570,14 +570,14 @@ tracer = trace.get_tracer(__name__)
 with tracer.start_as_current_span("rag_query") as span:
     span.set_attribute("query", query_text)
     span.set_attribute("user_id", user_id)
-    
+
     with tracer.start_as_current_span("retrieval"):
         # Vector + BM25 search
         span.set_attribute("retrieval.method", "hybrid")
         span.set_attribute("retrieval.top_k", top_k)
         results = search(query)
         span.set_attribute("retrieval.results_count", len(results))
-    
+
     with tracer.start_as_current_span("generation"):
         span.set_attribute("llm.model", "llama3.2:3b")
         span.set_attribute("llm.temperature", 0.5)
@@ -585,7 +585,7 @@ with tracer.start_as_current_span("rag_query") as span:
         span.set_attribute("llm.prompt_tokens", prompt_tokens)
         span.set_attribute("llm.completion_tokens", completion_tokens)
         span.set_attribute("llm.total_tokens", total_tokens)
-    
+
     with tracer.start_as_current_span("quality_check"):
         groundedness_score = check_groundedness(response, results)
         span.set_attribute("quality.groundedness", groundedness_score)
@@ -631,12 +631,12 @@ with tracer.start_as_current_span("rag_query") as span:
 
 **Splunk Integration Benefits:**
 
-✅ **End-to-end visibility**: Query → Retrieval → Generation → Response  
-✅ **RAG-specific metrics**: Retrieval quality, groundedness, source accuracy  
-✅ **Cost tracking**: Token usage, model costs, infrastructure spend  
-✅ **Performance optimization**: Identify bottlenecks in hybrid search, reranking  
-✅ **Compliance**: Audit trails, data lineage, response provenance  
-✅ **Alerting**: Anomaly detection, hallucination spikes, cost overruns  
+✅ **End-to-end visibility**: Query → Retrieval → Generation → Response
+✅ **RAG-specific metrics**: Retrieval quality, groundedness, source accuracy
+✅ **Cost tracking**: Token usage, model costs, infrastructure spend
+✅ **Performance optimization**: Identify bottlenecks in hybrid search, reranking
+✅ **Compliance**: Audit trails, data lineage, response provenance
+✅ **Alerting**: Anomaly detection, hallucination spikes, cost overruns
 
 **Demo Value:**
 
@@ -1034,4 +1034,234 @@ Persist to localStorage on tab switch.
 6. **Multi-tab UI:** Will include future "Infrastructure" tab slot
 
 This ensures Phase 2 delivers immediate educational value while documenting the infrastructure monitoring vision for future implementation.
+
+
+---
+
+### Phase 4: Splunk AI Platform Integration (Long-term Vision)
+**Timeline:** Post-Phase 3 Lab Framework
+**Status:** Strategic roadmap
+
+**Integration with Splunk AI Ecosystem:**
+
+References:
+- [Splunk AI Toolkit](https://splunkbase.splunk.com/app/2890) - formerly MLTK
+- [Splunk App for Data Science and Deep Learning](https://splunkbase.splunk.com/app/4607) - formerly DLTK
+
+**Strategic Vision:**
+
+Position the RAG Reference Architecture Lab as a **bridge between Splunk's existing AI platforms** and modern LLM/RAG deployments.
+
+**Phase 4A: Splunk AI Toolkit Integration**
+
+**Splunk AI Toolkit (MLTK) + RAG Lab:**
+- Export RAG metrics to Splunk SPL for ML analysis
+- Use MLTK assistants for RAG optimization:
+  - **Predict Numeric Fields**: Predict query latency based on config
+  - **Detect Numeric Outliers**: Identify anomalous response times
+  - **Forecast Time Series**: Forecast token usage, cost trends
+  - **Cluster Numeric Events**: Cluster similar queries for optimization
+  - **Smart Prediction**: Predict which RAG config for given query
+
+**RAG Metrics → Splunk SPL Pipeline:**
+```spl
+| makeresults 
+| eval query="sample query", latency_ms=250, tokens=1500, 
+       groundedness=0.94, cost=0.0005, config="balanced"
+| collect index=rag_metrics
+| timechart avg(latency_ms) by config
+| predict latency_ms algorithm=LLP future_timespan=24h
+```
+
+**Generative AI Integration (MLTK 5.6+):**
+- MLTK supports LLM integration in search pipelines
+- Our RAG lab becomes the **reference implementation**
+- Show customers: "This is how you monitor LLMs in Splunk"
+
+**Value Proposition:**
+*"The RAG Lab isn't separate from Splunk AI Toolkit - it's the next evolution. Use MLTK to analyze and optimize your RAG pipeline."*
+
+---
+
+**Phase 4B: Data Science & Deep Learning App Integration**
+
+**DSDL + RAG Lab:**
+- Leverage DSDL's Jupyter Lab Notebooks for RAG experimentation
+- Use prebuilt containers (TensorFlow, PyTorch) for custom embeddings
+- GPU acceleration for embedding generation at scale
+- Classical ML for RAG optimization (which chunking strategy? which config?)
+
+**Use Cases:**
+1. **Custom Embedding Models**: Train domain-specific embeddings in DSDL, deploy in RAG
+2. **Query Classification**: Use DSDL to classify query types → route to optimal RAG config
+3. **Relevance Scoring**: Train custom re-ranker models in DSDL
+4. **Anomaly Detection**: Detect unusual query patterns, potential attacks
+5. **NLP Preprocessing**: Advanced text preprocessing before RAG retrieval
+
+**Architecture:**
+```
+User Query → DSDL Query Classifier → 
+    If factual: RAG Pipeline (our lab)
+    If analytical: MLTK (forecasting, clustering)
+    If creative: Direct LLM
+→ Splunk Observability Cloud monitors all
+```
+
+**Integration Points:**
+
+1. **Splunk AI Toolkit** ← RAG Metrics
+   - Forecast token costs
+   - Detect latency anomalies
+   - Predict optimal config
+   - Cluster query types
+
+2. **DSDL** ← RAG Experiments
+   - Custom embedding models
+   - Query classifiers
+   - Relevance scorers
+   - Advanced NLP
+
+3. **RAG Lab** ← Monitored by Observability
+   - Production LLM deployment
+   - Reference architecture
+   - Field enablement platform
+
+4. **Splunk Observability** → Monitors Everything
+   - LLM observability (our focus)
+   - ML model monitoring (MLTK/DSDL)
+   - Full-stack visibility
+
+---
+
+**Phase 4C: Unified Splunk AI Platform Story**
+
+**Customer Narrative:**
+
+*"Splunk provides a complete AI platform - not just observability:*
+
+**1. Build Models (DSDL)**
+- Jupyter notebooks, TensorFlow, PyTorch
+- Train custom classifiers, embeddings, NLP models
+- GPU-accelerated training
+
+**2. Deploy & Monitor LLMs (RAG Lab)**
+- Production RAG architecture
+- Groundedness, cost, latency tracking
+- Hybrid search, knowledge graphs, re-ranking
+
+**3. Analyze & Optimize (MLTK)**
+- Forecast costs, predict latency
+- Detect anomalies, cluster queries
+- Optimize configurations with ML
+
+**4. Observe Everything (Observability Cloud)**
+- End-to-end visibility
+- RAG-specific metrics
+- Cost optimization
+- Compliance & audit
+
+*This is the only platform that covers the entire AI lifecycle."*
+
+---
+
+**Phase 4D: Field Enablement Expansion**
+
+**Lab Series Concept:**
+
+**Lab 1:** RAG Reference Architecture (current lab)
+- Build production RAG
+- Monitor with Splunk Observability
+- 4-5 hours hands-on
+
+**Lab 2:** Advanced RAG with MLTK
+- Export metrics to Splunk
+- Use MLTK assistants for optimization
+- Forecast costs, detect anomalies
+- 3-4 hours hands-on
+
+**Lab 3:** Custom Models with DSDL
+- Train custom embeddings
+- Build query classifiers
+- Deploy to RAG pipeline
+- 4-5 hours hands-on
+
+**Lab 4:** Production AI Platform
+- Integrate all three (RAG + MLTK + DSDL)
+- Complete customer deployment
+- End-to-end monitoring
+- 6-8 hours hands-on
+
+**Certification Path:**
+- Level 1: RAG Fundamentals (Lab 1) ✅
+- Level 2: RAG Optimization (Lab 1 + 2)
+- Level 3: Advanced AI (Lab 1 + 2 + 3)
+- Level 4: AI Architect (All labs + deployment)
+
+---
+
+**Phase 4E: Product Integration Roadmap**
+
+**Short-term (3-6 months):**
+- Export RAG metrics to Splunk format
+- Document MLTK integration patterns
+- Create sample SPL queries for RAG analysis
+
+**Medium-term (6-12 months):**
+- Pre-built MLTK dashboards for RAG
+- DSDL notebook templates for RAG
+- Splunk app for RAG monitoring
+
+**Long-term (12-24 months):**
+- Native Splunk RAG capabilities
+- Unified AI platform (MLTK + DSDL + RAG + Observability)
+- Splunk as the enterprise AI platform
+
+---
+
+**Enterprise Value Proposition:**
+
+**For Customers:**
+*"You don't need to stitch together 5 vendors for AI:*
+- *Build models: Splunk DSDL*
+- *Deploy LLMs: Splunk RAG Reference Architecture*
+- *Optimize: Splunk AI Toolkit*
+- *Monitor: Splunk Observability Cloud*
+
+*One platform. One vendor. Complete AI lifecycle."*
+
+**For Splunk Field Teams:**
+*"You're not just selling observability - you're selling the complete AI platform. This lab is the entry point."*
+
+**For Splunk Leadership:**
+*"We're positioning Splunk as THE enterprise AI platform - from data science to production deployment to monitoring. Our competitors can't match this breadth."*
+
+---
+
+**Success Metrics (Phase 4):**
+
+- ✅ MLTK adoption increase (% of RAG customers also using MLTK)
+- ✅ DSDL adoption increase (custom model training)
+- ✅ Unified platform deals (RAG + MLTK + DSDL + Observability)
+- ✅ Customer success stories (AI lifecycle on Splunk)
+- ✅ Competitive wins against "AI platform" vendors
+
+---
+
+**Next Steps (Documented for Future):**
+
+1. Complete Phase 2 (Current Lab Enhancement)
+2. Build Phase 3 (Lab Development Framework)
+3. Engage with Splunk AI Toolkit product team
+4. Engage with DSDL product team
+5. Design unified AI platform roadmap
+6. Execute Phase 4 integration
+
+---
+
+**Status:** Long-term vision documented  
+**Owner:** AI Enablement + Product teams  
+**Timeline:** 12-24 months  
+**Strategic Importance:** 🔥 HIGH - Platform differentiation
+
+This positions Splunk as the ONLY vendor with a complete AI platform for enterprises.
 
