@@ -5,7 +5,7 @@
 ### ✅ FIXED Issues:
 1. **Infinite render loops** - ALL RESOLVED
    - ChatInterface: Fixed with useMemo
-   - ProgressTracker: Fixed with useMemo  
+   - ProgressTracker: Fixed with useMemo
    - MetricsOverview: Fixed with useMemo
 2. **CSS visibility** - Dark mode and layout fixed
 3. **Tailwind CSS** - Downgraded to v3 for stability
@@ -104,19 +104,19 @@ const summary = useMemo(() => {
 
 1. `frontend/src/components/chat/ChatInterface.tsx`
    - Lines 17-66: Individual selectors + useMemo
-   
+
 2. `frontend/src/components/lab/ProgressTracker.tsx`
    - Lines 7-17: exercises selector + useMemo
-   
+
 3. `frontend/src/components/metrics/MetricsOverview.tsx`
    - Lines 8-31: queries selector + useMemo
 
 4. `frontend/src/index.css`
    - Added proper height and flex layout
-   
+
 5. `frontend/index.html`
    - Added `class="dark"` for Tailwind dark mode
-   
+
 6. `frontend/postcss.config.js`
    - Changed to Tailwind v3 syntax
 
