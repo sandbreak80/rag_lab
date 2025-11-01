@@ -307,6 +307,80 @@ def upload_file():
         return jsonify({'error': str(e), 'success': False}), 500
 
 
+@app.route('/api/evaluate', methods=['POST'])
+def evaluate():
+    """
+    Run evaluation on test set with current configuration
+    
+    Body:
+    {
+        "config": {
+            "use_query_expansion": true,
+            "use_bm25": true,
+            ...
+        }
+    }
+    """
+    try:
+        data = request.json or {}
+        config = data.get('config', {})
+        
+        # Run evaluation using the evaluation script
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).parent))
+        
+        from evaluate_rag_system import RAGEvaluator
+        
+        evaluator = RAGEvaluator()
+        
+        # Use search_with_config endpoint for evaluation
+        search_endpoint = os.getenv('SEARCH_SERVICE_URL', 'http://localhost:8002') + '/search_with_config'
+        
+        results = evaluator.evaluate_search_endpoint(search_endpoint, {'config': config})
+        
+        return jsonify(results)
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/presets', methods=['GET'])
+def get_presets():
+    """Get available configuration presets"""
+    try:
+        import json
+        from pathlib import Path
+        
+        presets_file = Path(__file__).parent.parent / 'config' / 'presets.json'
+        
+        if presets_file.exists():
+            with open(presets_file, 'r') as f:
+                presets_data = json.load(f)
+            return jsonify(presets_data)
+        else:
+            # Return default presets if file doesn't exist
+            return jsonify({
+                'presets': {
+                    'minimal': {
+                        'name': 'Minimal',
+                        'config': {
+                            'use_query_expansion': False,
+                            'use_bm25': False,
+                            'use_hybrid': False,
+                            'use_graph': False,
+                            'use_reranking': False,
+                            'top_k': 5
+                        }
+                    }
+                }
+            })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     # Use port 5555 (ports 5000/8080 often in use on macOS)
     app.run(host='0.0.0.0', port=5555, debug=False)

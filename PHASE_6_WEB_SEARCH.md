@@ -76,7 +76,7 @@ server:
   secret_key: "change_this_secret_key"
   limiter: false
   image_proxy: false
-  
+
 engines:
   - name: google
     weight: 1
@@ -123,7 +123,7 @@ SEARXNG_URL = os.getenv('SEARXNG_URL', 'http://searxng:8080')
 def web_search():
     """
     Search the web via SearXNG
-    
+
     Body:
     {
         "query": "latest AI developments",
@@ -136,10 +136,10 @@ def web_search():
         query = data.get('query', '')
         num_results = data.get('num_results', 5)
         pages_per_result = data.get('pages_per_result', 1)
-        
+
         if not query:
             return jsonify({'error': 'query required'}), 400
-        
+
         # Query SearXNG
         response = requests.get(
             f"{SEARXNG_URL}/search",
@@ -150,13 +150,13 @@ def web_search():
             },
             timeout=10
         )
-        
+
         if response.status_code != 200:
             return jsonify({'error': 'SearXNG error'}), 500
-        
+
         results = response.json()
         web_results = []
-        
+
         # Format results
         for result in results.get('results', [])[:num_results]:
             web_results.append({
@@ -167,16 +167,16 @@ def web_search():
                 'score': result.get('score', 0.5),
                 'source': 'web'
             })
-        
+
         metrics.increment('web_searches')
         metrics.increment('web_results_returned', len(web_results))
-        
+
         return jsonify({
             'results': web_results,
             'count': len(web_results),
             'query': query
         })
-        
+
     except Exception as e:
         metrics.increment('web_search_errors')
         return jsonify({'error': str(e)}), 500
@@ -201,7 +201,7 @@ Add new endpoint:
 def search_hybrid_web():
     """
     Hybrid search: Local RAG + Web Results
-    
+
     Body:
     {
         "query": "latest RAG techniques",
@@ -218,7 +218,7 @@ def search_hybrid_web():
         web_results_count = data.get('web_results', 5)
         rag_results_count = data.get('rag_results', 10)
         fusion_strategy = data.get('fusion_strategy', 'interleave')
-        
+
         # Get RAG results
         rag_results = []
         if rag_results_count > 0:
@@ -233,7 +233,7 @@ def search_hybrid_web():
             )
             if rag_response.status_code == 200:
                 rag_results = rag_response.json().get('results', [])
-        
+
         # Get web results if enabled
         web_results = []
         if use_web:
@@ -247,14 +247,14 @@ def search_hybrid_web():
             )
             if web_response.status_code == 200:
                 web_results = web_response.json().get('results', [])
-        
+
         # Fuse results
         fused_results = fuse_results(
-            rag_results, 
-            web_results, 
+            rag_results,
+            web_results,
             strategy=fusion_strategy
         )
-        
+
         return jsonify({
             'results': fused_results,
             'count': len(fused_results),
@@ -262,7 +262,7 @@ def search_hybrid_web():
             'web_count': len(web_results),
             'fusion_strategy': fusion_strategy
         })
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -291,7 +291,7 @@ def fuse_results(rag_results, web_results, strategy='interleave'):
 ```html
 <div class="settings-section">
   <h3>🌐 Web Search</h3>
-  
+
   <div class="toggle-item">
     <input type="checkbox" id="use-web-search">
     <label for="use-web-search">
@@ -300,14 +300,14 @@ def fuse_results(rag_results, web_results, strategy='interleave'):
       <span class="info-icon" title="Searches live internet via SearXNG">ℹ️</span>
     </label>
   </div>
-  
+
   <div id="web-search-config" style="display: none;">
     <label># Web Results: <span id="web-results-value">5</span></label>
     <input type="range" id="web-results" min="1" max="20" step="1" value="5">
-    
+
     <label># RAG Results: <span id="rag-results-value">10</span></label>
     <input type="range" id="rag-results" min="1" max="20" step="1" value="10">
-    
+
     <label>Fusion Strategy</label>
     <select id="fusion-strategy">
       <option value="interleave">Interleave (Mix)</option>
