@@ -1665,10 +1665,9 @@
 
         let availablePresets = {};
 
-        // Toggle settings panel
+        // Toggle settings panel - now switches to Settings tab
         function toggleSettings() {
-            const panel = document.getElementById('settingsPanel');
-            panel.classList.toggle('open');
+            switchTab('settings');
         }
 
         // Load presets from API
@@ -1895,10 +1894,9 @@
             total: 6
         };
 
-        // Toggle lab guide panel
+        // Toggle lab guide panel - now switches to Lab tab
         function toggleLabGuide() {
-            const panel = document.getElementById('labGuidePanel');
-            panel.classList.toggle('open');
+            switchTab('lab');
         }
 
         // Toggle lab section collapse
