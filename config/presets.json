@@ -9,7 +9,11 @@
         "use_hybrid": false,
         "use_graph": false,
         "use_reranking": false,
-        "top_k": 5
+        "use_web_search": false,
+        "top_k": 5,
+        "rerank_top_k": 5,
+        "web_search_docs": 3,
+        "web_search_pages_per_doc": 1
       },
       "llm_config": {
         "model": "llama3.2:3b",
@@ -33,7 +37,11 @@
         "use_hybrid": false,
         "use_graph": false,
         "use_reranking": false,
-        "top_k": 5
+        "use_web_search": false,
+        "top_k": 5,
+        "rerank_top_k": 5,
+        "web_search_docs": 3,
+        "web_search_pages_per_doc": 1
       },
       "llm_config": {
         "model": "llama3.2:1b",
@@ -57,7 +65,11 @@
         "use_hybrid": true,
         "use_graph": false,
         "use_reranking": false,
-        "top_k": 10
+        "use_web_search": false,
+        "top_k": 10,
+        "rerank_top_k": 10,
+        "web_search_docs": 5,
+        "web_search_pages_per_doc": 2
       },
       "llm_config": {
         "model": "llama3.2:3b",
@@ -81,7 +93,11 @@
         "use_hybrid": true,
         "use_graph": true,
         "use_reranking": false,
-        "top_k": 15
+        "use_web_search": true,
+        "top_k": 15,
+        "rerank_top_k": 15,
+        "web_search_docs": 7,
+        "web_search_pages_per_doc": 3
       },
       "llm_config": {
         "model": "llama3.2:3b",
@@ -105,7 +121,11 @@
         "use_hybrid": true,
         "use_graph": true,
         "use_reranking": true,
-        "top_k": 20
+        "use_web_search": true,
+        "top_k": 20,
+        "rerank_top_k": 10,
+        "web_search_docs": 10,
+        "web_search_pages_per_doc": 5
       },
       "llm_config": {
         "model": "llama3.2:8b",
@@ -129,7 +149,11 @@
         "use_hybrid": true,
         "use_graph": true,
         "use_reranking": false,
-        "top_k": 10
+        "use_web_search": true,
+        "top_k": 10,
+        "rerank_top_k": 10,
+        "web_search_docs": 5,
+        "web_search_pages_per_doc": 2
       },
       "llm_config": {
         "model": "llama3.2:3b",
@@ -181,6 +205,13 @@
       "latency_cost": "+2000ms",
       "compute_cost": "high (LLM inference)",
       "best_for": "Critical queries, low QPS systems"
+    },
+    "web_search": {
+      "recall_improvement": "+10-20%",
+      "precision_impact": "+5%",
+      "latency_cost": "+500-1500ms",
+      "compute_cost": "medium (external API calls)",
+      "best_for": "Current events, broad knowledge, fact-checking"
     }
   }
 }
