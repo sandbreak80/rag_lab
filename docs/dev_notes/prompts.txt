@@ -1,0 +1,47 @@
+Are we using neo4j for our knowledge graph?
+
+
+
+
+To-do
+Priority 1: Query Decomposition ⭐⭐⭐⭐☆
+What it does: Break complex questions into simpler sub-queries
+User: "Compare hybrid search performance vs vector-only and explain knowledge graphs"→ Sub-query 1: "hybrid search performance metrics"→ Sub-query 2: "vector search performance"  → Sub-query 3: "what is knowledge graph"→ Synthesize combined answer
+Impact: +18% on complex questions
+Effort: Medium
+Value for Lab: High - teaches students about query understanding
+Priority 2: Metadata Filtering UI ⭐⭐⭐☆☆
+What it does: Let users filter by document attributes
+UI Filters:- Document Type: [PDF] [Word] [PowerPoint]- Date Range: [Last 7 days] [Last month] [All time]- Tags: [AI] [RAG] [LLM] [Enterprise]- Author: [Select author]
+Impact: +5% precision, better UX
+Effort: Low (we already have metadata, just need UI)
+Value for Lab: Medium - practical, real-world feature
+Priority 3: Self-RAG (Iterative Refinement) ⭐⭐⭐⭐☆
+What it does: LLM critiques its own retrieval, refines if needed
+1. Retrieve initial documents2. LLM: "Are these docs sufficient to answer?"3. If no → refine query, retrieve again4. Repeat up to N times5. Generate final answer
+Impact: +20% complex handling, -15% hallucination
+Effort: High
+Value for Lab: Very High - cutting edge, demonstrates advanced RAG
+📋 RECOMMENDATION:
+Implement in this order:
+Metadata Filtering UI (Low effort, immediate value)
+Add dropdowns/checkboxes to Chat tab
+Filter documents before search
+~2 hours work
+Query Decomposition (Medium effort, high impact)
+Add decomposition service
+LLM breaks query into sub-queries
+Parallel search, combine results
+~4-6 hours work
+Self-RAG (High effort, wow factor)
+Add reflection/critique step
+Iterative retrieval loop
+Quality gate before answering
+~8-10 hours work
+
+
+
+
+are we tracking page numbers in metadata? What other metadata do we need to track that we are currently not tracking?
+
+

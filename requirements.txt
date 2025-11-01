@@ -23,6 +23,7 @@ playwright>=1.40.0
 
 # Web UI
 flask>=3.0.0
+flask-cors>=4.0.0
 
 # Hybrid Search
 rank-bm25>=0.2.2
