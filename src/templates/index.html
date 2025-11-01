@@ -817,31 +817,31 @@
                 </label>
                 <input type="checkbox" id="use-web-search" onchange="updateConfig()">
             </div>
-            
+
             <div class="setting-item">
                 <label for="web-search-docs">
                     Web Search: Max Results
                     <span class="setting-value" id="web-docs-value">5</span>
                 </label>
-                <input type="range" id="web-search-docs" min="1" max="10" value="5" 
+                <input type="range" id="web-search-docs" min="1" max="10" value="5"
                        oninput="document.getElementById('web-docs-value').textContent = this.value; updateConfig();">
             </div>
-            
+
             <div class="setting-item">
                 <label for="web-search-pages">
                     Web Search: Pages Per Result
                     <span class="setting-value" id="web-pages-value">1</span>
                 </label>
-                <input type="range" id="web-search-pages" min="1" max="3" value="1" 
+                <input type="range" id="web-search-pages" min="1" max="3" value="1"
                        oninput="document.getElementById('web-pages-value').textContent = this.value; updateConfig();">
             </div>
-            
+
             <div class="setting-item">
                 <label for="rerank-top-k">
                     Reranker: Top-K
                     <span class="setting-value" id="rerank-k-value">10</span>
                 </label>
-                <input type="range" id="rerank-top-k" min="5" max="20" value="10" 
+                <input type="range" id="rerank-top-k" min="5" max="20" value="10"
                        oninput="document.getElementById('rerank-k-value').textContent = this.value; updateConfig();">
             </div>
         </div>
@@ -1184,6 +1184,12 @@
             </button>
             <button class="tab-btn" data-tab="lab" data-emoji="🎓">
                 Lab Guide
+            </button>
+            <button class="tab-btn" data-tab="qa" data-emoji="❓">
+                Q&A
+            </button>
+            <button class="tab-btn" data-tab="feedback" data-emoji="💭">
+                Feedback
             </button>
         </div>
 
@@ -1567,6 +1573,112 @@
                 <div id="lab-tab-container"></div>
             </div>
             <!-- End TAB 5: Lab Guide -->
+
+            <!-- TAB 6: Q&A -->
+            <div class="tab-content" id="tab-qa">
+                <h2>❓ Frequently Asked Questions</h2>
+                
+                <div class="qa-section">
+                    <h3>About RAG Systems</h3>
+                    <details>
+                        <summary>What is RAG?</summary>
+                        <p>RAG (Retrieval Augmented Generation) combines document retrieval with LLM generation. It searches relevant documents, then uses them as context for the LLM to generate accurate, grounded responses.</p>
+                    </details>
+                    <details>
+                        <summary>Why use RAG instead of just an LLM?</summary>
+                        <p>RAG provides: 1) Up-to-date information beyond training data, 2) Source attribution for answers, 3) Domain-specific knowledge, 4) Reduced hallucinations, 5) Cost-effective vs fine-tuning.</p>
+                    </details>
+                    <details>
+                        <summary>What's the difference between vector and keyword search?</summary>
+                        <p>Vector search finds semantically similar content (meaning-based). Keyword search finds exact term matches. Hybrid search combines both for better results.</p>
+                    </details>
+                </div>
+                
+                <div class="qa-section">
+                    <h3>Using This Lab</h3>
+                    <details>
+                        <summary>How do I upload documents?</summary>
+                        <p>Go to the Documents tab, drag & drop files or click to browse. Supports PDF, Office docs, Markdown, Text up to 50MB.</p>
+                    </details>
+                    <details>
+                        <summary>What do the toggles in Settings do?</summary>
+                        <p>Each toggle enables/disables a RAG component. Try turning them on/off to see how they affect response quality and speed.</p>
+                    </details>
+                    <details>
+                        <summary>How do I compare different configurations?</summary>
+                        <p>Use Quick Presets in Settings to load different configs, ask the same question, and compare results in the Metrics tab.</p>
+                    </details>
+                </div>
+                
+                <div class="qa-section">
+                    <h3>Technical Details</h3>
+                    <details>
+                        <summary>What models are being used?</summary>
+                        <p>Embeddings: nomic-embed-text. LLM: Llama 3.2 (1B/3B/8B). All run locally via Ollama.</p>
+                    </details>
+                    <details>
+                        <summary>How does knowledge graph help?</summary>
+                        <p>Knowledge graphs connect entities, concepts, and documents. They help find related information beyond simple text matching.</p>
+                    </details>
+                    <details>
+                        <summary>What's agentic chunking?</summary>
+                        <p>LLM-powered intelligent document splitting that preserves context and semantic meaning, vs simple fixed-size chunks.</p>
+                    </details>
+                </div>
+            </div>
+            <!-- End TAB 6: Q&A -->
+
+            <!-- TAB 7: Feedback -->
+            <div class="tab-content" id="tab-feedback">
+                <h2>💭 Your Feedback</h2>
+                <p>Help us improve this RAG lab! Your input is valuable.</p>
+                
+                <form id="feedback-form" style="max-width: 600px; margin-top: 30px;">
+                    <div class="form-group">
+                        <label>Overall Experience</label>
+                        <div class="rating">
+                            <input type="radio" name="rating" value="5" id="r5"><label for="r5">⭐⭐⭐⭐⭐ Excellent</label><br>
+                            <input type="radio" name="rating" value="4" id="r4"><label for="r4">⭐⭐⭐⭐ Good</label><br>
+                            <input type="radio" name="rating" value="3" id="r3"><label for="r3">⭐⭐⭐ Average</label><br>
+                            <input type="radio" name="rating" value="2" id="r2"><label for="r2">⭐⭐ Below Average</label><br>
+                            <input type="radio" name="rating" value="1" id="r1"><label for="r1">⭐ Poor</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label>What did you learn?</label>
+                        <textarea rows="3" placeholder="What concepts or techniques did you find most valuable?"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>What could be improved?</label>
+                        <textarea rows="3" placeholder="Suggestions for exercises, documentation, or features"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Would you recommend this lab?</label>
+                        <select>
+                            <option>Yes, definitely</option>
+                            <option>Yes, with reservations</option>
+                            <option>Maybe</option>
+                            <option>Probably not</option>
+                            <option>No</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Additional Comments</label>
+                        <textarea rows="4" placeholder="Any other feedback, questions, or suggestions"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn-upload" style="margin-top: 20px;">📮 Submit Feedback</button>
+                </form>
+                
+                <p style="margin-top: 30px; color: var(--text-muted); font-size: 14px;">
+                    Thank you for taking the time to provide feedback!
+                </p>
+            </div>
+            <!-- End TAB 7: Feedback -->
 
         </div>
         <!-- End Tab Content Wrapper -->
