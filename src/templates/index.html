@@ -921,50 +921,316 @@
     <!-- Lab Guide Panel -->
     <div class="lab-guide-panel" id="labGuidePanel">
         <div class="lab-guide-header">
-            <h2>🎓 RAG Lab Guide</h2>
-            <p class="subtitle">Learn RAG by experimentation! Complete each section to master world-class retrieval systems.</p>
+            <h2>🎓 Educational RAG Lab</h2>
+            <p class="subtitle">Master Enterprise AI & RAG - Learn by doing!</p>
+            <p style="font-size: 14px; color: var(--text-muted); margin-top: 10px;">
+                <strong>Audience:</strong> Solutions Engineers, Sales Engineers, Architects, Technical Leaders<br>
+                <strong>Goal:</strong> Learn to confidently discuss AI/RAG with enterprise customers
+            </p>
         </div>
 
-        <!-- Progress Tracker -->
-        <div class="lab-progress">
-            <h3>Your Progress</h3>
-            <div class="progress-bar-container">
-                <div class="progress-bar" id="labProgressBar" style="width: 0%"></div>
+        <!-- Quick Navigation -->
+        <div class="lab-nav" style="background: var(--bg-tertiary); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="font-size: 16px; margin-bottom: 10px;">📚 Quick Navigation</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px;">
+                <a href="#lab-foundation" style="color: var(--accent-primary);">Foundation (4 topics)</a>
+                <a href="#lab-retrieval" style="color: var(--accent-primary);">Enterprise Retrieval (4 topics)</a>
+                <a href="#lab-advanced" style="color: var(--accent-primary);">Advanced Features (2 topics)</a>
+                <a href="#lab-technical" style="color: var(--accent-primary);">Technical Deep Dive (4 topics)</a>
             </div>
-            <p class="progress-text" id="labProgressText">0 of 6 sections complete</p>
         </div>
 
-        <!-- Lab Section 1: Getting Started -->
-        <div class="lab-section" id="lab-section-1">
-            <div class="lab-section-header" onclick="toggleLabSection(1)">
-                <div class="lab-section-title">
-                    <div class="lab-section-number">1</div>
-                    <h4>Getting Started</h4>
+        <!-- FOUNDATION SECTION -->
+        <div id="lab-foundation">
+            <h3 style="color: var(--accent-primary); font-size: 20px; margin: 30px 0 15px 0; border-bottom: 2px solid var(--accent-primary); padding-bottom: 8px;">
+                📖 FOUNDATION - Customer Discovery
+            </h3>
+
+            <!-- Lab Section 1: What is RAG -->
+            <div class="lab-section" id="lab-section-1">
+                <div class="lab-section-header" onclick="toggleLabSection(1)">
+                    <div class="lab-section-title">
+                        <div class="lab-section-number">1</div>
+                        <h4>What is RAG?</h4>
+                    </div>
+                    <div class="lab-section-checkbox" onclick="markLabComplete(1, event)"></div>
                 </div>
-                <div class="lab-section-checkbox" onclick="markLabComplete(1, event)"></div>
+                <div class="lab-section-content">
+                    <p><strong>💼 Customer Value Proposition:</strong></p>
+                    <blockquote style="border-left: 3px solid var(--accent-primary); padding-left: 15px; margin: 15px 0; font-style: italic;">
+                        "RAG allows your organization to deploy AI that's grounded in YOUR data, YOUR policies, and YOUR expertise - without expensive model retraining or data leaving your environment."
+                    </blockquote>
+                    
+                    <p><strong>The Business Problem RAG Solves:</strong></p>
+                    <ul>
+                        <li><strong>Generic AI Can't Help:</strong> Public LLMs don't know your products, processes, or policies</li>
+                        <li><strong>Fine-tuning is Expensive:</strong> $50K-500K per training run, weeks to months</li>
+                        <li><strong>Data Privacy:</strong> Can't send proprietary data to external APIs (GDPR, HIPAA, SOC2)</li>
+                    </ul>
+
+                    <p><strong>RAG Solution Benefits:</strong></p>
+                    <ul>
+                        <li>✅ <strong>Cost:</strong> $0 training, ~$5K-20K infrastructure</li>
+                        <li>✅ <strong>Time:</strong> Hours to deploy, instant updates</li>
+                        <li>✅ <strong>Privacy:</strong> All data stays in your environment</li>
+                        <li>✅ <strong>Accuracy:</strong> Grounded in your documents with source attribution</li>
+                    </ul>
+
+                    <p><strong>🎯 Exercise:</strong></p>
+                    <ol>
+                        <li>Ask a query: "What is RAG?" (using lab docs)</li>
+                        <li>Observe the sources shown below the response</li>
+                        <li>Note: The answer is grounded in uploaded documents, not generic training data</li>
+                    </ol>
+
+                    <div class="lab-section-tips">
+                        <strong>💡 Discovery Question for Customers:</strong><br>
+                        "What document formats do you have? How many documents? How often updated?"
+                    </div>
+                </div>
             </div>
-            <div class="lab-section-content">
-                <p><strong>Welcome to the RAG Lab!</strong> Let's start with the basics.</p>
-                <p><strong>What you'll learn:</strong></p>
-                <ul>
-                    <li>What is RAG (Retrieval Augmented Generation)</li>
-                    <li>How the settings panel works</li>
-                    <li>Understanding the baseline configuration</li>
-                </ul>
-                <p><strong>Task:</strong></p>
-                <ol>
-                    <li>Click the ⚙️ settings button (bottom left) to open the settings panel</li>
-                    <li>Review the default <code>Balanced</code> preset</li>
-                    <li>Try clicking different preset buttons to see their configurations</li>
-                    <li>Close the settings panel</li>
-                </ol>
-                <div class="lab-section-tips">
-                    <strong>💡 Tip:</strong> Each preset shows expected latency and use cases. The "Balanced" preset is recommended for most applications.
+
+            <!-- Lab Section 2: Document Ingestion -->
+            <div class="lab-section" id="lab-section-2">
+                <div class="lab-section-header" onclick="toggleLabSection(2)">
+                    <div class="lab-section-title">
+                        <div class="lab-section-number">2</div>
+                        <h4>Document Ingestion & Docling</h4>
+                    </div>
+                    <div class="lab-section-checkbox" onclick="markLabComplete(2, event)"></div>
+                </div>
+                <div class="lab-section-content">
+                    <p><strong>What is Document Ingestion?</strong></p>
+                    <p>Converting raw files (PDFs, Word, PowerPoint, etc.) into a format that RAG systems can search and retrieve.</p>
+
+                    <p><strong>Our Pipeline (6 Steps):</strong></p>
+                    <ol>
+                        <li><strong>Collection:</strong> File upload, batch import, API integration</li>
+                        <li><strong>Parsing:</strong> PDF → Text (using Docling), Word/Excel/PPT parsers</li>
+                        <li><strong>Cleaning:</strong> Remove headers/footers, preserve structure</li>
+                        <li><strong>Chunking:</strong> Split into semantic units (see next section)</li>
+                        <li><strong>Embedding:</strong> Convert to vectors (768-1536 dimensions)</li>
+                        <li><strong>Storage:</strong> Vector DB, Metadata DB, BM25 Index, Knowledge Graph</li>
+                    </ol>
+
+                    <p><strong>Why Docling for Enterprise PDFs?</strong></p>
+                    <ul>
+                        <li>✅ Preserves structure (tables, lists, headings)</li>
+                        <li>✅ OCR capable for scanned documents</li>
+                        <li>✅ Multi-column layouts parsed correctly</li>
+                        <li>✅ Metadata extraction (author, title, dates)</li>
+                        <li>✅ Open source, no vendor lock-in</li>
+                    </ul>
+
+                    <p><strong>🎯 Exercise:</strong></p>
+                    <ol>
+                        <li>Go to the <strong>Documents</strong> tab</li>
+                        <li>Upload a PDF, Word doc, or text file</li>
+                        <li>Watch the processing (parsing → chunking → embedding → indexing)</li>
+                        <li>Return to Documents tab to see it in the list</li>
+                        <li>Ask a question about your uploaded document</li>
+                    </ol>
+
+                    <div class="lab-section-tips">
+                        <strong>💼 Customer Messaging:</strong><br>
+                        "We can ingest your entire SharePoint library overnight - 50,000 documents in 6 hours. Our pipeline handles any format: PDFs, Word, PowerPoint, even scanned images with OCR."
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lab Section 3: Chunking Strategies -->
+            <div class="lab-section" id="lab-section-3">
+                <div class="lab-section-header" onclick="toggleLabSection(3)">
+                    <div class="lab-section-title">
+                        <div class="lab-section-number">3</div>
+                        <h4>Chunking & Agentic Chunking</h4>
+                    </div>
+                    <div class="lab-section-checkbox" onclick="markLabComplete(3, event)"></div>
+                </div>
+                <div class="lab-section-content">
+                    <p><strong>Why Chunking?</strong></p>
+                    <p>Documents are too large! Enterprise policy doc: 50 pages = 25,000 tokens, but LLM context window is only 4,096 tokens.</p>
+
+                    <p><strong>Chunking Strategies:</strong></p>
+                    <ul>
+                        <li><strong>Fixed-Size:</strong> Split every 500 tokens (❌ splits mid-sentence, loses context)</li>
+                        <li><strong>Sentence Boundary:</strong> Respect sentences (⚠️ still splits mid-paragraph)</li>
+                        <li><strong>Paragraph Boundary:</strong> Maintain semantic units (✅ our default)</li>
+                        <li><strong>Semantic:</strong> Use embeddings to detect topic changes (✅ best quality, slower)</li>
+                        <li><strong>Agentic:</strong> LLM decides boundaries (✅✅ highest quality, +20% accuracy)</li>
+                    </ul>
+
+                    <p><strong>What is Agentic Chunking?</strong></p>
+                    <p>Uses an LLM "agent" to intelligently decide where to split documents, understanding semantic meaning and maintaining logical flow. The LLM analyzes: "Should these segments be combined? Is this a natural topic boundary?"</p>
+
+                    <p><strong>Agentic Chunking Trade-offs:</strong></p>
+                    <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                        <tr style="background: var(--bg-tertiary);">
+                            <th style="padding: 8px; border: 1px solid var(--border);">Method</th>
+                            <th style="padding: 8px; border: 1px solid var(--border);">Quality</th>
+                            <th style="padding: 8px; border: 1px solid var(--border);">Speed</th>
+                            <th style="padding: 8px; border: 1px solid var(--border);">Cost</th>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid var(--border);">Paragraph-based</td>
+                            <td style="padding: 8px; border: 1px solid var(--border);">⭐⭐⭐⭐ Good</td>
+                            <td style="padding: 8px; border: 1px solid var(--border);">⚡⚡ 50ms</td>
+                            <td style="padding: 8px; border: 1px solid var(--border);">Free</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid var(--border);">Agentic</td>
+                            <td style="padding: 8px; border: 1px solid var(--border);">⭐⭐⭐⭐⭐ Excellent</td>
+                            <td style="padding: 8px; border: 1px solid var(--border);">⚡ 2000ms</td>
+                            <td style="padding: 8px; border: 1px solid var(--border);">LLM cost (local = $0)</td>
+                        </tr>
+                    </table>
+
+                    <p><strong>🎯 Exercise:</strong></p>
+                    <ol>
+                        <li>Go to <strong>Settings</strong> → toggle <strong>Agentic Chunking</strong> ON</li>
+                        <li>Upload a document (note: processing takes longer)</li>
+                        <li>Ask detailed questions about that document</li>
+                        <li>Observe: Complete, coherent answers (not sentence fragments)</li>
+                    </ol>
+
+                    <div class="lab-section-tips">
+                        <strong>💼 Customer Value:</strong><br>
+                        "Our AI-powered agentic chunking preserves complete thoughts. Employees get full, coherent answers, not sentence fragments. +20% retrieval accuracy for high-value use cases."
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lab Section 4: Embeddings & Vector Search -->
+            <div class="lab-section" id="lab-section-4">
+                <div class="lab-section-header" onclick="toggleLabSection(4)">
+                    <div class="lab-section-title">
+                        <div class="lab-section-number">4</div>
+                        <h4>Embeddings & Vector Search</h4>
+                    </div>
+                    <div class="lab-section-checkbox" onclick="markLabComplete(4, event)"></div>
+                </div>
+                <div class="lab-section-content">
+                    <p><strong>What are Embeddings?</strong></p>
+                    <p>Text converted into numbers (vectors) that capture semantic meaning. Similar meanings = close together in vector space.</p>
+                    
+                    <p><strong>Example:</strong> "neural network" and "deep learning" are close together, but "banana recipe" is far away.</p>
+
+                    <p><strong>Vector Search Process:</strong></p>
+                    <ol>
+                        <li>Query → Embedding Model → Query Vector</li>
+                        <li>Compare query vector with all document vectors</li>
+                        <li>Find most similar (using cosine similarity)</li>
+                        <li>Return top-K most similar documents</li>
+                    </ol>
+
+                    <p><strong>Our Lab Uses:</strong></p>
+                    <ul>
+                        <li><strong>Model:</strong> nomic-embed-text</li>
+                        <li><strong>Dimensions:</strong> 768 (each chunk becomes a 768-number vector)</li>
+                        <li><strong>Vector DB:</strong> ChromaDB</li>
+                    </ul>
+
+                    <p><strong>Advantages:</strong></p>
+                    <ul>
+                        <li>✅ Understands <strong>meaning</strong>, not just keywords</li>
+                        <li>✅ Finds semantically similar content</li>
+                        <li>✅ Handles synonyms and paraphrases</li>
+                    </ul>
+
+                    <p><strong>Limitations:</strong></p>
+                    <ul>
+                        <li>❌ May miss exact keyword matches</li>
+                        <li>❌ Requires embedding model (adds ~10ms latency)</li>
+                    </ul>
+
+                    <p><strong>🎯 Exercise:</strong></p>
+                    <ol>
+                        <li>Go to <strong>Settings</strong> → ensure <strong>Vector Search</strong> is ON</li>
+                        <li>Disable all other features (BM25, Hybrid, KG, etc.)</li>
+                        <li>Ask: "machine learning tutorial"</li>
+                        <li>Observe: Finds docs about ML, AI, neural networks (semantic match!)</li>
+                        <li>Note sources and relevance scores</li>
+                    </ol>
+
+                    <div class="lab-section-tips">
+                        <strong>💡 Pro Tip:</strong> Vector search alone is good, but combining it with keyword search (BM25) gives even better results!
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Lab Section 2: Your First Query -->
+        <!-- ENTERPRISE RETRIEVAL SECTION -->
+        <div id="lab-retrieval">
+            <h3 style="color: var(--accent-primary); font-size: 20px; margin: 30px 0 15px 0; border-bottom: 2px solid var(--accent-primary); padding-bottom: 8px;">
+                🔍 ENTERPRISE RETRIEVAL - Solution Design
+            </h3>
+
+            <!-- Lab Section 5: BM25 Keyword Search -->
+            <div class="lab-section" id="lab-section-5">
+                <div class="lab-section-header" onclick="toggleLabSection(5)">
+                    <div class="lab-section-title">
+                        <div class="lab-section-number">5</div>
+                        <h4>BM25 Keyword Search</h4>
+                    </div>
+                    <div class="lab-section-checkbox" onclick="markLabComplete(5, event)"></div>
+                </div>
+                <div class="lab-section-content">
+                    <p><strong>What is BM25?</strong></p>
+                    <p>Best Matching 25 - A probabilistic ranking function for keyword-based search. Traditional search engine technology.</p>
+
+                    <p><strong>How it works:</strong></p>
+                    <ol>
+                        <li>Query splits into terms: "neural network training" → ["neural", "network", "training"]</li>
+                        <li>For each document: Count term frequency (TF)</li>
+                        <li>Calculate inverse document frequency (IDF) - rare terms = more important</li>
+                        <li>Score documents, return top-K</li>
+                    </ol>
+
+                    <p><strong>BM25 vs Vector Search:</strong></p>
+                    <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                        <tr style="background: var(--bg-tertiary);">
+                            <th style="padding: 8px; border: 1px solid var(--border);">Aspect</th>
+                            <th style="padding: 8px; border: 1px solid var(--border);">BM25</th>
+                            <th style="padding: 8px; border: 1px solid var(--border);">Vector Search</th>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid var(--border);">Matching</td>
+                            <td style="padding: 8px; border: 1px solid var(--border);">Exact keywords</td>
+                            <td style="padding: 8px; border: 1px solid var(--border);">Semantic meaning</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid var(--border);">Speed</td>
+                            <td style="padding: 8px; border: 1px solid var(--border);">⚡⚡⚡ Very fast</td>
+                            <td style="padding: 8px; border: 1px solid var(--border);">⚡⚡ Fast</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid var(--border);">Synonyms</td>
+                            <td style="padding: 8px; border: 1px solid var(--border);">❌ No</td>
+                            <td style="padding: 8px; border: 1px solid var(--border);">✅ Yes</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid var(--border);">Exact match</td>
+                            <td style="padding: 8px; border: 1px solid var(--border);">✅ Perfect</td>
+                            <td style="padding: 8px; border: 1px solid var(--border);">⚠️ May miss</td>
+                        </tr>
+                    </table>
+
+                    <p><strong>🎯 Exercise:</strong></p>
+                    <ol>
+                        <li>Go to <strong>Settings</strong> → Turn OFF Vector Search</li>
+                        <li>Turn ON <strong>BM25 Search</strong></li>
+                        <li>Ask: "Python programming" (exact keywords)</li>
+                        <li>Note: Fast results, keyword-focused</li>
+                        <li>Try: "coding in Python" → May miss docs without exact "coding" term</li>
+                    </ol>
+
+                    <div class="lab-section-tips">
+                        <strong>💡 Best Practice:</strong> Don't choose! Use BM25 + Vector together (Hybrid Search) for best results.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lab Section 6: Hybrid Search & Fusion -->
         <div class="lab-section" id="lab-section-2">
             <div class="lab-section-header" onclick="toggleLabSection(2)">
                 <div class="lab-section-title">
