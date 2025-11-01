@@ -20,6 +20,7 @@
     <!-- Settings Panel Styles -->
     <link rel="stylesheet" href="/static/settings-panel.css">
     <link rel="stylesheet" href="/static/metrics-dashboard.css">
+    <link rel="stylesheet" href="/static/lab-guide.css">
 
     <style>
         :root {
@@ -879,7 +880,236 @@
     <button class="settings-toggle" id="settingsToggle" onclick="toggleSettings()">
         ⚙️
     </button>
-
+    
+    <!-- Lab Guide Panel -->
+    <div class="lab-guide-panel" id="labGuidePanel">
+        <div class="lab-guide-header">
+            <h2>🎓 RAG Lab Guide</h2>
+            <p class="subtitle">Learn RAG by experimentation! Complete each section to master world-class retrieval systems.</p>
+        </div>
+        
+        <!-- Progress Tracker -->
+        <div class="lab-progress">
+            <h3>Your Progress</h3>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="labProgressBar" style="width: 0%"></div>
+            </div>
+            <p class="progress-text" id="labProgressText">0 of 6 sections complete</p>
+        </div>
+        
+        <!-- Lab Section 1: Getting Started -->
+        <div class="lab-section" id="lab-section-1">
+            <div class="lab-section-header" onclick="toggleLabSection(1)">
+                <div class="lab-section-title">
+                    <div class="lab-section-number">1</div>
+                    <h4>Getting Started</h4>
+                </div>
+                <div class="lab-section-checkbox" onclick="markLabComplete(1, event)"></div>
+            </div>
+            <div class="lab-section-content">
+                <p><strong>Welcome to the RAG Lab!</strong> Let's start with the basics.</p>
+                <p><strong>What you'll learn:</strong></p>
+                <ul>
+                    <li>What is RAG (Retrieval Augmented Generation)</li>
+                    <li>How the settings panel works</li>
+                    <li>Understanding the baseline configuration</li>
+                </ul>
+                <p><strong>Task:</strong></p>
+                <ol>
+                    <li>Click the ⚙️ settings button (bottom left) to open the settings panel</li>
+                    <li>Review the default <code>Balanced</code> preset</li>
+                    <li>Try clicking different preset buttons to see their configurations</li>
+                    <li>Close the settings panel</li>
+                </ol>
+                <div class="lab-section-tips">
+                    <strong>💡 Tip:</strong> Each preset shows expected latency and use cases. The "Balanced" preset is recommended for most applications.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lab Section 2: Your First Query -->
+        <div class="lab-section" id="lab-section-2">
+            <div class="lab-section-header" onclick="toggleLabSection(2)">
+                <div class="lab-section-title">
+                    <div class="lab-section-number">2</div>
+                    <h4>Your First Query</h4>
+                </div>
+                <div class="lab-section-checkbox" onclick="markLabComplete(2, event)"></div>
+            </div>
+            <div class="lab-section-content">
+                <p><strong>Let's see the RAG system in action!</strong></p>
+                <p><strong>Task:</strong></p>
+                <ol>
+                    <li>Scroll down to the chat interface</li>
+                    <li>Type a question like "What is vector search?"</li>
+                    <li>Click Ask and observe the metrics dashboard appear</li>
+                    <li>Review the 4 key metrics: Latency, Results, Method, Precision</li>
+                </ol>
+                <div class="lab-section-tips">
+                    <strong>💡 Tip:</strong> The metrics dashboard only appears after your first query. It shows real-time performance data!
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lab Section 3: Understanding Metrics -->
+        <div class="lab-section" id="lab-section-3">
+            <div class="lab-section-header" onclick="toggleLabSection(3)">
+                <div class="lab-section-title">
+                    <div class="lab-section-number">3</div>
+                    <h4>Understanding Metrics</h4>
+                </div>
+                <div class="lab-section-checkbox" onclick="markLabComplete(3, event)"></div>
+            </div>
+            <div class="lab-section-content">
+                <p><strong>Learn to read the performance dashboard.</strong></p>
+                <p><strong>Key Metrics Explained:</strong></p>
+                <ul>
+                    <li><strong>Latency:</strong> How long the search took (lower is better)</li>
+                    <li><strong>Results Found:</strong> Number of relevant documents retrieved</li>
+                    <li><strong>Search Method:</strong> hybrid (vector+BM25) or vector_only</li>
+                    <li><strong>Precision:</strong> Estimated % of results that are relevant</li>
+                </ul>
+                <p><strong>Task:</strong></p>
+                <ol>
+                    <li>Click "Show Details" in the metrics dashboard</li>
+                    <li>Review the latency breakdown bars</li>
+                    <li>Notice which components are active (green dots)</li>
+                </ol>
+                <div class="lab-section-tips">
+                    <strong>💡 Tip:</strong> The percentages show how much time each component takes. This helps identify bottlenecks!
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lab Section 4: Experiment with Configurations -->
+        <div class="lab-section" id="lab-section-4">
+            <div class="lab-section-header" onclick="toggleLabSection(4)">
+                <div class="lab-section-title">
+                    <div class="lab-section-number">4</div>
+                    <h4>Configuration Experiments</h4>
+                </div>
+                <div class="lab-section-checkbox" onclick="markLabComplete(4, event)"></div>
+            </div>
+            <div class="lab-section-content">
+                <p><strong>Time to experiment! See how settings affect performance.</strong></p>
+                <p><strong>Experiment 1: Minimal vs Maximum</strong></p>
+                <ol>
+                    <li>Open settings, click <code>Minimal</code> preset</li>
+                    <li>Ask the same question again</li>
+                    <li>Note the latency (~40-50ms)</li>
+                    <li>Now click <code>Maximum</code> preset</li>
+                    <li>Ask the question again</li>
+                    <li>Compare latency (~2000-3000ms) and precision</li>
+                </ol>
+                <p><strong>Experiment 2: Toggle Individual Features</strong></p>
+                <ol>
+                    <li>Start with <code>Balanced</code> preset</li>
+                    <li>Turn OFF "BM25 Keyword Search"</li>
+                    <li>Ask a question and note the method changes to "vector_only"</li>
+                    <li>Turn it back ON and see "hybrid" return</li>
+                </ol>
+                <div class="lab-section-tips">
+                    <strong>💡 Tip:</strong> Each feature has an impact badge showing its cost/benefit (+5% recall, +10ms). Use these to make informed decisions!
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lab Section 5: Advanced Features -->
+        <div class="lab-section" id="lab-section-5">
+            <div class="lab-section-header" onclick="toggleLabSection(5)">
+                <div class="lab-section-title">
+                    <div class="lab-section-number">5</div>
+                    <h4>Advanced Features</h4>
+                </div>
+                <div class="lab-section-checkbox" onclick="markLabComplete(5, event)"></div>
+            </div>
+            <div class="lab-section-content">
+                <p><strong>Explore the power features!</strong></p>
+                <p><strong>Knowledge Graph (+5% recall, +50ms):</strong></p>
+                <ul>
+                    <li>Finds related documents through connections</li>
+                    <li>Great for multi-hop reasoning</li>
+                    <li>Adds ~50ms but improves coverage</li>
+                </ul>
+                <p><strong>LLM Re-ranking (+10% precision, +2000ms):</strong></p>
+                <ul>
+                    <li>Uses LLM to re-order results by relevance</li>
+                    <li>Significantly improves precision</li>
+                    <li>Expensive: adds ~2 seconds</li>
+                </ul>
+                <p><strong>Task:</strong></p>
+                <ol>
+                    <li>Enable "Knowledge Graph" toggle</li>
+                    <li>Ask a complex question</li>
+                    <li>Check metrics - see graph_enhancement_ms in breakdown</li>
+                    <li>Enable "LLM Re-ranking" (⚠️ slow!)</li>
+                    <li>Compare precision estimate</li>
+                </ol>
+                <div class="lab-section-tips">
+                    <strong>⚠️ Warning:</strong> LLM Re-ranking is SLOW! Only use for critical queries or low QPS systems.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lab Section 6: Production Configuration -->
+        <div class="lab-section" id="lab-section-6">
+            <div class="lab-section-header" onclick="toggleLabSection(6)">
+                <div class="lab-section-title">
+                    <div class="lab-section-number">6</div>
+                    <h4>Your Take-Home System</h4>
+                </div>
+                <div class="lab-section-checkbox" onclick="markLabComplete(6, event)"></div>
+            </div>
+            <div class="lab-section-content">
+                <p><strong>🏆 Time to build your production-ready RAG system!</strong></p>
+                <p><strong>The Production Preset:</strong></p>
+                <ul>
+                    <li>Query Expansion: ✅ ON (+5% recall)</li>
+                    <li>BM25 Search: ✅ ON (+15% recall)</li>
+                    <li>Hybrid Fusion: ✅ ON (best of both)</li>
+                    <li>Knowledge Graph: ✅ ON (+5% recall)</li>
+                    <li>LLM Re-ranking: ❌ OFF (too slow for production)</li>
+                </ul>
+                <p><strong>Why this configuration?</strong></p>
+                <ul>
+                    <li>Excellent quality: 92-96% precision, 88-93% recall</li>
+                    <li>Acceptable latency: 250-350ms</li>
+                    <li>Scalable: No expensive LLM calls per query</li>
+                    <li>Real-world proven: Production-ready!</li>
+                </ul>
+                <p><strong>Task:</strong></p>
+                <ol>
+                    <li>Click the <code>Production</code> preset</li>
+                    <li>Test it with several questions</li>
+                    <li>Review the consistent ~300ms latency</li>
+                    <li>Note the high precision estimates</li>
+                </ol>
+                <div class="lab-section-tips">
+                    <strong>🎓 Congratulations!</strong> You now understand how to build, configure, and optimize a world-class RAG system. Take this configuration with you!
+                </div>
+            </div>
+        </div>
+        
+        <!-- Resources -->
+        <div class="lab-resources">
+            <h3>📚 Additional Resources</h3>
+            <a href="https://github.com/sandbreak80/rag_lab" target="_blank">📂 GitHub Repository</a>
+            <a href="/static/EDUCATIONAL_LAB_STATUS.md" target="_blank">📊 System Architecture</a>
+            <a href="https://www.pinecone.io/learn/retrieval-augmented-generation/" target="_blank">📖 RAG Deep Dive</a>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="lab-actions">
+            <button class="lab-action-btn" onclick="resetLabProgress()">🔄 Reset Progress</button>
+            <button class="lab-action-btn" onclick="loadPreset('production')">🏆 Load Production</button>
+        </div>
+    </div>
+    
+    <!-- Lab Guide Toggle Button -->
+    <button class="lab-guide-toggle" id="labGuideToggle" onclick="toggleLabGuide()">
+        📖
+    </button>
+    
     <div class="container">
         <header>
             <div class="header-content">
@@ -1344,7 +1574,123 @@
                 dot.className = `status-dot ${isActive ? 'active' : 'inactive'}`;
             }
         }
-
+        
+        // ====================================
+        // LAB GUIDE SYSTEM
+        // ====================================
+        
+        let labProgress = {
+            completed: [],
+            total: 6
+        };
+        
+        // Toggle lab guide panel
+        function toggleLabGuide() {
+            const panel = document.getElementById('labGuidePanel');
+            panel.classList.toggle('open');
+        }
+        
+        // Toggle lab section collapse
+        function toggleLabSection(sectionNum) {
+            const section = document.getElementById(`lab-section-${sectionNum}`);
+            const content = section.querySelector('.lab-section-content');
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+            } else {
+                content.style.display = 'none';
+            }
+        }
+        
+        // Mark lab section as complete
+        function markLabComplete(sectionNum, event) {
+            event.stopPropagation(); // Prevent toggle when clicking checkbox
+            
+            const section = document.getElementById(`lab-section-${sectionNum}`);
+            const isComplete = section.classList.contains('completed');
+            
+            if (isComplete) {
+                // Uncomplete
+                section.classList.remove('completed');
+                labProgress.completed = labProgress.completed.filter(n => n !== sectionNum);
+            } else {
+                // Complete
+                section.classList.add('completed');
+                if (!labProgress.completed.includes(sectionNum)) {
+                    labProgress.completed.push(sectionNum);
+                }
+                
+                // Show celebration for final section
+                if (sectionNum === 6) {
+                    showNotification('🎉 Congratulations! You completed the RAG Lab!', 'success');
+                }
+            }
+            
+            updateLabProgress();
+            saveLabProgress();
+        }
+        
+        // Update progress bar
+        function updateLabProgress() {
+            const completed = labProgress.completed.length;
+            const total = labProgress.total;
+            const percent = (completed / total) * 100;
+            
+            document.getElementById('labProgressBar').style.width = `${percent}%`;
+            document.getElementById('labProgressText').textContent = 
+                `${completed} of ${total} sections complete`;
+        }
+        
+        // Save progress to localStorage
+        function saveLabProgress() {
+            localStorage.setItem('lab_progress', JSON.stringify(labProgress));
+        }
+        
+        // Load progress from localStorage
+        function loadLabProgress() {
+            try {
+                const saved = localStorage.getItem('lab_progress');
+                if (saved) {
+                    labProgress = JSON.parse(saved);
+                    
+                    // Apply completed state to sections
+                    labProgress.completed.forEach(sectionNum => {
+                        const section = document.getElementById(`lab-section-${sectionNum}`);
+                        if (section) {
+                            section.classList.add('completed');
+                        }
+                    });
+                    
+                    updateLabProgress();
+                    console.log('✅ Loaded lab progress:', labProgress);
+                }
+            } catch (e) {
+                console.error('❌ Error loading lab progress:', e);
+            }
+        }
+        
+        // Reset all progress
+        function resetLabProgress() {
+            if (confirm('Are you sure you want to reset all lab progress?')) {
+                labProgress = {
+                    completed: [],
+                    total: 6
+                };
+                
+                // Remove completed class from all sections
+                for (let i = 1; i <= 6; i++) {
+                    const section = document.getElementById(`lab-section-${i}`);
+                    if (section) {
+                        section.classList.remove('completed');
+                    }
+                }
+                
+                updateLabProgress();
+                saveLabProgress();
+                showNotification('Lab progress reset!', 'info');
+            }
+        }
+        
         // ====================================
         // ORIGINAL CODE (EXISTING)
         // ====================================
@@ -1379,7 +1725,8 @@
         // Initialize educational features
         loadPresetsFromAPI();
         loadSavedConfig();
-
+        loadLabProgress();
+        
         // Load stats and folders
         fetch('/api/stats')
             .then(r => r.json())
