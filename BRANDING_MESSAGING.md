@@ -128,10 +128,10 @@
 
 **LinkedIn (Launch Announcement):**
 ```
-🚀 Exciting news! Splunk (a Cisco company) just launched our first AI 
+🚀 Exciting news! Splunk (a Cisco company) just launched our first AI
 enablement lab for field teams.
 
-The Splunk AI Reference Architecture Lab teaches you to build AND monitor 
+The Splunk AI Reference Architecture Lab teaches you to build AND monitor
 production RAG systems - not toy demos.
 
 ✅ 10 microservices (vector search, hybrid fusion, knowledge graphs)
@@ -139,7 +139,7 @@ production RAG systems - not toy demos.
 ✅ Production-ready (deploy to your laptop)
 ✅ Customer demo platform (show, don't tell)
 
-This is how we're enabling our SEs, architects, and sales leaders to 
+This is how we're enabling our SEs, architects, and sales leaders to
 confidently discuss enterprise AI with customers.
 
 Learn more: [link]
@@ -198,11 +198,11 @@ This is how you monitor LLMs in production.
 ```markdown
 # [Document Title]
 
-**Splunk AI Reference Architecture Lab**  
+**Splunk AI Reference Architecture Lab**
 *Production RAG with Built-in Observability*
 
-**For:** Splunk/Cisco Field Teams  
-**Version:** 1.0  
+**For:** Splunk/Cisco Field Teams
+**Version:** 1.0
 **Updated:** [Date]
 ```
 
@@ -210,7 +210,7 @@ This is how you monitor LLMs in production.
 ```markdown
 ---
 
-*Splunk inside Cisco - First AI Enablement Lab*  
+*Splunk inside Cisco - First AI Enablement Lab*
 *Reference Architecture for Production LLM Deployments*
 
 Learn more: [Splunk Observability Cloud](https://www.splunk.com/observability)
@@ -314,7 +314,7 @@ I'm excited to announce Splunk's first AI enablement lab inside Cisco!
 
 This isn't theory - it's a working reference architecture that tracks:
 ✅ Groundedness (prevent hallucinations)
-✅ Cost per answer (control spend)  
+✅ Cost per answer (control spend)
 ✅ p95 latency (ensure great UX)
 ✅ Full RAG pipeline visibility (query → answer)
 
