@@ -918,8 +918,8 @@
         ⚙️
     </button>
 
-    <!-- Lab Guide Panel (will be moved into tab by JavaScript) -->
-    <div class="lab-guide-panel" id="labGuidePanel" style="display: none;">
+    <!-- Lab Guide Panel -->
+    <div class="lab-guide-panel" id="labGuidePanel">
         <div class="lab-guide-header">
             <h2>🎓 Educational RAG Lab</h2>
             <p class="subtitle">Master Enterprise AI & RAG - Learn by doing!</p>
@@ -960,7 +960,7 @@
                     <blockquote style="border-left: 3px solid var(--accent-primary); padding-left: 15px; margin: 15px 0; font-style: italic;">
                         "RAG allows your organization to deploy AI that's grounded in YOUR data, YOUR policies, and YOUR expertise - without expensive model retraining or data leaving your environment."
                     </blockquote>
-
+                    
                     <p><strong>The Business Problem RAG Solves:</strong></p>
                     <ul>
                         <li><strong>Generic AI Can't Help:</strong> Public LLMs don't know your products, processes, or policies</li>
@@ -1112,7 +1112,7 @@
                 <div class="lab-section-content">
                     <p><strong>What are Embeddings?</strong></p>
                     <p>Text converted into numbers (vectors) that capture semantic meaning. Similar meanings = close together in vector space.</p>
-
+                    
                     <p><strong>Example:</strong> "neural network" and "deep learning" are close together, but "banana recipe" is far away.</p>
 
                     <p><strong>Vector Search Process:</strong></p>
@@ -1462,7 +1462,7 @@
             <!-- TAB 1: Chat -->
             <div class="tab-content active" id="tab-chat">
 
-        <div class="metrics-dashboard" id="metricsDashboard" style="display: none;">
+        <div class="metrics-dashboard" id="metricsDashboard">
             <div class="metrics-header">
                 <h3>📊 Performance Metrics</h3>
                 <button class="metrics-toggle" onclick="toggleMetricsDetails()">
