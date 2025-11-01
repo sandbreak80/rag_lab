@@ -1,6 +1,6 @@
 # 🎯 AI Discovery Questions for Customer Conversations
 
-**For Splunk/Cisco Field Teams**  
+**For Splunk/Cisco Field Teams**
 **Target Audience:** Architects, Solutions Engineers, Sales Engineers, Sales Leaders
 
 ---

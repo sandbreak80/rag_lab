@@ -1,6 +1,6 @@
 # 💰 ROI Calculator - Splunk AI Observability
 
-**For Splunk/Cisco Field Teams**  
+**For Splunk/Cisco Field Teams**
 **Target Audience:** Architects, Solutions Engineers, Sales Engineers
 
 ---
@@ -22,8 +22,8 @@ This guide provides formulas, models, and calculators to demonstrate ROI for Spl
 
 ### The Three-Pillar ROI Model
 
-**Pillar 1: Cost Avoidance** (Prevented incidents, downtime)  
-**Pillar 2: Cost Reduction** (Optimized AI spend, efficiency)  
+**Pillar 1: Cost Avoidance** (Prevented incidents, downtime)
+**Pillar 2: Cost Reduction** (Optimized AI spend, efficiency)
 **Pillar 3: Revenue Protection** (Customer satisfaction, SLAs)
 
 **Total ROI = (Cost Avoidance + Cost Reduction + Revenue Protection) - Splunk Cost**
@@ -421,7 +421,7 @@ Payback Period: 6.2 months
 | **Time to Value** | 1-2 days | 6-8 weeks |
 | **Opportunity Cost** | Low (team ships features) | High (team builds dashboards) |
 
-**Conclusion:** 
+**Conclusion:**
 - **Year 1:** Build-your-own is cheaper ($14K savings)
 - **Year 3:** Splunk is cheaper ($72K savings) + better features
 - **Recommendation:** Splunk if you want to ship features, not build monitoring

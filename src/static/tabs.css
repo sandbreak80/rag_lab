@@ -1,0 +1,319 @@
+/* 🎨 Multi-Tab Navigation Styles */
+/* Matches the dark glassmorphic theme */
+
+/* Tab Navigation Bar */
+.tab-navigation {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px 20px 0 0;
+    padding: 0;
+    margin-bottom: 0;
+    display: flex;
+    gap: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Tab Buttons */
+.tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 16px 24px;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+    border-radius: 16px 16px 0 0;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.tab-btn.active {
+    color: var(--text-primary);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+    position: relative;
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+    box-shadow: 0 0 12px var(--accent-glow);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: scaleX(0);
+        opacity: 0;
+    }
+    to {
+        transform: scaleX(1);
+        opacity: 1;
+    }
+}
+
+/* Tab indicator emojis */
+.tab-btn::before {
+    content: attr(data-emoji);
+    margin-right: 8px;
+    font-size: 18px;
+}
+
+/* Tab Content Containers */
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Tab Content Wrapper */
+.tab-content-wrapper {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-top: none;
+    border-radius: 0 0 20px 20px;
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    min-height: 500px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .tab-navigation {
+        border-radius: 16px 16px 0 0;
+        gap: 2px;
+    }
+
+    .tab-btn {
+        padding: 12px 16px;
+        font-size: 13px;
+    }
+
+    .tab-btn::before {
+        font-size: 16px;
+        margin-right: 4px;
+    }
+
+    .tab-content-wrapper {
+        padding: 16px;
+        border-radius: 0 0 16px 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .tab-btn {
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+
+    .tab-btn::before {
+        display: block;
+        margin: 0 0 4px 0;
+    }
+}
+
+/* Settings Tab Specific Styles */
+#tab-settings {
+    display: grid;
+    gap: 24px;
+}
+
+.settings-section {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.settings-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-section-title::before {
+    content: '●';
+    color: var(--accent-primary);
+    font-size: 12px;
+}
+
+/* Metrics Tab Specific Styles */
+#tab-metrics {
+    display: grid;
+    gap: 24px;
+}
+
+.metrics-section {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.metrics-history {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.metrics-history::-webkit-scrollbar {
+    width: 8px;
+}
+
+.metrics-history::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.metrics-history::-webkit-scrollbar-thumb {
+    background: var(--accent-primary);
+    border-radius: 4px;
+}
+
+.metrics-history::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-secondary);
+}
+
+/* Lab Guide Tab Specific Styles */
+#tab-lab {
+    /* Inherit from lab-guide.css */
+}
+
+/* Loading State */
+.tab-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    color: var(--text-muted);
+}
+
+.tab-loading::after {
+    content: '⚡';
+    font-size: 48px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.4;
+        transform: scale(0.8);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+/* Tab Badge (for notifications/counts) */
+.tab-badge {
+    display: inline-block;
+    background: var(--accent-primary);
+    color: var(--text-primary);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 6px;
+    vertical-align: top;
+}
+
+/* Compact mode for chat tab */
+.compact-metrics {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.compact-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.compact-metric-label {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.compact-metric-value {
+    color: var(--text-primary);
+    font-size: 20px;
+    font-weight: 600;
+}
+
+/* Tooltip for tab help */
+.tab-btn[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    white-space: nowrap;
+    margin-bottom: 8px;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.tab-btn[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--border);
+    margin-bottom: 2px;
+    z-index: 100;
+}
+
+/* Smooth transitions */
+* {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
