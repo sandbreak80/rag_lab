@@ -489,7 +489,7 @@ Sections:
 3. **GPU Monitoring Service**
    - Create `services/gpu-monitor/`
    - **NVIDIA Path** (AWS Lab):
-     - Execute `nvidia-smi --query-gpu=...` 
+     - Execute `nvidia-smi --query-gpu=...`
      - Parse XML/CSV output
      - Track utilization, memory, temp, power
    - **Mac M2 Path** (Leave-behind):
