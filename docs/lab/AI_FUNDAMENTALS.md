@@ -1,35 +1,91 @@
 # 🧠 AI Fundamentals - Complete Guide
 
-**Educational RAG Lab - AI Concepts Explained**
+**Educational RAG Lab - AI Concepts for Enterprise Solutions**
+
+**Audience:** Solutions Engineers, Sales Engineers, Architects, Technical Leaders  
+**Goal:** Learn to confidently discuss AI/RAG with enterprise customers  
+**Use:** Individual learning, team workshops, or group labs
+
+---
+
+## 💼 How to Use This Guide
+
+### For Individual Learning
+- Read sequentially, follow examples
+- Experiment in the UI with each concept
+- Use customer-facing language notes
+
+### For Team Workshops
+- Section 1-4: Foundation (60 min)
+- Section 5-8: Advanced Retrieval (60 min)
+- Section 9-12: Optimization & Economics (60 min)
+
+### For Customer Conversations
+- Use "Customer Value" boxes for messaging
+- Reference "Enterprise Considerations" 
+- Cite real performance numbers from this lab
 
 ---
 
 ## 📚 Table of Contents
 
+**Foundation (Customer Discovery)**
 1. [What is RAG?](#1-what-is-rag)
-2. [Large Language Models (LLMs)](#2-large-language-models-llms)
-3. [Embeddings & Vector Search](#3-embeddings--vector-search)
-4. [Keyword Search (BM25)](#4-keyword-search-bm25)
-5. [Hybrid Search & Fusion](#5-hybrid-search--fusion)
-6. [Re-ranking Strategies](#6-re-ranking-strategies)
-7. [Knowledge Graphs](#7-knowledge-graphs)
-8. [Query Expansion](#8-query-expansion)
-9. [Web Search Integration](#9-web-search-integration)
-10. [Model Parameters](#10-model-parameters)
-11. [Evaluation Metrics](#11-evaluation-metrics)
-12. [Tokens & Token Economics](#12-tokens--token-economics)
+2. [Document Ingestion Pipeline](#2-document-ingestion-pipeline)
+3. [Chunking Strategies](#3-chunking-strategies)
+4. [Embeddings & Vector Search](#4-embeddings--vector-search)
+
+**Enterprise Retrieval (Solution Design)**
+5. [Keyword Search (BM25)](#5-keyword-search-bm25)
+6. [Hybrid Search & Fusion](#6-hybrid-search--fusion)
+7. [Re-ranking Strategies](#7-re-ranking-strategies)
+8. [Knowledge Graphs](#8-knowledge-graphs)
+
+**Advanced Features (Differentiation)**
+9. [Query Expansion](#9-query-expansion)
+10. [Web Search Integration](#10-web-search-integration)
+
+**Technical Confidence (Objection Handling)**
+11. [Large Language Models (LLMs)](#11-large-language-models-llms)
+12. [Model Parameters](#12-model-parameters)
+13. [Evaluation Metrics](#13-evaluation-metrics)
+14. [Tokens & Token Economics](#14-tokens--token-economics)
 
 ---
 
 ## 1. What is RAG?
 
 ### Definition
-**RAG (Retrieval Augmented Generation)** is a technique that enhances Large Language Models by retrieving relevant information from a knowledge base before generating a response.
+**RAG (Retrieval Augmented Generation)** is an enterprise AI architecture that enhances Large Language Models by retrieving relevant information from your organization's knowledge base before generating responses.
 
-### The Problem RAG Solves
-- **LLMs have limited knowledge**: Trained on data up to a certain date
-- **LLMs can hallucinate**: Make up information that sounds plausible
-- **LLMs lack specific context**: Don't know about your private documents
+### 💼 Customer Value Proposition
+*"RAG allows your organization to deploy AI that's grounded in YOUR data, YOUR policies, and YOUR expertise - without expensive model retraining or data leaving your environment."*
+
+### The Business Problem RAG Solves
+
+**Challenge 1: Generic AI Can't Help Your Business**
+- Public LLMs (GPT-4, Claude) don't know your products, processes, or policies
+- They're trained on internet data, not your internal knowledge
+- Customer service, documentation Q&A, technical support need YOUR data
+
+**Challenge 2: Traditional Fine-tuning is Expensive**
+- Costs: $50K-500K per training run
+- Time: Weeks to months
+- Expertise: Requires ML engineers
+- Updates: Retrain for every change
+
+**Challenge 3: Data Privacy & Compliance**
+- Can't send proprietary data to external APIs
+- GDPR, HIPAA, SOC2 compliance
+- Intellectual property protection
+- Customer data sovereignty
+
+**RAG Solution:**
+- ✅ **Cost**: $0 training, ~$5K-20K infrastructure
+- ✅ **Time**: Hours to deploy, instant updates
+- ✅ **Expertise**: DevOps-level skills sufficient
+- ✅ **Privacy**: All data stays in your environment
+- ✅ **Accuracy**: Grounded in your documents (source attribution)
 
 ### How RAG Works
 
@@ -96,8 +152,8 @@ A **Large Language Model** is a neural network trained on massive amounts of tex
 ### How LLMs Work (Simplified)
 
 ```
-Input Text → Tokenization → Embedding → 
-Transformer Layers → Probability Distribution → 
+Input Text → Tokenization → Embedding →
+Transformer Layers → Probability Distribution →
 Next Token Selection → Output Text
 ```
 
@@ -169,7 +225,7 @@ RAG automatically creates good prompts!
 
 ```
             Semantic Space
-            
+
     "neural network" •
                       ↘
                        • "deep learning"
@@ -547,7 +603,7 @@ A **Knowledge Graph** represents entities and their relationships as nodes and e
     (Document B) (Document C)
 ```
 
-**Nodes**: Documents, tags, folders, concepts  
+**Nodes**: Documents, tags, folders, concepts
 **Edges**: Relationships (similar, tagged, in-folder, related)
 
 ### How It Enhances RAG
@@ -561,7 +617,7 @@ Returns: Documents containing "Python" and "tutorials"
 **With Knowledge Graph:**
 ```
 Query: "Python tutorials"
-Returns: 
+Returns:
   - Documents containing "Python" and "tutorials"
   + Documents tagged with related concepts
   + Documents in same folder
@@ -634,12 +690,12 @@ Our lab measurements:
 for doc in documents:
     # Add document node
     graph.add_node(doc.id, metadata=doc.metadata)
-    
+
     # Add edges to similar documents
     similar_docs = find_similar(doc, threshold=0.8)
     for similar_doc in similar_docs:
         graph.add_edge(doc.id, similar_doc.id, weight=similarity)
-    
+
     # Add edges for shared tags
     for tag in doc.tags:
         graph.add_edge(doc.id, tag, type='tagged')
@@ -661,7 +717,7 @@ Students can see the graph:
 
 ### Cost-Benefit
 
-**Cost:** +50ms latency, graph maintenance overhead  
+**Cost:** +50ms latency, graph maintenance overhead
 **Benefit:** +5% recall, better discovery
 
 **ROI:** ⭐⭐⭐ Good (moderate)
@@ -708,8 +764,8 @@ Format: comma-separated list
 """
 
 response = llm.generate(prompt)
-# Output: "network problem, connectivity issue, 
-#          internet trouble, connection error, 
+# Output: "network problem, connectivity issue,
+#          internet trouble, connection error,
 #          network debugging"
 ```
 
@@ -793,19 +849,19 @@ Note: Slight precision drop because broader search.
 def expand_query(query: str) -> str:
     # Use LLM for expansion
     expansions = llm_expand(query)
-    
+
     # Combine original + expansions
     expanded = f"{query} {' '.join(expansions)}"
-    
+
     # Deduplicate terms
     terms = set(expanded.lower().split())
-    
+
     return ' '.join(terms)
 ```
 
 ### Cost-Benefit
 
-**Cost:** +10ms, slight precision reduction  
+**Cost:** +10ms, slight precision reduction
 **Benefit:** +5% recall
 
 **ROI:** ⭐⭐⭐⭐ Excellent
@@ -983,12 +1039,12 @@ Observe: Latency, relevance, source diversity
 
 ### Cost-Benefit
 
-**Cost:** +800ms latency, privacy considerations  
+**Cost:** +800ms latency, privacy considerations
 **Benefit:** Fresh external information
 
 **ROI:** ⭐⭐⭐ Good (context-dependent)
 
-**Recommendation:** 
+**Recommendation:**
 - OFF by default for internal docs
 - ON for general knowledge / current events
 - User-configurable toggle
@@ -1049,8 +1105,8 @@ Next token probabilities:
 - "Rome" (5%)
 - ...100 other tokens
 
-**Top-K = 1:** Only "Paris" considered  
-**Top-K = 3:** "Paris", "London", "Berlin" considered  
+**Top-K = 1:** Only "Paris" considered
+**Top-K = 3:** "Paris", "London", "Berlin" considered
 **Top-K = 50:** All 50 top tokens considered
 
 **For RAG:**
@@ -1158,7 +1214,7 @@ Prevents model from generating fake sources or unnecessary follow-ups.
 
 **Prevents:**
 ```
-"The system is great. The system is powerful. 
+"The system is great. The system is powerful.
  The system is amazing. The system is..."
 ```
 
@@ -1336,8 +1392,8 @@ MRR = (1/N) × Σ(1 / rank_i)
 
 **Example:**
 
-Query 1: First relevant doc at position 2 → 1/2 = 0.5  
-Query 2: First relevant doc at position 1 → 1/1 = 1.0  
+Query 1: First relevant doc at position 2 → 1/2 = 0.5
+Query 2: First relevant doc at position 1 → 1/1 = 1.0
 Query 3: First relevant doc at position 3 → 1/3 = 0.33
 
 **MRR = (0.5 + 1.0 + 0.33) / 3 = 0.61**
@@ -1660,7 +1716,7 @@ docs_truncated = [doc.text[:500] for doc in results]  # 1500 tokens
 **2. Compress prompts**
 ```python
 # Verbose
-prompt = "Here are the documents that I found for you. 
+prompt = "Here are the documents that I found for you.
           Please read them carefully and answer the question..."
 
 # Concise
@@ -1862,7 +1918,7 @@ temperature: 0.1
 
 ## 📚 Additional Resources
 
-- **RAG Papers**: 
+- **RAG Papers**:
   - [RAG: Retrieval-Augmented Generation (Lewis et al., 2020)](https://arxiv.org/abs/2005.11401)
   - [Dense Passage Retrieval (Karpukhin et al., 2020)](https://arxiv.org/abs/2004.04906)
 
