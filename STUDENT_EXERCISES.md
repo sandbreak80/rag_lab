@@ -1,8 +1,8 @@
 # 🎓 RAG Lab - Student Exercises
 
-**Course:** Neural Networks & AI Systems  
-**Module:** Retrieval Augmented Generation  
-**Duration:** 3-4 hours  
+**Course:** Neural Networks & AI Systems
+**Module:** Retrieval Augmented Generation
+**Duration:** 3-4 hours
 **Difficulty:** Intermediate
 
 ---
@@ -56,16 +56,16 @@ Establish baseline metrics for comparison.
 
 ### Questions to Answer
 
-**Q1.1:** What is the total latency for the minimal configuration?  
+**Q1.1:** What is the total latency for the minimal configuration?
 **A:** _________ ms
 
-**Q2.2:** Which component takes the most time?  
+**Q2.2:** Which component takes the most time?
 **A:** ☐ Query Expansion  ☐ Vector Search  ☐ BM25  ☐ Fusion
 
-**Q1.3:** What is the estimated precision?  
+**Q1.3:** What is the estimated precision?
 **A:** _________ %
 
-**Q1.4:** How many results were returned?  
+**Q1.4:** How many results were returned?
 **A:** _________ documents
 
 ### Reflection
@@ -99,7 +99,7 @@ Understand the value of combining vector and keyword search.
 
 1. Load **Balanced** preset (hybrid)
 2. Ask the SAME question: "What are neural networks?"
-3. Note the latency: _______ ms  
+3. Note the latency: _______ ms
 4. Note the precision: _______ %
 5. Read the top result
 
@@ -111,16 +111,16 @@ Understand the value of combining vector and keyword search.
 
 ### Questions to Answer
 
-**Q2.1:** How much slower is hybrid search?  
+**Q2.1:** How much slower is hybrid search?
 **A:** _________ ms (_______ % increase)
 
-**Q2.2:** How much better is the precision?  
+**Q2.2:** How much better is the precision?
 **A:** _________ percentage points better
 
-**Q2.3:** Is the latency increase worth the quality improvement?  
+**Q2.3:** Is the latency increase worth the quality improvement?
 **A:** ☐ Yes  ☐ No  ☐ Depends on use case
 
-**Q2.4:** When would you choose vector-only over hybrid?  
+**Q2.4:** When would you choose vector-only over hybrid?
 **A:**
 ```
 Your answer here:
@@ -160,13 +160,13 @@ Fill in the table:
 
 ### Analysis Questions
 
-**Q3.1:** Which component is the bottleneck (takes most time)?  
+**Q3.1:** Which component is the bottleneck (takes most time)?
 **A:** _________________
 
-**Q3.2:** If you had to reduce latency by 50ms, which component would you disable?  
+**Q3.2:** If you had to reduce latency by 50ms, which component would you disable?
 **A:** _________________
 
-**Q3.3:** What would you lose by disabling that component?  
+**Q3.3:** What would you lose by disabling that component?
 **A:**
 ```
 Your answer here:
@@ -175,10 +175,10 @@ Your answer here:
 
 ```
 
-**Q3.4:** The Knowledge Graph adds _____ ms. Is that acceptable for a 5% recall improvement?  
+**Q3.4:** The Knowledge Graph adds _____ ms. Is that acceptable for a 5% recall improvement?
 **A:** ☐ Yes  ☐ No
 
-**Q3.5:** Calculate efficiency: (Results Found) / (Total Latency in seconds)  
+**Q3.5:** Calculate efficiency: (Results Found) / (Total Latency in seconds)
 **A:** _______ results per second
 
 ---
@@ -208,13 +208,13 @@ Understand the extreme cost of LLM re-ranking.
 
 ### Cost-Benefit Analysis
 
-**Q4.1:** How much slower is re-ranking?  
+**Q4.1:** How much slower is re-ranking?
 **A:** _________ ms (______ x slower)
 
-**Q4.2:** How much did precision improve?  
+**Q4.2:** How much did precision improve?
 **A:** _________ percentage points
 
-**Q4.3:** If your system handles 100 queries/minute, would re-ranking be feasible?  
+**Q4.3:** If your system handles 100 queries/minute, would re-ranking be feasible?
 **A:** ☐ Yes  ☐ No
 
 **Calculation:**
@@ -225,7 +225,7 @@ Your requirement: 100 queries/minute
 Feasible? _______
 ```
 
-**Q4.4:** In what scenarios would re-ranking be worth the cost?  
+**Q4.4:** In what scenarios would re-ranking be worth the cost?
 **A:**
 ```
 Your answer here:
@@ -261,13 +261,13 @@ Compare local knowledge base vs external web data.
 
 ### Questions
 
-**Q5.1:** Did web search provide more recent information?  
+**Q5.1:** Did web search provide more recent information?
 **A:** ☐ Yes  ☐ No
 
-**Q5.2:** How much latency did web search add?  
+**Q5.2:** How much latency did web search add?
 **A:** _________ ms
 
-**Q5.3:** When should you use web search vs local knowledge base?  
+**Q5.3:** When should you use web search vs local knowledge base?
 **A:**
 ```
 Local KB is better for:
@@ -381,7 +381,7 @@ Fill in the comparison:
 
 ### Decision
 
-**Q7.1:** Based on this data, should you enable Knowledge Graph?  
+**Q7.1:** Based on this data, should you enable Knowledge Graph?
 **A:** ☐ Yes  ☐ No  ☐ Depends
 
 **Q7.2:** What's your reasoning? (3-4 sentences)
@@ -395,7 +395,7 @@ Your answer here:
 
 ```
 
-**Q7.3:** What other factors would you consider besides these metrics?  
+**Q7.3:** What other factors would you consider besides these metrics?
 **A:**
 ```
 Your answer here:
@@ -443,10 +443,10 @@ Verify the production preset:
 
 ### Deployment Questions
 
-**Q8.1:** Would you deploy this to production?  
+**Q8.1:** Would you deploy this to production?
 **A:** ☐ Yes  ☐ No
 
-**Q8.2:** What changes would you make before deploying?  
+**Q8.2:** What changes would you make before deploying?
 **A:**
 ```
 Your answer here:
@@ -457,7 +457,7 @@ Your answer here:
 
 ```
 
-**Q8.3:** How would you monitor this in production?  
+**Q8.3:** How would you monitor this in production?
 **A:**
 ```
 Your answer here:
@@ -489,7 +489,7 @@ Research and estimate costs:
 
 ### ROI Analysis
 
-**Q9.1:** Which component has the best ROI (value / cost)?  
+**Q9.1:** Which component has the best ROI (value / cost)?
 **A:** _________________
 
 **Calculation:**
@@ -500,10 +500,10 @@ Knowledge Graph: 5% recall / 50ms = _____ recall points per ms
 LLM Re-ranking: 10% precision / 2000ms = _____ precision points per ms
 ```
 
-**Q9.2:** Which component has the worst ROI?  
+**Q9.2:** Which component has the worst ROI?
 **A:** _________________
 
-**Q9.3:** If you had a budget of 200ms total, which components would you enable?  
+**Q9.3:** If you had a budget of 200ms total, which components would you enable?
 **A:**
 ```
 Your answer here:

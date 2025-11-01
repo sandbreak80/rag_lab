@@ -1,7 +1,7 @@
 # 🎓 Educational RAG Lab - Complete System Documentation
 
-**Version:** 1.0.0  
-**Date:** November 1, 2025  
+**Version:** 1.0.0
+**Date:** November 1, 2025
 **Status:** Production Ready
 
 ---
@@ -105,7 +105,7 @@ Students will learn:
 
 ### 1. Web UI (Port 5555)
 
-**Technology:** Flask + Vanilla JavaScript  
+**Technology:** Flask + Vanilla JavaScript
 **Purpose:** Educational interface with interactive learning features
 
 **Endpoints:**
@@ -127,7 +127,7 @@ Students will learn:
 
 ### 2. Search Service (Port 8002)
 
-**Technology:** Flask + Python  
+**Technology:** Flask + Python
 **Purpose:** Orchestrate hybrid search with configurable pipeline
 
 **Endpoints:**
@@ -157,7 +157,7 @@ Students will learn:
 
 ### 3. Vector DB (Port 8005)
 
-**Technology:** ChromaDB + Flask  
+**Technology:** ChromaDB + Flask
 **Purpose:** Vector storage and similarity search
 
 **Endpoints:**
@@ -174,7 +174,7 @@ Students will learn:
 
 ### 4. Embedding Service (Port 8006)
 
-**Technology:** Ollama + Flask  
+**Technology:** Ollama + Flask
 **Purpose:** Generate embeddings for documents and queries
 
 **Endpoints:**
@@ -186,7 +186,7 @@ Students will learn:
 
 ### 5. Ingest Service (Port 8001)
 
-**Technology:** Flask + Docling + AgenticChunker  
+**Technology:** Flask + Docling + AgenticChunker
 **Purpose:** Process and ingest documents
 
 **Endpoints:**
@@ -210,7 +210,7 @@ Students will learn:
 
 ### 6. Knowledge Graph (Port 8007)
 
-**Technology:** NetworkX + Flask  
+**Technology:** NetworkX + Flask
 **Purpose:** Graph-based document relationships
 
 **Endpoints:**
@@ -227,7 +227,7 @@ Students will learn:
 
 ### 7. Reranker Service (Port 8008)
 
-**Technology:** Ollama LLM + Flask  
+**Technology:** Ollama LLM + Flask
 **Purpose:** LLM-based result reranking
 
 **Endpoints:**
@@ -244,7 +244,7 @@ Students will learn:
 
 ### 8. SearXNG (Port 8080)
 
-**Technology:** SearXNG metasearch engine  
+**Technology:** SearXNG metasearch engine
 **Purpose:** Privacy-preserving web search
 
 **Configuration:**
@@ -254,7 +254,7 @@ Students will learn:
 
 ### 9. Web Search Service (Port 8009)
 
-**Technology:** Flask + Requests  
+**Technology:** Flask + Requests
 **Purpose:** Wrapper for SearXNG with metrics
 
 **Endpoints:**
@@ -270,7 +270,7 @@ Students will learn:
 
 ### 10. Ollama (Port 11434)
 
-**Technology:** Ollama LLM server  
+**Technology:** Ollama LLM server
 **Purpose:** Local LLM inference
 
 **Models Used:**
@@ -285,7 +285,7 @@ Students will learn:
 
 ### 1. Settings Panel
 
-**Location:** Left sidebar (collapsible)  
+**Location:** Left sidebar (collapsible)
 **Toggle Button:** ⚙️ (bottom-left)
 
 **Quick Presets (6):**
@@ -372,7 +372,7 @@ Students will learn:
 
 ### 4. Lab Guide
 
-**Location:** Right sidebar (collapsible)  
+**Location:** Right sidebar (collapsible)
 **Toggle Button:** 📖 (bottom-right)
 
 **Progress Tracker:**
@@ -846,19 +846,19 @@ docker-compose -f docker-compose.test.yml down -v
 
 ### Common Issues
 
-**Issue:** Web UI not loading  
+**Issue:** Web UI not loading
 **Solution:** Check if port 5555 is available, restart container
 
-**Issue:** Search returns no results  
+**Issue:** Search returns no results
 **Solution:** Upload documents first, check Vector DB health
 
-**Issue:** BM25 not working  
+**Issue:** BM25 not working
 **Solution:** Build BM25 index via `/build_bm25_index` endpoint
 
-**Issue:** SearXNG timeout  
+**Issue:** SearXNG timeout
 **Solution:** Check internet connection, increase timeout in settings.yml
 
-**Issue:** Ollama connection failed  
+**Issue:** Ollama connection failed
 **Solution:** Ensure Ollama running on host at port 11434
 
 ### Health Checks
