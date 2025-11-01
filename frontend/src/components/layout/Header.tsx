@@ -12,6 +12,14 @@ export function Header() {
     queryKey: ['stats'],
     queryFn: () => api.getStats(),
     refetchInterval: 30000, // Refetch every 30 seconds
+    retry: 1, // Only retry once
+    retryDelay: 5000, // Wait 5 seconds before retry
+    staleTime: 60000, // Consider data fresh for 1 minute
+    // Suppress errors in dev mode when backend is not running
+    onError: (error) => {
+      // Silently fail - backend might not be running in dev mode
+      console.debug('Stats API unavailable (backend not running):', error.message);
+    },
   });
 
   return (
