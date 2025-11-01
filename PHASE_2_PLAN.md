@@ -1,7 +1,7 @@
 # 🚀 PHASE 2: AI EDUCATION & ADVANCED FEATURES
 
-**Date:** November 1, 2025  
-**Status:** Planning  
+**Date:** November 1, 2025
+**Status:** Planning
 **Scope:** Major expansion of Educational RAG Lab
 
 ---
@@ -467,6 +467,148 @@ Sections:
 4. Create screenshots
 5. Update README
 
+### Phase 2I: Infrastructure Monitoring Dashboards (3-5 hours)
+**Priority:** MEDIUM (Future State - Roadmap)
+
+**Note:** This is a future enhancement, documented for roadmap
+
+1. **System Monitoring Service**
+   - Create `services/system-monitor/`
+   - Collect system metrics (CPU, RAM, disk, network)
+   - Endpoints: `/api/system/stats`, `/api/system/history`
+   - Use `psutil` library (cross-platform)
+   - 10-minute rolling window
+
+2. **Docker Stats Service**
+   - Create `services/docker-monitor/`
+   - Execute `docker stats --no-stream` periodically
+   - Parse output to JSON
+   - Endpoints: `/api/docker/stats`, `/api/docker/history`
+   - Per-container breakdown
+
+3. **GPU Monitoring Service**
+   - Create `services/gpu-monitor/`
+   - **NVIDIA Path** (AWS Lab):
+     - Execute `nvidia-smi --query-gpu=...` 
+     - Parse XML/CSV output
+     - Track utilization, memory, temp, power
+   - **Mac M2 Path** (Leave-behind):
+     - Use `ioreg` or Metal API
+     - Track GPU/Neural Engine activity
+     - Platform detection (Darwin = Mac)
+   - Endpoints: `/api/gpu/stats`, `/api/gpu/history`
+
+4. **Infrastructure Dashboard Tab**
+   - New tab: "System" or "Infrastructure"
+   - Three panels:
+     1. System Performance (CPU, RAM charts)
+     2. Docker Stats (per-container table + charts)
+     3. GPU Monitoring (utilization, memory)
+   - Live updates (WebSocket or polling)
+   - 10-minute time window with scrubbing
+   - Export data functionality
+
+5. **Tokens/s Tracking**
+   - Add to Ollama calls
+   - Track generation speed
+   - Display in metrics
+   - Compare across hardware (AWS vs Mac M2)
+
+6. **Hardware Comparison Feature**
+   - Save metrics tagged with hardware
+   - "Lab Machine (AWS GPU)" vs "Local Machine (Mac M2)"
+   - Side-by-side comparison
+   - Show: tokens/s, latency, resource usage
+
+**Libraries Required:**
+- `psutil` - Cross-platform system metrics
+- `nvidia-ml-py3` - NVIDIA GPU monitoring (optional)
+- `subprocess` - Execute docker stats
+- Chart.js or similar - Visualization
+
+**Platform Detection:**
+```python
+import platform
+if platform.system() == "Darwin":
+    # Mac M2 - use Metal/ioreg
+    monitor = MacGPUMonitor()
+elif shutil.which("nvidia-smi"):
+    # NVIDIA GPU available
+    monitor = NvidiaGPUMonitor()
+else:
+    # No GPU monitoring
+    monitor = NoGPUMonitor()
+```
+
+**WebSocket for Live Updates:**
+- Real-time streaming of metrics
+- No page refresh needed
+- Smooth chart updates
+
+---
+
+### 9. Infrastructure Monitoring Dashboards (Future State)
+**Goal:** Show students how hard the system is working to run RAG
+
+**Three System Dashboards:**
+
+1. **System Performance Dashboard** (like `top`)
+   - CPU usage per core (live graphs)
+   - Memory usage (RAM)
+   - Disk I/O
+   - Network I/O
+   - System load average
+   - Process-level stats
+   - **Time Window:** Past 10 minutes, dynamic/live
+   - **Update Frequency:** 1-2 second refresh
+
+2. **Docker Stats Dashboard**
+   - Per-container metrics:
+     - CPU %
+     - Memory usage / limit
+     - Network I/O
+     - Block I/O
+     - PIDs count
+   - All 10 microservices visible
+   - Visual graphs (line charts for trends)
+   - **Command:** `docker stats --no-stream` (repeated)
+   - **Time Window:** Past 10 minutes
+
+3. **GPU Monitoring Dashboard**
+   - GPU utilization %
+   - GPU memory usage
+   - GPU temperature
+   - Power draw
+   - Processes using GPU (embedding, inference)
+   - **Tools:** `nvidia-smi` (NVIDIA) or Metal Performance HUD (Mac M2)
+   - **Platforms:**
+     - AWS Lab: NVIDIA GPU (`nvidia-smi`)
+     - Leave-behind: Mac M2/M3 (Metal API)
+   - **Time Window:** Past 10 minutes
+
+**Key Value Proposition:**
+"See exactly how hard your system is working to deliver RAG responses"
+
+**Comparison Feature:**
+- Show tokens/s on AWS GPU vs Mac M2
+- Compare resource usage
+- Demonstrate: "This is what you need to run RAG at scale"
+- Students understand hardware requirements
+
+**Platform Support:**
+- ✅ **AWS Lab Machines**: NVIDIA GPU instances
+- ✅ **Leave-behind Lab**: Mac M2/M3/M4 (no GPU, but Metal acceleration)
+- ❌ **Windows**: Not supported (per user requirement)
+
+### 10. Tokens per Second Tracking
+**Goal:** Show inference speed across different hardware
+
+**Metrics to Add:**
+- Tokens per second (tokens/s) during generation
+- Total tokens generated
+- Prompt processing speed
+- Hardware comparison (AWS GPU vs Mac M2)
+
 ---
 
 ## 🤔 Open Questions & Decisions
@@ -533,17 +675,20 @@ Persist to localStorage on tab switch.
 
 ## 📊 Estimated Effort
 
-| Phase | Hours | Priority |
-|-------|-------|----------|
-| 2A: AI Fundamentals Docs | 2-3 | HIGH |
-| 2B: Ollama Model API | 1-2 | HIGH |
-| 2C: Enhanced Metrics | 2-3 | HIGH |
-| 2D: Multi-Tab UI | 3-4 | MEDIUM |
-| 2E: Metrics Dashboard | 3-4 | HIGH |
-| 2F: Web Search Config | 1-2 | MEDIUM |
-| 2G: Model Comparison | 2-3 | MEDIUM |
-| 2H: Testing & Docs | 2-3 | HIGH |
-| **TOTAL** | **17-24 hours** | |
+| Phase | Hours | Priority | Status |
+|-------|-------|----------|--------|
+| 2A: AI Fundamentals Docs | 2-3 | HIGH | Phase 2 |
+| 2B: Ollama Model API | 1-2 | HIGH | Phase 2 |
+| 2C: Enhanced Metrics | 2-3 | HIGH | Phase 2 |
+| 2D: Multi-Tab UI | 3-4 | MEDIUM | Phase 2 |
+| 2E: Metrics Dashboard | 3-4 | HIGH | Phase 2 |
+| 2F: Web Search Config | 1-2 | MEDIUM | Phase 2 |
+| 2G: Model Comparison | 2-3 | MEDIUM | Phase 2 |
+| 2H: Testing & Docs | 2-3 | HIGH | Phase 2 |
+| **Phase 2 Subtotal** | **17-24 hrs** | | |
+| | | | |
+| 2I: Infrastructure Monitoring | 3-5 | MEDIUM | **Future/Roadmap** |
+| **TOTAL (with monitoring)** | **20-29 hours** | | |
 
 ---
 
@@ -556,7 +701,7 @@ Persist to localStorage on tab switch.
 - ⏳ docs/lab/METRICS_GUIDE.md
 - ⏳ Updated existing lab docs
 
-### Code
+### Code (Phase 2)
 - ⏳ Multi-tab UI (HTML/CSS/JS)
 - ⏳ Metrics dashboard tab
 - ⏳ Enhanced metrics collection
@@ -564,13 +709,30 @@ Persist to localStorage on tab switch.
 - ⏳ Web search configuration
 - ⏳ Model comparison interface (optional)
 
-### Features
+### Code (Future/Roadmap - Phase 2I)
+- ⏳ System monitoring service (CPU, RAM, disk, network)
+- ⏳ Docker stats monitoring service
+- ⏳ GPU monitoring service (NVIDIA + Mac M2 Metal)
+- ⏳ Infrastructure dashboard tab with live charts
+- ⏳ Tokens/s tracking and comparison
+- ⏳ Hardware comparison feature (AWS vs Mac M2)
+
+### Features (Phase 2)
 - ⏳ Dynamic model selector (from Ollama API)
 - ⏳ Comprehensive metrics tracking
 - ⏳ Session-wide metrics aggregation
 - ⏳ Metrics export (CSV/JSON)
 - ⏳ Web search customization
 - ⏳ Model comparison exercise
+
+### Features (Future/Roadmap - Phase 2I)
+- ⏳ Live system performance monitoring (CPU, RAM, disk, network)
+- ⏳ Per-container Docker stats with charts
+- ⏳ GPU utilization tracking (NVIDIA + Mac M2)
+- ⏳ Tokens per second measurement
+- ⏳ Hardware comparison (AWS GPU vs Mac M2)
+- ⏳ Infrastructure dashboard tab with 10-min rolling window
+- ⏳ Real-time updates via WebSocket
 
 ---
 
@@ -603,22 +765,87 @@ Persist to localStorage on tab switch.
 
 ---
 
-## 📋 Next Steps
+## 🗺️ Roadmap Summary
 
-1. **Get approval on plan**
-2. **Start with Phase 2A** (AI Fundamentals Docs)
-3. **Then Phase 2B & 2C** (Backend enhancements)
-4. **Then Phase 2D & 2E** (UI restructure + metrics)
-5. **Finally 2F, 2G, 2H** (Additional features + testing)
+### **Phase 2: Core Education & Advanced Features** (17-24 hours)
+**Timeline:** Immediate implementation
+- AI Fundamentals documentation
+- Enhanced metrics tracking
+- Multi-tab UI restructure
+- Comprehensive metrics dashboard
+- Dynamic model management
+- Model comparison exercises
+- Web search configuration
+
+### **Phase 2I: Infrastructure Monitoring** (3-5 hours)
+**Timeline:** Future enhancement (documented for roadmap)
+**Status:** Deferred until Phase 2 complete
+
+**Why Separate?**
+- Phase 2 provides immediate educational value
+- Infrastructure monitoring is observability/advanced feature
+- Allows Phase 2 to be completed and tested first
+- Can be added as v1.1 or v1.2 release
+
+**Infrastructure Monitoring Includes:**
+1. System Performance Dashboard (CPU, RAM, disk, network)
+2. Docker Stats Dashboard (per-container resource usage)
+3. GPU Monitoring Dashboard (NVIDIA + Mac M2 Metal)
+4. Tokens/s tracking across hardware
+5. Hardware comparison (AWS GPU vs Mac M2)
+6. Live charts with 10-minute rolling window
+
+**Platform Support Matrix:**
+
+| Platform | GPU Support | Monitoring Method | Status |
+|----------|-------------|-------------------|--------|
+| **AWS Lab (NVIDIA)** | ✅ NVIDIA GPU | `nvidia-smi` | Primary target |
+| **Mac M2/M3 Leave-behind** | ✅ Metal/Neural Engine | `ioreg` / Metal API | Primary target |
+| **Mac Intel** | ❌ No GPU | CPU only | Supported |
+| **Linux (NVIDIA)** | ✅ NVIDIA GPU | `nvidia-smi` | Supported |
+| **Windows** | ❌ Not supported | - | Not supported per user |
 
 ---
 
-**Status:** ⏳ AWAITING APPROVAL TO PROCEED
+## 📋 Next Steps
+
+### Immediate (Phase 2):
+1. ✅ **Plan approved** (this document)
+2. ⏳ **Start with Phase 2A** (AI Fundamentals Docs)
+3. ⏳ **Then Phase 2B & 2C** (Backend enhancements)
+4. ⏳ **Then Phase 2D & 2E** (UI restructure + metrics)
+5. ⏳ **Finally 2F, 2G, 2H** (Additional features + testing)
+
+### Future (Phase 2I - Roadmap):
+6. 📋 **Infrastructure Monitoring** (after Phase 2 complete)
+   - System monitoring service
+   - Docker stats service
+   - GPU monitoring service (NVIDIA + Mac M2)
+   - Infrastructure dashboard tab
+   - Hardware comparison feature
+
+---
+
+**Status:** ⏳ AWAITING APPROVAL TO PROCEED WITH PHASE 2
 
 **Questions for User:**
-1. Does this plan address all requirements?
-2. Any priorities to adjust?
-3. Should we do this in phases or all at once?
-4. Any specific models you want to focus on?
-5. Approve to start with Phase 2A (documentation)?
+1. ✅ **Infrastructure monitoring added to roadmap** - Agree to defer to Phase 2I?
+2. Does Phase 2 plan address all immediate requirements?
+3. Any priorities to adjust?
+4. Should we do Phase 2 in phases or all at once?
+5. Any specific models you want to focus on?
+6. **Approve to start with Phase 2A (AI Fundamentals documentation)?**
+
+---
+
+## 🎯 Key Decisions Made
+
+1. **Infrastructure monitoring = Future state** (Phase 2I, documented in roadmap)
+2. **Platform support:** AWS NVIDIA + Mac M2 (no Windows)
+3. **Tokens/s tracking:** Added to metrics system
+4. **Hardware comparison:** Show AWS GPU vs Mac M2 performance
+5. **Live monitoring:** 10-minute rolling window with dynamic graphs
+6. **Multi-tab UI:** Will include future "Infrastructure" tab slot
+
+This ensures Phase 2 delivers immediate educational value while documenting the infrastructure monitoring vision for future implementation.
 
