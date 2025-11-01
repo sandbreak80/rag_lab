@@ -74,10 +74,28 @@
     font-size: 18px;
 }
 
+/* Tab Content Wrapper */
+.tab-content-wrapper {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-top: none;
+    border-radius: 0 0 20px 20px;
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    min-height: 500px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
 /* Tab Content Containers */
 .tab-content {
     display: none;
     animation: fadeIn 0.3s ease;
+    width: 100%;
+    max-width: 100%;
 }
 
 .tab-content.active {
@@ -93,19 +111,6 @@
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-/* Tab Content Wrapper */
-.tab-content-wrapper {
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
-    border-top: none;
-    border-radius: 0 0 20px 20px;
-    padding: 24px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    min-height: 500px;
 }
 
 /* Mobile Responsive */
@@ -145,8 +150,18 @@
 
 /* Settings Tab Specific Styles */
 #tab-settings {
+    width: 100%;
+}
+
+#tab-settings.active {
+    display: block;
+}
+
+#tab-settings > div,
+#tab-settings #settingsPanel {
     display: grid;
     gap: 24px;
+    width: 100%;
 }
 
 .settings-section {
@@ -174,8 +189,18 @@
 
 /* Metrics Tab Specific Styles */
 #tab-metrics {
+    width: 100%;
+}
+
+#tab-metrics.active {
+    display: block;
+}
+
+#tab-metrics > div,
+#tab-metrics #metricsDashboard {
     display: grid;
     gap: 24px;
+    width: 100%;
 }
 
 .metrics-section {
@@ -210,7 +235,8 @@
 
 /* Lab Guide Tab Specific Styles */
 #tab-lab {
-    /* Inherit from lab-guide.css */
+    width: 100%;
+    max-width: 100%;
 }
 
 /* Loading State */
