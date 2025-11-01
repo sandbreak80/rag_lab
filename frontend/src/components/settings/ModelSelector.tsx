@@ -14,7 +14,7 @@ export function ModelSelector() {
     queryFn: () => api.getModels(),
   });
 
-  const models = modelsData?.models || [];
+  const models = (modelsData as any)?.models || modelsData || [];
 
   return (
     <div className="space-y-2">
