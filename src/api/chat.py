@@ -16,7 +16,7 @@ def chat():
     """Chat with RAG system"""
     data = request.json
     query = data.get('query', '')
-    
+
     # Get configuration from request
     top_k = data.get('topK', 5)
     use_query_expansion = data.get('useQueryExpansion', False)
@@ -50,10 +50,10 @@ def chat():
             },
             timeout=60
         )
-        
+
         if search_response.status_code != 200:
             return jsonify({'error': 'Search failed'}), 500
-            
+
         search_data = search_response.json()
         results = search_data.get('results', [])
         metrics = search_data.get('metrics', {})
@@ -73,7 +73,7 @@ def chat():
             file_name = result.get('file_name', 'Unknown')
             chunk_text = result.get('chunk_text', '')
             score = result.get('score', 0)
-            
+
             context_text += f"## Source {i}: {file_name}\n"
             context_text += f"Relevance: {score:.3f}\n\n"
             context_text += f"{chunk_text}\n\n"
@@ -145,7 +145,7 @@ def search():
     data = request.json
     query = data.get('query', '')
     top_k = data.get('topK', 5)
-    
+
     if not query:
         return jsonify({'error': 'Query is required'}), 400
 
@@ -156,10 +156,10 @@ def search():
             json={'query': query, 'limit': top_k},
             timeout=30
         )
-        
+
         if response.status_code != 200:
             return jsonify({'error': 'Search failed'}), 500
-            
+
         return jsonify(response.json())
 
     except Exception as e:

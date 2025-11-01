@@ -43,22 +43,22 @@ def log_metric():
     """Log a query metric"""
     try:
         data = request.json
-        
+
         # Validate required fields
         if not data.get('query'):
             return jsonify({'error': 'Query is required'}), 400
-        
+
         metrics = load_metrics()
         metrics.append(data)
-        
+
         # Keep only last 100 metrics
         if len(metrics) > 100:
             metrics = metrics[-100:]
-        
+
         save_metrics(metrics)
-        
+
         return jsonify({'success': True})
-    
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

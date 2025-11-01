@@ -10,7 +10,7 @@ interface LabExercise {
 interface LabStore {
   exercises: LabExercise[];
   progress: { [key: string]: boolean };
-  
+
   // Actions
   markExerciseComplete: (exerciseId: string) => void;
   markExerciseIncomplete: (exerciseId: string) => void;
@@ -48,7 +48,7 @@ export const useLabStore = create<LabStore>((set, get) => {
       const exercises = get().exercises.map((ex) =>
         ex.id === exerciseId ? { ...ex, completed: true } : ex
       );
-      
+
       set({ progress, exercises });
       saveToLocalStorage('lab_progress', progress);
     },
@@ -58,7 +58,7 @@ export const useLabStore = create<LabStore>((set, get) => {
       const exercises = get().exercises.map((ex) =>
         ex.id === exerciseId ? { ...ex, completed: false } : ex
       );
-      
+
       set({ progress, exercises });
       saveToLocalStorage('lab_progress', progress);
     },

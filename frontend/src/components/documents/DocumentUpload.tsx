@@ -133,7 +133,7 @@ export function DocumentUpload({ onUploadComplete }: DocumentUploadProps) {
               <CardContent className="p-3">
                 <div className="flex items-center gap-3">
                   <File className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
-                  
+
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">
                       {upload.filename}

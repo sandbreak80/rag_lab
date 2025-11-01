@@ -45,16 +45,16 @@ def update_progress():
         data = request.json
         exercise_id = data.get('exercise_id')
         completed = data.get('completed', False)
-        
+
         if not exercise_id:
             return jsonify({'error': 'exercise_id is required'}), 400
-        
+
         progress = load_progress()
         progress[exercise_id] = completed
         save_progress(progress)
-        
+
         return jsonify({'success': True})
-    
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -64,17 +64,17 @@ def submit_feedback():
     """Submit user feedback"""
     try:
         data = request.json
-        
+
         # Validate required fields
         rating = data.get('rating')
         if rating is None:
             return jsonify({'error': 'Rating is required'}), 400
-        
+
         # In production, save to database
         # For now, just log it
         print(f"📝 Feedback received: {data}")
-        
+
         return jsonify({'success': True})
-    
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500

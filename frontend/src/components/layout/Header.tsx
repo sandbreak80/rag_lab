@@ -32,7 +32,7 @@ export function Header() {
               <span className="text-muted-foreground">Model:</span>
               <span className="font-medium">{model}</span>
             </div>
-            
+
             {stats && (
               <>
                 <div className="h-4 w-px bg-border" />
@@ -40,12 +40,12 @@ export function Header() {
                   <span className="text-muted-foreground">Chunks:</span>
                   <span className="font-medium">{formatNumber(stats.chunks)}</span>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">Documents:</span>
                   <span className="font-medium">{stats.documents?.length || 0}</span>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">Graph Nodes:</span>
                   <span className="font-medium">{formatNumber(stats.knowledge_graph_nodes)}</span>

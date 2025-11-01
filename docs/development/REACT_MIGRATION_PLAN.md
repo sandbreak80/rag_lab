@@ -314,7 +314,7 @@ With React, adding new features becomes trivial:
 **Metadata Filtering (Feature 1):**
 ```tsx
 // Just add a component!
-<MetadataFilters 
+<MetadataFilters
   onFilterChange={(filters) => setFilters(filters)}
 />
 ```
@@ -330,7 +330,7 @@ With React, adding new features becomes trivial:
 **Self-RAG (Feature 3):**
 ```tsx
 // Show critique/refinement UI
-<SelfRAGIndicator 
+<SelfRAGIndicator
   iterations={iterations}
   currentStep={step}
 />

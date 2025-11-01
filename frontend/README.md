@@ -1,73 +1,71 @@
-# React + TypeScript + Vite
+# React Frontend Deployment
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Development
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Access at http://localhost:5173
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Production Build
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd frontend
+npm run build
 ```
+
+Output in `frontend/dist/`
+
+## Docker Production Deployment
+
+The frontend is built into a Docker image with Nginx:
+
+```bash
+# Build and start all services
+docker-compose -f docker-compose.test.yml up --build frontend web-api
+
+# Access the application
+open http://localhost:3000
+```
+
+## Architecture
+
+```
+Browser → Nginx (port 3000)
+    ↓
+    ├─ /         → React SPA (static files)
+    └─ /api/*    → Flask API (port 5555)
+          ↓
+          └─ Microservices (vector-db, search, ingest, etc.)
+```
+
+## Environment Variables
+
+The frontend proxies API requests to the backend. No environment variables needed for production.
+
+## Features
+
+- **Modern UI**: React 18 + TypeScript + Tailwind CSS
+- **Component Library**: Custom Shadcn-style components
+- **State Management**: Zustand for global state
+- **API Layer**: React Query for data fetching
+- **Routing**: React Router for navigation
+- **7 Main Tabs**:
+  1. Chat - RAG Q&A with sources
+  2. Documents - Upload and manage files
+  3. Settings - Configure RAG features
+  4. Metrics - Performance analytics
+  5. Lab Guide - Educational content
+  6. Q&A - Frequently asked questions
+  7. Feedback - User feedback form
+
+## Performance
+
+- Gzip compression enabled
+- Static assets cached for 1 year
+- Code splitting via Vite
+- Lazy loading for routes
+- Optimized bundle size

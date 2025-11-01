@@ -4,7 +4,7 @@ import { saveToLocalStorage, loadFromLocalStorage } from '../utils/localStorage'
 
 interface MetricsStore {
   queries: QueryMetric[];
-  
+
   // Actions
   addQuery: (metric: QueryMetric) => void;
   clearMetrics: () => void;
@@ -32,7 +32,7 @@ export const useMetricsStore = create<MetricsStore>((set, get) => {
 
     getSummary: () => {
       const queries = get().queries;
-      
+
       if (queries.length === 0) {
         return {
           total_queries: 0,
@@ -77,7 +77,7 @@ export const useMetricsStore = create<MetricsStore>((set, get) => {
 
     exportCSV: () => {
       const queries = get().queries;
-      
+
       const headers = [
         'Timestamp',
         'Query',

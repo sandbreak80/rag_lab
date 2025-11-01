@@ -14,12 +14,12 @@ def get_presets():
     try:
         # Read from config/presets.json
         presets_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'config', 'presets.json')
-        
+
         with open(presets_path, 'r') as f:
             presets_data = json.load(f)
-        
+
         return jsonify(presets_data.get('presets', []))
-    
+
     except Exception as e:
         # Return default presets if file not found
         return jsonify([
@@ -58,11 +58,11 @@ def get_models():
     try:
         ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://ollama:11434')
         response = requests.get(f"{ollama_url}/api/tags", timeout=10)
-        
+
         if response.status_code == 200:
             data = response.json()
             return jsonify(data)
-        
+
         # Return default if Ollama is not available
         return jsonify({
             'models': [
@@ -77,6 +77,6 @@ def get_models():
                 }
             ]
         })
-    
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500

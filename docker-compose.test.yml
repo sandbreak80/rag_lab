@@ -304,3 +304,46 @@ services:
     depends_on:
       - searxng
 
+  # React Frontend (production build with Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rag-frontend
+    networks:
+      - rag-network
+    ports:
+      - "3000:80"
+    depends_on:
+      - web-api
+    restart: unless-stopped
+
+  # Flask API Server (API-only backend)
+  web-api:
+    image: python:3.11-slim
+    container_name: rag-web-api
+    networks:
+      - rag-network
+    ports:
+      - "5555:5555"
+    volumes:
+      - ./src:/app
+      - ./config:/workspace/config
+    working_dir: /app
+    environment:
+      - PORT=5555
+      - PYTHONPATH=/workspace
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - VECTOR_DB_URL=http://vector-db:8005
+      - SEARCH_SERVICE_URL=http://search-service:8002
+      - INGEST_SERVICE_URL=http://ingest-service:8001
+      - KNOWLEDGE_GRAPH_URL=http://knowledge-graph:8007
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: bash -c "pip install -q flask flask-cors requests && python api_server.py"
+    depends_on:
+      - vector-db
+      - search-service
+      - ingest-service
+      - knowledge-graph
+

@@ -12,7 +12,7 @@ export function ChatInterface() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   const config = useConfigStore((state) => state.getConfig());
   const addMetric = useMetricsStore((state) => state.addQuery);
 

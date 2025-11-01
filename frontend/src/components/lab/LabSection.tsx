@@ -25,7 +25,7 @@ export function LabSection({ title, content, defaultOpen = false }: LabSectionPr
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
         )}
       </button>
-      
+
       {isOpen && (
         <CardContent className="pt-0 pb-4 px-4">
           <div className="prose prose-invert max-w-none text-sm">
