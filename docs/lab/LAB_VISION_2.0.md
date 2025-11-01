@@ -1,8 +1,8 @@
 # 🎯 RAG Lab Vision 2.0 - The Self-Referential Splunk Value Lab
 
-**Date:** November 1, 2025  
-**Status:** 🔥 CRITICAL PIVOT - Major Strategic Shift  
-**Impact:** 10x value increase, multi-audience expansion  
+**Date:** November 1, 2025
+**Status:** 🔥 CRITICAL PIVOT - Major Strategic Shift
+**Impact:** 10x value increase, multi-audience expansion
 
 ---
 
@@ -64,21 +64,21 @@ RESULT: Students SEE Splunk value while LEARNING AI concepts!
 ## 👥 Multi-Audience Strategy
 
 ### Audience 1: Splunk/Cisco Field Teams (PRIMARY - NOW)
-**Duration:** 4-5 hours  
-**Format:** Hands-on lab, self-paced or instructor-led  
-**Goal:** Learn AI + Learn Splunk value for AI monitoring  
+**Duration:** 4-5 hours
+**Format:** Hands-on lab, self-paced or instructor-led
+**Goal:** Learn AI + Learn Splunk value for AI monitoring
 
 **What They Learn:**
 1. **AI Fundamentals** (30%):
    - What is RAG, embeddings, chunking, etc.
    - By querying the lab's own documentation
-   
+
 2. **Splunk Product Value** (70%):
    - How Splunk monitors LLMs (groundedness, cost, latency)
    - How to export metrics to Splunk HEC
    - How to use MLTK for optimization
    - How to position Splunk Observability for AI customers
-   
+
 3. **Customer Conversation Prep**:
    - Discovery questions (provided in docs)
    - Objection handling (with data from lab)
@@ -101,9 +101,9 @@ RESULT: Students SEE Splunk value while LEARNING AI concepts!
 ---
 
 ### Audience 2: Splunk Partners (PHASE 2 - 6-12 MONTHS)
-**Duration:** 1-2 days (deeper dive)  
-**Format:** Partner enablement workshop  
-**Goal:** Partners can sell & deploy Splunk-monitored AI systems  
+**Duration:** 1-2 days (deeper dive)
+**Format:** Partner enablement workshop
+**Goal:** Partners can sell & deploy Splunk-monitored AI systems
 
 **What They Learn (Everything from Audience 1, plus):**
 4. **Deployment at Customer Sites**:
@@ -133,9 +133,9 @@ RESULT: Students SEE Splunk value while LEARNING AI concepts!
 ---
 
 ### Audience 3: Enterprise Customers (PHASE 3 - 12-24 MONTHS)
-**Duration:** 2-3 hours (focused on outcomes)  
-**Format:** Executive workshop at .conf or customer site  
-**Goal:** Customers understand value of Splunk for AI monitoring  
+**Duration:** 2-3 hours (focused on outcomes)
+**Format:** Executive workshop at .conf or customer site
+**Goal:** Customers understand value of Splunk for AI monitoring
 
 **Heavy Polish Required:**
 - 🎨 Enterprise branding (white-label capable)

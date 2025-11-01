@@ -1,6 +1,6 @@
 # 🤖 AI-Powered Development Case Study
 
-**Splunk AI Reference Architecture Lab**  
+**Splunk AI Reference Architecture Lab**
 **Built in <1 Week by 1 Person + AI**
 
 ---
@@ -541,7 +541,7 @@
 
 We just built Splunk's first AI enablement lab:
 • 10 microservices
-• 50,000+ words of documentation  
+• 50,000+ words of documentation
 • Full certification program
 • Production-ready RAG system with observability
 

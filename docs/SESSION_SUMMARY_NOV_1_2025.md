@@ -51,7 +51,7 @@ Today we achieved a **MAJOR strategic breakthrough** that transforms the RAG Lab
 
 **Key Sections:**
 - **Executive Summary:** Position Splunk as THE complete AI platform
-- **Strategic Context:** 
+- **Strategic Context:**
   - Splunk AI Toolkit (MLTK)
   - Splunk App for Data Science & Deep Learning (DSDL)
   - RAG Reference Architecture Lab

@@ -2,10 +2,10 @@
 
 **Splunk AI Reference Architecture Lab - Integration Roadmap**
 
-**For:** Product Teams, Field Teams, Partners, Customers  
-**Vision:** Position Splunk as the complete enterprise AI platform  
-**Timeline:** 12-24 months  
-**Strategic Importance:** 🔥 CRITICAL - Platform differentiation  
+**For:** Product Teams, Field Teams, Partners, Customers
+**Vision:** Position Splunk as the complete enterprise AI platform
+**Timeline:** 12-24 months
+**Strategic Importance:** 🔥 CRITICAL - Platform differentiation
 
 ---
 
@@ -36,7 +36,7 @@ This document outlines the comprehensive strategy to integrate the **RAG Referen
 ### Splunk AI Product Portfolio
 
 #### 1. **Splunk AI Toolkit** (formerly MLTK)
-**What it does:** Classical ML and forecasting within Splunk  
+**What it does:** Classical ML and forecasting within Splunk
 **Use cases:**
 - Predict numeric fields (linear regression)
 - Predict categorical fields (logistic regression)
@@ -50,7 +50,7 @@ This document outlines the comprehensive strategy to integrate the **RAG Referen
 **Reference:** https://splunkbase.splunk.com/app/2890
 
 #### 2. **Splunk App for Data Science & Deep Learning** (formerly DLTK)
-**What it does:** Advanced ML/DL with TensorFlow, PyTorch, Jupyter notebooks  
+**What it does:** Advanced ML/DL with TensorFlow, PyTorch, Jupyter notebooks
 **Use cases:**
 - Build custom models (classification, regression, forecasting)
 - Deep learning (neural networks, NLP)
@@ -62,7 +62,7 @@ This document outlines the comprehensive strategy to integrate the **RAG Referen
 **Reference:** https://splunkbase.splunk.com/app/4607
 
 #### 3. **RAG Reference Architecture Lab** (THIS PROJECT)
-**What it does:** Production RAG deployment with Splunk observability  
+**What it does:** Production RAG deployment with Splunk observability
 **Use cases:**
 - Enterprise Q&A systems
 - Document retrieval & chat
@@ -72,8 +72,8 @@ This document outlines the comprehensive strategy to integrate the **RAG Referen
 **Gap:** Needs integration with MLTK (optimization) and DSDL (custom models)
 
 #### 4. **Splunk Observability Cloud**
-**What it does:** Full-stack monitoring including LLM observability  
-**Monitors:** Groundedness, cost-per-answer, p95 latency  
+**What it does:** Full-stack monitoring including LLM observability
+**Monitors:** Groundedness, cost-per-answer, p95 latency
 
 **References:**
 - [LLM Observability Explained](https://www.splunk.com/en_us/blog/learn/llm-observability.html)
@@ -153,8 +153,8 @@ This document outlines the comprehensive strategy to integrate the **RAG Referen
 ## 🔗 Integration Phases
 
 ### Phase 4A: Splunk AI Toolkit Integration (MLTK)
-**Timeline:** Months 1-6  
-**Priority:** HIGH  
+**Timeline:** Months 1-6
+**Priority:** HIGH
 **Goal:** Use MLTK to optimize RAG pipeline performance
 
 #### Technical Integration
@@ -201,13 +201,13 @@ import json
 
 def export_metrics_to_splunk(metrics_data):
     """Export RAG metrics to Splunk HEC (HTTP Event Collector)"""
-    
+
     splunk_hec_url = os.getenv("SPLUNK_HEC_URL")  # e.g., https://hec.splunk.com:8088
     splunk_hec_token = os.getenv("SPLUNK_HEC_TOKEN")
-    
+
     if not splunk_hec_url or not splunk_hec_token:
         return  # Skip if not configured
-    
+
     # Format for Splunk HEC
     event = {
         "time": metrics_data["timestamp"],
@@ -216,12 +216,12 @@ def export_metrics_to_splunk(metrics_data):
         "index": "rag_metrics",
         "event": metrics_data
     }
-    
+
     headers = {
         "Authorization": f"Splunk {splunk_hec_token}",
         "Content-Type": "application/json"
     }
-    
+
     try:
         response = requests.post(
             f"{splunk_hec_url}/services/collector/event",
@@ -345,8 +345,8 @@ MLTK 5.6 adds **Generative AI support** - allows LLM calls directly in SPL:
 ---
 
 ### Phase 4B: Data Science & Deep Learning App Integration (DSDL)
-**Timeline:** Months 3-9  
-**Priority:** MEDIUM-HIGH  
+**Timeline:** Months 3-9
+**Priority:** MEDIUM-HIGH
 **Goal:** Train custom models in DSDL, deploy to RAG pipeline
 
 #### Technical Integration
@@ -463,12 +463,12 @@ tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 @app.route('/api/chat', methods=['POST'])
 def chat():
     query = request.json.get('query')
-    
+
     # Classify query
     inputs = tokenizer(query, return_tensors='tf', truncation=True, padding=True)
     outputs = classifier(inputs)
     query_type = ['factual', 'analytical', 'creative', 'conversational'][outputs.logits.argmax()]
-    
+
     if query_type == 'factual':
         return route_to_rag_pipeline(query)
     elif query_type == 'analytical':
@@ -581,12 +581,12 @@ anomaly_detector = joblib.load('query_anomaly_detector.pkl')
 def chat():
     query = request.json.get('query')
     query_embedding = embed_query(query)
-    
+
     # Check for anomalies
     if anomaly_detector.predict([query_embedding])[0] == -1:
         logger.warning(f"Suspicious query detected: {query}")
         return {"error": "Query flagged for review"}, 400
-    
+
     return route_to_rag_pipeline(query)
 ```
 
@@ -623,8 +623,8 @@ DSDL provides GPU-accelerated training:
 ---
 
 ### Phase 4C: Unified Platform Story
-**Timeline:** Months 6-12  
-**Priority:** HIGH (Go-to-market)  
+**Timeline:** Months 6-12
+**Priority:** HIGH (Go-to-market)
 **Goal:** Position Splunk as THE complete AI platform
 
 #### Customer Narrative
@@ -706,8 +706,8 @@ DSDL provides GPU-accelerated training:
 ---
 
 ### Phase 4D: Field Enablement Expansion (Lab Series)
-**Timeline:** Months 9-18  
-**Priority:** MEDIUM  
+**Timeline:** Months 9-18
+**Priority:** MEDIUM
 **Goal:** Multi-lab certification path
 
 #### Lab Series Design
@@ -914,7 +914,7 @@ Level 4: AI Platform Architect (All Labs)
 ---
 
 ### Phase 4E: Product Integration Roadmap
-**Timeline:** 6-24 months  
+**Timeline:** 6-24 months
 **Stakeholders:** Product teams (MLTK, DSDL, Observability), Engineering, Field, Marketing
 
 #### Short-term (3-6 months)
@@ -1082,7 +1082,7 @@ Level 4: AI Platform Architect (All Labs)
 
 **1. Field Enablement ROI**
 - **Investment:** $500K (lab development) + $200K/year (maintenance)
-- **Return:** 
+- **Return:**
   - Faster ramp time (6 months → 3 months) = $2M saved (100 SEs @ $20K/mo)
   - Higher win rates (40% → 50%) = $5M incremental revenue
   - ROI: 10x first year
@@ -1319,7 +1319,7 @@ Level 4: AI Platform Architect (All Labs)
 
 ## 📞 Contact & Ownership
 
-**Program Owner:** AI Enablement Leader (You!)  
+**Program Owner:** AI Enablement Leader (You!)
 **Stakeholders:**
 - Product Management (MLTK, DSDL, Observability)
 - Engineering (Platform, Services, Infrastructure)
@@ -1362,7 +1362,7 @@ Level 4: AI Platform Architect (All Labs)
 - 500+ field team members certified (Year 1)
 - Market leadership in LLM observability (5-10% market share)
 
-**Investment:** $2-5M (engineering, field enablement, marketing)  
+**Investment:** $2-5M (engineering, field enablement, marketing)
 **ROI:** 10-20x (revenue uplift, cost savings, market position)
 
 ---
