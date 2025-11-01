@@ -1163,9 +1163,6 @@
                 </div>
             </div>
 
-            <div class="folder-selector" id="folder-selector">
-                <button class="folder-btn active" data-folder="">🌐 All Folders</button>
-            </div>
         </header>
 
         <!-- Tab Navigation -->
@@ -1549,7 +1546,12 @@
 
             <!-- TAB 2: Documents -->
             <div class="tab-content" id="tab-documents">
-                <div id="documents-tab-container"></div>
+                <div id="documents-tab-container">
+                    <h2>📁 Uploaded Documents</h2>
+                    <div id="documents-list" style="margin: 20px 0;">
+                        <p style="color: var(--text-muted);">Loading documents...</p>
+                    </div>
+                </div>
             </div>
             <!-- End TAB 2: Documents -->
 
@@ -1577,7 +1579,7 @@
             <!-- TAB 6: Q&A -->
             <div class="tab-content" id="tab-qa">
                 <h2>❓ Frequently Asked Questions</h2>
-                
+
                 <div class="qa-section">
                     <h3>About RAG Systems</h3>
                     <details>
@@ -1593,7 +1595,7 @@
                         <p>Vector search finds semantically similar content (meaning-based). Keyword search finds exact term matches. Hybrid search combines both for better results.</p>
                     </details>
                 </div>
-                
+
                 <div class="qa-section">
                     <h3>Using This Lab</h3>
                     <details>
@@ -1609,7 +1611,7 @@
                         <p>Use Quick Presets in Settings to load different configs, ask the same question, and compare results in the Metrics tab.</p>
                     </details>
                 </div>
-                
+
                 <div class="qa-section">
                     <h3>Technical Details</h3>
                     <details>
@@ -1632,7 +1634,7 @@
             <div class="tab-content" id="tab-feedback">
                 <h2>💭 Your Feedback</h2>
                 <p>Help us improve this RAG lab! Your input is valuable.</p>
-                
+
                 <form id="feedback-form" style="max-width: 600px; margin-top: 30px;">
                     <div class="form-group">
                         <label>Overall Experience</label>
@@ -1644,17 +1646,17 @@
                             <input type="radio" name="rating" value="1" id="r1"><label for="r1">⭐ Poor</label>
                         </div>
                     </div>
-                    
+
                     <div class="form-group" style="margin-top: 20px;">
                         <label>What did you learn?</label>
                         <textarea rows="3" placeholder="What concepts or techniques did you find most valuable?"></textarea>
                     </div>
-                    
+
                     <div class="form-group">
                         <label>What could be improved?</label>
                         <textarea rows="3" placeholder="Suggestions for exercises, documentation, or features"></textarea>
                     </div>
-                    
+
                     <div class="form-group">
                         <label>Would you recommend this lab?</label>
                         <select>
@@ -1665,15 +1667,15 @@
                             <option>No</option>
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
                         <label>Additional Comments</label>
                         <textarea rows="4" placeholder="Any other feedback, questions, or suggestions"></textarea>
                     </div>
-                    
+
                     <button type="submit" class="btn-upload" style="margin-top: 20px;">📮 Submit Feedback</button>
                 </form>
-                
+
                 <p style="margin-top: 30px; color: var(--text-muted); font-size: 14px;">
                     Thank you for taking the time to provide feedback!
                 </p>
@@ -2397,12 +2399,40 @@
                 console.log('Stats loaded:', data);
                 document.getElementById('chunk-count').textContent = (data.total_chunks || data.indexed_chunks || 0).toLocaleString();
                 document.getElementById('model-name').textContent = data.chat_model || 'loading...';
+                
+                // Load documents list
+                loadDocumentsList(data);
             })
             .catch(e => {
                 console.error('Failed to load stats:', e);
                 document.getElementById('chunk-count').textContent = 'Error';
                 document.getElementById('model-name').textContent = 'Error';
             });
+
+        function loadDocumentsList(stats) {
+            const docsList = document.getElementById('documents-list');
+            if (!docsList) return;
+            
+            const docs = stats.documents || [];
+            const filteredDocs = docs.filter(d => !d.includes('_SUMMARY') && !d.includes('lab/') && !d.includes('docs/'));
+            
+            if (filteredDocs.length === 0) {
+                docsList.innerHTML = '<p style="color: var(--text-muted);">No user documents uploaded yet. Upload files to get started!</p>';
+                return;
+            }
+            
+            docsList.innerHTML = filteredDocs.map((doc, i) => `
+                <div class="document-item" style="padding: 15px; margin: 10px 0; background: var(--bg-tertiary); border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="font-size: 18px; margin-right: 8px;">📄</span>
+                            <span style="font-weight: 500;">${doc}</span>
+                        </div>
+                        <span style="color: var(--text-muted); font-size: 14px;">#${i + 1}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
 
         // Handle ask button
         askButton.addEventListener('click', askQuestion);
