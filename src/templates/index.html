@@ -16,6 +16,9 @@
     <!-- Highlight.js for Code Syntax -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <!-- Settings Panel Styles -->
+    <link rel="stylesheet" href="/static/settings-panel.css">
 
     <style>
         :root {
@@ -727,6 +730,155 @@
     </style>
 </head>
 <body>
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            <h2>⚙️ RAG Configuration</h2>
+            <p>Experiment with different settings to see how they affect quality, speed, and resource usage.</p>
+        </div>
+        
+        <!-- Quick Presets -->
+        <div class="settings-section">
+            <h3>⚡ Quick Presets</h3>
+            <div class="preset-grid">
+                <button class="preset-btn" onclick="loadPreset('minimal')">
+                    Minimal<br><small>Baseline</small>
+                </button>
+                <button class="preset-btn" onclick="loadPreset('fast')">
+                    Fast<br><small>40-60ms</small>
+                </button>
+                <button class="preset-btn" onclick="loadPreset('balanced')">
+                    Balanced<br><small>100-150ms</small>
+                </button>
+                <button class="preset-btn" onclick="loadPreset('quality')">
+                    Quality<br><small>200-300ms</small>
+                </button>
+                <button class="preset-btn" onclick="loadPreset('maximum')">
+                    Maximum<br><small>2-3s</small>
+                </button>
+                <button class="preset-btn" onclick="loadPreset('production')">
+                    Production<br><small>250-350ms</small>
+                </button>
+            </div>
+        </div>
+        
+        <!-- RAG Pipeline Toggles -->
+        <div class="settings-section">
+            <h3>🔧 RAG Pipeline</h3>
+            
+            <div class="toggle-item">
+                <label for="use-query-expansion">
+                    Query Expansion
+                    <span class="impact-badge positive">+5% recall, +10ms</span>
+                </label>
+                <input type="checkbox" id="use-query-expansion" checked onchange="updateConfig()">
+            </div>
+            
+            <div class="toggle-item">
+                <label for="use-bm25">
+                    BM25 Keyword Search
+                    <span class="impact-badge positive">+15% recall, +20ms</span>
+                </label>
+                <input type="checkbox" id="use-bm25" checked onchange="updateConfig()">
+            </div>
+            
+            <div class="toggle-item">
+                <label for="use-hybrid">
+                    Hybrid Fusion
+                    <span class="impact-badge positive">+20% recall, +30ms</span>
+                </label>
+                <input type="checkbox" id="use-hybrid" checked onchange="updateConfig()">
+            </div>
+            
+            <div class="toggle-item">
+                <label for="use-graph">
+                    Knowledge Graph
+                    <span class="impact-badge positive">+5% recall, +50ms</span>
+                </label>
+                <input type="checkbox" id="use-graph" onchange="updateConfig()">
+            </div>
+            
+            <div class="toggle-item">
+                <label for="use-reranking">
+                    LLM Re-ranking
+                    <span class="impact-badge warning">+10% precision, +2000ms</span>
+                </label>
+                <input type="checkbox" id="use-reranking" onchange="updateConfig()">
+            </div>
+        </div>
+        
+        <!-- Search Parameters -->
+        <div class="settings-section">
+            <h3>🎯 Search Parameters</h3>
+            
+            <div class="setting-item">
+                <label>
+                    Top-K Results: <span class="slider-value" id="topk-value">10</span>
+                </label>
+                <input type="range" id="top-k" min="1" max="20" value="10" oninput="document.getElementById('topk-value').textContent = this.value; updateConfig()">
+            </div>
+        </div>
+        
+        <!-- LLM Configuration -->
+        <div class="settings-section">
+            <h3>🤖 LLM Settings</h3>
+            
+            <div class="setting-item">
+                <label for="llm-model">Model</label>
+                <select id="llm-model" onchange="updateConfig()">
+                    <option value="llama3.2:1b">Llama 3.2 1B (Fast)</option>
+                    <option value="llama3.2:3b" selected>Llama 3.2 3B (Balanced)</option>
+                    <option value="llama3.2:8b">Llama 3.2 8B (Accurate)</option>
+                </select>
+            </div>
+            
+            <div class="setting-item">
+                <label>
+                    Temperature: <span class="slider-value" id="temp-value">0.5</span>
+                </label>
+                <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.5" oninput="document.getElementById('temp-value').textContent = this.value; updateConfig()">
+            </div>
+            
+            <div class="setting-item">
+                <label>
+                    Max Tokens: <span class="slider-value" id="tokens-value">500</span>
+                </label>
+                <input type="range" id="max-tokens" min="100" max="2000" step="100" value="500" oninput="document.getElementById('tokens-value').textContent = this.value; updateConfig()">
+            </div>
+            
+            <div class="setting-item">
+                <label>
+                    Context Window: <span class="slider-value" id="context-value">4000</span>
+                </label>
+                <input type="range" id="context-window" min="1000" max="8000" step="1000" value="4000" oninput="document.getElementById('context-value').textContent = this.value; updateConfig()">
+            </div>
+        </div>
+        
+        <!-- Current Metrics Preview -->
+        <div class="settings-section">
+            <h3>📊 Expected Performance</h3>
+            <div class="metrics-preview">
+                <div class="metric-row">
+                    <span class="label">Precision:</span>
+                    <span class="value" id="expected-precision">85-90%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="label">Recall:</span>
+                    <span class="value" id="expected-recall">80-85%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="label">Latency:</span>
+                    <span class="value" id="expected-latency">100-150ms</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Toggle Button -->
+    <button class="settings-toggle" id="settingsToggle" onclick="toggleSettings()">
+        ⚙️
+    </button>
+    
     <div class="container">
         <header>
             <div class="header-content">
@@ -805,6 +957,171 @@
     </div>
 
     <script>
+        // ====================================
+        // SETTINGS PANEL & CONFIGURATION
+        // ====================================
+        
+        // Current configuration state
+        let currentConfig = {
+            use_query_expansion: true,
+            use_bm25: true,
+            use_hybrid: true,
+            use_graph: false,
+            use_reranking: false,
+            top_k: 10
+        };
+        
+        let currentLLMConfig = {
+            model: 'llama3.2:3b',
+            temperature: 0.5,
+            max_tokens: 500,
+            context_window: 4000
+        };
+        
+        let availablePresets = {};
+        
+        // Toggle settings panel
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('open');
+        }
+        
+        // Load presets from API
+        function loadPresetsFromAPI() {
+            fetch('/api/presets')
+                .then(response => response.json())
+                .then(data => {
+                    availablePresets = data.presets || {};
+                    console.log('✅ Loaded', Object.keys(availablePresets).length, 'presets');
+                })
+                .catch(error => {
+                    console.error('❌ Error loading presets:', error);
+                });
+        }
+        
+        // Load a specific preset
+        function loadPreset(presetName) {
+            const preset = availablePresets[presetName];
+            if (!preset) {
+                console.error('Preset not found:', presetName);
+                return;
+            }
+            
+            console.log('📋 Loading preset:', preset.name);
+            
+            // Apply RAG config
+            if (preset.config) {
+                document.getElementById('use-query-expansion').checked = preset.config.use_query_expansion || false;
+                document.getElementById('use-bm25').checked = preset.config.use_bm25 || false;
+                document.getElementById('use-hybrid').checked = preset.config.use_hybrid || false;
+                document.getElementById('use-graph').checked = preset.config.use_graph || false;
+                document.getElementById('use-reranking').checked = preset.config.use_reranking || false;
+                document.getElementById('top-k').value = preset.config.top_k || 10;
+                document.getElementById('topk-value').textContent = preset.config.top_k || 10;
+            }
+            
+            // Apply LLM config
+            if (preset.llm_config) {
+                document.getElementById('llm-model').value = preset.llm_config.model || 'llama3.2:3b';
+                document.getElementById('temperature').value = preset.llm_config.temperature || 0.5;
+                document.getElementById('temp-value').textContent = preset.llm_config.temperature || 0.5;
+                document.getElementById('max-tokens').value = preset.llm_config.max_tokens || 500;
+                document.getElementById('tokens-value').textContent = preset.llm_config.max_tokens || 500;
+                document.getElementById('context-window').value = preset.llm_config.context_window || 4000;
+                document.getElementById('context-value').textContent = preset.llm_config.context_window || 4000;
+            }
+            
+            // Update expected metrics
+            if (preset.expected_metrics) {
+                document.getElementById('expected-precision').textContent = preset.expected_metrics.precision || 'N/A';
+                document.getElementById('expected-recall').textContent = preset.expected_metrics.recall || 'N/A';
+                document.getElementById('expected-latency').textContent = preset.expected_metrics.latency || 'N/A';
+            }
+            
+            // Highlight active preset
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update config
+            updateConfig();
+            
+            // Show notification
+            showNotification(`Loaded ${preset.name} preset`, 'success');
+        }
+        
+        // Update configuration from UI
+        function updateConfig() {
+            currentConfig = {
+                use_query_expansion: document.getElementById('use-query-expansion').checked,
+                use_bm25: document.getElementById('use-bm25').checked,
+                use_hybrid: document.getElementById('use-hybrid').checked,
+                use_graph: document.getElementById('use-graph').checked,
+                use_reranking: document.getElementById('use-reranking').checked,
+                top_k: parseInt(document.getElementById('top-k').value)
+            };
+            
+            currentLLMConfig = {
+                model: document.getElementById('llm-model').value,
+                temperature: parseFloat(document.getElementById('temperature').value),
+                max_tokens: parseInt(document.getElementById('max-tokens').value),
+                context_window: parseInt(document.getElementById('context-window').value)
+            };
+            
+            console.log('⚙️  Config updated:', currentConfig);
+            
+            // Save to localStorage
+            localStorage.setItem('rag_config', JSON.stringify(currentConfig));
+            localStorage.setItem('llm_config', JSON.stringify(currentLLMConfig));
+        }
+        
+        // Load saved configuration
+        function loadSavedConfig() {
+            try {
+                const savedConfig = localStorage.getItem('rag_config');
+                const savedLLMConfig = localStorage.getItem('llm_config');
+                
+                if (savedConfig) {
+                    currentConfig = JSON.parse(savedConfig);
+                    // Apply to UI
+                    document.getElementById('use-query-expansion').checked = currentConfig.use_query_expansion;
+                    document.getElementById('use-bm25').checked = currentConfig.use_bm25;
+                    document.getElementById('use-hybrid').checked = currentConfig.use_hybrid;
+                    document.getElementById('use-graph').checked = currentConfig.use_graph;
+                    document.getElementById('use-reranking').checked = currentConfig.use_reranking;
+                    document.getElementById('top-k').value = currentConfig.top_k;
+                    document.getElementById('topk-value').textContent = currentConfig.top_k;
+                }
+                
+                if (savedLLMConfig) {
+                    currentLLMConfig = JSON.parse(savedLLMConfig);
+                    // Apply to UI
+                    document.getElementById('llm-model').value = currentLLMConfig.model;
+                    document.getElementById('temperature').value = currentLLMConfig.temperature;
+                    document.getElementById('temp-value').textContent = currentLLMConfig.temperature;
+                    document.getElementById('max-tokens').value = currentLLMConfig.max_tokens;
+                    document.getElementById('tokens-value').textContent = currentLLMConfig.max_tokens;
+                    document.getElementById('context-window').value = currentLLMConfig.context_window;
+                    document.getElementById('context-value').textContent = currentLLMConfig.context_window;
+                }
+                
+                console.log('✅ Loaded saved configuration');
+            } catch (e) {
+                console.error('❌ Error loading saved config:', e);
+            }
+        }
+        
+        // Show notification
+        function showNotification(message, type = 'info') {
+            // You can implement a toast notification here
+            console.log(`${type === 'success' ? '✅' : 'ℹ️'} ${message}`);
+        }
+        
+        // ====================================
+        // ORIGINAL CODE (EXISTING)
+        // ====================================
+        
         const messagesContainer = document.getElementById('messages');
         const questionInput = document.getElementById('question-input');
         const askButton = document.getElementById('ask-button');
@@ -832,6 +1149,10 @@
             console.error('❌ Error configuring marked:', e);
         }
 
+        // Initialize educational features
+        loadPresetsFromAPI();
+        loadSavedConfig();
+        
         // Load stats and folders
         fetch('/api/stats')
             .then(r => r.json())

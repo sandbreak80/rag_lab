@@ -588,7 +588,7 @@ def search():
 def search_with_config():
     """
     Educational search endpoint with detailed configuration and metrics
-    
+
     Body:
     {
         "query": "search text",
@@ -601,17 +601,17 @@ def search_with_config():
             "top_k": 10
         }
     }
-    
+
     Returns results + detailed performance metrics for each component
     """
     try:
         data = request.json
         query = data.get('query', '')
         config = data.get('config', {})
-        
+
         if not query:
             return jsonify({'error': 'query required'}), 400
-        
+
         # Default config
         use_query_expansion = config.get('use_query_expansion', True)
         use_bm25 = config.get('use_bm25', True)
@@ -619,11 +619,11 @@ def search_with_config():
         use_graph = config.get('use_graph', False)
         use_reranking = config.get('use_reranking', False)
         top_k = config.get('top_k', 10)
-        
+
         # Performance tracking
         perf_metrics = {}
         start_time = time.time()
-        
+
         # Step 1: Query Expansion
         original_query = query
         if use_query_expansion and query_expander:
@@ -634,17 +634,17 @@ def search_with_config():
         else:
             perf_metrics['query_expansion_ms'] = 0
             perf_metrics['query_expanded'] = False
-        
+
         # Step 2: Retrieval
         vector_results = []
         bm25_results = []
-        
+
         # Vector search (always do this as baseline)
         vec_start = time.time()
         vector_results = vector_search_internal(query, top_k * 2)
         perf_metrics['vector_search_ms'] = round((time.time() - vec_start) * 1000, 2)
         perf_metrics['vector_results_count'] = len(vector_results)
-        
+
         # BM25 search (if enabled and index available)
         if use_bm25 and bm25_index:
             bm25_start = time.time()
@@ -654,7 +654,7 @@ def search_with_config():
         else:
             perf_metrics['bm25_search_ms'] = 0
             perf_metrics['bm25_results_count'] = 0
-        
+
         # Hybrid fusion
         if use_hybrid and bm25_results:
             fusion_start = time.time()
@@ -665,9 +665,9 @@ def search_with_config():
             fused = vector_results
             perf_metrics['fusion_ms'] = 0
             perf_metrics['method'] = 'vector_only'
-        
+
         fused = fused[:top_k * 2]  # Keep extra for graph/reranking
-        
+
         # Step 3: Knowledge Graph Enhancement
         if use_graph and fused:
             graph_start = time.time()
@@ -685,7 +685,7 @@ def search_with_config():
                         if response.status_code == 200:
                             related = response.json().get('related', [])
                             related_docs.update(related)
-                
+
                 # Add related documents
                 existing_ids = {r.get('metadata', {}).get('file_name', '') for r in fused}
                 graph_added = 0
@@ -705,7 +705,7 @@ def search_with_config():
                                 result['source'] = 'knowledge_graph'
                                 fused.append(result)
                                 graph_added += 1
-                
+
                 perf_metrics['graph_enhancement_ms'] = round((time.time() - graph_start) * 1000, 2)
                 perf_metrics['graph_docs_added'] = graph_added
             except Exception as e:
@@ -715,7 +715,7 @@ def search_with_config():
         else:
             perf_metrics['graph_enhancement_ms'] = 0
             perf_metrics['graph_docs_added'] = 0
-        
+
         # Step 4: LLM Re-ranking
         if use_reranking and fused:
             rerank_start = time.time()
@@ -745,13 +745,13 @@ def search_with_config():
         else:
             perf_metrics['reranking_ms'] = 0
             perf_metrics['reranking_success'] = False
-        
+
         # Final results
         final_results = fused[:top_k]
-        
+
         # Total time
         perf_metrics['total_latency_ms'] = round((time.time() - start_time) * 1000, 2)
-        
+
         # Calculate breakdown percentages
         total = perf_metrics['total_latency_ms']
         if total > 0:
@@ -763,7 +763,7 @@ def search_with_config():
                 'graph': round((perf_metrics['graph_enhancement_ms'] / total) * 100, 1),
                 'reranking': round((perf_metrics['reranking_ms'] / total) * 100, 1)
             }
-        
+
         return jsonify({
             'results': final_results,
             'count': len(final_results),
@@ -774,7 +774,7 @@ def search_with_config():
             'config_used': config,
             'metrics': perf_metrics
         })
-        
+
     except Exception as e:
         import traceback
         traceback.print_exc()

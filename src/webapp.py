@@ -311,7 +311,7 @@ def upload_file():
 def evaluate():
     """
     Run evaluation on test set with current configuration
-    
+
     Body:
     {
         "config": {
@@ -324,23 +324,23 @@ def evaluate():
     try:
         data = request.json or {}
         config = data.get('config', {})
-        
+
         # Run evaluation using the evaluation script
         import sys
         from pathlib import Path
         sys.path.insert(0, str(Path(__file__).parent))
-        
+
         from evaluate_rag_system import RAGEvaluator
-        
+
         evaluator = RAGEvaluator()
-        
+
         # Use search_with_config endpoint for evaluation
         search_endpoint = os.getenv('SEARCH_SERVICE_URL', 'http://localhost:8002') + '/search_with_config'
-        
+
         results = evaluator.evaluate_search_endpoint(search_endpoint, {'config': config})
-        
+
         return jsonify(results)
-        
+
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -353,9 +353,9 @@ def get_presets():
     try:
         import json
         from pathlib import Path
-        
+
         presets_file = Path(__file__).parent.parent / 'config' / 'presets.json'
-        
+
         if presets_file.exists():
             with open(presets_file, 'r') as f:
                 presets_data = json.load(f)
