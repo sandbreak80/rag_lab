@@ -2,8 +2,8 @@
 
 **Educational RAG Lab - AI Concepts for Enterprise Solutions**
 
-**Audience:** Solutions Engineers, Sales Engineers, Architects, Technical Leaders  
-**Goal:** Learn to confidently discuss AI/RAG with enterprise customers  
+**Audience:** Solutions Engineers, Sales Engineers, Architects, Technical Leaders
+**Goal:** Learn to confidently discuss AI/RAG with enterprise customers
 **Use:** Individual learning, team workshops, or group labs
 
 ---
@@ -22,7 +22,7 @@
 
 ### For Customer Conversations
 - Use "Customer Value" boxes for messaging
-- Reference "Enterprise Considerations" 
+- Reference "Enterprise Considerations"
 - Cite real performance numbers from this lab
 
 ---

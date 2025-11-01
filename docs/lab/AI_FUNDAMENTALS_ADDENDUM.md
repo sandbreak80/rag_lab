@@ -192,8 +192,8 @@ for sentence in sentences:
 Split at paragraph breaks (\n\n)
 Maintain semantic units
 
-Chunk 1: "Employee Benefits\n\nOur company offers comprehensive 
-          health insurance including medical, dental, and vision 
+Chunk 1: "Employee Benefits\n\nOur company offers comprehensive
+          health insurance including medical, dental, and vision
           coverage. All full-time employees are eligible..."
 
 ✅ Maintains semantic meaning
@@ -321,7 +321,7 @@ Result: "...and the requirements are: 1. Valid ID 2. Proof of"
 **Agentic Chunking:**
 ```
 LLM analyzes: "This is a list of requirements. They should stay together."
-Result: "...and the requirements are: 1. Valid ID 2. Proof of 
+Result: "...and the requirements are: 1. Valid ID 2. Proof of
          residence 3. Employment verification. 4. Credit check..."
         [CHUNK BREAK - After complete list]
 
@@ -493,7 +493,7 @@ Query: "How do I check connections?" → Miss step 1!
 Chunk 42: "Safety Procedures:
            ...always follow these steps:
            1. Turn off power
-           2. Remove panel  
+           2. Remove panel
            3. Check connections
            4. Replace panel
            5. Restore power"
@@ -531,7 +531,7 @@ Query: "How do I check connections?" → Get full procedure!
 
 ### Discovery Questions
 1. **"What document formats do you have?"** → Assess parsing needs
-2. **"How many documents? How often updated?"** → Size infrastructure  
+2. **"How many documents? How often updated?"** → Size infrastructure
 3. **"Any compliance requirements?"** → Plan security controls
 4. **"What's your current search solution?"** → Positioning against competitors
 

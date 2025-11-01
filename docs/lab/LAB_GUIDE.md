@@ -282,7 +282,7 @@ Understand advanced RAG components and their impact.
    - Load "Balanced" preset (Graph OFF)
    - Ask: "What are embeddings?"
    - Note results count
-   
+
    - Now enable "Knowledge Graph" toggle
    - Ask the same question
    - Did you get more results?
@@ -292,7 +292,7 @@ Understand advanced RAG components and their impact.
    - Enable "LLM Re-ranking" toggle
    - Ask a question
    - **Warning**: This will be SLOW (~2 seconds)
-   
+
    - Observe the re-ranking time in metrics
    - Is the quality improvement worth 2000ms?
 
