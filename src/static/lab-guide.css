@@ -36,20 +36,22 @@
 
 /* Lab Guide Panel */
 .lab-guide-panel {
-    position: fixed;
-    right: -500px;
+    /* OLD: position: fixed; right: -500px; - for collapsible side panel */
+    /* NEW: Static positioning for tab content */
+    position: relative;
+    right: 0;
     top: 0;
-    width: 500px;
-    height: 100vh;
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-left: 1px solid var(--glass-border);
-    transition: right 0.3s ease;
-    z-index: 1000;
-    overflow-y: auto;
-    padding: 20px;
-    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-height: auto;
+    background: transparent;
+    border-left: none;
+    transition: none;
+    z-index: auto;
+    overflow-y: visible;
+    padding: 0;
+    box-shadow: none;
 }
 
 .lab-guide-panel.open {

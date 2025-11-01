@@ -175,7 +175,7 @@ async def validate_ui():
             print("\n" + "="*60)
             print("✅ VALIDATION COMPLETE")
             print("="*60)
-            
+
         except Exception as e:
             print(f"\n❌ ERROR: {e}")
             import traceback
