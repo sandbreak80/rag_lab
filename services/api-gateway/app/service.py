@@ -253,14 +253,32 @@ def chat():
 @app.route('/api/ask', methods=['POST'])
 @timed(metrics, 'ask_request')
 def ask():
-    """Ask question (non-streaming)"""
+    """Ask question (non-streaming) - Transform React UI format to chat service format"""
     try:
         metrics.increment('ask_requests')
+        
+        # Get React UI format
+        data = request.json
+        
+        # Transform to chat service format
+        chat_request = {
+            'question': data.get('query', data.get('question', '')),
+            'num_contexts': data.get('topK', data.get('num_contexts', 5)),
+            # Add other config as needed
+            'use_query_expansion': data.get('useQueryExpansion', False),
+            'use_bm25': data.get('useBM25', False),
+            'use_hybrid': data.get('useHybrid', False),
+            'use_graph': data.get('useGraph', False),
+            'use_reranking': data.get('useReranking', False),
+            'use_web_search': data.get('useWebSearch', False),
+            'model': data.get('model', 'llama3.2:3b'),
+            'temperature': data.get('temperature', 0.7),
+        }
 
         # Forward to chat service
         response = requests.post(
             f"{CHAT_SERVICE_URL}/ask",
-            json=request.json,
+            json=chat_request,
             timeout=120
         )
         response.raise_for_status()
@@ -280,17 +298,17 @@ def get_presets():
     try:
         import json
         import os
-        
+
         # Read from config/presets.json
         presets_path = '/workspace/config/presets.json'
-        
+
         with open(presets_path, 'r') as f:
             presets_data = json.load(f)
-        
+
         # Convert presets dictionary to array
         presets_dict = presets_data.get('presets', {})
         presets_array = []
-        
+
         for key, value in presets_dict.items():
             presets_array.append({
                 'name': key,
@@ -300,7 +318,7 @@ def get_presets():
                 'expected_metrics': value.get('expected_metrics', {}),
                 'notes': value.get('notes', '')
             })
-        
+
         return jsonify(presets_array)
     except Exception as e:
         # Return default presets if file not found
@@ -340,10 +358,10 @@ def get_models():
         import os
         ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://ollama:11434')
         response = requests.get(f"{ollama_url}/api/tags", timeout=10)
-        
+
         if response.status_code == 200:
             return jsonify(response.json())
-        
+
         # Return default if Ollama is not available
         return jsonify({
             'models': [
@@ -367,25 +385,25 @@ def get_documents():
             json={},
             timeout=10
         )
-        
+
         if response.status_code == 200:
             data = response.json()
             metadatas = data.get('metadatas', [])
-            
+
             # Extract unique filenames from metadata
             filenames = set()
             for metadata in metadatas:
                 filename = metadata.get('filename') or metadata.get('file_name')
                 if filename:
                     filenames.add(filename)
-            
+
             # Convert to sorted list
             documents = sorted(list(filenames))
             return jsonify({
                 'documents': documents,
                 'count': len(documents)
             })
-        
+
         return jsonify({'documents': [], 'count': 0})
     except Exception as e:
         return jsonify({'error': str(e), 'documents': [], 'count': 0}), 500
