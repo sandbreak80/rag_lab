@@ -103,6 +103,35 @@ def get_stats():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/nodes', methods=['GET'])
+def list_nodes():
+    """List all nodes (optionally filtered by type)"""
+    try:
+        if not kg:
+            return jsonify({'error': 'Knowledge graph not available'}), 503
+
+        node_type = request.args.get('type', None)
+        limit = request.args.get('limit', 100, type=int)
+
+        nodes = []
+        for node, data in kg.graph.nodes(data=True):
+            if node_type is None or data.get('type') == node_type:
+                nodes.append({
+                    'id': node,
+                    'type': data.get('type', 'unknown'),
+                    'attributes': {k: v for k, v in data.items() if k != 'type'}
+                })
+                if len(nodes) >= limit:
+                    break
+
+        return jsonify({
+            'nodes': nodes,
+            'count': len(nodes),
+            'total': len(kg.graph.nodes())
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/related/<doc_id>', methods=['GET'])
 @timed(metrics, 'find_related')
 def find_related(doc_id):
@@ -112,11 +141,12 @@ def find_related(doc_id):
             return jsonify({'error': 'Knowledge graph not available'}), 503
 
         limit = request.args.get('limit', 10, type=int)
+        max_hops = request.args.get('max_hops', 2, type=int)
 
         metrics.increment('find_related_requests')
 
-        # Find related nodes
-        related = kg.find_related(doc_id, max_results=limit)
+        # Find related nodes (correct parameter name is 'limit', not 'max_results')
+        related = kg.find_related(doc_id, max_hops=max_hops, limit=limit)
 
         metrics.increment('find_related_success')
 
