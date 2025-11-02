@@ -101,11 +101,11 @@ if [ "$HTTP_CODE" = "200" ]; then
     echo "────────────────────────────────────────────────────────────────"
     echo "📊 RESPONSE ANALYSIS"
     echo "────────────────────────────────────────────────────────────────"
-    
+
     # Parse response
     ANSWER_LENGTH=$(echo "$RESPONSE_BODY" | jq -r '.answer | length' 2>/dev/null)
     SOURCES_COUNT=$(echo "$RESPONSE_BODY" | jq -r '.sources | length' 2>/dev/null)
-    
+
     echo "$RESPONSE_BODY" | jq -r '
     "
 📝 Answer:
@@ -115,11 +115,11 @@ if [ "$HTTP_CODE" = "200" ]; then
 📚 Sources: \(.sources | length) documents
 
 ⚙️  RAG PIPELINE METRICS:
-" + 
+" +
     if .metrics then
         "   Method: \(.metrics.method // "N/A")
    Query Expanded: \(.metrics.query_expanded // false)
-   
+
    🔍 SEARCH TIMING:
    • Query Expansion: \(.metrics.query_expansion_ms // 0)ms
    • Vector Search:   \(.metrics.vector_search_ms // 0)ms (\(.metrics.vector_results_count // 0) results)
@@ -128,16 +128,16 @@ if [ "$HTTP_CODE" = "200" ]; then
    • Knowledge Graph: \(.metrics.graph_enhancement_ms // 0)ms (\(.metrics.graph_docs_added // 0) docs added)
    • Reranking:       \(.metrics.reranking_ms // 0)ms (success: \(.metrics.reranking_success // false))
    • Web Search:      \(.metrics.web_search_ms // 0)ms
-   
+
    📊 TOTAL SEARCH:   \(.metrics.total_latency_ms // 0)ms
-   
+
    🎯 RESULTS:
    • Context Chunks: \(.metrics.context_chunks // 0)
    • Model: \(.metrics.model // "N/A")
    • Temperature: \(.metrics.temperature // 0)
-   
+
    ⚡ BREAKDOWN:
-" + 
+" +
         if .metrics.breakdown_percent then
             (.metrics.breakdown_percent | to_entries | map("   • " + .key + ": " + (.value | tostring) + "%") | join("\n"))
         else
@@ -147,9 +147,9 @@ if [ "$HTTP_CODE" = "200" ]; then
         "   (No metrics available)"
     end
     ' 2>/dev/null
-    
+
     echo ""
-    
+
 else
     echo "❌ FAILED!"
     echo ""

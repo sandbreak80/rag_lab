@@ -608,6 +608,9 @@ def search_with_config():
         data = request.json
         query = data.get('query', '')
         config = data.get('config', {})
+        
+        print(f"\n🔍 ===== SEARCH REQUEST =====")
+        print(f"Query: {query[:80]}...")
 
         if not query:
             return jsonify({'error': 'query required'}), 400
@@ -619,6 +622,8 @@ def search_with_config():
         use_graph = config.get('use_graph', False)
         use_reranking = config.get('use_reranking', False)
         top_k = config.get('top_k', 10)
+        
+        print(f"Config: QE={use_query_expansion}, BM25={use_bm25}, Hybrid={use_hybrid}, Graph={use_graph}, Rerank={use_reranking}, K={top_k}")
 
         # Performance tracking
         perf_metrics = {}
@@ -631,9 +636,11 @@ def search_with_config():
             query = query_expander.expand_with_context(query)
             perf_metrics['query_expansion_ms'] = round((time.time() - exp_start) * 1000, 2)
             perf_metrics['query_expanded'] = query != original_query
+            print(f"✓ Query Expansion: {perf_metrics['query_expansion_ms']}ms (expanded={perf_metrics['query_expanded']})")
         else:
             perf_metrics['query_expansion_ms'] = 0
             perf_metrics['query_expanded'] = False
+            print(f"⊘ Query Expansion: SKIPPED")
 
         # Step 2: Retrieval
         vector_results = []
@@ -644,6 +651,7 @@ def search_with_config():
         vector_results = vector_search_internal(query, top_k * 2)
         perf_metrics['vector_search_ms'] = round((time.time() - vec_start) * 1000, 2)
         perf_metrics['vector_results_count'] = len(vector_results)
+        print(f"✓ Vector Search: {perf_metrics['vector_search_ms']}ms ({perf_metrics['vector_results_count']} results)")
 
         # BM25 search (if enabled and index available)
         if use_bm25 and bm25_index:
@@ -651,6 +659,7 @@ def search_with_config():
             bm25_results = bm25_search_internal(query, top_k * 2)
             perf_metrics['bm25_search_ms'] = round((time.time() - bm25_start) * 1000, 2)
             perf_metrics['bm25_results_count'] = len(bm25_results)
+            print(f"✓ BM25 Search: {perf_metrics['bm25_search_ms']}ms ({perf_metrics['bm25_results_count']} results)")
         else:
             perf_metrics['bm25_search_ms'] = 0
             perf_metrics['bm25_results_count'] = 0
@@ -661,6 +670,7 @@ def search_with_config():
             fused = reciprocal_rank_fusion([vector_results, bm25_results])
             perf_metrics['fusion_ms'] = round((time.time() - fusion_start) * 1000, 2)
             perf_metrics['method'] = 'hybrid'
+            print(f"✓ Hybrid Fusion: {perf_metrics['fusion_ms']}ms")
         else:
             fused = vector_results
             perf_metrics['fusion_ms'] = 0
@@ -672,6 +682,7 @@ def search_with_config():
         if use_graph and fused:
             graph_start = time.time()
             kg_url = os.getenv('KNOWLEDGE_GRAPH_URL', 'http://knowledge-graph:8007')
+            print(f"🕸️  Calling knowledge graph: {kg_url}/search_related")
             try:
                 related_docs = set()
                 for result in fused[:5]:
@@ -708,6 +719,7 @@ def search_with_config():
 
                 perf_metrics['graph_enhancement_ms'] = round((time.time() - graph_start) * 1000, 2)
                 perf_metrics['graph_docs_added'] = graph_added
+                print(f"✓ Knowledge Graph: {perf_metrics['graph_enhancement_ms']}ms ({perf_metrics['graph_docs_added']} docs added)")
             except Exception as e:
                 perf_metrics['graph_enhancement_ms'] = 0
                 perf_metrics['graph_docs_added'] = 0
@@ -715,11 +727,72 @@ def search_with_config():
         else:
             perf_metrics['graph_enhancement_ms'] = 0
             perf_metrics['graph_docs_added'] = 0
+            print(f"⊘ Knowledge Graph: SKIPPED")
+
+        # Step 3.5: Web Search (if enabled)
+        use_web_search = config.get('use_web_search', False)
+        if use_web_search:
+            web_start = time.time()
+            web_search_url = os.getenv('WEB_SEARCH_URL', 'http://web-search:8009')
+            web_docs_limit = config.get('web_search_docs', 5)
+            web_pages_per_doc = config.get('web_search_pages_per_doc', 1)
+            
+            try:
+                print(f"🌐 Calling web search: {web_search_url}/search (docs={web_docs_limit}, pages={web_pages_per_doc})")
+                response = requests.post(
+                    f"{web_search_url}/search",
+                    json={
+                        'query': original_query,
+                        'max_results': web_docs_limit,
+                        'pages_per_result': web_pages_per_doc
+                    },
+                    timeout=30
+                )
+                if response.status_code == 200:
+                    web_data = response.json()
+                    web_results = web_data.get('results', [])
+                    
+                    # Convert web results to standard format and add to fused results
+                    for web_result in web_results:
+                        fused.append({
+                            'id': web_result.get('url', ''),
+                            'content': web_result.get('content', web_result.get('snippet', '')),
+                            'score': 0.3,  # Lower score for web results
+                            'source': 'web_search',
+                            'metadata': {
+                                'title': web_result.get('title', 'Web Result'),
+                                'file_name': web_result.get('url', 'web'),
+                                'url': web_result.get('url', ''),
+                                'engine': web_result.get('engine', 'searxng')
+                            }
+                        })
+                    
+                    perf_metrics['web_search_ms'] = round((time.time() - web_start) * 1000, 2)
+                    perf_metrics['web_results_count'] = len(web_results)
+                    perf_metrics['web_search_success'] = True
+                    print(f"✓ Web Search: {perf_metrics['web_search_ms']}ms ({perf_metrics['web_results_count']} results)")
+                else:
+                    perf_metrics['web_search_ms'] = 0
+                    perf_metrics['web_results_count'] = 0
+                    perf_metrics['web_search_success'] = False
+                    print(f"⚠️  Web Search: HTTP {response.status_code}")
+            except Exception as e:
+                perf_metrics['web_search_ms'] = 0
+                perf_metrics['web_results_count'] = 0
+                perf_metrics['web_search_success'] = False
+                perf_metrics['web_search_error'] = str(e)
+                print(f"❌ Web Search error: {e}")
+        else:
+            perf_metrics['web_search_ms'] = 0
+            perf_metrics['web_results_count'] = 0
+            perf_metrics['web_search_success'] = False
+            print(f"⊘ Web Search: SKIPPED")
 
         # Step 4: LLM Re-ranking
         if use_reranking and fused:
             rerank_start = time.time()
-            reranker_url = os.getenv('RERANKER_URL', 'http://reranker:8008')
+            reranker_url = os.getenv('RERANKER_SERVICE_URL', 'http://reranker:8008')
+            print(f"🎯 Calling reranker: {reranker_url}/rerank")
             try:
                 response = requests.post(
                     f"{reranker_url}/rerank",
@@ -735,22 +808,28 @@ def search_with_config():
                     fused = reranked_data.get('results', fused)
                     perf_metrics['reranking_ms'] = round((time.time() - rerank_start) * 1000, 2)
                     perf_metrics['reranking_success'] = True
+                    print(f"✓ Reranking: {perf_metrics['reranking_ms']}ms (success={perf_metrics['reranking_success']})")  
                 else:
                     perf_metrics['reranking_ms'] = 0
                     perf_metrics['reranking_success'] = False
+                    print(f"⚠️  Reranking: HTTP {response.status_code}")
             except Exception as e:
                 perf_metrics['reranking_ms'] = 0
                 perf_metrics['reranking_success'] = False
                 perf_metrics['reranking_error'] = str(e)
+                print(f"❌ Reranking error: {e}")
         else:
             perf_metrics['reranking_ms'] = 0
             perf_metrics['reranking_success'] = False
+            print(f"⊘ Reranking: SKIPPED (enabled={use_reranking}, results={len(fused)})")
 
         # Final results
         final_results = fused[:top_k]
 
         # Total time
         perf_metrics['total_latency_ms'] = round((time.time() - start_time) * 1000, 2)
+        print(f"⏱️  TOTAL SEARCH: {perf_metrics['total_latency_ms']}ms")
+        print(f"✅ Returning {len(final_results)} results\n")
 
         # Calculate breakdown percentages
         total = perf_metrics['total_latency_ms']
