@@ -30,14 +30,35 @@ export function formatNumber(num: number, decimals = 0): string {
   }).format(num);
 }
 
-export function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
+export function formatDate(date: Date | string | number): string {
+  try {
+    // Handle different input types
+    let dateObj: Date;
+    
+    if (date instanceof Date) {
+      dateObj = date;
+    } else if (typeof date === 'string' || typeof date === 'number') {
+      dateObj = new Date(date);
+    } else {
+      return 'Invalid date';
+    }
+    
+    // Check if date is valid
+    if (isNaN(dateObj.getTime())) {
+      return 'Invalid date';
+    }
+    
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(dateObj);
+  } catch (error) {
+    console.error('formatDate error:', error, 'input:', date);
+    return 'Invalid date';
+  }
 }
 
 export function truncate(str: string, length: number): string {

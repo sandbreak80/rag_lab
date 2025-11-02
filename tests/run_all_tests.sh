@@ -86,7 +86,7 @@ else
     TOTAL_FAILED=$((TOTAL_FAILED + 1))
 fi
 
-# Check if production UI is accessible  
+# Check if production UI is accessible
 if curl -s http://localhost:3000 | grep -q "html"; then
     echo -e "${GREEN}✅ Production UI accessible (http://localhost:3000)${NC}"
     TOTAL_PASSED=$((TOTAL_PASSED + 1))
