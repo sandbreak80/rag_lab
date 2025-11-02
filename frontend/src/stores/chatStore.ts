@@ -5,7 +5,7 @@ import { saveToLocalStorage, loadFromLocalStorage } from '../utils/localStorage'
 interface ChatStore {
   messages: ChatMessage[];
   isLoading: boolean;
-  
+
   // Actions
   addMessage: (message: ChatMessage) => void;
   setLoading: (loading: boolean) => void;
