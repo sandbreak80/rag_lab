@@ -21,7 +21,7 @@ def get_presets():
         # Convert presets dictionary to array
         presets_dict = presets_data.get('presets', {})
         presets_array = []
-        
+
         for key, value in presets_dict.items():
             presets_array.append({
                 'name': key,
@@ -31,7 +31,7 @@ def get_presets():
                 'expected_metrics': value.get('expected_metrics', {}),
                 'notes': value.get('notes', '')
             })
-        
+
         return jsonify(presets_array)
 
     except Exception as e:

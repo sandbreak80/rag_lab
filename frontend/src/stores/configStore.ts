@@ -107,7 +107,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
       // Combine RAG config and LLM config
       const config = presetData.config || {};
       const llmConfig = presetData.llm_config || {};
-      
+
       const newConfig = {
         ...config,
         model: llmConfig.model || get().model,
@@ -126,7 +126,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
         webSearchDocs: config.web_search_docs || get().webSearchDocs,
         webSearchPages: config.web_search_pages_per_doc || get().webSearchPages,
       };
-      
+
       set(newConfig);
       saveToLocalStorage('rag_config', get().getConfig());
     },
