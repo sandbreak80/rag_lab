@@ -311,13 +311,14 @@ services:
       - metrics-data:/data/metrics
       - ./services/metrics-store/app:/app
       - ./services/common:/workspace/services/common
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # Read-only Docker socket for stats
     working_dir: /app
     environment:
       - SERVICE_NAME=metrics-store
       - SERVICE_PORT=8011
       - METRICS_DB_PATH=/data/metrics/metrics.db
       - PYTHONPATH=/workspace
-    command: bash -c "pip install -q flask flask-cors && python service.py"
+    command: bash -c "apt-get update -qq && apt-get install -y -qq docker.io && pip install -q flask flask-cors psutil && python service.py"
     restart: unless-stopped
 
   # Flask API Server (API-only backend)
