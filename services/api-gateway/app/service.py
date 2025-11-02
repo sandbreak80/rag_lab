@@ -113,21 +113,56 @@ def list_services():
 @app.route('/api/stats', methods=['GET'])
 @timed(metrics, 'stats_request')
 def get_stats():
-    """Get system statistics"""
+    """Get system statistics - Transform to UI format"""
     try:
         metrics.increment('stats_requests')
 
         # Get stats from vector DB
-        response = requests.get(f"{VECTOR_DB_URL}/stats", timeout=10)
-        response.raise_for_status()
+        db_response = requests.get(f"{VECTOR_DB_URL}/stats", timeout=10)
+        db_response.raise_for_status()
+        db_stats = db_response.json()
 
-        stats = response.json()
-        stats['chat_model'] = CHAT_MODEL
-        stats['search_mode'] = 'hybrid'
+        # Get knowledge graph stats
+        try:
+            kg_response = requests.get(f"{KNOWLEDGE_GRAPH_URL}/stats", timeout=5)
+            kg_stats = kg_response.json() if kg_response.status_code == 200 else {}
+        except:
+            kg_stats = {}
 
-        return jsonify(stats)
+        # Get document list
+        try:
+            docs_response = requests.post(f"{VECTOR_DB_URL}/get_all", json={}, timeout=10)
+            if docs_response.status_code == 200:
+                data = docs_response.json()
+                metadatas = data.get('metadatas', [])
+                
+                # Extract unique filenames
+                filenames = set()
+                for metadata in metadatas:
+                    filename = metadata.get('filename') or metadata.get('file_name')
+                    if filename:
+                        filenames.add(filename)
+                
+                documents = sorted(list(filenames))
+            else:
+                documents = []
+        except:
+            documents = []
+
+        # Transform to UI format
+        return jsonify({
+            'chunks': db_stats.get('total_chunks', 0),
+            'documents': documents,
+            'knowledge_graph_nodes': kg_stats.get('total_nodes', 0),
+            'chat_model': CHAT_MODEL,
+            'search_mode': 'hybrid',
+            'embedding_model': db_stats.get('embedding_model', 'nomic-embed-text'),
+            'collection_name': db_stats.get('collection_name', 'markdown_vault')
+        })
     except Exception as e:
         metrics.increment('stats_errors')
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 # === Upload Endpoints ===

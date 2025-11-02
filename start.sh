@@ -38,9 +38,9 @@ echo -e "${BLUE}Starting Neural Vault RAG Lab...${NC}\n"
 check_service() {
     local service_name=$1
     local check_cmd=$2
-    
+
     echo -ne "${YELLOW}Checking ${service_name}...${NC} "
-    
+
     if eval "$check_cmd" > /dev/null 2>&1; then
         echo -e "${GREEN}✓ Running${NC}"
         return 0
@@ -56,9 +56,9 @@ wait_for_service() {
     local health_url=$2
     local max_attempts=30
     local attempt=0
-    
+
     echo -ne "${YELLOW}Waiting for ${service_name}...${NC} "
-    
+
     while [ $attempt -lt $max_attempts ]; do
         if curl -sf "$health_url" > /dev/null 2>&1; then
             echo -e "${GREEN}✓ Ready${NC}"
@@ -68,7 +68,7 @@ wait_for_service() {
         sleep 2
         echo -ne "."
     done
-    
+
     echo -e "${RED}✗ Timeout${NC}"
     return 1
 }

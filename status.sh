@@ -20,15 +20,15 @@ echo -e "${BLUE}═════════════════════�
 check_service() {
     local name=$1
     local url=$2
-    
+
     echo -ne "${YELLOW}${name}${NC} "
-    
+
     response=$(curl -sf "$url" 2>/dev/null)
-    
+
     if [ $? -eq 0 ]; then
         # Try to extract status from JSON
         status=$(echo "$response" | jq -r '.status // "ok"' 2>/dev/null || echo "ok")
-        
+
         if [ "$status" = "ok" ] || [ "$status" = "healthy" ]; then
             echo -e "${GREEN}✓ Healthy${NC}"
             return 0
@@ -90,7 +90,7 @@ if [ $? -eq 0 ]; then
     chunks=$(echo "$stats" | jq -r '.chunks // 0')
     docs=$(echo "$stats" | jq -r '.documents | length // 0')
     nodes=$(echo "$stats" | jq -r '.knowledge_graph_nodes // 0')
-    
+
     echo -e "  Documents:        ${CYAN}${docs}${NC}"
     echo -e "  Chunks:           ${CYAN}${chunks}${NC}"
     echo -e "  Graph Nodes:      ${CYAN}${nodes}${NC}"
