@@ -176,19 +176,19 @@ def upload_file():
         print(f"📥 Gateway received upload request")
         print(f"   Files: {list(request.files.keys())}")
         print(f"   Form: {list(request.form.keys())}")
-        
+
         metrics.increment('upload_requests')
-        
+
         # Check if file exists
         if 'file' not in request.files:
             print(f"❌ No file in request")
             return jsonify({'error': 'No file provided'}), 400
-        
+
         file = request.files['file']
         if file.filename == '':
             print(f"❌ Empty filename")
             return jsonify({'error': 'No file selected'}), 400
-        
+
         print(f"✅ Forwarding file: {file.filename}")
 
         # Forward to ingest service

@@ -75,7 +75,7 @@ export function DocumentList() {
   const userDocuments = (documents as string[]).filter((doc: string) => {
     const lower = doc.toLowerCase();
     // Exclude specific system/lab documentation
-    const isSystemDoc = 
+    const isSystemDoc =
       doc.includes('_SUMMARY') ||
       doc.startsWith('LAB_') ||
       doc.startsWith('AI_FUNDAMENTALS') ||
@@ -89,7 +89,7 @@ export function DocumentList() {
       // Exclude docs/ directory content (not user uploads)
       doc.includes('docs/') ||
       doc.includes('archive/');
-    
+
     return !isSystemDoc;
   });
 

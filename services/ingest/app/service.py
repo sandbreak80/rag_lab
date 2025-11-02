@@ -314,7 +314,7 @@ def upload_file():
         print(f"📥 Upload request received")
         print(f"   Request files: {list(request.files.keys())}")
         print(f"   Request form: {list(request.form.keys())}")
-        
+
         # Validate file
         if 'file' not in request.files:
             print(f"❌ No file provided in request")

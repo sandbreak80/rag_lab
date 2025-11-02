@@ -183,7 +183,7 @@ def ask_question():
                 'query': question,
                 'config': search_config
             },
-            timeout=180  # Increased to 3 minutes for slow operations (reranking, graph, web search)
+            timeout=300  # Increased to 5 minutes for complex RAG pipelines (web search + reranking can take time)
         )
         context_response.raise_for_status()
         print(f"✅ Search completed")
