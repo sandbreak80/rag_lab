@@ -68,11 +68,11 @@ export function DocumentList() {
     );
   }
 
-  // Extract documents array from response
-  const documents = response?.documents || [];
+  // Extract documents array from response with type assertion
+  const documents = (response as any)?.documents || [];
 
   // Filter out system/lab documents
-  const userDocuments = documents.filter((doc: string) => {
+  const userDocuments = (documents as string[]).filter((doc: string) => {
     const lower = doc.toLowerCase();
     return (
       !doc.includes('_SUMMARY') &&
