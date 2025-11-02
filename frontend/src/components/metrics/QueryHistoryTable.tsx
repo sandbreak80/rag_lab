@@ -20,12 +20,12 @@ export function QueryHistoryTable({ onViewDetails }: QueryHistoryTableProps) {
       // Safely parse timestamps
       const timeA = new Date(a.timestamp).getTime();
       const timeB = new Date(b.timestamp).getTime();
-      
+
       // Handle invalid dates
       if (isNaN(timeA) && isNaN(timeB)) return 0;
       if (isNaN(timeA)) return 1; // Push invalid dates to end
       if (isNaN(timeB)) return -1; // Push invalid dates to end
-      
+
       return timeB - timeA;
     }
     return b.performance.total_latency_ms - a.performance.total_latency_ms;

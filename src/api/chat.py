@@ -70,8 +70,11 @@ def chat():
         sources = []
 
         for i, result in enumerate(results, 1):
-            file_name = result.get('file_name', 'Unknown')
-            chunk_text = result.get('chunk_text', '')
+            # Extract file_name and chunk_text from result structure
+            # Search service returns {'content': text, 'metadata': {...}, 'score': float}
+            chunk_text = result.get('content', result.get('chunk_text', ''))
+            metadata = result.get('metadata', {})
+            file_name = metadata.get('file_name', result.get('file_name', 'Unknown'))
             score = result.get('score', 0)
 
             context_text += f"## Source {i}: {file_name}\n"
@@ -83,7 +86,7 @@ def chat():
                 'file_name': file_name,
                 'chunk_text': chunk_text[:200] + '...' if len(chunk_text) > 200 else chunk_text,
                 'score': round(score, 3),
-                'metadata': result.get('metadata', {})
+                'metadata': metadata
             })
 
         # Create prompt
