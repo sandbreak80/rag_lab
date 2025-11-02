@@ -130,11 +130,41 @@ export function ChatInterface() {
 
       setLoading(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Chat error:', error);
+      
+      // Extract detailed error information
+      let errorContent = 'An error occurred while processing your request.';
+      let errorDetails = '';
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        errorContent = errorData.error || errorData.message || errorContent;
+        
+        // Add error type if available
+        if (errorData.type) {
+          errorDetails = `\n\n**Error Type:** ${errorData.type}`;
+        }
+        
+        // Add status code
+        errorDetails += `\n\n**Status Code:** ${error.response.status}`;
+        
+        // Add helpful suggestions based on error type
+        if (errorData.type === 'timeout') {
+          errorDetails += '\n\n**Suggestion:** The system is processing your request but taking longer than expected. This usually happens when Ollama is busy with other requests. Please try again in a moment.';
+        } else if (errorData.type === 'connection_error') {
+          errorDetails += '\n\n**Suggestion:** Cannot connect to the backend services. Please ensure all Docker containers are running.';
+        } else if (error.response.status === 503) {
+          errorDetails += '\n\n**Suggestion:** One or more backend services are currently unavailable. Please wait a moment and try again.';
+        }
+      } else if (error.message) {
+        errorContent = error.message;
+      }
+      
       const errorMessage: ChatMessage = {
         id: generateId(),
         role: 'assistant',
-        content: `Error: ${error.message}`,
+        content: `❌ **Error**\n\n${errorContent}${errorDetails}`,
         timestamp: new Date(),
       };
       addMessage(errorMessage);

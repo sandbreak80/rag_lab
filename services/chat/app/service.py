@@ -156,8 +156,10 @@ def ask_question():
         num_contexts = data.get('num_contexts', 5)
 
         if not question:
+            print("❌ Error: question required")
             return jsonify({'error': 'question required'}), 400
 
+        print(f"📥 Received question: {question[:100]}...")
         metrics.increment('ask_requests')
 
         # Get RAG config
@@ -170,8 +172,10 @@ def ask_question():
             'use_reranking': data.get('use_reranking', False),
             'use_web_search': data.get('use_web_search', False),
         }
+        print(f"⚙️  RAG config: {search_config}")
 
         # Get context with config
+        print(f"🔍 Calling search service at {SEARCH_SERVICE_URL}/search_with_config")
         context_response = requests.post(
             f"{SEARCH_SERVICE_URL}/search_with_config",
             json={
@@ -181,12 +185,15 @@ def ask_question():
             timeout=180  # Increased to 3 minutes for slow operations (reranking, graph, web search)
         )
         context_response.raise_for_status()
+        print(f"✅ Search completed")
 
         search_data = context_response.json()
         results = search_data.get('results', [])
         search_metrics = search_data.get('metrics', {})
+        print(f"📊 Retrieved {len(results)} results")
 
         if not results:
+            print("⚠️  No relevant context found")
             metrics.increment('no_context_found')
             return jsonify({
                 'answer': 'No relevant information found in the knowledge base.',
@@ -236,6 +243,7 @@ Answer:"""
         # Generate answer via Ollama
         model = data.get('model', CHAT_MODEL)
         temperature = data.get('temperature', 0.7)
+        print(f"🤖 Generating answer with model: {model}, temp: {temperature}")
 
         llm_response = requests.post(
             f"{LLM_SERVICE_URL}/api/generate",
@@ -251,8 +259,10 @@ Answer:"""
             timeout=300  # Increased to 5 minutes for slow LLM generation
         )
         llm_response.raise_for_status()
+        print(f"✅ LLM generation completed")
 
         answer = llm_response.json()['response']
+        print(f"📝 Answer length: {len(answer)} characters")
 
         metrics.increment('ask_success')
 
@@ -267,15 +277,23 @@ Answer:"""
             }
         })
 
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.ConnectionError as e:
+        error_msg = f'Cannot connect to search/LLM service: {str(e)}'
+        print(f"❌ ConnectionError: {error_msg}")
         metrics.increment('ask_errors')
-        return jsonify({'error': 'Cannot connect to LLM service'}), 503
-    except requests.exceptions.Timeout:
+        return jsonify({'error': error_msg, 'type': 'connection_error'}), 503
+    except requests.exceptions.Timeout as e:
+        error_msg = f'Service timeout after waiting: {str(e)}'
+        print(f"❌ Timeout: {error_msg}")
         metrics.increment('ask_errors')
-        return jsonify({'error': 'LLM service timeout'}), 504
+        return jsonify({'error': error_msg, 'type': 'timeout'}), 504
     except Exception as e:
+        error_msg = f"Unexpected error: {str(e)}"
+        print(f"❌ Exception: {error_msg}")
         metrics.increment('ask_errors')
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': error_msg, 'type': 'internal_error'}), 500
 
 @app.route('/stream', methods=['POST'])
 def stream_answer():
