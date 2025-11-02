@@ -34,7 +34,7 @@ export function formatDate(date: Date | string | number): string {
   try {
     // Handle different input types
     let dateObj: Date;
-    
+
     if (date instanceof Date) {
       dateObj = date;
     } else if (typeof date === 'string' || typeof date === 'number') {
@@ -42,12 +42,12 @@ export function formatDate(date: Date | string | number): string {
     } else {
       return 'Invalid date';
     }
-    
+
     // Check if date is valid
     if (isNaN(dateObj.getTime())) {
       return 'Invalid date';
     }
-    
+
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric',

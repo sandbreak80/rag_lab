@@ -38,7 +38,7 @@ export function SourceCard({ source, index }: SourceCardProps) {
 
             {source.metadata && Object.keys(source.metadata).length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
-                {source.metadata.tags?.map((tag, i) => (
+                {Array.isArray(source.metadata.tags) && source.metadata.tags.map((tag, i) => (
                   <span
                     key={i}
                     className="px-2 py-0.5 text-xs rounded-full bg-secondary/20 text-secondary-foreground"
