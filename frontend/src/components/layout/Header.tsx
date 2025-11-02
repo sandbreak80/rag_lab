@@ -15,11 +15,6 @@ export function Header() {
     retry: 1, // Only retry once
     retryDelay: 5000, // Wait 5 seconds before retry
     staleTime: 60000, // Consider data fresh for 1 minute
-    // Suppress errors in dev mode when backend is not running
-    onError: (error) => {
-      // Silently fail - backend might not be running in dev mode
-      console.debug('Stats API unavailable (backend not running):', error.message);
-    },
   });
 
   return (
@@ -46,17 +41,17 @@ export function Header() {
                 <div className="h-4 w-px bg-border" />
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">Chunks:</span>
-                  <span className="font-medium">{formatNumber(stats.chunks)}</span>
+                  <span className="font-medium">{formatNumber((stats as any).chunks)}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">Documents:</span>
-                  <span className="font-medium">{stats.documents?.length || 0}</span>
+                  <span className="font-medium">{(stats as any).documents?.length || 0}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">Graph Nodes:</span>
-                  <span className="font-medium">{formatNumber(stats.knowledge_graph_nodes)}</span>
+                  <span className="font-medium">{formatNumber((stats as any).knowledge_graph_nodes)}</span>
                 </div>
               </>
             )}

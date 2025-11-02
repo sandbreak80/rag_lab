@@ -17,7 +17,7 @@ class TestRunner:
         self.passed = 0
         self.failed = 0
         self.tests = []
-    
+
     def test(self, name: str, func):
         """Run a test and record result"""
         try:
@@ -38,7 +38,7 @@ class TestRunner:
             print(f"💥 ERROR: {name}")
             print(f"   Error: {e}")
             return False
-    
+
     def summary(self):
         total = self.passed + self.failed
         percentage = (self.passed / total * 100) if total > 0 else 0
@@ -131,7 +131,7 @@ def test_document_upload():
     """Test /api/upload endpoint with real file"""
     # Create a test file
     test_content = """# Test Document
-    
+
 This is a test document for API testing.
 
 ## Section 1
@@ -141,7 +141,7 @@ Some content here.
 More content here.
 """
     files = {"file": ("test_api_doc.md", test_content, "text/markdown")}
-    
+
     response = requests.post(f"{BASE_URL}/api/upload", files=files, timeout=TIMEOUT)
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
     data = response.json()
@@ -169,7 +169,7 @@ def test_chat_endpoint():
             "use_hybrid": True
         }
     }
-    
+
     response = requests.post(
         f"{BASE_URL}/api/chat",
         json=payload,
@@ -194,7 +194,7 @@ def test_chat_with_sources():
             "use_hybrid": True
         }
     }
-    
+
     response = requests.post(
         f"{BASE_URL}/api/chat",
         json=payload,
@@ -203,7 +203,7 @@ def test_chat_with_sources():
     )
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
     data = response.json()
-    
+
     if "sources" in data and data["sources"]:
         assert isinstance(data["sources"], list), "sources should be a list"
         source = data["sources"][0]
@@ -222,7 +222,7 @@ def test_chat_metrics():
             "top_k": 3
         }
     }
-    
+
     response = requests.post(
         f"{BASE_URL}/api/chat",
         json=payload,
@@ -231,7 +231,7 @@ def test_chat_metrics():
     )
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
     data = response.json()
-    
+
     if "metrics" in data:
         metrics = data["metrics"]
         assert isinstance(metrics, dict), "metrics should be a dict"
@@ -281,7 +281,7 @@ def test_invalid_endpoint():
 def test_invalid_chat_payload():
     """Test chat with missing required fields"""
     payload = {"query": ""}  # Empty query
-    
+
     response = requests.post(
         f"{BASE_URL}/api/chat",
         json=payload,

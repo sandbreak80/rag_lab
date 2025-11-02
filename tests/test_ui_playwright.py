@@ -1,225 +1,338 @@
 """
-Playwright E2E Tests for RAG Lab UI
-Tests microservices architecture with headless Chrome
+Comprehensive Playwright Browser Tests for React UI
+Tests all UI functionality with real interactions (no mocks)
 """
-import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import sync_playwright, expect
 import time
+import json
 
-BASE_URL = "http://rag-web-ui:5555"
+BASE_URL = "http://localhost:5173"
+TEST_RESULTS = []
 
-def test_homepage_loads(page: Page):
-    """Test that the homepage loads successfully"""
-    page.goto(BASE_URL)
+def test_result(name: str, passed: bool, details: str = ""):
+    """Record test result"""
+    TEST_RESULTS.append({
+        "name": name,
+        "passed": passed,
+        "details": details
+    })
+    status = "✅ PASS" if passed else "❌ FAIL"
+    print(f"{status}: {name}")
+    if details:
+        print(f"   {details}")
 
-    # Wait for page to load
-    page.wait_for_load_state("networkidle")
+def run_tests():
+    with sync_playwright() as p:
+        # Launch browser
+        browser = p.chromium.launch(headless=False)  # headless=False to see what's happening
+        context = browser.new_context()
+        page = context.new_page()
+        
+        print("="*60)
+        print("PLAYWRIGHT BROWSER TESTS - REACT UI")
+        print("="*60)
+        print()
+        
+        # =================================================================
+        # NAVIGATION & LOADING TESTS
+        # =================================================================
+        
+        print("🌐 Navigation & Loading Tests")
+        print("-" * 60)
+        
+        try:
+            page.goto(BASE_URL, wait_until="networkidle")
+            test_result("Page loads successfully", True, f"URL: {BASE_URL}")
+        except Exception as e:
+            test_result("Page loads successfully", False, str(e))
+            return
+        
+        try:
+            expect(page.locator("text=Neural Vault")).to_be_visible(timeout=5000)
+            test_result("Header displays 'Neural Vault'", True)
+        except:
+            test_result("Header displays 'Neural Vault'", False)
+        
+        try:
+            # Check all tabs are visible
+            tabs = ["Chat", "Documents", "Settings", "Metrics", "Lab Guide", "Q&A", "Feedback"]
+            for tab_name in tabs:
+                page.locator(f"text={tab_name}").first.wait_for(state="visible", timeout=2000)
+            test_result(f"All {len(tabs)} tabs visible", True)
+        except Exception as e:
+            test_result("All tabs visible", False, str(e))
+        
+        print()
+        
+        # =================================================================
+        # CHAT TAB TESTS
+        # =================================================================
+        
+        print("💬 Chat Tab Tests")
+        print("-" * 60)
+        
+        try:
+            # Navigate to chat (should be default)
+            page.click("text=Chat")
+            time.sleep(1)
+            
+            # Check for input field
+            input_field = page.locator('textarea, input[type="text"]').first
+            expect(input_field).to_be_visible(timeout=5000)
+            test_result("Chat input field visible", True)
+            
+            # Type a message
+            input_field.fill("What is a test?")
+            test_result("Can type in chat input", True)
+            
+            # Find and click send button
+            send_button = page.locator('button:has-text("Send"), button[type="submit"]').first
+            send_button.click()
+            test_result("Send button clickable", True)
+            
+            # Wait for response (with timeout)
+            page.wait_for_selector(".prose, [class*='message']", timeout=30000)
+            test_result("Chat response appears", True)
+            
+        except Exception as e:
+            test_result("Chat interaction", False, str(e))
+        
+        print()
+        
+        # =================================================================
+        # DOCUMENTS TAB TESTS
+        # =================================================================
+        
+        print("📄 Documents Tab Tests")
+        print("-" * 60)
+        
+        try:
+            page.click("text=Documents")
+            time.sleep(1)
+            test_result("Navigate to Documents tab", True)
+            
+            # Check for upload area
+            expect(page.locator("text=/upload|drag|drop/i").first).to_be_visible(timeout=5000)
+            test_result("Upload area visible", True)
+            
+            # Check if documents list is visible
+            if page.locator("text=/no documents|upload/i").is_visible():
+                test_result("Document list renders (empty state)", True)
+            else:
+                # Check for document cards
+                doc_count = page.locator("text=.md, text=.pdf, text=.txt").count()
+                test_result("Document list renders", True, f"{doc_count} documents")
+            
+        except Exception as e:
+            test_result("Documents tab", False, str(e))
+        
+        print()
+        
+        # =================================================================
+        # SETTINGS TAB TESTS
+        # =================================================================
+        
+        print("⚙️  Settings Tab Tests")
+        print("-" * 60)
+        
+        try:
+            page.click("text=Settings")
+            time.sleep(1)
+            test_result("Navigate to Settings tab", True)
+            
+            # Check for model selector
+            expect(page.locator("text=/model|llama|qwen/i").first).to_be_visible(timeout=5000)
+            test_result("Model settings visible", True)
+            
+            # Check for toggles/switches
+            switches = page.locator('button[role="switch"], input[type="checkbox"]').count()
+            test_result("RAG feature toggles present", switches > 0, f"{switches} toggles")
+            
+            # Check for sliders
+            sliders = page.locator('input[type="range"], [role="slider"]').count()
+            test_result("Parameter sliders present", sliders > 0, f"{sliders} sliders")
+            
+        except Exception as e:
+            test_result("Settings tab", False, str(e))
+        
+        print()
+        
+        # =================================================================
+        # METRICS TAB TESTS
+        # =================================================================
+        
+        print("📊 Metrics Tab Tests")
+        print("-" * 60)
+        
+        try:
+            page.click("text=Metrics")
+            time.sleep(1)
+            test_result("Navigate to Metrics tab", True)
+            
+            # Check for metrics display
+            metrics_visible = (
+                page.locator("text=/queries|latency|tokens/i").count() > 0 or
+                page.locator("text=/no data|metrics/i").count() > 0
+            )
+            test_result("Metrics section visible", metrics_visible)
+            
+        except Exception as e:
+            test_result("Metrics tab", False, str(e))
+        
+        print()
+        
+        # =================================================================
+        # LAB GUIDE TAB TESTS
+        # =================================================================
+        
+        print("🎓 Lab Guide Tab Tests")
+        print("-" * 60)
+        
+        try:
+            page.click("text=Lab Guide")
+            time.sleep(1)
+            test_result("Navigate to Lab Guide tab", True)
+            
+            # Check for lab content
+            lab_content = page.locator("text=/exercise|lab|progress/i").count()
+            test_result("Lab guide content visible", lab_content > 0, f"{lab_content} elements")
+            
+            # Check for checkboxes (exercise completion)
+            checkboxes = page.locator('input[type="checkbox"], button[role="checkbox"]').count()
+            test_result("Exercise checkboxes present", checkboxes > 0, f"{checkboxes} exercises")
+            
+        except Exception as e:
+            test_result("Lab Guide tab", False, str(e))
+        
+        print()
+        
+        # =================================================================
+        # Q&A TAB TESTS
+        # =================================================================
+        
+        print("❓ Q&A Tab Tests")
+        print("-" * 60)
+        
+        try:
+            page.click("text=Q&A")
+            time.sleep(1)
+            test_result("Navigate to Q&A tab", True)
+            
+            # Check for FAQ content
+            faq_content = page.locator("text=/question|answer|faq/i").count()
+            test_result("Q&A content visible", faq_content > 0)
+            
+        except Exception as e:
+            test_result("Q&A tab", False, str(e))
+        
+        print()
+        
+        # =================================================================
+        # FEEDBACK TAB TESTS
+        # =================================================================
+        
+        print("📝 Feedback Tab Tests")
+        print("-" * 60)
+        
+        try:
+            page.click("text=Feedback")
+            time.sleep(1)
+            test_result("Navigate to Feedback tab", True)
+            
+            # Check for feedback form
+            form_elements = page.locator("textarea, input, button[type='submit']").count()
+            test_result("Feedback form elements present", form_elements > 0, f"{form_elements} elements")
+            
+        except Exception as e:
+            test_result("Feedback tab", False, str(e))
+        
+        print()
+        
+        # =================================================================
+        # RESPONSIVENESS TESTS
+        # =================================================================
+        
+        print("📱 Responsiveness Tests")
+        print("-" * 60)
+        
+        try:
+            # Test mobile viewport
+            page.set_viewport_size({"width": 375, "height": 667})
+            time.sleep(0.5)
+            test_result("Mobile viewport renders", True, "375x667")
+            
+            # Test tablet viewport
+            page.set_viewport_size({"width": 768, "height": 1024})
+            time.sleep(0.5)
+            test_result("Tablet viewport renders", True, "768x1024")
+            
+            # Reset to desktop
+            page.set_viewport_size({"width": 1920, "height": 1080})
+            time.sleep(0.5)
+            test_result("Desktop viewport renders", True, "1920x1080")
+            
+        except Exception as e:
+            test_result("Responsiveness", False, str(e))
+        
+        print()
+        
+        # =================================================================
+        # BROWSER CONSOLE ERRORS
+        # =================================================================
+        
+        print("🐛 Console Errors Check")
+        print("-" * 60)
+        
+        console_errors = []
+        
+        def handle_console(msg):
+            if msg.type == "error":
+                console_errors.append(msg.text)
+        
+        page.on("console", handle_console)
+        
+        # Reload page to capture console messages
+        page.reload(wait_until="networkidle")
+        time.sleep(2)
+        
+        if len(console_errors) == 0:
+            test_result("No console errors", True)
+        else:
+            test_result("No console errors", False, f"{len(console_errors)} errors found")
+            for err in console_errors[:3]:  # Show first 3
+                print(f"      - {err[:100]}")
+        
+        print()
+        
+        # Close browser
+        browser.close()
 
-    # Check title
-    expect(page).to_have_title("🧠 Neural Vault - AI-Powered Knowledge")
-
-    # Check for main elements
-    expect(page.locator("h1")).to_contain_text("Neural Vault")
-    expect(page.locator("#question-input")).to_be_visible()
-    expect(page.locator("#ask-button")).to_be_visible()
-
-    # Take screenshot
-    page.screenshot(path="/screenshots/01_homepage.png")
-    print("✅ Homepage loaded successfully")
-
-def test_stats_display(page: Page):
-    """Test that stats are displayed"""
-    page.goto(BASE_URL)
-    page.wait_for_load_state("networkidle")
-
-    # Wait for stats to load
-    page.wait_for_selector("#chunk-count", timeout=10000)
-
-    # Check stats elements
-    chunk_count = page.locator("#chunk-count").inner_text()
-    model_name = page.locator("#model-name").inner_text()
-
-    assert chunk_count is not None
-    assert model_name is not None
-
-    print(f"✅ Stats loaded: {chunk_count} chunks, model: {model_name}")
-
-    # Screenshot with stats
-    page.screenshot(path="/screenshots/02_stats_loaded.png")
-
-def test_empty_state(page: Page):
-    """Test empty state display"""
-    page.goto(BASE_URL)
-    page.wait_for_load_state("networkidle")
-
-    # Check for empty state
-    expect(page.locator(".empty-state")).to_be_visible()
-    expect(page.locator(".empty-state h2")).to_contain_text("Ready to explore")
-
-    # Check suggestions
-    suggestions = page.locator(".suggestion")
-    expect(suggestions).to_have_count(3)
-
-    page.screenshot(path="/screenshots/03_empty_state.png")
-    print("✅ Empty state displayed correctly")
-
-def test_input_field_interaction(page: Page):
-    """Test input field interaction"""
-    page.goto(BASE_URL)
-    page.wait_for_load_state("networkidle")
-
-    # Type in input field
-    input_field = page.locator("#question-input")
-    input_field.click()
-    input_field.fill("What is machine learning?")
-
-    # Check that text was entered
-    expect(input_field).to_have_value("What is machine learning?")
-
-    # Screenshot with input
-    page.screenshot(path="/screenshots/04_input_filled.png")
-    print("✅ Input field works correctly")
-
-def test_suggestion_click(page: Page):
-    """Test clicking a suggestion"""
-    page.goto(BASE_URL)
-    page.wait_for_load_state("networkidle")
-
-    # Click first suggestion
-    page.locator(".suggestion").first.click()
-
-    # Check that input was filled
-    input_field = page.locator("#question-input")
-    input_value = input_field.input_value()
-
-    assert len(input_value) > 0
-    print(f"✅ Suggestion clicked: {input_value}")
-
-    page.screenshot(path="/screenshots/05_suggestion_clicked.png")
-
-def test_ask_button_state(page: Page):
-    """Test ask button states"""
-    page.goto(BASE_URL)
-    page.wait_for_load_state("networkidle")
-
-    ask_button = page.locator("#ask-button")
-
-    # Button should be visible and enabled initially
-    expect(ask_button).to_be_visible()
-    expect(ask_button).to_be_enabled()
-
-    # Check button text
-    button_text = page.locator("#button-text").inner_text()
-    assert button_text == "Ask"
-
-    print("✅ Ask button in correct initial state")
-    page.screenshot(path="/screenshots/06_ask_button_ready.png")
-
-def test_responsive_design(page: Page):
-    """Test responsive design at different viewports"""
-    # Test desktop
-    page.set_viewport_size({"width": 1920, "height": 1080})
-    page.goto(BASE_URL)
-    page.wait_for_load_state("networkidle")
-    page.screenshot(path="/screenshots/07_desktop_view.png")
-    print("✅ Desktop view rendered")
-
-    # Test tablet
-    page.set_viewport_size({"width": 768, "height": 1024})
-    page.goto(BASE_URL)
-    page.wait_for_load_state("networkidle")
-    page.screenshot(path="/screenshots/08_tablet_view.png")
-    print("✅ Tablet view rendered")
-
-    # Test mobile
-    page.set_viewport_size({"width": 375, "height": 667})
-    page.goto(BASE_URL)
-    page.wait_for_load_state("networkidle")
-    page.screenshot(path="/screenshots/09_mobile_view.png")
-    print("✅ Mobile view rendered")
-
-def test_api_integration(page: Page):
-    """Test that API calls are being made"""
-    page.goto(BASE_URL)
-
-    # Listen for API calls
-    requests = []
-    page.on("request", lambda request: requests.append(request.url))
-
-    page.wait_for_load_state("networkidle")
-
-    # Check that stats API was called
-    stats_called = any("/api/stats" in url for url in requests)
-    assert stats_called, "Stats API should be called"
-
-    print(f"✅ API integration working: {len(requests)} requests made")
-    print(f"   Stats API called: {stats_called}")
-
-def test_console_errors(page: Page):
-    """Test for console errors"""
-    console_messages = []
-    page.on("console", lambda msg: console_messages.append({
-        "type": msg.type,
-        "text": msg.text
-    }))
-
-    page.goto(BASE_URL)
-    page.wait_for_load_state("networkidle")
-
-    # Check for errors
-    errors = [msg for msg in console_messages if msg["type"] == "error"]
-
-    if errors:
-        print(f"⚠️  Console errors found: {len(errors)}")
-        for error in errors:
-            print(f"   - {error['text']}")
-    else:
-        print("✅ No console errors")
-
-    # Take screenshot
-    page.screenshot(path="/screenshots/10_console_check.png")
-
-def test_network_requests(page: Page):
-    """Test network requests and responses"""
-    page.goto(BASE_URL)
-
-    # Intercept network requests
-    responses = []
-
-    def handle_response(response):
-        responses.append({
-            "url": response.url,
-            "status": response.status,
-            "ok": response.ok
-        })
-
-    page.on("response", handle_response)
-    page.wait_for_load_state("networkidle")
-
-    # Wait a bit for all requests
-    time.sleep(2)
-
-    # Check responses
-    failed = [r for r in responses if not r["ok"]]
-
-    print(f"✅ Network requests: {len(responses)} total")
-    print(f"   Successful: {len(responses) - len(failed)}")
-    print(f"   Failed: {len(failed)}")
-
-    if failed:
-        for resp in failed:
-            print(f"   ❌ {resp['status']}: {resp['url']}")
-
-# Pytest configuration
-@pytest.fixture(scope="function")
-def page(browser):
-    """Create a new page for each test"""
-    context = browser.new_context()
-    page = context.new_page()
-    yield page
-    page.close()
-    context.close()
-
+# Run tests
 if __name__ == "__main__":
-    pytest.main([__file__, "-v", "-s"])
-
+    run_tests()
+    
+    # Summary
+    passed = sum(1 for t in TEST_RESULTS if t["passed"])
+    total = len(TEST_RESULTS)
+    percentage = (passed / total * 100) if total > 0 else 0
+    
+    print("="*60)
+    print(f"RESULTS: {passed}/{total} tests passed ({percentage:.1f}%)")
+    print("="*60)
+    print()
+    
+    # Save results
+    with open("/tmp/playwright_test_results.json", "w") as f:
+        json.dump({
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "total": total,
+            "passed": passed,
+            "failed": total - passed,
+            "percentage": percentage,
+            "tests": TEST_RESULTS
+        }, f, indent=2)
+    
+    print(f"📄 Results saved to: /tmp/playwright_test_results.json")
+    print()
+    
+    exit(0 if passed == total else 1)

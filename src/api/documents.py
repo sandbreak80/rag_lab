@@ -22,14 +22,14 @@ def get_documents():
         if response.status_code == 200:
             data = response.json()
             metadatas = data.get('metadatas', [])
-            
+
             # Extract unique filenames from metadata
             filenames = set()
             for metadata in metadatas:
                 filename = metadata.get('filename') or metadata.get('file_name')
                 if filename:
                     filenames.add(filename)
-            
+
             # Convert to sorted list
             documents = sorted(list(filenames))
             return jsonify({
