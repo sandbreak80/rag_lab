@@ -16,6 +16,7 @@ GRAPH_SERVICE_URL = os.getenv("GRAPH_SERVICE_URL", "http://graph-service:8007")
 KNOWLEDGE_GRAPH_URL = os.getenv("KNOWLEDGE_GRAPH_URL", "http://knowledge-graph:8007")  # Alias for graph service
 RERANKER_SERVICE_URL = os.getenv("RERANKER_SERVICE_URL", "http://reranker:8008")
 WEB_SEARCH_URL = os.getenv("WEB_SEARCH_URL", "http://web-search:8009")
+METRICS_STORE_URL = os.getenv("METRICS_STORE_URL", "http://metrics-store:8011")
 LLM_SERVICE_URL = os.getenv("LLM_SERVICE_URL", "http://llm-service:11434")
 
 # Ollama Configuration (for services that need it directly)

@@ -1,7 +1,7 @@
 version: '3.8'
 
 # Simplified Microservices for Testing
-# Only core services initially
+# Environment variables loaded from config.env
 
 networks:
   rag-network:
@@ -12,6 +12,7 @@ volumes:
   ollama-models:
   uploads:
   indices:
+  metrics-data:  # Store performance metrics for lab analysis
 
 services:
   # Note: Using local Ollama at host.docker.internal:11434
@@ -296,6 +297,27 @@ services:
       - "3000:80"
     depends_on:
       - web-api
+    restart: unless-stopped
+
+  # Metrics Storage Service (SQLite)
+  metrics-store:
+    image: python:3.11-slim
+    container_name: rag-metrics-store
+    networks:
+      - rag-network
+    ports:
+      - "8011:8011"
+    volumes:
+      - metrics-data:/data/metrics
+      - ./services/metrics-store/app:/app
+      - ./services/common:/workspace/services/common
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=metrics-store
+      - SERVICE_PORT=8011
+      - METRICS_DB_PATH=/data/metrics/metrics.db
+      - PYTHONPATH=/workspace
+    command: bash -c "pip install -q flask flask-cors && python service.py"
     restart: unless-stopped
 
   # Flask API Server (API-only backend)

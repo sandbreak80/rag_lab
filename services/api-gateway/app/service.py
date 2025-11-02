@@ -135,14 +135,14 @@ def get_stats():
             if docs_response.status_code == 200:
                 data = docs_response.json()
                 metadatas = data.get('metadatas', [])
-                
+
                 # Extract unique filenames
                 filenames = set()
                 for metadata in metadatas:
                     filename = metadata.get('filename') or metadata.get('file_name')
                     if filename:
                         filenames.add(filename)
-                
+
                 documents = sorted(list(filenames))
             else:
                 documents = []
@@ -153,7 +153,8 @@ def get_stats():
         return jsonify({
             'chunks': db_stats.get('total_chunks', 0),
             'documents': documents,
-            'knowledge_graph_nodes': kg_stats.get('total_nodes', 0),
+            'knowledge_graph_nodes': kg_stats.get('nodes', 0),  # KG service returns 'nodes', not 'total_nodes'
+            'knowledge_graph_edges': kg_stats.get('edges', 0),
             'chat_model': CHAT_MODEL,
             'search_mode': 'hybrid',
             'embedding_model': db_stats.get('embedding_model', 'nomic-embed-text'),
