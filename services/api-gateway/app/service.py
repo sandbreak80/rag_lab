@@ -256,10 +256,10 @@ def ask():
     """Ask question (non-streaming) - Transform React UI format to chat service format"""
     try:
         metrics.increment('ask_requests')
-        
+
         # Get React UI format
         data = request.json
-        
+
         # Transform to chat service format
         chat_request = {
             'question': data.get('query', data.get('question', '')),

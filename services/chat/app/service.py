@@ -160,24 +160,38 @@ def ask_question():
 
         metrics.increment('ask_requests')
 
-        # Get context
+        # Get RAG config
+        search_config = {
+            'top_k': num_contexts,
+            'use_query_expansion': data.get('use_query_expansion', False),
+            'use_bm25': data.get('use_bm25', False),
+            'use_hybrid': data.get('use_hybrid', False),
+            'use_graph': data.get('use_graph', False),
+            'use_reranking': data.get('use_reranking', False),
+            'use_web_search': data.get('use_web_search', False),
+        }
+
+        # Get context with config
         context_response = requests.post(
-            f"{SEARCH_SERVICE_URL}/search",
+            f"{SEARCH_SERVICE_URL}/search_with_config",
             json={
                 'query': question,
-                'limit': num_contexts
+                'config': search_config
             },
-            timeout=30
+            timeout=60
         )
         context_response.raise_for_status()
 
-        results = context_response.json()['results']
+        search_data = context_response.json()
+        results = search_data.get('results', [])
+        search_metrics = search_data.get('metrics', {})
 
         if not results:
             metrics.increment('no_context_found')
             return jsonify({
                 'answer': 'No relevant information found in the knowledge base.',
-                'sources': []
+                'sources': [],
+                'metrics': search_metrics
             })
 
         # Build context
@@ -185,17 +199,23 @@ def ask_question():
         sources = []
 
         for i, result in enumerate(results, 1):
-            metadata = result['metadata']
+            metadata = result.get('metadata', {})
+            content = result.get('content', '')
+            score = result.get('score', 0)
+            
             context_text += f"## Source {i}: {metadata.get('title', 'Unknown')}\n"
             context_text += f"File: {metadata.get('file_name', 'Unknown')}\n"
-            context_text += f"Relevance: {result['score']:.3f}\n\n"
-            context_text += f"{result['content']}\n\n"
+            context_text += f"Relevance: {score:.3f}\n\n"
+            context_text += f"{content}\n\n"
             context_text += "---\n\n"
 
             sources.append({
-                'title': metadata.get('title', 'Unknown'),
-                'file': metadata.get('file_name', 'Unknown'),
-                'score': round(result['score'], 3)
+                'id': result.get('id', ''),
+                'file_name': metadata.get('file_name', 'Unknown'),
+                'chunk_text': content[:200] + '...' if len(content) > 200 else content,
+                'score': round(score, 3),
+                'metadata': metadata,
+                'page_number': metadata.get('page_number', 1)
             })
 
         # Create prompt
@@ -214,14 +234,17 @@ Instructions:
 Answer:"""
 
         # Generate answer via Ollama
+        model = data.get('model', CHAT_MODEL)
+        temperature = data.get('temperature', 0.7)
+        
         llm_response = requests.post(
             f"{LLM_SERVICE_URL}/api/generate",
             json={
-                "model": CHAT_MODEL,
+                "model": model,
                 "prompt": prompt,
                 "stream": False,
                 "options": {
-                    "temperature": 0.1,
+                    "temperature": temperature,
                     "num_predict": 500
                 }
             },
@@ -236,7 +259,12 @@ Answer:"""
         return jsonify({
             'answer': answer,
             'sources': sources,
-            'context_chunks': len(sources)
+            'metrics': {
+                **search_metrics,
+                'model': model,
+                'temperature': temperature,
+                'context_chunks': len(sources)
+            }
         })
 
     except requests.exceptions.ConnectionError:
