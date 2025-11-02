@@ -13,10 +13,10 @@ const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
     };
 
     return (
-      <label className="relative inline-flex cursor-pointer items-center">
+      <label className={cn("relative inline-flex cursor-pointer items-center", className)}>
         <input
           type="checkbox"
-          className="sr-only peer"
+          className="sr-only"
           checked={checked}
           onChange={handleChange}
           ref={ref}
@@ -24,18 +24,16 @@ const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
         />
         <div
           className={cn(
-            'w-11 h-6 bg-muted rounded-full peer',
-            'peer-checked:bg-primary',
-            'peer-focus:ring-2 peer-focus:ring-ring peer-focus:ring-offset-2 peer-focus:ring-offset-background',
-            'transition-colors',
-            className
+            'relative w-11 h-6 rounded-full transition-colors duration-200',
+            checked ? 'bg-primary' : 'bg-muted'
           )}
         >
           <div
             className={cn(
               'absolute top-0.5 left-0.5 bg-background rounded-full h-5 w-5',
-              'transition-transform peer-checked:translate-x-5',
-              'shadow-sm'
+              'transition-transform duration-200 ease-in-out',
+              'shadow-sm',
+              checked ? 'translate-x-5' : 'translate-x-0'
             )}
           />
         </div>
