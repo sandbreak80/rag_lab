@@ -17,7 +17,7 @@ test_result() {
     local name="$1"
     local status="$2"
     local details="$3"
-    
+
     if [ "$status" = "pass" ]; then
         echo -e "${GREEN}✅${NC} $name"
         [ -n "$details" ] && echo -e "   $details"

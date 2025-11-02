@@ -50,8 +50,8 @@ def test_stats_endpoint():
     try:
         response = requests.get(f"{API_URL}/api/stats", timeout=5)
         data = response.json()
-        success = (response.status_code == 200 and 
-                  "chunks" in data and 
+        success = (response.status_code == 200 and
+                  "chunks" in data and
                   "documents" in data and
                   "knowledge_graph_nodes" in data)
         details = f"Chunks: {data.get('chunks')}, Docs: {data.get('documents')}, Nodes: {data.get('knowledge_graph_nodes')}"
@@ -145,7 +145,7 @@ def main():
     print(f"{Colors.BLUE}React UI + Backend Integration Tests{Colors.RESET}")
     print(f"{Colors.BLUE}{'='*60}{Colors.RESET}")
     print()
-    
+
     tests = [
         test_ui_loads,
         test_api_health,
@@ -158,34 +158,34 @@ def main():
         test_knowledge_graph,
         test_search_service,
     ]
-    
+
     results = []
     for i, test in enumerate(tests, 1):
         print(f"\n{Colors.YELLOW}[{i}/{len(tests)}]{Colors.RESET} ", end="")
         results.append(test())
-    
+
     print()
     print(f"{Colors.BLUE}{'='*60}{Colors.RESET}")
     passed = sum(results)
     total = len(results)
     percentage = (passed / total) * 100
-    
+
     color = Colors.GREEN if percentage == 100 else Colors.YELLOW if percentage >= 70 else Colors.RED
     print(f"{color}Results: {passed}/{total} tests passed ({percentage:.0f}%){Colors.RESET}")
-    
+
     if percentage == 100:
         print(f"{Colors.GREEN}🎉 All tests passed! Full stack is working!{Colors.RESET}")
     elif percentage >= 70:
         print(f"{Colors.YELLOW}⚠️  Most tests passed. Check failures above.{Colors.RESET}")
     else:
         print(f"{Colors.RED}❌ Multiple failures. Check services are running.{Colors.RESET}")
-    
+
     print(f"{Colors.BLUE}{'='*60}{Colors.RESET}")
     print()
     print(f"📱 React UI: {BASE_URL}")
     print(f"🔧 Flask API: {API_URL}")
     print()
-    
+
     return 0 if percentage == 100 else 1
 
 if __name__ == "__main__":
