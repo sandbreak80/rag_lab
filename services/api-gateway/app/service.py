@@ -295,6 +295,7 @@ def ask():
 
         # Get React UI format
         data = request.json
+        print(f"🌐 API Gateway received request: query={data.get('query', '')[:50]}, model={data.get('model')}")
 
         # Transform to chat service format
         chat_request = {
@@ -310,6 +311,7 @@ def ask():
             'model': data.get('model', 'llama3.2:3b'),
             'temperature': data.get('temperature', 0.7),
         }
+        print(f"📤 Forwarding to chat service: {CHAT_SERVICE_URL}/ask")
 
         # Forward to chat service
         response = requests.post(
@@ -317,14 +319,23 @@ def ask():
             json=chat_request,
             timeout=120
         )
+        
+        print(f"📬 Chat service responded with status: {response.status_code}")
+        if response.status_code != 200:
+            print(f"❌ Error response: {response.text[:200]}")
+        
         response.raise_for_status()
 
         metrics.increment('ask_success')
 
         return jsonify(response.json())
     except Exception as e:
+        error_msg = str(e)
+        print(f"❌ API Gateway error: {error_msg}")
         metrics.increment('ask_errors')
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': error_msg}), 500
 
 # === Admin Endpoints ===
 

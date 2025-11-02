@@ -132,23 +132,23 @@ export function ChatInterface() {
     },
     onError: (error: any) => {
       console.error('Chat error:', error);
-      
+
       // Extract detailed error information
       let errorContent = 'An error occurred while processing your request.';
       let errorDetails = '';
-      
+
       if (error.response?.data) {
         const errorData = error.response.data;
         errorContent = errorData.error || errorData.message || errorContent;
-        
+
         // Add error type if available
         if (errorData.type) {
           errorDetails = `\n\n**Error Type:** ${errorData.type}`;
         }
-        
+
         // Add status code
         errorDetails += `\n\n**Status Code:** ${error.response.status}`;
-        
+
         // Add helpful suggestions based on error type
         if (errorData.type === 'timeout') {
           errorDetails += '\n\n**Suggestion:** The system is processing your request but taking longer than expected. This usually happens when Ollama is busy with other requests. Please try again in a moment.';
@@ -160,7 +160,7 @@ export function ChatInterface() {
       } else if (error.message) {
         errorContent = error.message;
       }
-      
+
       const errorMessage: ChatMessage = {
         id: generateId(),
         role: 'assistant',
