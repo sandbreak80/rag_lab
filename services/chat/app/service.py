@@ -202,7 +202,7 @@ def ask_question():
             metadata = result.get('metadata', {})
             content = result.get('content', '')
             score = result.get('score', 0)
-            
+
             context_text += f"## Source {i}: {metadata.get('title', 'Unknown')}\n"
             context_text += f"File: {metadata.get('file_name', 'Unknown')}\n"
             context_text += f"Relevance: {score:.3f}\n\n"
@@ -236,7 +236,7 @@ Answer:"""
         # Generate answer via Ollama
         model = data.get('model', CHAT_MODEL)
         temperature = data.get('temperature', 0.7)
-        
+
         llm_response = requests.post(
             f"{LLM_SERVICE_URL}/api/generate",
             json={

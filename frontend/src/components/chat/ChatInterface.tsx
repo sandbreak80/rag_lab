@@ -1,16 +1,19 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useConfigStore } from '../../stores/configStore';
 import { useMetricsStore } from '../../stores/metricsStore';
+import { useChatStore } from '../../stores/chatStore';
 import { ChatMessage } from '../../types/chat';
 import { MessageList } from './MessageList';
 import { InputBar } from './InputBar';
 import { generateId } from '../../utils/formatting';
 
 export function ChatInterface() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const messages = useChatStore((state) => state.messages);
+  const isLoading = useChatStore((state) => state.isLoading);
+  const addMessage = useChatStore((state) => state.addMessage);
+  const setLoading = useChatStore((state) => state.setLoading);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Select individual properties to avoid creating new objects
@@ -92,7 +95,8 @@ export function ChatInterface() {
         },
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      addMessage(assistantMessage);
+      setLoading(false);
 
       // Log metric
       if (data.metrics) {
@@ -124,7 +128,7 @@ export function ChatInterface() {
         });
       }
 
-      setIsLoading(false);
+      setLoading(false);
     },
     onError: (error) => {
       const errorMessage: ChatMessage = {
@@ -133,8 +137,8 @@ export function ChatInterface() {
         content: `Error: ${error.message}`,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, errorMessage]);
-      setIsLoading(false);
+      addMessage(errorMessage);
+      setLoading(false);
     },
   });
 
@@ -149,15 +153,16 @@ export function ChatInterface() {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
+    addMessage(userMessage);
+    setLoading(true);
 
     // Send to API
     chatMutation.mutate(query);
   };
 
   const handleClearChat = () => {
-    setMessages([]);
+    const clearMessages = useChatStore.getState().clearMessages;
+    clearMessages();
   };
 
   return (
