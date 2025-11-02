@@ -18,7 +18,21 @@ def get_presets():
         with open(presets_path, 'r') as f:
             presets_data = json.load(f)
 
-        return jsonify(presets_data.get('presets', []))
+        # Convert presets dictionary to array
+        presets_dict = presets_data.get('presets', {})
+        presets_array = []
+        
+        for key, value in presets_dict.items():
+            presets_array.append({
+                'name': key,
+                'description': value.get('description', ''),
+                'config': value.get('config', {}),
+                'llm_config': value.get('llm_config', {}),
+                'expected_metrics': value.get('expected_metrics', {}),
+                'notes': value.get('notes', '')
+            })
+        
+        return jsonify(presets_array)
 
     except Exception as e:
         # Return default presets if file not found

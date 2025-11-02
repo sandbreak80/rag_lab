@@ -64,11 +64,18 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
     },
 
     toggleFeature: (feature) => {
-      const currentValue = get()[feature];
-      if (typeof currentValue === 'boolean') {
-        set({ [feature]: !currentValue });
-        saveToLocalStorage('rag_config', get().getConfig());
-      }
+      set((state) => {
+        const currentValue = state[feature];
+        if (typeof currentValue === 'boolean') {
+          const newState = { [feature]: !currentValue };
+          // Save to localStorage after state update
+          setTimeout(() => {
+            saveToLocalStorage('rag_config', get().getConfig());
+          }, 0);
+          return newState;
+        }
+        return state;
+      });
     },
 
     setWebSearchDocs: (webSearchDocs) => {
@@ -96,8 +103,31 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
       saveToLocalStorage('rag_config', get().getConfig());
     },
 
-    loadPreset: (config) => {
-      set({ ...DEFAULT_CONFIG, ...config });
+    loadPreset: (presetData: any) => {
+      // Combine RAG config and LLM config
+      const config = presetData.config || {};
+      const llmConfig = presetData.llm_config || {};
+      
+      const newConfig = {
+        ...config,
+        model: llmConfig.model || get().model,
+        temperature: llmConfig.temperature || get().temperature,
+        contextWindow: llmConfig.context_window || get().contextWindow,
+        // Map snake_case to camelCase
+        useQueryExpansion: config.use_query_expansion !== undefined ? config.use_query_expansion : get().useQueryExpansion,
+        useBM25: config.use_bm25 !== undefined ? config.use_bm25 : get().useBM25,
+        useHybrid: config.use_hybrid !== undefined ? config.use_hybrid : get().useHybrid,
+        useGraph: config.use_graph !== undefined ? config.use_graph : get().useGraph,
+        useReranking: config.use_reranking !== undefined ? config.use_reranking : get().useReranking,
+        useWebSearch: config.use_web_search !== undefined ? config.use_web_search : get().useWebSearch,
+        useAgenticChunking: config.use_agentic_chunking !== undefined ? config.use_agentic_chunking : get().useAgenticChunking,
+        topK: config.top_k || get().topK,
+        rerankTopK: config.rerank_top_k || get().rerankTopK,
+        webSearchDocs: config.web_search_docs || get().webSearchDocs,
+        webSearchPages: config.web_search_pages_per_doc || get().webSearchPages,
+      };
+      
+      set(newConfig);
       saveToLocalStorage('rag_config', get().getConfig());
     },
 

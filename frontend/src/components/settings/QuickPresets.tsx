@@ -32,7 +32,7 @@ export function QuickPresets() {
           <Card
             key={preset.name}
             className="cursor-pointer hover:border-primary transition-colors"
-            onClick={() => loadPreset(preset.config)}
+            onClick={() => loadPreset(preset)}
           >
             <CardContent className="p-4">
               <div className="flex items-start gap-2 mb-2">
@@ -44,6 +44,11 @@ export function QuickPresets() {
                   <p className="text-xs text-muted-foreground mt-1">
                     {preset.description}
                   </p>
+                  {preset.expected_metrics && (
+                    <p className="text-xs text-primary mt-1">
+                      {preset.expected_metrics.latency}
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>
