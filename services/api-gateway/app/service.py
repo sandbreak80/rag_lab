@@ -173,10 +173,26 @@ def get_stats():
 def upload_file():
     """Upload file to ingest service"""
     try:
+        print(f"📥 Gateway received upload request")
+        print(f"   Files: {list(request.files.keys())}")
+        print(f"   Form: {list(request.form.keys())}")
+        
         metrics.increment('upload_requests')
+        
+        # Check if file exists
+        if 'file' not in request.files:
+            print(f"❌ No file in request")
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            print(f"❌ Empty filename")
+            return jsonify({'error': 'No file selected'}), 400
+        
+        print(f"✅ Forwarding file: {file.filename}")
 
         # Forward to ingest service
-        files = {'file': request.files['file']}
+        files = {'file': (file.filename, file.stream, file.content_type)}
         response = requests.post(
             f"{INGEST_SERVICE_URL}/upload",
             files=files,
@@ -187,9 +203,11 @@ def upload_file():
             metrics.increment('upload_success')
         else:
             metrics.increment('upload_errors')
+            print(f"❌ Ingest service returned {response.status_code}: {response.text[:200]}")
 
         return (response.json(), response.status_code)
     except Exception as e:
+        print(f"❌ Gateway upload error: {e}")
         metrics.increment('upload_errors')
         return jsonify({'error': str(e)}), 500
 
@@ -403,7 +421,7 @@ def get_models():
     """Get available Ollama models"""
     try:
         import os
-        ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://ollama:11434')
+        ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://host.docker.internal:11434')
         response = requests.get(f"{ollama_url}/api/tags", timeout=10)
 
         if response.status_code == 200:

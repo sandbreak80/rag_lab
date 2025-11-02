@@ -311,16 +311,24 @@ def upload_file():
     }
     """
     try:
+        print(f"📥 Upload request received")
+        print(f"   Request files: {list(request.files.keys())}")
+        print(f"   Request form: {list(request.form.keys())}")
+        
         # Validate file
         if 'file' not in request.files:
+            print(f"❌ No file provided in request")
             return jsonify({'error': 'No file provided'}), 400
 
         file = request.files['file']
+        print(f"   Filename: {file.filename}")
 
         if file.filename == '':
+            print(f"❌ Empty filename")
             return jsonify({'error': 'Empty filename'}), 400
 
         if not allowed_file(file.filename):
+            print(f"❌ File type not supported: {file.filename}")
             return jsonify({
                 'error': f'File type not supported. Allowed: {", ".join(SUPPORTED_EXTENSIONS)}'
             }), 400
@@ -331,6 +339,7 @@ def upload_file():
         filename = secure_filename(file.filename)
         file_path = UPLOAD_FOLDER / filename
         file.save(str(file_path))
+        print(f"✅ File saved: {file_path}")
 
         metrics.increment('files_uploaded')
         metrics.set_gauge('last_upload_size_mb', file_path.stat().st_size / (1024 * 1024))
