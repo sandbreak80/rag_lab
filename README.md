@@ -29,19 +29,49 @@ The Educational RAG Lab is a **production-ready, fully-functional RAG system** d
 
 ## 🚀 Quick Start (5 Minutes)
 
+### One-Command Startup
+
 ```bash
 # Clone the repository
 git clone https://github.com/sandbreak80/rag_lab.git
 cd rag_lab
 
-# Start all services
+# Run the startup script
+./start.sh
+```
+
+The startup script will:
+- ✅ Check Docker is running
+- ✅ Start Ollama and verify models
+- ✅ Build and start all microservices
+- ✅ Wait for services to be healthy
+- ✅ Start the React UI
+- ✅ Display status and access URLs
+
+### Manual Startup
+
+```bash
+# Start Ollama
+docker start ollama
+
+# Start backend services
 docker-compose -f docker-compose.test.yml up -d
 
-# Wait for initialization (30 seconds)
-sleep 30
+# Start frontend (in a new terminal)
+cd frontend && npm run dev
+```
 
-# Open the UI
-open http://localhost:5555
+### Access the Application
+
+- **React UI**: http://localhost:5173 (development)
+- **Production UI**: http://localhost:3000
+- **API Gateway**: http://localhost:8000
+
+### Useful Commands
+
+```bash
+./status.sh   # Check status of all services
+./stop.sh     # Stop all services
 ```
 
 **That's it!** Follow the interactive lab guide (📖 button) in the UI.
