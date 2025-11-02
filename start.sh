@@ -60,7 +60,7 @@ check_service() {
     local name=$1
     local url=$2
     local status=$(curl -s -o /dev/null -w "%{http_code}" "$url" 2>/dev/null || echo "000")
-    
+
     if [ "$status" = "200" ]; then
         echo "   ✅ $name"
         return 0

@@ -14,21 +14,21 @@ echo ""
 if [ -z "$1" ]; then
     echo "🔄 Restarting all services..."
     docker-compose -f $COMPOSE_FILE restart
-    
+
     echo ""
     echo "⏳ Waiting for services to initialize (15 seconds)..."
     sleep 15
-    
+
     echo ""
     echo "✅ All services restarted"
 else
     echo "🔄 Restarting $1..."
     docker-compose -f $COMPOSE_FILE restart "$1"
-    
+
     echo ""
     echo "⏳ Waiting for service to initialize (5 seconds)..."
     sleep 5
-    
+
     echo ""
     echo "✅ $1 restarted"
 fi

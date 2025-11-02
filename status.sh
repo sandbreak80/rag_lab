@@ -27,7 +27,7 @@ check_service() {
     local response=$(curl -s -w "\n%{http_code}" "$url" 2>/dev/null || echo "000")
     local body=$(echo "$response" | head -n -1)
     local status=$(echo "$response" | tail -n 1)
-    
+
     if [ "$status" = "200" ]; then
         echo "   ✅ $name - Healthy"
         if echo "$body" | jq . > /dev/null 2>&1; then
