@@ -248,11 +248,13 @@ Answer:"""
         print(f"🔗 LLM URL: {LLM_SERVICE_URL}/api/generate")
 
         # Retry logic for Ollama (sometimes model needs to load)
-        max_retries = 2
-        retry_delay = 2
+        max_retries = 3  # Increased to 3 retries
+        retry_delay = 3  # Increased to 3 seconds
+        llm_response = None
 
         for attempt in range(max_retries):
             try:
+                print(f"🔄 Attempt {attempt + 1}/{max_retries}: Calling Ollama...")
                 llm_response = requests.post(
                     f"{LLM_SERVICE_URL}/api/generate",
                     json={
@@ -269,6 +271,7 @@ Answer:"""
 
                 # Check if response is successful
                 if llm_response.status_code == 200:
+                    print(f"✅ Ollama responded successfully")
                     break
 
                 # Log non-200 response
@@ -276,12 +279,13 @@ Answer:"""
 
                 # If 404, model might not be loaded - retry
                 if llm_response.status_code == 404 and attempt < max_retries - 1:
-                    print(f"🔄 Model not found, waiting {retry_delay}s and retrying (attempt {attempt + 1}/{max_retries})...")
+                    print(f"🔄 Model not found, waiting {retry_delay}s and retrying...")
                     time.sleep(retry_delay)
                     continue
 
-                # Raise for other errors
-                llm_response.raise_for_status()
+                # If last attempt and still failing, raise
+                if attempt == max_retries - 1:
+                    llm_response.raise_for_status()
 
             except requests.exceptions.Timeout:
                 if attempt < max_retries - 1:
@@ -295,8 +299,21 @@ Answer:"""
                     time.sleep(retry_delay)
                     continue
                 raise
+            except requests.exceptions.HTTPError:
+                # Only raise if it's the last attempt
+                if attempt == max_retries - 1:
+                    raise
+                print(f"⚠️  HTTP error, retrying...")
+                time.sleep(retry_delay)
+                continue
 
-        llm_response.raise_for_status()
+        # Final check - if we never got a 200 response, raise the last error
+        if llm_response is None or llm_response.status_code != 200:
+            if llm_response is not None:
+                llm_response.raise_for_status()
+            else:
+                raise Exception("Failed to get response from Ollama after all retries")
+
         print(f"✅ LLM generation completed")
 
         answer = llm_response.json()['response']
