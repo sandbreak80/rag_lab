@@ -118,7 +118,7 @@ services:
       - LLM_SERVICE_URL=http://host.docker.internal:11434
       - CHAT_MODEL=llama3.2:3b
       - PYTHONPATH=/workspace
-    command: bash -c "pip install -q flask requests && python service.py"
+    command: bash -c "pip install -q flask flask-cors requests && python -u service.py"
     depends_on:
       - search-service
 
@@ -143,7 +143,7 @@ services:
       - VECTOR_DB_URL=http://vector-db:8005
       - EMBEDDING_SERVICE_URL=http://embedding-service:8006
       - PYTHONPATH=/workspace
-    command: bash -c "pip install -q flask flask-cors requests && python service.py"
+    command: bash -c "pip install -q flask flask-cors requests && python -u service.py"
     depends_on:
       - search-service
       - chat-service
@@ -166,7 +166,7 @@ services:
       - SERVICE_NAME=docling-service
       - SERVICE_PORT=8004
       - PYTHONPATH=/workspace
-    command: bash -c "apt-get update -qq && apt-get install -y -qq poppler-utils tesseract-ocr && pip install -q flask requests docling && python service.py"
+    command: bash -c "apt-get update -qq && apt-get install -y -qq poppler-utils tesseract-ocr && pip install -q flask flask-cors requests docling && python -u service.py"
 
   # Ingest Service (Document Ingestion)
   ingest-service:
@@ -192,7 +192,7 @@ services:
       - VECTOR_DB_URL=http://vector-db:8005
       - PYTHONPATH=/workspace
       - UPLOAD_FOLDER=/uploads
-    command: bash -c "pip install -q flask requests chromadb ollama pyyaml && python service.py"
+    command: bash -c "pip install -q flask flask-cors requests chromadb ollama pyyaml && python -u service.py"
     depends_on:
       - docling-service
       - embedding-service
@@ -219,7 +219,7 @@ services:
       - VECTOR_DB_URL=http://vector-db:8005
       - KNOWLEDGE_GRAPH_PATH=/kg-data/knowledge_graph.pkl
       - PYTHONPATH=/workspace
-    command: bash -c "pip install -q flask requests networkx chromadb && python service.py"
+    command: bash -c "pip install -q flask flask-cors requests networkx chromadb && python -u service.py"
     depends_on:
       - vector-db
 
@@ -242,7 +242,7 @@ services:
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
       - CHAT_MODEL=llama3.2:3b
       - PYTHONPATH=/workspace
-    command: bash -c "pip install -q flask requests && python service.py"
+    command: bash -c "pip install -q flask flask-cors requests && python -u service.py"
 
   # Playwright Testing Service
   playwright-tests:
@@ -294,7 +294,7 @@ services:
       - SERVICE_PORT=8009
       - SEARXNG_URL=http://searxng:8080
       - PYTHONPATH=/workspace
-    command: bash -c "pip install -q flask requests && python service.py"
+    command: bash -c "pip install -q flask flask-cors requests && python -u service.py"
     depends_on:
       - searxng
 
@@ -331,7 +331,7 @@ services:
       - SERVICE_PORT=8011
       - METRICS_DB_PATH=/data/metrics/metrics.db
       - PYTHONPATH=/workspace
-    command: bash -c "apt-get update -qq && apt-get install -y -qq docker.io && pip install -q flask flask-cors psutil && python service.py"
+    command: bash -c "apt-get update -qq && apt-get install -y -qq docker.io && pip install -q flask flask-cors psutil && python -u service.py"
     restart: unless-stopped
 
   # Flask API Server (API-only backend)

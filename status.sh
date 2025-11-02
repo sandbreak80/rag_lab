@@ -1,113 +1,66 @@
 #!/bin/bash
+# Neural Vault RAG Lab - Status Script
+# Shows detailed status of all services
 
-# Neural Vault RAG Lab - Status Check
-# Shows current status of all services
+set -e
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+COMPOSE_FILE="docker-compose.test.yml"
 
-echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
-echo -e "${CYAN}   Neural Vault RAG Lab - System Status${NC}"
-echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}\n"
+echo "════════════════════════════════════════════════════════════════"
+echo "  📊 Neural Vault RAG Lab - System Status"
+echo "════════════════════════════════════════════════════════════════"
+echo ""
 
-# Function to check service health
+echo "🐳 Docker Services:"
+docker-compose -f $COMPOSE_FILE ps --format "table {{.Service}}\t{{.Status}}\t{{.Ports}}"
+
+echo ""
+echo "💾 Data Volumes:"
+docker volume ls | grep "rag_lab" | awk '{printf "   %-30s %s\n", $2, ""}'
+
+echo ""
+echo "🔍 Service Health Checks:"
+
 check_service() {
     local name=$1
     local url=$2
-
-    echo -ne "${YELLOW}${name}${NC} "
-
-    response=$(curl -sf "$url" 2>/dev/null)
-
-    if [ $? -eq 0 ]; then
-        # Try to extract status from JSON
-        status=$(echo "$response" | jq -r '.status // "ok"' 2>/dev/null || echo "ok")
-
-        if [ "$status" = "ok" ] || [ "$status" = "healthy" ]; then
-            echo -e "${GREEN}✓ Healthy${NC}"
-            return 0
-        else
-            echo -e "${YELLOW}⚠ Running but unhealthy${NC}"
-            return 1
+    local response=$(curl -s -w "\n%{http_code}" "$url" 2>/dev/null || echo "000")
+    local body=$(echo "$response" | head -n -1)
+    local status=$(echo "$response" | tail -n 1)
+    
+    if [ "$status" = "200" ]; then
+        echo "   ✅ $name - Healthy"
+        if echo "$body" | jq . > /dev/null 2>&1; then
+            echo "$body" | jq -r '.service // .status // empty' | sed 's/^/      /'
         fi
+    elif [ "$status" = "000" ]; then
+        echo "   ❌ $name - Unreachable"
     else
-        echo -e "${RED}✗ Down${NC}"
-        return 1
+        echo "   ⚠️  $name - HTTP $status"
     fi
 }
 
-# Check Docker
-echo -e "${PURPLE}Docker Services:${NC}"
-if docker ps > /dev/null 2>&1; then
-    echo -e "${GREEN}✓ Docker daemon running${NC}\n"
-else
-    echo -e "${RED}✗ Docker daemon not running${NC}\n"
-    exit 1
-fi
-
-# Check Ollama
-echo -e "${PURPLE}Ollama:${NC}"
-check_service "Ollama API          " "http://localhost:11434/api/tags"
-
-# Check models
-if curl -sf http://localhost:11434/api/tags 2>/dev/null | grep -q "llama3.2:3b"; then
-    echo -e "  ${GREEN}✓ llama3.2:3b model available${NC}"
-else
-    echo -e "  ${RED}✗ llama3.2:3b model not found${NC}"
-fi
+check_service "API Gateway      " "http://localhost:8000/health"
+check_service "Ingest Service   " "http://localhost:8001/health"
+check_service "Search Service   " "http://localhost:8002/health"
+check_service "Chat Service     " "http://localhost:8003/health"
+check_service "Vector DB        " "http://localhost:8005/health"
+check_service "Embedding Service" "http://localhost:8006/health"
+check_service "Knowledge Graph  " "http://localhost:8007/health"
+check_service "Reranker         " "http://localhost:8008/health"
+check_service "Web Search       " "http://localhost:8009/health"
+check_service "Metrics Store    " "http://localhost:8011/health"
 
 echo ""
-
-# Check Backend Services
-echo -e "${PURPLE}Backend Services:${NC}"
-check_service "API Gateway         " "http://localhost:8000/health"
-check_service "Vector DB           " "http://localhost:8005/health"
-check_service "Search Service      " "http://localhost:8002/health"
-check_service "Chat Service        " "http://localhost:8003/health"
-check_service "Embedding Service   " "http://localhost:8006/health"
-check_service "Knowledge Graph     " "http://localhost:8007/health"
-check_service "Reranker Service    " "http://localhost:8009/health"
+echo "📈 Quick Stats:"
+curl -s http://localhost:8005/stats 2>/dev/null | jq -r 'if .total_chunks then "   Vector DB: \(.total_chunks) chunks" else empty end' || echo "   Vector DB: N/A"
+curl -s http://localhost:8007/stats 2>/dev/null | jq -r 'if .nodes then "   Knowledge Graph: \(.nodes) nodes, \(.edges) edges" else empty end' || echo "   Knowledge Graph: N/A"
+curl -s http://localhost:8011/stats 2>/dev/null | jq -r 'if .total_queries then "   Metrics: \(.total_queries) queries tracked" else empty end' || echo "   Metrics: N/A"
 
 echo ""
-
-# Check Frontend
-echo -e "${PURPLE}Frontend:${NC}"
-check_service "React Dev Server    " "http://localhost:5173"
-check_service "Production UI       " "http://localhost:3000"
-
+echo "🌐 Access Points:"
+echo "   API Gateway:  http://localhost:8000"
+echo "   React UI:     http://localhost:5173"
+echo "   Old UI:       http://localhost:5555"
+echo "   Metrics:      http://localhost:8011"
 echo ""
-
-# Get stats
-echo -e "${PURPLE}System Statistics:${NC}"
-stats=$(curl -sf http://localhost:8000/api/stats 2>/dev/null)
-if [ $? -eq 0 ]; then
-    chunks=$(echo "$stats" | jq -r '.chunks // 0')
-    docs=$(echo "$stats" | jq -r '.documents | length // 0')
-    nodes=$(echo "$stats" | jq -r '.knowledge_graph_nodes // 0')
-
-    echo -e "  Documents:        ${CYAN}${docs}${NC}"
-    echo -e "  Chunks:           ${CYAN}${chunks}${NC}"
-    echo -e "  Graph Nodes:      ${CYAN}${nodes}${NC}"
-else
-    echo -e "  ${RED}Unable to fetch stats${NC}"
-fi
-
-echo ""
-
-# Docker container status
-echo -e "${PURPLE}Container Details:${NC}"
-docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "(NAMES|rag-)" | head -15
-
-echo -e "\n${BLUE}═══════════════════════════════════════════════════════════${NC}"
-echo -e "${CYAN}Access Points:${NC}"
-echo -e "  ${PURPLE}React UI:${NC}       http://localhost:5173"
-echo -e "  ${PURPLE}API Gateway:${NC}    http://localhost:8000"
-echo -e "  ${PURPLE}Ollama:${NC}         http://localhost:11434"
-echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}\n"
-

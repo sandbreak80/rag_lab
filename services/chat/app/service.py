@@ -250,7 +250,7 @@ Answer:"""
         # Retry logic for Ollama (sometimes model needs to load)
         max_retries = 2
         retry_delay = 2
-        
+
         for attempt in range(max_retries):
             try:
                 llm_response = requests.post(
@@ -266,23 +266,23 @@ Answer:"""
                     },
                     timeout=300  # Increased to 5 minutes for slow LLM generation
                 )
-                
+
                 # Check if response is successful
                 if llm_response.status_code == 200:
                     break
-                    
+
                 # Log non-200 response
                 print(f"⚠️  Ollama returned {llm_response.status_code}: {llm_response.text[:200]}")
-                
+
                 # If 404, model might not be loaded - retry
                 if llm_response.status_code == 404 and attempt < max_retries - 1:
                     print(f"🔄 Model not found, waiting {retry_delay}s and retrying (attempt {attempt + 1}/{max_retries})...")
                     time.sleep(retry_delay)
                     continue
-                    
+
                 # Raise for other errors
                 llm_response.raise_for_status()
-                
+
             except requests.exceptions.Timeout:
                 if attempt < max_retries - 1:
                     print(f"⏱️  Timeout, retrying (attempt {attempt + 1}/{max_retries})...")
@@ -295,7 +295,7 @@ Answer:"""
                     time.sleep(retry_delay)
                     continue
                 raise
-        
+
         llm_response.raise_for_status()
         print(f"✅ LLM generation completed")
 
