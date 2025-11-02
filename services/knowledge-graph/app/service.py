@@ -330,7 +330,7 @@ def build_graph():
         response = requests.post(
             f"{vector_db_url}/get_all",
             json={},
-            timeout=60
+            timeout=180
         )
         response.raise_for_status()
         data = response.json()

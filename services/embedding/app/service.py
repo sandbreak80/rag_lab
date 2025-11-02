@@ -98,7 +98,7 @@ def embed_text():
                 "model": model,
                 "prompt": text
             },
-            timeout=120  # Increased to 2 minutes for slow Ollama responses
+            timeout=180  # 3 minutes for slow Ollama responses responses
         )
         response.raise_for_status()
 
@@ -172,7 +172,7 @@ def embed_batch():
                     "model": model,
                     "prompt": text
                 },
-                timeout=120  # Increased to 2 minutes for slow Ollama responses
+                timeout=180  # 3 minutes for slow Ollama responses responses
             )
             response.raise_for_status()
 

@@ -226,7 +226,7 @@ def parse_pdf_url():
 
         # Download PDF
         import requests
-        response = requests.get(url, timeout=60)
+        response = requests.get(url, timeout=180)
         response.raise_for_status()
 
         # Save to temp file

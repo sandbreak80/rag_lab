@@ -150,7 +150,7 @@ def build_bm25_index():
         bm25_path = os.getenv('BM25_INDEX_PATH', '/indices/bm25_index.pkl')
 
         # Get all documents from vector DB
-        response = requests.get(f"{vector_db_url}/stats", timeout=30)
+        response = requests.get(f"{vector_db_url}/stats", timeout=180)
         response.raise_for_status()
         stats = response.json()
 
@@ -165,7 +165,7 @@ def build_bm25_index():
         response = requests.post(
             f"{vector_db_url}/get_all",
             json={},
-            timeout=60
+            timeout=180
         )
         response.raise_for_status()
         data = response.json()
@@ -241,7 +241,7 @@ def vector_search():
         embed_response = requests.post(
             f"{EMBEDDING_SERVICE_URL}/embed",
             json={'text': query},
-            timeout=30
+            timeout=180
         )
         embed_response.raise_for_status()
         query_embedding = embed_response.json()['embedding']
@@ -253,7 +253,7 @@ def vector_search():
                 'query_embeddings': [query_embedding],
                 'n_results': limit
             },
-            timeout=30
+            timeout=180
         )
         search_response.raise_for_status()
 
@@ -396,7 +396,7 @@ def vector_search_internal(query: str, limit: int) -> List[Dict]:
     embed_response = requests.post(
         f"{embedding_url}/embed",
         json={'text': query},
-        timeout=30
+        timeout=180
     )
     embed_response.raise_for_status()
     query_embedding = embed_response.json()['embedding']
@@ -408,7 +408,7 @@ def vector_search_internal(query: str, limit: int) -> List[Dict]:
             'query_embeddings': [query_embedding],
             'n_results': limit
         },
-        timeout=30
+        timeout=180
     )
     search_response.raise_for_status()
 
@@ -557,7 +557,7 @@ def search():
                         'results': fused,
                         'limit': limit
                     },
-                    timeout=60  # Long timeout for LLM processing
+                    timeout=180  # 3 minutes for LLM processing
                 )
                 if response.status_code == 200:
                     reranked_data = response.json()
@@ -754,7 +754,7 @@ def search_with_config():
                         'max_results': web_docs_limit,
                         'pages_per_result': web_pages_per_doc
                     },
-                    timeout=30
+                    timeout=180
                 )
                 if response.status_code == 200:
                     web_data = response.json()
@@ -809,7 +809,7 @@ def search_with_config():
                         'results': fused,
                         'limit': top_k
                     },
-                    timeout=60
+                    timeout=180
                 )
                 if response.status_code == 200:
                     reranked_data = response.json()

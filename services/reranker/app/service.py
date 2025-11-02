@@ -168,7 +168,7 @@ Relevance Score:"""
                     "num_predict": 10    # Just need a number
                 }
             },
-            timeout=30  # Longer timeout for generation
+            timeout=180  # 3 minutes for LLM generation
         )
 
         if response.status_code == 200:

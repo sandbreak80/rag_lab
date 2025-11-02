@@ -99,7 +99,7 @@ def web_search():
 
         print(f"🌐 Searching web for: '{query}'")
 
-        response = requests.get(search_url, params=params, timeout=15)
+        response = requests.get(search_url, params=params, timeout=180)
         response.raise_for_status()
 
         search_data = response.json()

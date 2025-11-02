@@ -118,7 +118,7 @@ def get_stats():
         metrics.increment('stats_requests')
 
         # Get stats from vector DB
-        db_response = requests.get(f"{VECTOR_DB_URL}/stats", timeout=10)
+        db_response = requests.get(f"{VECTOR_DB_URL}/stats", timeout=180)
         db_response.raise_for_status()
         db_stats = db_response.json()
 
@@ -131,7 +131,7 @@ def get_stats():
 
         # Get document list
         try:
-            docs_response = requests.post(f"{VECTOR_DB_URL}/get_all", json={}, timeout=10)
+            docs_response = requests.post(f"{VECTOR_DB_URL}/get_all", json={}, timeout=180)
             if docs_response.status_code == 200:
                 data = docs_response.json()
                 metadatas = data.get('metadatas', [])
@@ -248,7 +248,7 @@ def search():
         response = requests.post(
             f"{SEARCH_SERVICE_URL}/search",
             json=request.json,
-            timeout=30
+            timeout=180  # 3 minutes minimum
         )
         response.raise_for_status()
 
@@ -285,7 +285,7 @@ def chat():
             f"{CHAT_SERVICE_URL}/stream",
             json=request.json,
             stream=True,
-            timeout=120
+            timeout=180  # 3 minutes minimum
         )
 
         def generate():
@@ -422,7 +422,7 @@ def get_models():
     try:
         import os
         ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://host.docker.internal:11434')
-        response = requests.get(f"{ollama_url}/api/tags", timeout=10)
+        response = requests.get(f"{ollama_url}/api/tags", timeout=180)
 
         if response.status_code == 200:
             return jsonify(response.json())
@@ -448,7 +448,7 @@ def get_documents():
         response = requests.post(
             f"{VECTOR_DB_URL}/get_all",
             json={},
-            timeout=10
+            timeout=180  # 3 minutes minimum
         )
 
         if response.status_code == 200:
@@ -478,7 +478,7 @@ def admin_reset():
     """Reset the vector database (admin only)"""
     try:
         # Forward to vector DB
-        response = requests.post(f"{VECTOR_DB_URL}/reset", timeout=30)
+        response = requests.post(f"{VECTOR_DB_URL}/reset", timeout=180)
         response.raise_for_status()
 
         metrics.increment('admin_resets')

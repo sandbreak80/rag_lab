@@ -222,7 +222,7 @@ def collect_docker_stats():
                 ['docker', 'stats', '--no-stream', '--format', '{{json .}}'],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=180
             )
 
             if result.returncode == 0:

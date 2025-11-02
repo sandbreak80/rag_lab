@@ -90,7 +90,7 @@ def build_context():
                 'query': question,
                 'limit': num_contexts
             },
-            timeout=30
+            timeout=180
         )
         search_response.raise_for_status()
 
@@ -368,7 +368,7 @@ def stream_answer():
                     'query': question,
                     'limit': num_contexts
                 },
-                timeout=30
+                timeout=180
             )
             context_response.raise_for_status()
 
@@ -431,7 +431,7 @@ Answer:"""
                     }
                 },
                 stream=True,
-                timeout=120
+                timeout=180
             )
             llm_response.raise_for_status()
 

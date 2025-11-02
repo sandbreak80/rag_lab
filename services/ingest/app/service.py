@@ -213,7 +213,7 @@ def embed_chunks(chunks: List[Dict]) -> List[Dict]:
     response = requests.post(
         f"{EMBEDDING_SERVICE_URL}/embed/batch",
         json={'texts': texts},
-        timeout=120
+        timeout=180
     )
     response.raise_for_status()
 
@@ -251,7 +251,7 @@ def store_in_vector_db(chunks: List[Dict], metadata: Dict) -> Dict:
             'embeddings': embeddings,
             'metadatas': metadatas
         },
-        timeout=60
+        timeout=180
     )
     response.raise_for_status()
 
@@ -280,7 +280,7 @@ def add_to_knowledge_graph(metadata: Dict) -> Dict:
         response = requests.post(
             f"{KNOWLEDGE_GRAPH_URL}/add_document",
             json=payload,
-            timeout=30
+            timeout=180
         )
         response.raise_for_status()
 
@@ -437,7 +437,7 @@ def upload_from_url():
         metrics.increment('url_upload_requests')
 
         # Download file
-        response = requests.get(url, timeout=120)
+        response = requests.get(url, timeout=180)
         response.raise_for_status()
 
         # Determine filename from URL or Content-Disposition
