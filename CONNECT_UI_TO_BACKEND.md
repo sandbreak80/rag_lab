@@ -152,7 +152,7 @@ docker-compose -f docker-compose.test.yml logs vector-db
 ```
 
 ### Issue: React UI still shows 500 error
-**Solution**: 
+**Solution**:
 1. Verify web-api is running: `curl http://localhost:5555/health`
 2. Check browser network tab to see actual error
 3. Restart Vite dev server: `cd frontend && npm run dev`

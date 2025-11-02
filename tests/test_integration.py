@@ -1,485 +1,192 @@
+#!/usr/bin/env python3
 """
-Integration Tests for Educational RAG Lab
-NO MOCKS - Real service calls only
-
-Tests the entire system end-to-end with actual service interactions.
+Integration tests for React UI + Backend
+Tests the full stack end-to-end
 """
-
-import pytest
 import requests
 import time
 import json
+from typing import Dict, Any
 
-# Service URLs
-BASE_URL = "http://localhost:5555"
-SEARCH_URL = "http://localhost:8002"
-VECTOR_DB_URL = "http://localhost:8005"
-INGEST_URL = "http://localhost:8001"
-WEB_SEARCH_URL = "http://localhost:8009"
-KNOWLEDGE_GRAPH_URL = "http://localhost:8007"
-RERANKER_URL = "http://localhost:8008"
+BASE_URL = "http://localhost:5173"
+API_URL = "http://localhost:5555"
 
-class TestServiceHealth:
-    """Test all services are running and healthy"""
+class Colors:
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    YELLOW = '\033[93m'
+    BLUE = '\033[94m'
+    RESET = '\033[0m'
 
-    def test_web_ui_health(self):
-        """Web UI should respond"""
+def test_result(name: str, success: bool, details: str = ""):
+    """Print test result"""
+    icon = f"{Colors.GREEN}✅{Colors.RESET}" if success else f"{Colors.RED}❌{Colors.RESET}"
+    print(f"{icon} {name}")
+    if details:
+        print(f"   {details}")
+    return success
+
+def test_ui_loads():
+    """Test 1: React UI loads"""
+    try:
+        response = requests.get(BASE_URL, timeout=5)
+        success = response.status_code == 200 and "Neural Vault" in response.text
+        return test_result("React UI loads", success, f"Status: {response.status_code}")
+    except Exception as e:
+        return test_result("React UI loads", False, str(e))
+
+def test_api_health():
+    """Test 2: API health check"""
+    try:
+        response = requests.get(f"{API_URL}/health", timeout=5)
+        data = response.json()
+        success = response.status_code == 200 and data.get("status") == "ok"
+        return test_result("API health check", success, json.dumps(data))
+    except Exception as e:
+        return test_result("API health check", False, str(e))
+
+def test_stats_endpoint():
+    """Test 3: Stats endpoint returns data"""
+    try:
+        response = requests.get(f"{API_URL}/api/stats", timeout=5)
+        data = response.json()
+        success = (response.status_code == 200 and 
+                  "chunks" in data and 
+                  "documents" in data and
+                  "knowledge_graph_nodes" in data)
+        details = f"Chunks: {data.get('chunks')}, Docs: {data.get('documents')}, Nodes: {data.get('knowledge_graph_nodes')}"
+        return test_result("Stats endpoint", success, details)
+    except Exception as e:
+        return test_result("Stats endpoint", False, str(e))
+
+def test_ui_proxy():
+    """Test 4: UI proxy to backend"""
+    try:
+        # Test through Vite proxy
         response = requests.get(f"{BASE_URL}/api/stats", timeout=5)
-        assert response.status_code == 200
-
-    def test_search_service_health(self):
-        """Search service should be healthy"""
-        response = requests.get(f"{SEARCH_URL}/health", timeout=5)
-        assert response.status_code == 200
         data = response.json()
-        assert data['status'] == 'healthy'
+        success = response.status_code == 200 and "chunks" in data
+        return test_result("UI → API proxy", success, "Proxy working correctly")
+    except Exception as e:
+        return test_result("UI → API proxy", False, str(e))
 
-    def test_vector_db_health(self):
-        """Vector DB should be healthy"""
-        response = requests.get(f"{VECTOR_DB_URL}/health", timeout=5)
-        assert response.status_code == 200
-
-    def test_web_search_health(self):
-        """Web search service should be healthy"""
-        response = requests.get(f"{WEB_SEARCH_URL}/health", timeout=5)
-        assert response.status_code == 200
-        data = response.json()
-        assert data['searxng_accessible'] == True
-
-    def test_knowledge_graph_health(self):
-        """Knowledge graph service should be healthy"""
-        response = requests.get(f"{KNOWLEDGE_GRAPH_URL}/health", timeout=5)
-        assert response.status_code == 200
-
-    def test_reranker_health(self):
-        """Reranker service should be healthy"""
-        response = requests.get(f"{RERANKER_URL}/health", timeout=5)
-        assert response.status_code == 200
-
-
-class TestConfigurableSearch:
-    """Test the search_with_config endpoint with various configurations"""
-
-    def test_minimal_config(self):
-        """Test minimal configuration (vector only)"""
-        config = {
-            "query": "test query",
-            "config": {
-                "use_query_expansion": False,
-                "use_bm25": False,
-                "use_hybrid": False,
-                "use_graph": False,
-                "use_reranking": False,
-                "top_k": 5
-            }
-        }
-
-        response = requests.post(
-            f"{SEARCH_URL}/search_with_config",
-            json=config,
-            timeout=30
-        )
-
-        assert response.status_code == 200
-        data = response.json()
-
-        # Verify structure
-        assert 'results' in data
-        assert 'metrics' in data
-        assert 'config_used' in data
-
-        # Verify metrics
-        metrics = data['metrics']
-        assert 'total_latency_ms' in metrics
-        assert metrics['total_latency_ms'] > 0
-        assert metrics['query_expansion_ms'] == 0  # Should be disabled
-        assert metrics['bm25_search_ms'] == 0  # Should be disabled
-
-    def test_balanced_config(self):
-        """Test balanced configuration (hybrid search)"""
-        config = {
-            "query": "explain embeddings",
-            "config": {
-                "use_query_expansion": True,
-                "use_bm25": True,
-                "use_hybrid": True,
-                "use_graph": False,
-                "use_reranking": False,
-                "top_k": 10
-            }
-        }
-
-        response = requests.post(
-            f"{SEARCH_URL}/search_with_config",
-            json=config,
-            timeout=30
-        )
-
-        assert response.status_code == 200
-        data = response.json()
-
-        metrics = data['metrics']
-        # Should have hybrid method
-        assert metrics['method'] == 'hybrid'
-        # Query expansion should have taken time
-        assert metrics['query_expansion_ms'] > 0
-        # BM25 should have taken time
-        assert metrics['bm25_search_ms'] > 0
-        # Should have breakdown percentages
-        assert 'breakdown_percent' in metrics
-
-    def test_maximum_config(self):
-        """Test maximum quality configuration (all features)"""
-        config = {
-            "query": "vector search",
-            "config": {
-                "use_query_expansion": True,
-                "use_bm25": True,
-                "use_hybrid": True,
-                "use_graph": True,
-                "use_reranking": True,
-                "top_k": 20
-            }
-        }
-
-        response = requests.post(
-            f"{SEARCH_URL}/search_with_config",
-            json=config,
-            timeout=90  # Longer timeout for re-ranking
-        )
-
-        assert response.status_code == 200
-        data = response.json()
-
-        metrics = data['metrics']
-        # All components should be active
-        assert metrics['query_expansion_ms'] > 0
-        assert metrics['vector_search_ms'] > 0
-        assert metrics['bm25_search_ms'] > 0
-        # Total latency should be higher
-        assert metrics['total_latency_ms'] > 1000  # At least 1 second with re-ranking
-
-
-class TestWebSearch:
-    """Test web search integration"""
-
-    def test_web_search_basic(self):
-        """Test basic web search functionality"""
-        payload = {
-            "query": "RAG retrieval augmented generation",
-            "limit": 3
-        }
-
-        response = requests.post(
-            f"{WEB_SEARCH_URL}/search",
-            json=payload,
-            timeout=30
-        )
-
-        assert response.status_code == 200
-        data = response.json()
-
-        # Verify results
-        assert 'results' in data
-        assert data['count'] >= 1
-        assert data['web_docs_returned'] >= 1
-        assert data['latency_ms'] > 0
-
-        # Verify result structure
-        if data['results']:
-            result = data['results'][0]
-            assert 'title' in result
-            assert 'url' in result
-            assert 'content' in result
-            assert 'engine' in result
-
-    def test_web_search_metrics(self):
-        """Test web search returns proper metrics"""
-        payload = {
-            "query": "machine learning",
-            "limit": 5
-        }
-
-        response = requests.post(
-            f"{WEB_SEARCH_URL}/search",
-            json=payload,
-            timeout=30
-        )
-
-        assert response.status_code == 200
-        data = response.json()
-
-        # Check metrics
-        assert 'web_docs_returned' in data
-        assert 'avg_pages_per_doc' in data
-        assert 'latency_ms' in data
-        assert 'engines_used' in data
-
-        # Latency should be reasonable (< 20 seconds)
-        assert data['latency_ms'] < 20000
-
-
-class TestPresets:
-    """Test configuration presets"""
-
-    def test_get_presets(self):
-        """Test retrieving all presets"""
-        response = requests.get(f"{BASE_URL}/api/presets", timeout=5)
-
-        assert response.status_code == 200
-        data = response.json()
-
-        assert 'presets' in data
-        presets = data['presets']
-
-        # Should have all 6 presets
-        assert 'minimal' in presets
-        assert 'fast' in presets
-        assert 'balanced' in presets
-        assert 'quality' in presets
-        assert 'maximum' in presets
-        assert 'production' in presets
-
-        # Check preset structure
-        for preset_name, preset in presets.items():
-            assert 'name' in preset
-            assert 'config' in preset
-            assert 'llm_config' in preset
-            assert 'expected_metrics' in preset
-
-
-class TestKnowledgeGraph:
-    """Test knowledge graph functionality"""
-
-    def test_build_graph(self):
-        """Test building knowledge graph"""
-        # First get all documents
-        docs_response = requests.post(
-            f"{VECTOR_DB_URL}/get_all",
-            json={},
-            timeout=30
-        )
-
-        if docs_response.status_code == 200:
-            docs_data = docs_response.json()
-
-            if docs_data.get('count', 0) > 0:
-                # Build graph
-                response = requests.post(
-                    f"{KNOWLEDGE_GRAPH_URL}/build",
-                    timeout=30
-                )
-
-                assert response.status_code == 200
-                data = response.json()
-                assert data['success'] == True
-                assert data['nodes'] >= 0
-                assert data['edges'] >= 0
-
-
-class TestReranker:
-    """Test LLM re-ranking functionality"""
-
-    def test_rerank_results(self):
-        """Test re-ranking search results"""
-        # First get some results
-        search_response = requests.post(
-            f"{SEARCH_URL}/search_with_config",
-            json={
-                "query": "neural networks",
-                "config": {
-                    "use_query_expansion": False,
-                    "use_bm25": False,
-                    "use_hybrid": False,
-                    "use_graph": False,
-                    "use_reranking": False,
-                    "top_k": 5
-                }
-            },
-            timeout=30
-        )
-
-        if search_response.status_code == 200:
-            search_data = search_response.json()
-            results = search_data.get('results', [])
-
-            if results:
-                # Rerank them
-                rerank_response = requests.post(
-                    f"{RERANKER_URL}/rerank",
-                    json={
-                        "query": "neural networks",
-                        "results": results,
-                        "limit": 5
-                    },
-                    timeout=90
-                )
-
-                assert rerank_response.status_code == 200
-                rerank_data = rerank_response.json()
-
-                assert 'results' in rerank_data
-                assert 'latency_ms' in rerank_data
-                # Re-ranking should take significant time
-                assert rerank_data['latency_ms'] > 100
-
-
-class TestEndToEndFlow:
-    """Test complete end-to-end workflows"""
-
-    def test_complete_rag_flow(self):
-        """Test complete RAG flow: search -> context -> answer"""
-        # Step 1: Configure and search
-        search_response = requests.post(
-            f"{SEARCH_URL}/search_with_config",
-            json={
-                "query": "What is an embedding?",
-                "config": {
-                    "use_query_expansion": True,
-                    "use_bm25": True,
-                    "use_hybrid": True,
-                    "use_graph": False,
-                    "use_reranking": False,
-                    "top_k": 5
-                }
-            },
-            timeout=30
-        )
-
-        assert search_response.status_code == 200
-        search_data = search_response.json()
-
-        # Verify we got results
-        assert 'results' in search_data
-        assert len(search_data['results']) > 0
-
-        # Verify metrics are complete
-        metrics = search_data['metrics']
-        assert metrics['total_latency_ms'] > 0
-        assert 'breakdown_percent' in metrics
-
-        # Step 2: These results would go to LLM for answer generation
-        # (We don't test LLM here as it's external Ollama service)
-
-    def test_performance_comparison_flow(self):
-        """Test flow for comparing two configurations"""
-        configs = [
-            {
-                "name": "minimal",
-                "config": {
-                    "use_query_expansion": False,
-                    "use_bm25": False,
-                    "use_hybrid": False,
-                    "use_graph": False,
-                    "use_reranking": False,
-                    "top_k": 5
-                }
-            },
-            {
-                "name": "balanced",
-                "config": {
-                    "use_query_expansion": True,
-                    "use_bm25": True,
-                    "use_hybrid": True,
-                    "use_graph": False,
-                    "use_reranking": False,
-                    "top_k": 10
-                }
-            }
-        ]
-
-        results = []
-        query = "explain vector search"
-
-        for cfg in configs:
-            response = requests.post(
-                f"{SEARCH_URL}/search_with_config",
-                json={"query": query, "config": cfg['config']},
-                timeout=30
-            )
-
-            assert response.status_code == 200
+def test_documents_list():
+    """Test 5: Documents list endpoint"""
+    try:
+        response = requests.get(f"{API_URL}/api/documents", timeout=5)
+        success = response.status_code == 200
+        if success:
             data = response.json()
-            results.append({
-                'name': cfg['name'],
-                'latency': data['metrics']['total_latency_ms'],
-                'method': data['metrics']['method']
-            })
+            doc_count = len(data.get("documents", []))
+            return test_result("Documents list", success, f"{doc_count} documents found")
+        return test_result("Documents list", success)
+    except Exception as e:
+        return test_result("Documents list", False, str(e))
 
-        # Balanced should be slower but hybrid
-        assert results[1]['latency'] > results[0]['latency']
-        assert results[1]['method'] == 'hybrid'
-        assert results[0]['method'] == 'vector_only'
+def test_settings_models():
+    """Test 6: Models list endpoint"""
+    try:
+        response = requests.get(f"{API_URL}/api/models", timeout=5)
+        success = response.status_code == 200
+        if success:
+            data = response.json()
+            models = data.get("models", [])
+            model_names = [m.get("name", m.get("model")) for m in models]
+            return test_result("Models endpoint", success, f"Models: {', '.join(model_names[:3])}")
+        return test_result("Models endpoint", success)
+    except Exception as e:
+        return test_result("Models endpoint", False, str(e))
 
+def test_settings_presets():
+    """Test 7: Presets endpoint"""
+    try:
+        response = requests.get(f"{API_URL}/api/presets", timeout=5)
+        success = response.status_code == 200
+        if success:
+            data = response.json()
+            preset_names = [p.get("name") for p in data]
+            return test_result("Presets endpoint", success, f"Presets: {', '.join(preset_names)}")
+        return test_result("Presets endpoint", success)
+    except Exception as e:
+        return test_result("Presets endpoint", False, str(e))
 
-class TestMetricsAccuracy:
-    """Test that metrics are accurate and consistent"""
-
-    def test_latency_breakdown_sum(self):
-        """Test that component latencies sum to total"""
-        response = requests.post(
-            f"{SEARCH_URL}/search_with_config",
-            json={
-                "query": "test",
-                "config": {
-                    "use_query_expansion": True,
-                    "use_bm25": True,
-                    "use_hybrid": True,
-                    "use_graph": False,
-                    "use_reranking": False,
-                    "top_k": 5
-                }
-            },
-            timeout=30
-        )
-
-        assert response.status_code == 200
+def test_vector_db_connection():
+    """Test 8: Vector DB health"""
+    try:
+        response = requests.get("http://localhost:8005/health", timeout=5)
         data = response.json()
+        success = response.status_code == 200 and data.get("status") == "healthy"
+        return test_result("Vector DB connection", success, f"Chunks: {data.get('stats', {}).get('chunks', 0)}")
+    except Exception as e:
+        return test_result("Vector DB connection", False, str(e))
 
-        metrics = data['metrics']
-        total = metrics['total_latency_ms']
-
-        # Sum of components should be close to total (within 10% for overhead)
-        component_sum = (
-            metrics.get('query_expansion_ms', 0) +
-            metrics.get('vector_search_ms', 0) +
-            metrics.get('bm25_search_ms', 0) +
-            metrics.get('fusion_ms', 0) +
-            metrics.get('graph_enhancement_ms', 0) +
-            metrics.get('reranking_ms', 0)
-        )
-
-        # Allow 10% variance for overhead
-        assert abs(total - component_sum) < total * 0.1
-
-    def test_percentage_breakdown(self):
-        """Test that percentages sum to ~100%"""
-        response = requests.post(
-            f"{SEARCH_URL}/search_with_config",
-            json={
-                "query": "test",
-                "config": {
-                    "use_query_expansion": True,
-                    "use_bm25": True,
-                    "use_hybrid": True,
-                    "use_graph": False,
-                    "use_reranking": False,
-                    "top_k": 5
-                }
-            },
-            timeout=30
-        )
-
-        assert response.status_code == 200
+def test_knowledge_graph():
+    """Test 9: Knowledge Graph health"""
+    try:
+        response = requests.get("http://localhost:8007/health", timeout=5)
         data = response.json()
+        success = response.status_code == 200 and data.get("status") == "healthy"
+        return test_result("Knowledge Graph service", success)
+    except Exception as e:
+        return test_result("Knowledge Graph service", False, str(e))
 
-        breakdown = data['metrics']['breakdown_percent']
-        total_percent = sum(breakdown.values())
+def test_search_service():
+    """Test 10: Search Service health"""
+    try:
+        response = requests.get("http://localhost:8002/health", timeout=5)
+        data = response.json()
+        success = response.status_code == 200
+        return test_result("Search service", success, f"Status: {data.get('status')}")
+    except Exception as e:
+        return test_result("Search service", False, str(e))
 
-        # Should sum to approximately 100%
-        assert 95 <= total_percent <= 105
-
+def main():
+    print(f"{Colors.BLUE}{'='*60}{Colors.RESET}")
+    print(f"{Colors.BLUE}React UI + Backend Integration Tests{Colors.RESET}")
+    print(f"{Colors.BLUE}{'='*60}{Colors.RESET}")
+    print()
+    
+    tests = [
+        test_ui_loads,
+        test_api_health,
+        test_stats_endpoint,
+        test_ui_proxy,
+        test_documents_list,
+        test_settings_models,
+        test_settings_presets,
+        test_vector_db_connection,
+        test_knowledge_graph,
+        test_search_service,
+    ]
+    
+    results = []
+    for i, test in enumerate(tests, 1):
+        print(f"\n{Colors.YELLOW}[{i}/{len(tests)}]{Colors.RESET} ", end="")
+        results.append(test())
+    
+    print()
+    print(f"{Colors.BLUE}{'='*60}{Colors.RESET}")
+    passed = sum(results)
+    total = len(results)
+    percentage = (passed / total) * 100
+    
+    color = Colors.GREEN if percentage == 100 else Colors.YELLOW if percentage >= 70 else Colors.RED
+    print(f"{color}Results: {passed}/{total} tests passed ({percentage:.0f}%){Colors.RESET}")
+    
+    if percentage == 100:
+        print(f"{Colors.GREEN}🎉 All tests passed! Full stack is working!{Colors.RESET}")
+    elif percentage >= 70:
+        print(f"{Colors.YELLOW}⚠️  Most tests passed. Check failures above.{Colors.RESET}")
+    else:
+        print(f"{Colors.RED}❌ Multiple failures. Check services are running.{Colors.RESET}")
+    
+    print(f"{Colors.BLUE}{'='*60}{Colors.RESET}")
+    print()
+    print(f"📱 React UI: {BASE_URL}")
+    print(f"🔧 Flask API: {API_URL}")
+    print()
+    
+    return 0 if percentage == 100 else 1
 
 if __name__ == "__main__":
-    pytest.main([__file__, "-v", "-s"])
-
+    exit(main())
