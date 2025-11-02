@@ -1,7 +1,9 @@
 Are we using neo4j for our knowledge graph?
 
+Build UI Dashboard with real-time charts (using Chart.js or Recharts)
+Integrate with Chat Flow to correlate queries with resource spikes
 
-
+add timers for each service call to the metrics tab
 
 To-do
 Priority 1: Query Decomposition ⭐⭐⭐⭐☆
@@ -40,8 +42,24 @@ Quality gate before answering
 ~8-10 hours work
 
 
-
+How can we test if agentic chunking is working?
+How can we test if web search is working?
 
 are we tracking page numbers in metadata? What other metadata do we need to track that we are currently not tracking?
 
 
+We still need to enhance our lab content in the UI
+
+
+Metrics page needs to track prompts run and all metrics associated wit hthe system perofrmance.
+I need to figure out what all of these metrics are. I previously outlined in Chat
+
+
+
+Documents page is not showing already uploaded documents. Documents show as 0 from header.
+
+We loose the chat conversation if the page is refreshed
+
+The settings toggles dont seem to work. We want to be testing with all features enabled at this time
+
+Validate each toggle in the RAG pipeline one by one.
