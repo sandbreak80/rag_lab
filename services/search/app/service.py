@@ -62,7 +62,7 @@ def load_bm25_index():
         try:
             with open(bm25_index_path, 'rb') as f:
                 data = pickle.load(f)
-                bm25_index = data['bm25']
+                bm25_index = data['index']  # Key is 'index', not 'bm25'
                 bm25_docs = data['docs']
                 bm25_metadata = data['metadata']
             print(f"✅ Loaded BM25 index: {len(bm25_docs)} documents")
