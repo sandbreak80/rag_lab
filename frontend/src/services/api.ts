@@ -23,7 +23,7 @@ class ApiClient {
     sources: Source[];
     metrics: any;
   }> {
-    const response = await this.client.post('/chat', {
+    const response = await this.client.post('/ask', {
       query,
       ...config,
     });

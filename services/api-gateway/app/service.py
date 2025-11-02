@@ -274,6 +274,122 @@ def ask():
 
 # === Admin Endpoints ===
 
+@app.route('/api/presets', methods=['GET'])
+def get_presets():
+    """Get configuration presets"""
+    try:
+        import json
+        import os
+        
+        # Read from config/presets.json
+        presets_path = '/workspace/config/presets.json'
+        
+        with open(presets_path, 'r') as f:
+            presets_data = json.load(f)
+        
+        # Convert presets dictionary to array
+        presets_dict = presets_data.get('presets', {})
+        presets_array = []
+        
+        for key, value in presets_dict.items():
+            presets_array.append({
+                'name': key,
+                'description': value.get('description', ''),
+                'config': value.get('config', {}),
+                'llm_config': value.get('llm_config', {}),
+                'expected_metrics': value.get('expected_metrics', {}),
+                'notes': value.get('notes', '')
+            })
+        
+        return jsonify(presets_array)
+    except Exception as e:
+        # Return default presets if file not found
+        return jsonify([
+            {
+                "name": "minimal",
+                "description": "Everything OFF - baseline performance",
+                "config": {
+                    "use_query_expansion": False,
+                    "use_bm25": False,
+                    "use_hybrid": False,
+                    "use_graph": False,
+                    "use_reranking": False,
+                    "use_web_search": False,
+                    "top_k": 5
+                }
+            },
+            {
+                "name": "production",
+                "description": "All optimizations enabled",
+                "config": {
+                    "use_query_expansion": True,
+                    "use_bm25": True,
+                    "use_hybrid": True,
+                    "use_graph": True,
+                    "use_reranking": False,
+                    "use_web_search": True,
+                    "top_k": 10
+                }
+            }
+        ])
+
+@app.route('/api/models', methods=['GET'])
+def get_models():
+    """Get available Ollama models"""
+    try:
+        import os
+        ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://ollama:11434')
+        response = requests.get(f"{ollama_url}/api/tags", timeout=10)
+        
+        if response.status_code == 200:
+            return jsonify(response.json())
+        
+        # Return default if Ollama is not available
+        return jsonify({
+            'models': [
+                {
+                    'name': 'llama3.2:3b',
+                    'model': 'llama3.2:3b',
+                    'size': 2000000000
+                }
+            ]
+        })
+    except Exception as e:
+        return jsonify({'error': str(e), 'models': []}), 500
+
+@app.route('/api/documents', methods=['GET'])
+def get_documents():
+    """Get list of documents"""
+    try:
+        # Get all chunks from vector DB to extract unique filenames
+        response = requests.post(
+            f"{VECTOR_DB_URL}/get_all",
+            json={},
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            metadatas = data.get('metadatas', [])
+            
+            # Extract unique filenames from metadata
+            filenames = set()
+            for metadata in metadatas:
+                filename = metadata.get('filename') or metadata.get('file_name')
+                if filename:
+                    filenames.add(filename)
+            
+            # Convert to sorted list
+            documents = sorted(list(filenames))
+            return jsonify({
+                'documents': documents,
+                'count': len(documents)
+            })
+        
+        return jsonify({'documents': [], 'count': 0})
+    except Exception as e:
+        return jsonify({'error': str(e), 'documents': [], 'count': 0}), 500
+
 @app.route('/api/admin/reset', methods=['POST'])
 def admin_reset():
     """Reset the vector database (admin only)"""
