@@ -14,7 +14,7 @@ volumes:
   knowledge-graph:   # Knowledge graph relationships
   uploads:           # Uploaded documents (persistent)
   metrics-data:      # Performance metrics database
-  
+
   # Optional (if using local Ollama in Docker)
   # ollama-models:
 
@@ -181,7 +181,8 @@ services:
       - ./services/common:/workspace/services/common
       - ./src:/workspace/src
       - uploads:/uploads
-      - indices:/indices
+      - bm25-indices:/indices         # BM25 indices (shared with search)
+      - knowledge-graph:/kg-data       # KG data (shared with KG service)
     working_dir: /app
     environment:
       - SERVICE_NAME=ingest-service
@@ -209,12 +210,14 @@ services:
       - ./services/knowledge-graph/app:/app
       - ./services/common:/workspace/services/common
       - ./src:/workspace/src
-      - ./indices:/indices
+      - knowledge-graph:/kg-data         # Knowledge graph persistence
+      - bm25-indices:/indices            # BM25 indices (shared)
     working_dir: /app
     environment:
       - SERVICE_NAME=knowledge-graph
       - SERVICE_PORT=8007
       - VECTOR_DB_URL=http://vector-db:8005
+      - KNOWLEDGE_GRAPH_PATH=/kg-data/knowledge_graph.pkl
       - PYTHONPATH=/workspace
     command: bash -c "pip install -q flask requests networkx chromadb && python service.py"
     depends_on:

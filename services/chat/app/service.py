@@ -6,6 +6,7 @@ from flask import Flask, request, jsonify, Response, stream_with_context
 import requests
 import json
 import sys
+import time
 
 # Add common to path
 sys.path.insert(0, '/workspace/services/common')
@@ -244,20 +245,57 @@ Answer:"""
         model = data.get('model', CHAT_MODEL)
         temperature = data.get('temperature', 0.7)
         print(f"🤖 Generating answer with model: {model}, temp: {temperature}")
+        print(f"🔗 LLM URL: {LLM_SERVICE_URL}/api/generate")
 
-        llm_response = requests.post(
-            f"{LLM_SERVICE_URL}/api/generate",
-            json={
-                "model": model,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "temperature": temperature,
-                    "num_predict": 500
-                }
-            },
-            timeout=300  # Increased to 5 minutes for slow LLM generation
-        )
+        # Retry logic for Ollama (sometimes model needs to load)
+        max_retries = 2
+        retry_delay = 2
+        
+        for attempt in range(max_retries):
+            try:
+                llm_response = requests.post(
+                    f"{LLM_SERVICE_URL}/api/generate",
+                    json={
+                        "model": model,
+                        "prompt": prompt,
+                        "stream": False,
+                        "options": {
+                            "temperature": temperature,
+                            "num_predict": 500
+                        }
+                    },
+                    timeout=300  # Increased to 5 minutes for slow LLM generation
+                )
+                
+                # Check if response is successful
+                if llm_response.status_code == 200:
+                    break
+                    
+                # Log non-200 response
+                print(f"⚠️  Ollama returned {llm_response.status_code}: {llm_response.text[:200]}")
+                
+                # If 404, model might not be loaded - retry
+                if llm_response.status_code == 404 and attempt < max_retries - 1:
+                    print(f"🔄 Model not found, waiting {retry_delay}s and retrying (attempt {attempt + 1}/{max_retries})...")
+                    time.sleep(retry_delay)
+                    continue
+                    
+                # Raise for other errors
+                llm_response.raise_for_status()
+                
+            except requests.exceptions.Timeout:
+                if attempt < max_retries - 1:
+                    print(f"⏱️  Timeout, retrying (attempt {attempt + 1}/{max_retries})...")
+                    time.sleep(retry_delay)
+                    continue
+                raise
+            except requests.exceptions.ConnectionError as e:
+                if attempt < max_retries - 1:
+                    print(f"🔌 Connection error, retrying (attempt {attempt + 1}/{max_retries})...")
+                    time.sleep(retry_delay)
+                    continue
+                raise
+        
         llm_response.raise_for_status()
         print(f"✅ LLM generation completed")
 
