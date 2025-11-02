@@ -65,7 +65,7 @@ if use_web_search:
     web_search_url = os.getenv('WEB_SEARCH_URL', 'http://web-search:8009')
     web_docs_limit = config.get('web_search_docs', 5)
     web_pages_per_doc = config.get('web_search_pages_per_doc', 1)
-    
+
     response = requests.post(
         f"{web_search_url}/search",
         json={
@@ -160,7 +160,7 @@ But the service was calling it with `max_results` (which doesn't exist), causing
 def find_related(doc_id):
     limit = request.args.get('limit', 10, type=int)
     max_hops = request.args.get('max_hops', 2, type=int)
-    
+
     # Fixed parameter name
     related = kg.find_related(doc_id, max_hops=max_hops, limit=limit)
 ```
