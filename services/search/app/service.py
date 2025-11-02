@@ -608,7 +608,7 @@ def search_with_config():
         data = request.json
         query = data.get('query', '')
         config = data.get('config', {})
-        
+
         print(f"\n🔍 ===== SEARCH REQUEST =====")
         print(f"Query: {query[:80]}...")
 
@@ -622,7 +622,7 @@ def search_with_config():
         use_graph = config.get('use_graph', False)
         use_reranking = config.get('use_reranking', False)
         top_k = config.get('top_k', 10)
-        
+
         print(f"Config: QE={use_query_expansion}, BM25={use_bm25}, Hybrid={use_hybrid}, Graph={use_graph}, Rerank={use_reranking}, K={top_k}")
 
         # Performance tracking
@@ -736,7 +736,7 @@ def search_with_config():
             web_search_url = os.getenv('WEB_SEARCH_URL', 'http://web-search:8009')
             web_docs_limit = config.get('web_search_docs', 5)
             web_pages_per_doc = config.get('web_search_pages_per_doc', 1)
-            
+
             try:
                 print(f"🌐 Calling web search: {web_search_url}/search (docs={web_docs_limit}, pages={web_pages_per_doc})")
                 response = requests.post(
@@ -751,7 +751,7 @@ def search_with_config():
                 if response.status_code == 200:
                     web_data = response.json()
                     web_results = web_data.get('results', [])
-                    
+
                     # Convert web results to standard format and add to fused results
                     for web_result in web_results:
                         fused.append({
@@ -766,7 +766,7 @@ def search_with_config():
                                 'engine': web_result.get('engine', 'searxng')
                             }
                         })
-                    
+
                     perf_metrics['web_search_ms'] = round((time.time() - web_start) * 1000, 2)
                     perf_metrics['web_results_count'] = len(web_results)
                     perf_metrics['web_search_success'] = True
@@ -808,7 +808,7 @@ def search_with_config():
                     fused = reranked_data.get('results', fused)
                     perf_metrics['reranking_ms'] = round((time.time() - rerank_start) * 1000, 2)
                     perf_metrics['reranking_success'] = True
-                    print(f"✓ Reranking: {perf_metrics['reranking_ms']}ms (success={perf_metrics['reranking_success']})")  
+                    print(f"✓ Reranking: {perf_metrics['reranking_ms']}ms (success={perf_metrics['reranking_success']})")
                 else:
                     perf_metrics['reranking_ms'] = 0
                     perf_metrics['reranking_success'] = False
