@@ -435,10 +435,10 @@ def bm25_search_internal(query: str, limit: int) -> List[Dict]:
     query_tokens = tokenize(query)
     print(f"🔍 BM25: Query tokens: {query_tokens[:10]}")
     print(f"🔍 BM25: Index has {len(bm25_docs)} documents")
-    
+
     scores = bm25_index.get_scores(query_tokens)
     print(f"🔍 BM25: Score range: {min(scores):.4f} - {max(scores):.4f}")
-    
+
     top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:limit]
     print(f"🔍 BM25: Top {len(top_indices)} indices with scores: {[f'{scores[i]:.4f}' for i in top_indices[:5]]}")
 
@@ -451,7 +451,7 @@ def bm25_search_internal(query: str, limit: int) -> List[Dict]:
                 'score': float(scores[idx]),
                 'id': bm25_metadata[idx].get('file_name', f'doc_{idx}')
             })
-    
+
     print(f"🔍 BM25: Returning {len(results)} results (filtered from {len(top_indices)})")
     return results
 
