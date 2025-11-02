@@ -44,7 +44,7 @@ const getFileColor = (filename: string) => {
 };
 
 export function DocumentList() {
-  const { data: documents, isLoading, error } = useQuery({
+  const { data: response, isLoading, error } = useQuery({
     queryKey: ['documents'],
     queryFn: () => api.getDocuments(),
     refetchInterval: 10000, // Refetch every 10 seconds
@@ -68,8 +68,11 @@ export function DocumentList() {
     );
   }
 
+  // Extract documents array from response
+  const documents = response?.documents || [];
+
   // Filter out system/lab documents
-  const userDocuments = (documents || []).filter((doc: string) => {
+  const userDocuments = documents.filter((doc: string) => {
     const lower = doc.toLowerCase();
     return (
       !doc.includes('_SUMMARY') &&
@@ -86,7 +89,8 @@ export function DocumentList() {
         lower.endsWith('.pptx') ||
         lower.endsWith('.xlsx') ||
         lower.endsWith('.txt') ||
-        lower.endsWith('.rtf'))
+        lower.endsWith('.rtf') ||
+        lower.endsWith('.md'))
     );
   });
 

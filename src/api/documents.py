@@ -11,19 +11,38 @@ bp = Blueprint('documents', __name__)
 def get_documents():
     """Get list of documents"""
     try:
-        # Try to get from vector DB stats
+        # Get all chunks from vector DB to extract unique filenames
         vector_db_url = os.getenv('VECTOR_DB_URL', 'http://vector-db:8005')
-        response = requests.get(f"{vector_db_url}/stats", timeout=5)
+        response = requests.post(
+            f"{vector_db_url}/get_all",
+            json={},
+            timeout=10
+        )
 
         if response.status_code == 200:
-            stats = response.json()
-            documents = stats.get('unique_files', [])
-            return jsonify({'documents': documents})
+            data = response.json()
+            metadatas = data.get('metadatas', [])
+            
+            # Extract unique filenames from metadata
+            filenames = set()
+            for metadata in metadatas:
+                filename = metadata.get('filename') or metadata.get('file_name')
+                if filename:
+                    filenames.add(filename)
+            
+            # Convert to sorted list
+            documents = sorted(list(filenames))
+            return jsonify({
+                'documents': documents,
+                'count': len(documents)
+            })
 
-        return jsonify({'documents': []})
+        return jsonify({'documents': [], 'count': 0})
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e), 'documents': [], 'count': 0}), 500
 
 
 @bp.route('/upload', methods=['POST'])
