@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS query_metrics (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     timestamp TEXT NOT NULL,
     query TEXT NOT NULL,
-    
+
     -- RAG Configuration
     model TEXT,
     temperature REAL,
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS query_metrics (
     use_graph INTEGER,
     use_reranking INTEGER,
     use_web_search INTEGER,
-    
+
     -- Performance Metrics
     total_latency_ms REAL,
     search_latency_ms REAL,
@@ -61,17 +61,17 @@ CREATE TABLE IF NOT EXISTS query_metrics (
     embedding_latency_ms REAL,
     rerank_latency_ms REAL,
     web_search_latency_ms REAL,
-    
+
     -- Quality Metrics (if available)
     precision REAL,
     recall REAL,
     f1_score REAL,
-    
+
     -- Result Metrics
     chunks_returned INTEGER,
     tokens_used INTEGER,
     sources_count INTEGER,
-    
+
     -- Additional Data (JSON)
     metadata TEXT
 );
@@ -142,38 +142,38 @@ init_db()
 def collect_system_metrics():
     """Background thread to collect system metrics every 5 seconds"""
     print("🔄 Starting system metrics collection thread...")
-    
+
     # Store previous network/disk counters for delta calculations
     prev_network = psutil.net_io_counters()
     prev_disk = psutil.disk_io_counters()
-    
+
     while True:
         try:
             time.sleep(5)  # Collect every 5 seconds
-            
+
             # CPU and Memory
             cpu_percent = psutil.cpu_percent(interval=1)
             memory = psutil.virtual_memory()
-            
+
             # Disk
             disk = psutil.disk_usage('/')
             curr_disk = psutil.disk_io_counters()
             disk_read_mb = (curr_disk.read_bytes - prev_disk.read_bytes) / 1024 / 1024
             disk_write_mb = (curr_disk.write_bytes - prev_disk.write_bytes) / 1024 / 1024
             prev_disk = curr_disk
-            
+
             # Network
             curr_network = psutil.net_io_counters()
             network_sent_mb = (curr_network.bytes_sent - prev_network.bytes_sent) / 1024 / 1024
             network_recv_mb = (curr_network.bytes_recv - prev_network.bytes_recv) / 1024 / 1024
             prev_network = curr_network
-            
+
             # Load average (Unix-like systems)
             try:
                 load_avg = os.getloadavg()
             except (AttributeError, OSError):
                 load_avg = (0, 0, 0)
-            
+
             # Store in database
             conn = get_db()
             conn.execute("""
@@ -199,24 +199,24 @@ def collect_system_metrics():
                 load_avg[2]
             ))
             conn.commit()
-            
+
             # Clean up old data (keep only last 10 minutes)
             cutoff = (datetime.utcnow() - timedelta(minutes=10)).isoformat()
             conn.execute("DELETE FROM system_metrics WHERE timestamp < ?", (cutoff,))
             conn.commit()
             conn.close()
-            
+
         except Exception as e:
             print(f"❌ Error collecting system metrics: {e}")
 
 def collect_docker_stats():
     """Background thread to collect Docker container stats every 5 seconds"""
     print("🐳 Starting Docker stats collection thread...")
-    
+
     while True:
         try:
             time.sleep(5)  # Collect every 5 seconds
-            
+
             # Get Docker stats using subprocess (docker stats --no-stream --format json)
             result = subprocess.run(
                 ['docker', 'stats', '--no-stream', '--format', '{{json .}}'],
@@ -224,43 +224,43 @@ def collect_docker_stats():
                 text=True,
                 timeout=10
             )
-            
+
             if result.returncode == 0:
                 timestamp = datetime.utcnow().isoformat()
                 conn = get_db()
-                
+
                 for line in result.stdout.strip().split('\n'):
                     if not line:
                         continue
-                    
+
                     try:
                         stat = json.loads(line)
-                        
+
                         # Parse percentage strings (e.g., "12.34%")
                         cpu_percent = float(stat.get('CPUPerc', '0%').rstrip('%'))
                         memory_percent = float(stat.get('MemPerc', '0%').rstrip('%'))
-                        
+
                         # Parse memory usage (e.g., "123.4MiB / 1.5GiB")
                         mem_usage_str = stat.get('MemUsage', '0MiB / 0MiB')
                         mem_parts = mem_usage_str.split(' / ')
                         memory_used_mb = parse_size_to_mb(mem_parts[0]) if len(mem_parts) > 0 else 0
                         memory_limit_mb = parse_size_to_mb(mem_parts[1]) if len(mem_parts) > 1 else 0
-                        
+
                         # Parse network I/O (e.g., "1.2MB / 3.4MB")
                         net_io_str = stat.get('NetIO', '0B / 0B')
                         net_parts = net_io_str.split(' / ')
                         network_rx_mb = parse_size_to_mb(net_parts[0]) if len(net_parts) > 0 else 0
                         network_tx_mb = parse_size_to_mb(net_parts[1]) if len(net_parts) > 1 else 0
-                        
+
                         # Parse block I/O (e.g., "5.6MB / 7.8MB")
                         block_io_str = stat.get('BlockIO', '0B / 0B')
                         block_parts = block_io_str.split(' / ')
                         block_read_mb = parse_size_to_mb(block_parts[0]) if len(block_parts) > 0 else 0
                         block_write_mb = parse_size_to_mb(block_parts[1]) if len(block_parts) > 1 else 0
-                        
+
                         # PIDs
                         pids = int(stat.get('PIDs', 0))
-                        
+
                         conn.execute("""
                             INSERT INTO docker_stats (
                                 timestamp, container_name, container_id,
@@ -284,15 +284,15 @@ def collect_docker_stats():
                     except (json.JSONDecodeError, ValueError, KeyError) as e:
                         print(f"⚠️  Error parsing Docker stat line: {e}")
                         continue
-                
+
                 conn.commit()
-                
+
                 # Clean up old data (keep only last 10 minutes)
                 cutoff = (datetime.utcnow() - timedelta(minutes=10)).isoformat()
                 conn.execute("DELETE FROM docker_stats WHERE timestamp < ?", (cutoff,))
                 conn.commit()
                 conn.close()
-                
+
         except subprocess.TimeoutExpired:
             print("⚠️  Docker stats command timed out")
         except FileNotFoundError:
@@ -304,16 +304,16 @@ def collect_docker_stats():
 def parse_size_to_mb(size_str):
     """Parse size string (e.g., '123.4MiB', '1.5GiB', '500kB') to MB"""
     size_str = size_str.strip()
-    
+
     # Extract number and unit
     import re
     match = re.match(r'([\d.]+)([A-Za-z]+)', size_str)
     if not match:
         return 0
-    
+
     value = float(match.group(1))
     unit = match.group(2).upper()
-    
+
     # Convert to MB
     conversions = {
         'B': 1 / 1024 / 1024,
@@ -326,7 +326,7 @@ def parse_size_to_mb(size_str):
         'TB': 1024 * 1024,
         'TIB': 1024 * 1024
     }
-    
+
     return value * conversions.get(unit, 1)
 
 # Start background threads
@@ -652,7 +652,7 @@ def clear_metrics():
         conn.execute("DELETE FROM query_metrics")
         conn.commit()
         conn.close()
-        
+
         return jsonify({'success': True, 'message': 'All metrics cleared'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -663,7 +663,7 @@ def get_system_current():
     """Get current system metrics (last 10 minutes)"""
     try:
         conn = get_db()
-        
+
         # Get all system metrics from last 10 minutes
         cutoff = (datetime.utcnow() - timedelta(minutes=10)).isoformat()
         cursor = conn.execute("""
@@ -671,9 +671,9 @@ def get_system_current():
             WHERE timestamp >= ?
             ORDER BY timestamp ASC
         """, (cutoff,))
-        
+
         rows = cursor.fetchall()
-        
+
         metrics_data = []
         for row in rows:
             metrics_data.append({
@@ -691,15 +691,15 @@ def get_system_current():
                 'load_avg_5m': row['load_avg_5m'],
                 'load_avg_15m': row['load_avg_15m']
             })
-        
+
         conn.close()
-        
+
         return jsonify({
             'metrics': metrics_data,
             'count': len(metrics_data),
             'window_minutes': 10
         })
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -709,7 +709,7 @@ def get_docker_current():
     """Get current Docker container stats (last 10 minutes)"""
     try:
         conn = get_db()
-        
+
         # Get all Docker stats from last 10 minutes
         cutoff = (datetime.utcnow() - timedelta(minutes=10)).isoformat()
         cursor = conn.execute("""
@@ -717,16 +717,16 @@ def get_docker_current():
             WHERE timestamp >= ?
             ORDER BY timestamp ASC, container_name ASC
         """, (cutoff,))
-        
+
         rows = cursor.fetchall()
-        
+
         # Group by container
         containers = {}
         for row in rows:
             container_name = row['container_name']
             if container_name not in containers:
                 containers[container_name] = []
-            
+
             containers[container_name].append({
                 'timestamp': row['timestamp'],
                 'cpu_percent': row['cpu_percent'],
@@ -739,16 +739,16 @@ def get_docker_current():
                 'block_write_mb': row['block_write_mb'],
                 'pids': row['pids']
             })
-        
+
         conn.close()
-        
+
         return jsonify({
             'containers': containers,
             'container_count': len(containers),
             'total_datapoints': len(rows),
             'window_minutes': 10
         })
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -758,10 +758,10 @@ def get_system_summary():
     """Get summary statistics for system metrics (last 10 minutes)"""
     try:
         conn = get_db()
-        
+
         cutoff = (datetime.utcnow() - timedelta(minutes=10)).isoformat()
         cursor = conn.execute("""
-            SELECT 
+            SELECT
                 AVG(cpu_percent) as avg_cpu,
                 MAX(cpu_percent) as max_cpu,
                 AVG(memory_percent) as avg_memory,
@@ -774,10 +774,10 @@ def get_system_summary():
             FROM system_metrics
             WHERE timestamp >= ?
         """, (cutoff,))
-        
+
         row = cursor.fetchone()
         conn.close()
-        
+
         return jsonify({
             'avg_cpu_percent': row['avg_cpu'],
             'max_cpu_percent': row['max_cpu'],
@@ -790,7 +790,7 @@ def get_system_summary():
             'avg_load_1m': row['avg_load_1m'],
             'window_minutes': 10
         })
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -800,10 +800,10 @@ def get_docker_summary():
     """Get summary statistics for Docker containers (last 10 minutes)"""
     try:
         conn = get_db()
-        
+
         cutoff = (datetime.utcnow() - timedelta(minutes=10)).isoformat()
         cursor = conn.execute("""
-            SELECT 
+            SELECT
                 container_name,
                 AVG(cpu_percent) as avg_cpu,
                 MAX(cpu_percent) as max_cpu,
@@ -816,9 +816,9 @@ def get_docker_summary():
             GROUP BY container_name
             ORDER BY avg_cpu DESC
         """, (cutoff,))
-        
+
         rows = cursor.fetchall()
-        
+
         containers = []
         for row in rows:
             containers.append({
@@ -830,15 +830,15 @@ def get_docker_summary():
                 'avg_memory_used_mb': row['avg_memory_used_mb'],
                 'avg_pids': row['avg_pids']
             })
-        
+
         conn.close()
-        
+
         return jsonify({
             'containers': containers,
             'count': len(containers),
             'window_minutes': 10
         })
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

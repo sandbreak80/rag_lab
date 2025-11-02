@@ -178,7 +178,7 @@ def ask_question():
                 'query': question,
                 'config': search_config
             },
-            timeout=60
+            timeout=180  # Increased to 3 minutes for slow operations (reranking, graph, web search)
         )
         context_response.raise_for_status()
 
@@ -248,7 +248,7 @@ Answer:"""
                     "num_predict": 500
                 }
             },
-            timeout=120
+            timeout=300  # Increased to 5 minutes for slow LLM generation
         )
         llm_response.raise_for_status()
 
