@@ -15,7 +15,7 @@ export function PromptLoggingPage() {
   const analysis = useMemo(() => {
     const totalQueries = queries.length;
     const uniqueQueries = new Set(queries.map(q => q.query.toLowerCase().trim())).size;
-    
+
     // Detect potentially risky queries
     const riskyPatterns = [
       /password/i,
@@ -27,24 +27,24 @@ export function PromptLoggingPage() {
       /ssn|social security/i,
       /credit card/i,
     ];
-    
-    const riskyQueries = queries.filter(q => 
+
+    const riskyQueries = queries.filter(q =>
       riskyPatterns.some(pattern => pattern.test(q.query))
     );
-    
+
     // Query length analysis
     const avgLength = queries.length > 0
       ? queries.reduce((sum, q) => sum + q.query.length, 0) / queries.length
       : 0;
-    
+
     // Time-based patterns
     const queryTimes = queries.map(q => new Date(q.timestamp).getHours());
     const peakHour = queryTimes.length > 0
-      ? queryTimes.reduce((a, b, i, arr) => 
+      ? queryTimes.reduce((a, b, i, arr) =>
           arr.filter(v => v === a).length >= arr.filter(v => v === b).length ? a : b
         )
       : 0;
-    
+
     return {
       totalQueries,
       uniqueQueries,
@@ -55,8 +55,8 @@ export function PromptLoggingPage() {
     };
   }, [queries]);
 
-  const displayQueries = filterRisky 
-    ? queries.filter(q => 
+  const displayQueries = filterRisky
+    ? queries.filter(q =>
         (/password|secret|api.*key|token|confidential|private|ssn|credit/i).test(q.query)
       )
     : queries;
@@ -187,7 +187,7 @@ export function PromptLoggingPage() {
                 <p className="text-sm text-muted-foreground">Risky Queries</p>
                 <p className="text-2xl font-bold">{analysis.riskyQueries}</p>
                 <p className="text-xs text-muted-foreground">
-                  {analysis.totalQueries > 0 
+                  {analysis.totalQueries > 0
                     ? ((analysis.riskyQueries / analysis.totalQueries) * 100).toFixed(1)
                     : 0}% of total
                 </p>
@@ -229,7 +229,7 @@ export function PromptLoggingPage() {
             <div className="space-y-2 max-h-[600px] overflow-y-auto">
               {displayQueries.slice().reverse().map((query, index) => {
                 const isRisky = /password|secret|api.*key|token|confidential|private|ssn|credit/i.test(query.query);
-                
+
                 return (
                   <div
                     key={query.id}
