@@ -145,7 +145,7 @@ export function ChatInterface() {
         const cancelMessage: ChatMessage = {
           id: generateId(),
           role: 'assistant',
-          content: '⚠️ **Request Cancelled**\n\nYou cancelled the request. This is useful when using Maximum preset which can take 5-10 minutes.\n\n💡 **Tip**: Try faster presets like Balanced or Production for better response times.',
+          content: '⚠️ **Request Cancelled**\n\nYou cancelled the UI request. **Note:** Ollama may still be processing in the background and will complete eventually.\n\n**Why?** Ollama doesn\'t support mid-request cancellation. In a production system, you would:\n- Use streaming with early termination\n- Implement request queuing\n- Use multiple LLM instances\n\n💡 **Learning Point**: This shows why Maximum preset (5-10 min) is impractical. Try Balanced or Production presets instead (< 1 minute).',
           timestamp: new Date(),
         };
         addMessage(cancelMessage);
