@@ -1,3 +1,6 @@
+We also need a lap section that highlights the difference between response quality using a small vs large model and a small vs large con text window. The laptops running this only have 16GB so 8-12 GB for the model. We want to highlight using a smaller model and stuff a larger context window for a great response (is that the case?).
+Have students find what they consider optimal - pole classs if thats the learning environment
+
 Are we using neo4j for our knowledge graph?
 
 Build UI Dashboard with real-time charts (using Chart.js or Recharts)
@@ -63,3 +66,47 @@ We loose the chat conversation if the page is refreshed
 The settings toggles dont seem to work. We want to be testing with all features enabled at this time
 
 Validate each toggle in the RAG pipeline one by one.
+
+
+prompt classification - use case, blocking, enhancement features
+
+setup knowledge pairs (quiz and answer for RAG metrics on recall)
+
+LLM routing - route to different models based on prompt complexity, classification, and use case
+
+llm security!
+scan for prompt injection
+scan for emoji smuggling
+scan and block odd characters
+block buffer and context window overflow
+
+MCP integration to illistrate - AI news ingestion? Could also use API call for an agent / skill
+
+Prompt logging for analysis (best practice) all the big softeware does it - what does chatgpt capture?
+
+api integration? Not sure what, good to show full RAG implementation
+
+Keep with ollama or will we get stuck with some of these advanced features? What do the big orgs use (but free and on-prem), langchain
+
+long term
+compintel background skill / agent - async - same with AI news
+"guided path skill" to generate a spicific output tied to a use case. Think Sales DOCument of some softeware
+multimodal output - ppt, docs
+
+Reach in and pull data from a database (using API or SQL) - look into LLM building dynamic SQL
+
+Cwitxh out algorythmes for reranking, and ??? to show differences in cloosing these technologies
+
+
+Way long term - models
+local - ollama
+lab modelproduction mode in AWS bedrock!
+monitoring with splunk platforms, splunk, olly cloud, AI and MLDS from splunkbase
+leave behind mode - clean version and fast running on M2 macgook with 16 GB (mave them identify the settings)?
+Demo - always on mode? Now sure what we could do with this - consider having a few LLMs already loaded and in memory so we dont need to load and unload models
+
+Data posioning lab - could be a build your own use case for advanced usage. Ingest document from competition of create a false document which intentionally misleads the LLM!
+
+Scaling plan using docker endpoints, shared mounts / storage between docker similar containers when scaling?
+
+Can we improve lab launch speed? Store state whith ingest alrady ran and everything polulated for baseline? knowledge graph, chunkc, embeddings, meta DB.

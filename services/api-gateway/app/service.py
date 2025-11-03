@@ -331,12 +331,12 @@ def ask():
         }
         print(f"📤 Forwarding to chat service: {CHAT_SERVICE_URL}/ask")
 
-        # Forward to chat service
-        response = requests.post(
-            f"{CHAT_SERVICE_URL}/ask",
-            json=chat_request,
-            timeout=600  # Increased to 10 minutes for Maximum preset with all features (reranking + web search)
-        )
+    # Forward to chat service
+    response = requests.post(
+        f"{CHAT_SERVICE_URL}/ask",
+        json=chat_request,
+        timeout=1800  # 30 minutes - allows Maximum preset to complete for quality demo
+    )
 
         print(f"📬 Chat service responded with status: {response.status_code}")
         if response.status_code != 200:
