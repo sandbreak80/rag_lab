@@ -71,26 +71,16 @@ export function DocumentList() {
   // Extract documents array from response with type assertion
   const documents = (response as any)?.documents || [];
 
-  // Filter out system/lab documents (only keep user-uploaded content)
+  // Filter out only test/debug documents (show everything else including lab docs)
   const userDocuments = (documents as string[]).filter((doc: string) => {
     const lower = doc.toLowerCase();
-    // Exclude specific system/lab documentation
-    const isSystemDoc =
-      doc.includes('_SUMMARY') ||
-      doc.startsWith('LAB_') ||
-      doc.startsWith('AI_FUNDAMENTALS') ||
-      doc.startsWith('ARCHITECTURE') ||
-      doc.startsWith('PERFORMANCE') ||
-      doc.startsWith('RAG_') ||
-      doc.startsWith('CONTEXT_') ||
-      doc.startsWith('PROJECT_') ||
-      doc.startsWith('COMPREHENSIVE_') ||
-      lower.includes('readme.md') ||
-      // Exclude docs/ directory content (not user uploads)
-      doc.includes('docs/') ||
-      doc.includes('archive/');
+    // Only exclude test/debug files
+    const isTestDoc =
+      doc.startsWith('test_') ||
+      lower.includes('_summary') ||
+      lower.includes('archive/');
 
-    return !isSystemDoc;
+    return !isTestDoc;
   });
 
   if (userDocuments.length === 0) {
