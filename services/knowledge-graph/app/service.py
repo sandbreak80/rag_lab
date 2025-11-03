@@ -316,7 +316,7 @@ def build_graph():
         # Get algorithm from request (default to wikilinks)
         data = request.get_json() or {}
         algorithm = data.get('algorithm', 'wikilinks')
-        
+
         print(f"🔨 Building knowledge graph with algorithm: {algorithm}...")
 
         if not KG_AVAILABLE:
@@ -335,13 +335,13 @@ def build_graph():
             'nodes': kg.graph.number_of_nodes(),
             'edges': kg.graph.number_of_edges(),
         }
-        
+
         # Count node types
         doc_nodes = [n for n in kg.graph.nodes() if kg.graph.nodes[n].get('type') == 'document']
         tag_nodes = [n for n in kg.graph.nodes() if kg.graph.nodes[n].get('type') == 'tag']
         entity_nodes = [n for n in kg.graph.nodes() if kg.graph.nodes[n].get('type') == 'entity']
         folder_nodes = [n for n in kg.graph.nodes() if kg.graph.nodes[n].get('type') == 'folder']
-        
+
         stats.update({
             'documents': len(doc_nodes),
             'tags': len(tag_nodes),
@@ -369,22 +369,22 @@ def reset_knowledge_graph():
     """Reset the knowledge graph to empty state"""
     try:
         global kg
-        
+
         print("🔄 Resetting knowledge graph...")
-        
+
         # Create new empty knowledge graph
         if KG_AVAILABLE:
             kg = KnowledgeGraph()
-            
+
             # Save empty graph to disk
             kg_path.parent.mkdir(parents=True, exist_ok=True)
             with open(kg_path, 'wb') as f:
                 pickle.dump(kg, f)
-            
+
             print("✅ Knowledge graph reset successfully")
-            
+
             metrics.increment('resets')
-            
+
             return jsonify({
                 'success': True,
                 'message': 'Knowledge graph reset',
@@ -395,7 +395,7 @@ def reset_knowledge_graph():
             })
         else:
             return jsonify({'error': 'Knowledge graph not available'}), 503
-            
+
     except Exception as e:
         metrics.increment('errors')
         import traceback
@@ -408,7 +408,7 @@ def get_algorithms():
     try:
         if not KG_AVAILABLE:
             return jsonify({'error': 'Knowledge graph not available'}), 503
-            
+
         return jsonify({
             'algorithms': KG_ALGORITHMS,
             'default': 'wikilinks'

@@ -3,7 +3,7 @@ Knowledge Graph: Build and traverse document relationships
 
 Supports multiple construction algorithms:
 - wikilinks: Explicit [[Document Name]] connections (fast, accurate)
-- semantic: Embedding similarity connections (slow, implicit)  
+- semantic: Embedding similarity connections (slow, implicit)
 - entity: Named entity co-occurrence (medium, entities)
 - hybrid: Combines all methods (slowest, most comprehensive)
 
@@ -39,7 +39,7 @@ KG_ALGORITHMS = {
         "best_for": "Documents with explicit cross-references"
     },
     "semantic": {
-        "name": "Semantic Similarity", 
+        "name": "Semantic Similarity",
         "speed": "Slow (10-30s)",
         "accuracy": "High (implicit connections)",
         "cost": "High (requires embeddings)",
@@ -113,14 +113,14 @@ class KnowledgeGraph:
     def build_graph(self, algorithm: str = "wikilinks"):
         """
         Build knowledge graph from ChromaDB collection
-        
+
         Args:
             algorithm: Construction method ("wikilinks", "semantic", "entity", "hybrid")
         """
         if algorithm not in KG_ALGORITHMS:
             print(f"❌ Unknown algorithm: {algorithm}. Using 'wikilinks'.")
             algorithm = "wikilinks"
-            
+
         print(f"\n🔨 Building Knowledge Graph with '{KG_ALGORITHMS[algorithm]['name']}' algorithm...")
         print(f"   Speed: {KG_ALGORITHMS[algorithm]['speed']}")
         print(f"   Best for: {KG_ALGORITHMS[algorithm]['best_for']}")
@@ -143,7 +143,7 @@ class KnowledgeGraph:
         include = ['metadatas']
         if algorithm in ['semantic', 'hybrid']:
             include.append('embeddings')
-            
+
         all_docs = collection.get(include=include)
 
         if not all_docs['metadatas']:
@@ -152,7 +152,7 @@ class KnowledgeGraph:
 
         # Build base graph structure (always needed)
         self._build_base_structure(all_docs['metadatas'])
-        
+
         # Add algorithm-specific connections
         if algorithm == "wikilinks":
             self._add_wikilink_connections(all_docs['metadatas'])
@@ -170,11 +170,11 @@ class KnowledgeGraph:
 
         print("✅ Knowledge graph built successfully!")
         self._print_stats()
-        
+
     def _build_base_structure(self, metadatas: List[Dict]):
         """Build base document, folder, and tag nodes"""
         print("🔗 Building base structure...")
-        
+
         files_by_name = {}
         folders = set()
 
@@ -220,7 +220,7 @@ class KnowledgeGraph:
                 folder = '/'.join(file_path.split('/')[:-1])
                 if folder in self.graph and file_name in self.graph:
                     self.graph.add_edge(folder, file_name, relation='contains')
-                    
+
         # Step 4: Add tag nodes and connections
         tag_groups = defaultdict(list)
         for metadata in metadatas:
@@ -248,15 +248,15 @@ class KnowledgeGraph:
                         tag_edge_count += 1
 
         print(f"  Added {len(tag_groups)} tag nodes, {tag_edge_count} tag edges")
-        
+
         return files_by_name
-        
+
     def _add_wikilink_connections(self, metadatas: List[Dict]):
         """Add wikilink-based connections"""
         print("🔗 Adding wikilink connections...")
-        
+
         files_by_name = {m.get('file_name'): m.get('file_path') for m in metadatas if m.get('file_name')}
-        
+
         wikilink_count = 0
         for metadata in metadatas:
             file_name = metadata.get('file_name', '')
@@ -279,15 +279,15 @@ class KnowledgeGraph:
                     wikilink_count += 1
 
         print(f"  Added {wikilink_count} wikilink edges")
-        
+
     def _add_semantic_connections(self, metadatas: List[Dict], embeddings: List[List[float]]):
         """Add semantic similarity connections based on embeddings"""
         print("🔗 Adding semantic similarity connections...")
-        
+
         if not embeddings or len(embeddings) == 0:
             print("  ⚠️  No embeddings available")
             return
-            
+
         # Group embeddings by document
         doc_embeddings = {}
         for i, metadata in enumerate(metadatas):
@@ -296,71 +296,71 @@ class KnowledgeGraph:
                 if file_name not in doc_embeddings:
                     doc_embeddings[file_name] = []
                 doc_embeddings[file_name].append(embeddings[i])
-        
+
         # Average embeddings per document
         doc_avg_embeddings = {}
         for file_name, emb_list in doc_embeddings.items():
             doc_avg_embeddings[file_name] = np.mean(emb_list, axis=0)
-        
+
         # Calculate similarity matrix
         file_names = list(doc_avg_embeddings.keys())
         embedding_matrix = np.array([doc_avg_embeddings[fn] for fn in file_names])
-        
+
         similarity_matrix = cosine_similarity(embedding_matrix)
-        
+
         # Add edges for high similarity (>0.7 threshold)
         semantic_count = 0
         for i, file_a in enumerate(file_names):
             for j, file_b in enumerate(file_names):
                 if i < j and similarity_matrix[i][j] > 0.7:
-                    self.graph.add_edge(file_a, file_b, 
+                    self.graph.add_edge(file_a, file_b,
                                       relation='similar_to',
                                       similarity=float(similarity_matrix[i][j]))
                     semantic_count += 1
-        
+
         print(f"  Added {semantic_count} semantic similarity edges")
-        
+
     def _add_entity_connections(self, metadatas: List[Dict]):
         """Add entity co-occurrence connections"""
         print("🔗 Adding entity co-occurrence connections...")
-        
+
         # Simple entity extraction (capitalized words that appear multiple times)
         entity_docs = defaultdict(set)
-        
+
         for metadata in metadatas:
             file_name = metadata.get('file_name', '')
             content = metadata.get('content', '')
-            
+
             # Extract potential entities (sequences of capitalized words)
             import re
             entities = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', content)
-            
+
             # Filter entities that appear at least 2 times
             entity_counts = defaultdict(int)
             for entity in entities:
                 if len(entity) > 3:  # Ignore short words
                     entity_counts[entity] += 1
-            
+
             for entity, count in entity_counts.items():
                 if count >= 2:  # Entity appears multiple times
                     entity_docs[entity].add(file_name)
-        
+
         # Add entity nodes and connections
         entity_count = 0
         entity_edge_count = 0
-        
+
         for entity, docs in entity_docs.items():
             if len(docs) > 1:  # Entity appears in multiple documents
                 entity_node = f"entity:{entity}"
                 if entity_node not in self.graph:
                     self.graph.add_node(entity_node, type='entity', title=entity)
                     entity_count += 1
-                
+
                 for doc in docs:
                     if doc in self.graph:
                         self.graph.add_edge(doc, entity_node, relation='mentions')
                         entity_edge_count += 1
-        
+
         print(f"  Added {entity_count} entity nodes, {entity_edge_count} entity edges")
 
     def find_related(self, file_name: str, max_hops: int = 2, limit: int = 10) -> List[Dict[str, Any]]:

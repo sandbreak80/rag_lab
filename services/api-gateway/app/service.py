@@ -532,6 +532,38 @@ def admin_reset_kg():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/kg/algorithms', methods=['GET'])
+def get_kg_algorithms():
+    """Get available KG construction algorithms"""
+    try:
+        kg_url = os.getenv('KNOWLEDGE_GRAPH_URL', 'http://knowledge-graph:8007')
+        response = requests.get(f"{kg_url}/algorithms", timeout=30)
+        response.raise_for_status()
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/kg/build', methods=['POST'])
+def build_kg():
+    """Build knowledge graph with specified algorithm"""
+    try:
+        data = request.json or {}
+        kg_url = os.getenv('KNOWLEDGE_GRAPH_URL', 'http://knowledge-graph:8007')
+        
+        # Forward to KG service
+        response = requests.post(
+            f"{kg_url}/build",
+            json=data,
+            timeout=300  # 5 minutes for KG build
+        )
+        response.raise_for_status()
+        
+        metrics.increment('kg_builds')
+        
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # === Root ===
 
 @app.route('/')

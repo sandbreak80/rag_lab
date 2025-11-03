@@ -129,6 +129,21 @@ class ApiClient {
     return response.data;
   }
 
+  async resetKnowledgeGraph(): Promise<{ status: string; message: string }> {
+    const response = await this.client.post('/admin/reset-kg');
+    return response.data;
+  }
+
+  async getKGAlgorithms(): Promise<{ algorithms: any; default: string }> {
+    const response = await this.client.get('/kg/algorithms');
+    return response.data;
+  }
+
+  async buildKnowledgeGraph(algorithm: string): Promise<{ success: boolean; stats: any }> {
+    const response = await this.client.post('/kg/build', { algorithm });
+    return response.data;
+  }
+
   // Feedback endpoint
   async submitFeedback(feedback: {
     rating: number;
