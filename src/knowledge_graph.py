@@ -113,7 +113,7 @@ class KnowledgeGraph:
     def build_graph(self, algorithm: str = "wikilinks", metadatas: List[Dict] = None, embeddings: List[List[float]] = None):
         """
         Build knowledge graph from ChromaDB collection or provided data
-        
+
         Args:
             algorithm: Construction method ("wikilinks", "semantic", "entity", "hybrid")
             metadatas: Optional list of document metadata (if None, fetches from ChromaDB)
@@ -122,7 +122,7 @@ class KnowledgeGraph:
         if algorithm not in KG_ALGORITHMS:
             print(f"❌ Unknown algorithm: {algorithm}. Using 'wikilinks'.")
             algorithm = "wikilinks"
-            
+
         print(f"\n🔨 Building Knowledge Graph with '{KG_ALGORITHMS[algorithm]['name']}' algorithm...")
         print(f"   Speed: {KG_ALGORITHMS[algorithm]['speed']}")
         print(f"   Best for: {KG_ALGORITHMS[algorithm]['best_for']}")
@@ -147,19 +147,19 @@ class KnowledgeGraph:
             include = ['metadatas']
             if algorithm in ['semantic', 'hybrid']:
                 include.append('embeddings')
-                
+
             all_docs = collection.get(include=include)
-            
+
             metadatas = all_docs.get('metadatas', [])
             embeddings = all_docs.get('embeddings', [])
-        
+
         if not metadatas:
             print("❌ No documents found")
             return
 
         # Build base graph structure (always needed)
         self._build_base_structure(metadatas)
-        
+
         # Add algorithm-specific connections
         if algorithm == "wikilinks":
             self._add_wikilink_connections(metadatas)

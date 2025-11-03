@@ -7,9 +7,17 @@ import { api } from '../../services/api';
 import { Network, RefreshCw } from 'lucide-react';
 
 export function DocumentsPage() {
-  const [selectedAlgorithm, setSelectedAlgorithm] = useState('wikilinks');
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState(() => {
+    return localStorage.getItem('kg-algorithm') || 'wikilinks';
+  });
   const [showKGResetConfirm, setShowKGResetConfirm] = useState(false);
   const queryClient = useQueryClient();
+
+  // Save algorithm to localStorage when it changes
+  const handleAlgorithmChange = (algo: string) => {
+    setSelectedAlgorithm(algo);
+    localStorage.setItem('kg-algorithm', algo);
+  };
 
   // Get available KG algorithms
   const { data: algorithmsData } = useQuery({
@@ -79,7 +87,7 @@ export function DocumentsPage() {
               {/* Algorithm Selector */}
               <select
                 value={selectedAlgorithm}
-                onChange={(e) => setSelectedAlgorithm(e.target.value)}
+                onChange={(e) => handleAlgorithmChange(e.target.value)}
                 disabled={buildKGMutation.isPending}
                 className="flex-1 px-3 py-2 bg-background border rounded text-sm disabled:opacity-50"
               >

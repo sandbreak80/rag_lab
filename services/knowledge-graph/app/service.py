@@ -317,7 +317,7 @@ def build_graph():
         # Get algorithm from request (default to wikilinks)
         data = request.get_json() or {}
         algorithm = data.get('algorithm', 'wikilinks')
-        
+
         print(f"🔨 Building knowledge graph with algorithm: {algorithm}...")
 
         if not KG_AVAILABLE:
@@ -325,7 +325,7 @@ def build_graph():
 
         # Get vector DB URL from environment
         vector_db_url = os.getenv('VECTOR_DB_URL', 'http://vector-db:8005')
-        
+
         # Fetch all documents from vector-db service
         print(f"📥 Fetching documents from {vector_db_url}/get_all...")
         response = requests.post(
@@ -338,7 +338,7 @@ def build_graph():
 
         metadatas = data.get('metadatas', [])
         embeddings = data.get('embeddings', []) if algorithm in ['semantic', 'hybrid'] else None
-        
+
         print(f"📚 Fetched {len(metadatas)} documents")
 
         if not metadatas:
@@ -360,13 +360,13 @@ def build_graph():
             'nodes': kg.graph.number_of_nodes(),
             'edges': kg.graph.number_of_edges(),
         }
-        
+
         # Count node types
         doc_nodes = [n for n in kg.graph.nodes() if kg.graph.nodes[n].get('type') == 'document']
         tag_nodes = [n for n in kg.graph.nodes() if kg.graph.nodes[n].get('type') == 'tag']
         entity_nodes = [n for n in kg.graph.nodes() if kg.graph.nodes[n].get('type') == 'entity']
         folder_nodes = [n for n in kg.graph.nodes() if kg.graph.nodes[n].get('type') == 'folder']
-        
+
         stats.update({
             'documents': len(doc_nodes),
             'tags': len(tag_nodes),
