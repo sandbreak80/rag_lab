@@ -114,7 +114,7 @@
     },
     "maximum": {
       "name": "Maximum Quality (Slow)",
-      "description": "EVERYTHING ON including re-ranking. Best quality but slow.",
+      "description": "⚠️ EDUCATIONAL EXAMPLE: Shows what happens when ALL features are enabled. Takes 5-10 minutes! This demonstrates the importance of balancing quality vs latency.",
       "config": {
         "use_query_expansion": true,
         "use_bm25": true,
@@ -136,9 +136,10 @@
       "expected_metrics": {
         "precision": "95-98%",
         "recall": "90-95%",
-        "latency": "2000-3000ms",
-        "use_case": "Critical queries, research papers, legal documents"
-      }
+        "latency": "5-10 minutes (!)",
+        "use_case": "⚠️ Educational demo - NOT recommended for production"
+      },
+      "notes": "🎓 LEARNING POINT: This preset demonstrates that more features ≠ better system. While precision is slightly higher, the 5-10 minute latency makes this unusable. Real-world systems must balance quality with user experience. Use Production or Balanced presets instead."
     },
     "production": {
       "name": "Production (Optimized)",

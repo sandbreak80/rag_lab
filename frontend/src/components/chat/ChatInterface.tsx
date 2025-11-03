@@ -16,6 +16,9 @@ export function ChatInterface() {
   const setLoading = useChatStore((state) => state.setLoading);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Cancel token for aborting requests
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   // Select individual properties to avoid creating new objects
   const model = useConfigStore((state) => state.model);
   const temperature = useConfigStore((state) => state.temperature);
@@ -79,7 +82,11 @@ export function ChatInterface() {
   }, [messages]);
 
   const chatMutation = useMutation({
-    mutationFn: (query: string) => api.sendMessage(query, config),
+    mutationFn: (query: string) => {
+      // Create new abort controller for this request
+      abortControllerRef.current = new AbortController();
+      return api.sendMessage(query, config, abortControllerRef.current.signal);
+    },
     onSuccess: (data, query) => {
       const assistantMessage: ChatMessage = {
         id: generateId(),
@@ -132,6 +139,19 @@ export function ChatInterface() {
     },
     onError: (error: any) => {
       console.error('Chat error:', error);
+
+      // Check if request was cancelled
+      if (error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
+        const cancelMessage: ChatMessage = {
+          id: generateId(),
+          role: 'assistant',
+          content: '⚠️ **Request Cancelled**\n\nYou cancelled the request. This is useful when using Maximum preset which can take 5-10 minutes.\n\n💡 **Tip**: Try faster presets like Balanced or Production for better response times.',
+          timestamp: new Date(),
+        };
+        addMessage(cancelMessage);
+        setLoading(false);
+        return;
+      }
 
       // Extract detailed error information
       let errorContent = 'An error occurred while processing your request.';
@@ -195,6 +215,13 @@ export function ChatInterface() {
     clearMessages();
   };
 
+  const handleCancelRequest = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-200px)] bg-card rounded-lg border">
       {/* Header */}
@@ -205,13 +232,23 @@ export function ChatInterface() {
             Ask questions about your documents
           </p>
         </div>
-        <button
-          onClick={handleClearChat}
-          className="px-3 py-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          disabled={messages.length === 0}
-        >
-          Clear Chat
-        </button>
+        <div className="flex gap-2">
+          {isLoading && (
+            <button
+              onClick={handleCancelRequest}
+              className="px-3 py-1 text-sm bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded transition-colors"
+            >
+              Cancel Request
+            </button>
+          )}
+          <button
+            onClick={handleClearChat}
+            className="px-3 py-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            disabled={messages.length === 0}
+          >
+            Clear Chat
+          </button>
+        </div>
       </div>
 
       {/* Messages */}

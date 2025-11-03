@@ -18,7 +18,7 @@ class ApiClient {
   }
 
   // Chat endpoints
-  async sendMessage(query: string, config: RAGConfig): Promise<{
+  async sendMessage(query: string, config: RAGConfig, signal?: AbortSignal): Promise<{
     answer: string;
     sources: Source[];
     metrics: any;
@@ -26,7 +26,7 @@ class ApiClient {
     const response = await this.client.post('/ask', {
       query,
       ...config,
-    });
+    }, { signal });
     return response.data;
   }
 
