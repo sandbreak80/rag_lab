@@ -204,13 +204,13 @@ for entity, docs in entity_docs.items():
 # Run all three in sequence
 def build_graph(algorithm="hybrid"):
     self._build_base_structure(metadatas)  # Always
-    
+
     if algorithm in ["wikilinks", "hybrid"]:
         self._add_wikilink_connections(metadatas)
-    
+
     if algorithm in ["semantic", "hybrid"]:
         self._add_semantic_connections(metadatas, embeddings)
-    
+
     if algorithm in ["entity", "hybrid"]:
         self._add_entity_connections(metadatas)
 ```
