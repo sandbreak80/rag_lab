@@ -90,7 +90,7 @@ def build_context():
                 'query': question,
                 'limit': num_contexts
             },
-            timeout=180
+            timeout=900  # 15 minutes for search (Maximum preset needs time)
         )
         search_response.raise_for_status()
 
@@ -183,7 +183,7 @@ def ask_question():
                 'query': question,
                 'config': search_config
             },
-            timeout=300  # Increased to 5 minutes for complex RAG pipelines (web search + reranking can take time)
+            timeout=900  # 15 minutes for complex RAG pipelines (Maximum preset)
         )
         context_response.raise_for_status()
         print(f"✅ Search completed")
@@ -266,7 +266,7 @@ Answer:"""
                             "num_predict": 500
                         }
                     },
-                    timeout=300  # Increased to 5 minutes for slow LLM generation
+                    timeout=900  # 15 minutes for slow LLM generation (Maximum preset)
                 )
 
                 # Check if response is successful

@@ -113,8 +113,8 @@
       }
     },
     "maximum": {
-      "name": "Maximum Quality (Slow)",
-      "description": "⚠️ EDUCATIONAL EXAMPLE: Shows what happens when ALL features are enabled. Takes 5-10 minutes! This demonstrates the importance of balancing quality vs latency.",
+      "name": "Maximum Quality (Very Slow)",
+      "description": "🎓 EDUCATIONAL BENCHMARK: All features enabled for quality comparison. Start during lunch break - takes 5-30 minutes depending on hardware. Shows the quality ceiling vs latency trade-off.",
       "config": {
         "use_query_expansion": true,
         "use_bm25": true,
@@ -136,10 +136,10 @@
       "expected_metrics": {
         "precision": "95-98%",
         "recall": "90-95%",
-        "latency": "5-10 minutes (!)",
-        "use_case": "⚠️ Educational demo - NOT recommended for production"
+        "latency": "5-30 minutes (hardware dependent)",
+        "use_case": "🎓 Quality benchmark - NOT for production use"
       },
-      "notes": "🎓 LEARNING POINTS:\n1. More features ≠ better system - the 5-10 minute latency makes this unusable\n2. Real-world systems must balance quality with user experience\n3. Cancel button stops UI but Ollama continues processing (limitation of single LLM instance)\n4. Production systems need: streaming responses, request queuing, or multiple LLM instances\n5. Use Production or Balanced presets for real applications"
+      "notes": "🎓 LEARNING POINTS:\n1. Maximum quality comes at extreme latency cost (5-30 min vs < 1s for Balanced)\n2. Start during break/lunch - demonstrates why this approach is impractical for interactive use\n3. Useful for establishing quality ceiling on your hardware\n4. Cancel button stops UI but Ollama continues processing (single LLM limitation)\n5. Production systems need: streaming, request queuing, or multiple LLM instances\n6. Compare Maximum results with Balanced/Production to see if extra quality is worth the wait\n7. Students should determine their own optimal preset based on quality/latency needs"
     },
     "production": {
       "name": "Production (Optimized)",
