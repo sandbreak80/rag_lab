@@ -335,7 +335,7 @@ def ask():
         response = requests.post(
             f"{CHAT_SERVICE_URL}/ask",
             json=chat_request,
-            timeout=360  # Increased to 6 minutes for complex RAG pipelines (reranking, web search, etc.)
+            timeout=600  # Increased to 10 minutes for Maximum preset with all features (reranking + web search)
         )
 
         print(f"📬 Chat service responded with status: {response.status_code}")
