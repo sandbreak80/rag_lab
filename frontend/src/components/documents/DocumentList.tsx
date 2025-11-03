@@ -48,7 +48,7 @@ export function DocumentList() {
   const [showKGResetConfirm, setShowKGResetConfirm] = useState(false);
   const [selectedAlgorithm, setSelectedAlgorithm] = useState('wikilinks');
   const queryClient = useQueryClient();
-  
+
   const { data: response, isLoading, error } = useQuery({
     queryKey: ['documents'],
     queryFn: () => api.getDocuments(),
@@ -271,7 +271,7 @@ export function DocumentList() {
                   <span className="font-medium">Best for:</span> {algorithmsData.algorithms[selectedAlgorithm]?.best_for}
                 </p>
                 <p>
-                  <span className="font-medium">Speed:</span> {algorithmsData.algorithms[selectedAlgorithm]?.speed} | 
+                  <span className="font-medium">Speed:</span> {algorithmsData.algorithms[selectedAlgorithm]?.speed} |
                   <span className="font-medium"> Accuracy:</span> {algorithmsData.algorithms[selectedAlgorithm]?.accuracy}
                 </p>
               </div>

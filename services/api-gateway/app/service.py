@@ -521,7 +521,7 @@ def admin_reset_kg():
     try:
         # Get knowledge graph service URL from environment
         kg_url = os.getenv('KNOWLEDGE_GRAPH_URL', 'http://knowledge-graph:8007')
-        
+
         # Forward to knowledge graph service
         response = requests.post(f"{kg_url}/reset", timeout=180)
         response.raise_for_status()
@@ -549,7 +549,7 @@ def build_kg():
     try:
         data = request.json or {}
         kg_url = os.getenv('KNOWLEDGE_GRAPH_URL', 'http://knowledge-graph:8007')
-        
+
         # Forward to KG service
         response = requests.post(
             f"{kg_url}/build",
@@ -557,9 +557,9 @@ def build_kg():
             timeout=300  # 5 minutes for KG build
         )
         response.raise_for_status()
-        
+
         metrics.increment('kg_builds')
-        
+
         return jsonify(response.json())
     except Exception as e:
         return jsonify({'error': str(e)}), 500
