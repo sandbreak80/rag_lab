@@ -1,0 +1,101 @@
+{
+  "timestamp": "2025-11-02T20:25:44.972874",
+  "summary": {
+    "total": 6,
+    "passed": 0,
+    "warnings": 0,
+    "failed": 6
+  },
+  "results": [
+    {
+      "feature": "Query Expansion",
+      "timestamp": "2025-11-02T19:49:51.705904",
+      "query": "What are the key features of RAG?",
+      "status": "FAIL",
+      "off": {
+        "success": true,
+        "latency_ms": 42.09,
+        "sources": 5,
+        "answer_length": 1354
+      },
+      "on": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)"
+      }
+    },
+    {
+      "feature": "BM25 Keyword Search",
+      "timestamp": "2025-11-02T19:55:51.482763",
+      "query": "What are the key features of RAG?",
+      "status": "FAIL",
+      "off": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)"
+      },
+      "on": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)"
+      }
+    },
+    {
+      "feature": "Hybrid Search (Vector + BM25)",
+      "timestamp": "2025-11-02T20:01:53.509559",
+      "query": "What are the key features of RAG?",
+      "status": "FAIL",
+      "off": {
+        "success": true,
+        "latency_ms": 24.82,
+        "sources": 5,
+        "answer_length": 1155
+      },
+      "on": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)"
+      }
+    },
+    {
+      "feature": "Knowledge Graph",
+      "timestamp": "2025-11-02T20:07:47.091573",
+      "query": "What are the key features of RAG?",
+      "status": "FAIL",
+      "off": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)"
+      },
+      "on": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)"
+      }
+    },
+    {
+      "feature": "LLM Re-ranking",
+      "timestamp": "2025-11-02T20:13:49.109577",
+      "query": "What are the key features of RAG?",
+      "status": "FAIL",
+      "off": {
+        "success": true,
+        "latency_ms": 25.63,
+        "sources": 5,
+        "answer_length": 1354
+      },
+      "on": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)"
+      }
+    },
+    {
+      "feature": "Web Search",
+      "timestamp": "2025-11-02T20:19:44.947603",
+      "query": "What are the key features of RAG?",
+      "status": "FAIL",
+      "off": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)"
+      },
+      "on": {
+        "success": false,
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)"
+      }
+    }
+  ]
+}

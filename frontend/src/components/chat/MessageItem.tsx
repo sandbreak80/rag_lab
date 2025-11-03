@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { ChatMessage } from '../../types/chat';
 import { SourceCard } from './SourceCard';
+import { WaterfallChart } from '../metrics/WaterfallChart';
 import { formatDate } from '../../utils/formatting';
-import { User, Bot } from 'lucide-react';
+import { User, Bot, BarChart3 } from 'lucide-react';
 
 interface MessageItemProps {
   message: ChatMessage;
@@ -14,6 +15,9 @@ interface MessageItemProps {
 
 export function MessageItem({ message }: MessageItemProps) {
   const isUser = message.role === 'user';
+  const [showPerformance, setShowPerformance] = useState(false);
+  
+  const hasPerformanceData = !isUser && message.metadata?.performance;
 
   return (
     <div className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -93,6 +97,30 @@ export function MessageItem({ message }: MessageItemProps) {
                 <SourceCard key={index} source={source} index={index + 1} />
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Performance Waterfall */}
+        {hasPerformanceData && (
+          <div className="mt-4 border border-border rounded-lg bg-background/50 overflow-hidden">
+            <button
+              onClick={() => setShowPerformance(!showPerformance)}
+              className="w-full px-4 py-2 flex items-center justify-between hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <BarChart3 className="h-4 w-4 text-primary" />
+                <span>Performance Breakdown</span>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {showPerformance ? '▼ Hide' : '▶ Show'}
+              </span>
+            </button>
+            
+            {showPerformance && (
+              <div className="p-4 border-t border-border">
+                <WaterfallChart metrics={message.metadata!.performance!} compact />
+              </div>
+            )}
           </div>
         )}
       </div>

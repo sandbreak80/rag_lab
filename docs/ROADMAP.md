@@ -1,819 +1,314 @@
-# Roadmap: Future Enhancements
+# RAG Lab Roadmap
 
-**Evolution of World-Class RAG: What's Next**
+**Target Audience:** Splunk/Cisco Field Teams (Architects, SEs, Sales Leaders)
 
-This document outlines planned improvements, research directions, and community-requested features.
-
----
-
-## Table of Contents
-
-1. [Vision](#vision)
-2. [Completed Features](#completed-features)
-3. [In Progress](#in-progress)
-4. [Short-term (3 months)](#short-term-3-months)
-5. [Medium-term (6 months)](#medium-term-6-months)
-6. [Long-term (12+ months)](#long-term-12-months)
-7. [Research Ideas](#research-ideas)
-8. [Community Requests](#community-requests)
+**Current Status:** 85% Ready - Strong RAG foundation, missing critical teaching tools
 
 ---
 
-## Vision
+## ✅ COMPLETED (Current State)
 
-**Goal:** Build the best local-first RAG system for personal knowledge management.
+### Core RAG Pipeline
+- ✅ Query Expansion (synonym/related terms)
+- ✅ Vector Search (semantic similarity)
+- ✅ BM25 Keyword Search (exact term matching)
+- ✅ Hybrid Search (RRF fusion)
+- ✅ Knowledge Graph (4 algorithms: wikilinks, semantic, entity, hybrid)
+- ✅ LLM Re-ranking (precision improvement)
+- ✅ Web Search (SearXNG integration)
+- ✅ Agentic Chunking (LLM-powered intelligent splitting)
 
-**Principles:**
-1. **Privacy First**: All processing happens locally
-2. **User Control**: Full transparency and configurability
-3. **Performance**: Real-time response for great UX
-4. **Quality**: World-class retrieval accuracy
-5. **Simplicity**: Easy to setup and use
+### Infrastructure
+- ✅ Microservices architecture (12 services)
+- ✅ Docker Compose orchestration
+- ✅ Persistent storage (ChromaDB, BM25 indices, KG, uploads)
+- ✅ API Gateway with metrics
+- ✅ Health checks and monitoring endpoints
 
-**Target Users:**
-- Researchers with large note collections
-- Developers with technical documentation
-- Students with study materials
-- Teams with shared knowledge bases
-- Anyone who values privacy and control
+### UI/UX
+- ✅ React + TypeScript frontend (port 5173)
+- ✅ Multi-tab interface (Chat, Documents, Settings, Metrics, Lab Guide, Q&A, Feedback)
+- ✅ Document upload (PDF, Office, Markdown, TXT - up to 50MB)
+- ✅ RAG feature toggles (enable/disable to see impact)
+- ✅ Configuration presets (Minimal, Fast, Balanced, Quality, Maximum, Production)
+- ✅ Model selector (dynamic from Ollama)
+- ✅ KG algorithm selector with comparison
+- ✅ Database reset for LLM poisoning labs
 
----
-
-## Completed Features
-
-### ✅ Core RAG (v1.0)
-- [x] Markdown parsing with frontmatter
-- [x] Vector search via ChromaDB
-- [x] Simple chunking
-- [x] Ollama integration
-- [x] Basic web UI
-- [x] MCP server implementation
-- [x] Docker deployment
-
-**Metrics:** 85% recall, 300ms latency
-
-### ✅ Advanced Retrieval (v2.0)
-- [x] **Agentic Chunking** - LLM-powered semantic segmentation
-- [x] **Hybrid Search** - Vector + BM25 with RRF
-- [x] **Query Expansion** - Synonym and context enhancement
-- [x] **Knowledge Graph** - Relationship discovery
-- [x] **Streaming UI** - Real-time response display
-- [x] **Comprehensive Testing** - 60 tests, 96% coverage
-
-**Metrics:** 100% recall, 74ms latency, 68% precision
-
-### ✅ Production Readiness (v2.1)
-- [x] Error handling and logging
-- [x] Performance benchmarking
-- [x] Dependency testing
-- [x] Documentation (Architecture, Performance, Features)
-- [x] Docker optimization
-- [x] UI improvements
-
-**Status:** Production-ready for personal use
+### Documentation
+- ✅ Comprehensive lab guides
+- ✅ AI fundamentals teaching
+- ✅ RAG features deep dive
+- ✅ Architecture documentation
+- ✅ KG algorithm comparison exercise
+- ✅ Model comparison exercise framework
+- ✅ Performance optimization guide
 
 ---
 
-## In Progress
+## 🔥 PHASE 1: CRITICAL (In Progress - Week 1)
 
-### 🚧 UI Test Completion (v2.2)
-**Priority:** High  
-**Timeline:** 1 week  
-**Owner:** Core team
+**Goal:** Make the lab ready for initial field team delivery
 
-**Tasks:**
-- [ ] Complete Playwright UI tests
-- [ ] Add screenshot comparison tests
-- [ ] Test streaming behavior
-- [ ] Test error states
-- [ ] Add mobile responsiveness tests
+### Priority 1A: Fix Core UX Issues (2 hours)
+**Status:** 🚧 IN PROGRESS
 
-**Why:** Ensure UI reliability before wider deployment
+1. **Chat Persistence** (30 min)
+   - **Issue:** Chat history lost on page refresh
+   - **Solution:** Persist messages to localStorage
+   - **Impact:** Better UX, students can navigate tabs without losing context
 
-### 🚧 API Documentation (v2.2)
-**Priority:** High  
-**Timeline:** 1 week  
-**Owner:** Core team
+2. **Validate RAG Toggles** (1 hour)
+   - **Issue:** Need to verify all toggles actually work
+   - **Tests:** Query Expansion, BM25, Hybrid, Graph, Reranking, Web Search
+   - **Impact:** Core functionality - students must see feature impact
 
-**Tasks:**
-- [ ] OpenAPI/Swagger spec
-- [ ] Interactive API docs
-- [ ] Example requests/responses
-- [ ] Authentication guide
-- [ ] Rate limiting docs
+### Priority 1B: Critical Teaching Tools (6 hours)
+**Status:** 📋 PLANNED
 
-**Why:** Enable third-party integrations
+3. **Response Time Waterfall Chart** (4-6 hours) ⭐ **CRITICAL**
+   - **Why:** Students need to SEE the latency cost of each feature
+   - **Implementation:**
+     - Add Recharts to frontend
+     - Create waterfall/stacked bar chart component
+     - Show time breakdown: Query Expansion → Vector Search → BM25 → Hybrid Fusion → KG → Re-ranking → Web Search → LLM
+     - Display on Metrics tab + inline after each query
+   - **Learning Objective:** "Maximum preset takes 30 min because re-ranking (2s) + web search (60s) + large model (5 min)"
+   - **Impact:** 🔥 Core teaching tool - demonstrates quality vs latency trade-offs
 
----
+4. **Model Size vs Context Window Lab** (2-3 hours) ⭐ **HIGH EDUCATIONAL VALUE**
+   - **Why:** Teaches cost/performance optimization (critical enterprise skill)
+   - **Implementation:**
+     - Add context window slider to Settings
+     - Create comparison exercise (like KG algorithms)
+     - Test: "Llama 3.2 1B + 8K context" vs "Llama 3.1 8B + 2K context"
+   - **Learning Objective:** "Bigger model ≠ always better. Context window matters!"
+   - **Impact:** 🔥 Students learn to optimize for their constraints (16GB laptops)
 
-## Short-term (3 months)
-
-### 🎯 Query Result Caching (v2.3)
-**Priority:** High  
-**Impact:** 50x speedup for repeated queries  
-**Effort:** Medium
-
-**Description:**
-Cache search results for popular queries using Redis or in-memory LRU.
-
-**Benefits:**
-- Instant results for cached queries (<1ms)
-- Reduced load on Ollama
-- Better concurrent user support
-
-**Implementation:**
-```python
-from functools import lru_cache
-import redis
-
-# Option 1: In-memory (simple)
-@lru_cache(maxsize=1000)
-def search_cached(query: str) -> List[Dict]:
-    return advanced_searcher.search(query)
-
-# Option 2: Redis (persistent, shared)
-redis_client = redis.Redis(host='localhost', port=6379)
-
-def search_with_redis(query: str) -> List[Dict]:
-    # Check cache
-    cached = redis_client.get(f"search:{query}")
-    if cached:
-        return json.loads(cached)
-    
-    # Search and cache
-    results = advanced_searcher.search(query)
-    redis_client.setex(f"search:{query}", 3600, json.dumps(results))
-    return results
-```
-
-**Configuration:**
-```python
-CACHE_ENABLED = True
-CACHE_BACKEND = "redis"  # or "memory"
-CACHE_TTL = 3600  # 1 hour
-CACHE_MAX_SIZE = 10000  # queries
-```
-
-### 🎯 Incremental Indexing (v2.4)
-**Priority:** High  
-**Impact:** Auto-update when files change  
-**Effort:** Medium
-
-**Description:**
-Watch vault for file changes and automatically re-index modified files.
-
-**Benefits:**
-- Always up-to-date index
-- No manual re-indexing
-- Faster than full re-index
-
-**Implementation:**
-```python
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-
-class VaultWatcher(FileSystemEventHandler):
-    def on_modified(self, event):
-        if event.src_path.endswith(".md"):
-            logger.info(f"Reindexing {event.src_path}")
-            indexer.index_file(Path(event.src_path))
-    
-    def on_created(self, event):
-        if event.src_path.endswith(".md"):
-            logger.info(f"Indexing new file {event.src_path}")
-            indexer.index_file(Path(event.src_path))
-    
-    def on_deleted(self, event):
-        if event.src_path.endswith(".md"):
-            logger.info(f"Removing {event.src_path}")
-            indexer.remove_file(Path(event.src_path))
-
-# Start watching
-observer = Observer()
-observer.schedule(VaultWatcher(), vault_path, recursive=True)
-observer.start()
-```
-
-### 🎯 LLM Re-ranking Optimization (v2.5)
-**Priority:** Medium  
-**Impact:** +10% precision without latency penalty  
-**Effort:** High
-
-**Current State:**
-- Re-ranking improves precision by 10%
-- But adds 2000ms latency (too slow)
-
-**Solutions:**
-
-**Option 1: Async Re-ranking**
-```python
-# Return initial results immediately
-# Re-rank in background
-# Update UI when done
-
-@app.route("/api/search", methods=["POST"])
-async def search():
-    query = request.json["query"]
-    
-    # Quick results
-    results = await hybrid_search(query)
-    yield json.dumps({"type": "results", "data": results})
-    
-    # Background re-ranking
-    reranked = await rerank_with_llm(query, results)
-    yield json.dumps({"type": "reranked", "data": reranked})
-```
-
-**Option 2: Faster Re-ranking Model**
-```python
-# Use smaller, faster model for re-ranking
-RERANK_MODEL = "qwen2.5:1.5b"  # 10x faster than llama3.2:3b
-# Trade-off: Slightly lower quality but acceptable
-```
-
-**Option 3: Learned Re-ranker**
-```python
-# Train a small neural network on user feedback
-# 100x faster than LLM
-# Quality depends on training data
-
-import torch
-from transformers import AutoModelForSequenceClassification
-
-model = AutoModelForSequenceClassification.from_pretrained(
-    "cross-encoder/ms-marco-MiniLM-L-6-v2"
-)
-
-def rerank_learned(query, results):
-    pairs = [[query, r["content"]] for r in results]
-    scores = model.predict(pairs)
-    return sorted(zip(results, scores), key=lambda x: x[1], reverse=True)
-```
-
-### 🎯 Advanced Filters (v2.6)
-**Priority:** Medium  
-**Impact:** Better precision for specific use cases  
-**Effort:** Low
-
-**Description:**
-Support advanced search filters in UI and API.
-
-**Filters:**
-```python
-# Date ranges
-results = searcher.search(
-    query="machine learning",
-    date_after="2024-01-01",
-    date_before="2025-01-01"
-)
-
-# File types
-results = searcher.search(
-    query="API design",
-    file_types=["md", "pdf"]
-)
-
-# Folders
-results = searcher.search(
-    query="study materials",
-    folders=["courses/ai/", "notes/"]
-)
-
-# Tags
-results = searcher.search(
-    query="tutorials",
-    tags=["python", "beginner"]
-)
-
-# Custom metadata
-results = searcher.search(
-    query="project planning",
-    metadata={"author": "John", "status": "complete"}
-)
-```
-
-**UI:**
-```
-┌─────────────────────────────────────────┐
-│ Search: machine learning           🔍   │
-├─────────────────────────────────────────┤
-│ Filters:                                │
-│   Date: [2024-01-01] to [2025-01-01]   │
-│   Folders: [courses/] [notes/]         │
-│   Tags: #ml #tutorial                   │
-│   Type: [Markdown] [PDF]                │
-└─────────────────────────────────────────┘
-```
-
-### 🎯 Multi-vault Support (v2.7)
-**Priority:** Low  
-**Impact:** Support multiple knowledge bases  
-**Effort:** Medium
-
-**Use Cases:**
-- Work vault vs Personal vault
-- Different projects
-- Shared team vaults
-
-**Implementation:**
-```python
-# Config
-VAULTS = {
-    "personal": "/Users/me/Documents/Personal",
-    "work": "/Users/me/Documents/Work",
-    "ai-course": "/Users/me/Documents/Courses/AI"
-}
-
-# Search specific vault
-results = searcher.search(
-    query="meeting notes",
-    vault="work"
-)
-
-# Search all vaults
-results = searcher.search_all(
-    query="machine learning",
-    vaults=["personal", "ai-course"]
-)
-```
-
-**UI:**
-```
-Vault: [All ▼] or [Personal] [Work] [AI Course]
-```
+**Phase 1 Total Time:** 8-11 hours
+**Phase 1 Completion Target:** End of Week 1
 
 ---
 
-## Medium-term (6 months)
+## ⚡ PHASE 2: HIGH VALUE ENHANCEMENTS (Week 2-3)
 
-### 🔮 Multi-modal RAG (v3.0)
-**Priority:** High  
-**Impact:** Support images, PDFs, audio  
-**Effort:** High
+**Goal:** Add features that significantly improve educational value
 
-**Vision:**
-Search across all your content, not just text.
+### 2A: Quick Wins (2-4 hours)
 
-**Features:**
+1. **Metadata Filtering UI** (2 hours)
+   - Filters: Document Type, Date Range, Tags, Author
+   - Impact: +5% precision, teaches metadata importance
+   - Effort: Low (metadata already tracked)
 
-1. **Image Search**
-```python
-# Use CLIP for image embeddings
-from transformers import CLIPProcessor, CLIPModel
+2. **Chat History Export** (2 hours)
+   - Export conversation as Markdown/PDF
+   - Students can save experiments for reports
+   - Ties into "prompt logging" best practices
 
-model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+### 2B: Advanced RAG Features (8-12 hours)
 
-# Index images
-image = Image.open("diagram.png")
-inputs = processor(images=image, return_tensors="pt")
-embedding = model.get_image_features(**inputs)
+3. **Query Decomposition** (4-6 hours)
+   - Break complex questions into sub-queries
+   - Parallel search, synthesize results
+   - Impact: +18% on complex questions
+   - Learning: LLM orchestration, agentic behavior
+   - Example: "Compare hybrid search vs vector-only AND explain knowledge graphs"
+     - → Sub-query 1: "hybrid search performance"
+     - → Sub-query 2: "vector search performance"
+     - → Sub-query 3: "what are knowledge graphs"
+     - → Synthesize combined answer
 
-# Search: "architecture diagram"
-results = collection.query(
-    query_embeddings=[text_embedding],
-    where={"type": "image"}
-)
-```
+4. **Prompt Logging & Analysis** (3-4 hours)
+   - Log all prompts to metrics database
+   - Show students what enterprise AI systems capture
+   - Display: timestamp, user, query, model, tokens, latency, cost estimate
+   - **Splunk Tie-in:** "This is what you'd send to Splunk Observability Cloud"
 
-2. **PDF Support**
-```python
-import pypdf
+5. **Token Usage Tracking** (1-2 hours)
+   - Track prompt tokens, completion tokens, total tokens
+   - Show cumulative cost (if using paid APIs)
+   - Learning: AI operations cost management
 
-def parse_pdf(pdf_path):
-    reader = pypdf.PdfReader(pdf_path)
-    text = ""
-    for page in reader.pages:
-        text += page.extract_text()
-    return text
-```
-
-3. **Audio Transcription**
-```python
-import whisper
-
-model = whisper.load_model("base")
-result = model.transcribe("lecture.mp3")
-text = result["text"]
-```
-
-**Benefits:**
-- Search meeting recordings
-- Find content in PDFs
-- Query images by description
-
-### 🔮 Collaborative Features (v3.1)
-**Priority:** Medium  
-**Impact:** Team knowledge sharing  
-**Effort:** High
-
-**Features:**
-
-1. **Shared Vaults**
-```python
-# Sync via Git
-git_sync = GitSync(
-    repo="git@github.com:team/knowledge-base.git",
-    auto_pull=True,
-    auto_push=False
-)
-```
-
-2. **Comments & Annotations**
-```python
-# Add comments to search results
-comment = Comment(
-    user="alice",
-    chunk_id="chunk_123",
-    text="This is outdated, see NewDoc.md instead",
-    timestamp="2025-01-15T10:30:00"
-)
-```
-
-3. **Usage Analytics**
-```python
-# Track popular queries, documents
-analytics = Analytics()
-print(analytics.top_queries(limit=10))
-print(analytics.top_documents(limit=10))
-```
-
-### 🔮 Fine-tuned Embeddings (v3.2)
-**Priority:** Medium  
-**Impact:** Domain-specific improvements  
-**Effort:** High
-
-**Vision:**
-Train custom embeddings on your specific vault for better accuracy.
-
-**Approach:**
-```python
-# 1. Generate training data from user interactions
-training_data = [
-    ("query", "relevant_doc", 1.0),    # clicked
-    ("query", "irrelevant_doc", 0.0),  # not clicked
-]
-
-# 2. Fine-tune embedding model
-from sentence_transformers import SentenceTransformer, losses
-
-model = SentenceTransformer("nomic-embed-text")
-train_loss = losses.CosineSimilarityLoss(model)
-model.fit(
-    train_objectives=[(train_dataloader, train_loss)],
-    epochs=10
-)
-
-# 3. Use fine-tuned model
-embeddings = model.encode(["query text"])
-```
-
-**Benefits:**
-- Better understanding of domain-specific terms
-- Improved accuracy for technical content
-- Personalized to your writing style
-
-### 🔮 Active Learning (v3.3)
-**Priority:** Low  
-**Impact:** Continuous improvement  
-**Effort:** Medium
-
-**Vision:**
-System learns from user feedback to improve over time.
-
-**Feedback Collection:**
-```python
-# User rates search results
-@app.route("/api/feedback", methods=["POST"])
-def feedback():
-    query = request.json["query"]
-    doc_id = request.json["doc_id"]
-    rating = request.json["rating"]  # 1-5 stars
-    
-    feedback_db.insert({
-        "query": query,
-        "doc_id": doc_id,
-        "rating": rating,
-        "timestamp": time.time()
-    })
-```
-
-**Learning:**
-```python
-# Periodically retrain
-if feedback_db.count() > 1000:
-    # Generate training data
-    positive_pairs = feedback_db.query("rating >= 4")
-    negative_pairs = feedback_db.query("rating <= 2")
-    
-    # Fine-tune retrieval model
-    fine_tune_model(positive_pairs, negative_pairs)
-    
-    # Deploy new model
-    deploy_model("v2")
-```
+**Phase 2 Total Time:** 10-18 hours
 
 ---
 
-## Long-term (12+ months)
+## 🔮 PHASE 3: ADVANCED FEATURES (Month 2+)
 
-### 🌟 Distributed Deployment (v4.0)
-**Priority:** Low  
-**Impact:** Scale to enterprise  
-**Effort:** Very High
+**Goal:** Cutting-edge RAG techniques and production readiness
 
-**Architecture:**
-```
-┌─────────────┐
-│ Load        │
-│ Balancer    │
-└──────┬──────┘
-       │
-   ┌───┴────┬────────┬────────┐
-   │        │        │        │
-┌──▼──┐  ┌──▼──┐  ┌──▼──┐  ┌──▼──┐
-│API  │  │API  │  │API  │  │API  │
-│Node │  │Node │  │Node │  │Node │
-└──┬──┘  └──┬──┘  └──┬──┘  └──┬──┘
-   │        │        │        │
-   └────────┴────┬───┴────────┘
-                 │
-       ┌─────────▼─────────┐
-       │ Distributed Index │
-       │    (Sharded)      │
-       └───────────────────┘
-```
+### 3A: Self-RAG (8-10 hours)
+- Iterative refinement with LLM self-critique
+- Impact: +20% complex handling, -15% hallucination
+- Learning: Advanced RAG architectures
+- **Status:** Research phase - very cutting edge
 
-**Features:**
-- Horizontal scaling
+### 3B: LLM Routing (4-6 hours)
+- Route to different models based on query complexity
+- Simple query → Llama 3.2 1B (fast)
+- Complex query → Llama 3.1 8B (accurate)
+- Learning: Cost optimization, query classification
+
+### 3C: Evaluation Framework (6-8 hours)
+- Knowledge pairs (question → expected answer)
+- Automated RAG metrics: Recall, Precision, Faithfulness, Answer Relevance
+- Compare configurations automatically
+- Learning: How to measure RAG quality
+
+---
+
+## 🛡️ PHASE 4: AI SECURITY LAB (Separate Offering)
+
+**Goal:** Dedicated lab for AI security concerns
+
+### Features:
+- Prompt injection detection
+- Emoji smuggling prevention
+- Buffer overflow protection
+- Context window overflow handling
+- Jailbreak attempt logging
+- Content filtering
+
+**Why Separate:**
+- Different learning objective (security vs RAG quality)
+- Different audience (security teams vs field teams)
+- Splunk security products tie-in
+
+**Delivery:** Q2 2025 (after main RAG lab launch)
+
+---
+
+## 🏢 PHASE 5: PRODUCTION & ENTERPRISE (Month 3+)
+
+**Goal:** Take learnings to production
+
+### 5A: Splunk Observability Integration
+- OpenTelemetry instrumentation
+- LLM observability (groundedness, cost, latency)
+- System metrics (CPU, RAM, GPU)
+- Docker container stats
+- End-to-end trace visualization
+
+### 5B: AWS Bedrock Migration
+- Production LLM service (vs local Ollama)
+- Claude 3, GPT-4, etc.
+- Cost comparison lab
+- Learning: On-prem vs cloud trade-offs
+
+### 5C: Multi-LLM Orchestration
+- Multiple Ollama instances
+- Request queuing
 - Load balancing
-- Fault tolerance
-- Geo-distributed indices
-
-### 🌟 Mobile Apps (v4.1)
-**Priority:** Low  
-**Impact:** Access anywhere  
-**Effort:** Very High
-
-**Platforms:**
-- iOS (Swift/SwiftUI)
-- Android (Kotlin/Jetpack Compose)
-
-**Features:**
-- Offline search (synced index)
-- Voice queries (speech-to-text)
-- Camera search (image queries)
-- Push notifications (new content)
-
-### 🌟 Browser Extension (v4.2)
-**Priority:** Medium  
-**Impact:** Search while browsing  
-**Effort:** Medium
-
-**Features:**
-```
-Right-click selected text → "Search in my vault"
-                            ↓
-                    ┌──────────────┐
-                    │ Quick popup  │
-                    │ Top 3 results│
-                    └──────────────┘
-```
-
-**Use Cases:**
-- Research while reading articles
-- Find your notes about a topic
-- Quick fact-checking
+- Learning: Production scalability
 
 ---
 
-## Research Ideas
+## ❌ OUT OF SCOPE / FUTURE CONSIDERATIONS
 
-### 🔬 Hierarchical Indexing
-**Goal:** Support millions of documents
+### Not Planned (Wrong Focus):
+- **Multimodal Output (PPT/Docs):** Different product demo, not RAG learning
+- **Database SQL Integration:** Agentic AI, not RAG focus
+- **MCP Integration:** Too bleeding edge, not stable enough
+- **Docker Scaling Infrastructure:** Operations topic, not AI learning
 
-**Approach:**
-```
-Level 1: Topic clusters (50 topics)
-   └─ Level 2: Document embeddings (10k docs)
-      └─ Level 3: Chunk embeddings (100k chunks)
-```
-
-**Benefits:**
-- O(log log N) search time
-- Handles 1M+ documents
-- Lower memory usage
-
-### 🔬 Graph Neural Networks
-**Goal:** Better relationship modeling
-
-**Approach:**
-```python
-import torch_geometric
-
-# Build GNN on knowledge graph
-gnn = GraphSAGE(
-    in_channels=768,  # embedding dim
-    hidden_channels=256,
-    num_layers=3
-)
-
-# Learn node representations
-embeddings = gnn(graph, node_features)
-
-# Use for re-ranking
-scores = compute_relevance(query_embedding, embeddings)
-```
-
-**Benefits:**
-- Captures complex relationships
-- Multi-hop reasoning
-- Better than simple BFS
-
-### 🔬 Learned Dense Retrieval
-**Goal:** End-to-end learned retrieval
-
-**Approach:** ColBERT-style late interaction
-```python
-# Query: multiple embeddings (one per token)
-query_embeddings = [emb1, emb2, emb3]
-
-# Document: multiple embeddings (one per token)
-doc_embeddings = [emb1, emb2, ..., emb100]
-
-# Score: max similarity for each query token
-score = sum(max(similarity(q, d) for d in doc_embeddings) 
-            for q in query_embeddings)
-```
-
-**Benefits:**
-- Better than single embedding
-- Captures token-level interactions
-- State-of-the-art retrieval
-
-### 🔬 Zero-shot Classification
-**Goal:** Auto-tag and categorize documents
-
-**Approach:**
-```python
-from transformers import pipeline
-
-classifier = pipeline(
-    "zero-shot-classification",
-    model="facebook/bart-large-mnli"
-)
-
-# Classify document
-labels = ["tutorial", "reference", "meeting notes", "research"]
-result = classifier(document_text, labels)
-
-# Auto-tag
-document.tags = [label for label, score in zip(result["labels"], result["scores"]) 
-                 if score > 0.5]
-```
-
-**Benefits:**
-- No manual tagging
-- Consistent categorization
-- Discovers patterns
-
-### 🔬 Multilingual Support
-**Goal:** Search across languages
-
-**Approach:**
-```python
-# Use multilingual embedding model
-from sentence_transformers import SentenceTransformer
-
-model = SentenceTransformer("paraphrase-multilingual-mpnet-base-v2")
-
-# English query → Spanish document
-query_en = "machine learning"
-doc_es = "aprendizaje automático"
-
-query_emb = model.encode(query_en)
-doc_emb = model.encode(doc_es)
-similarity = cosine_similarity(query_emb, doc_emb)  # High!
-```
-
-**Benefits:**
-- Cross-lingual search
-- Support non-English vaults
-- Language-agnostic
+### Parking Lot (Maybe Later):
+- Graph visualization (D3.js/Cytoscape)
+- PageRank scoring for KG nodes
+- Community detection in KG
+- Temporal knowledge graph
+- Citation analysis
+- Advanced NER (spaCy/BERT)
 
 ---
 
-## Community Requests
+## 📊 FEATURE PRIORITIZATION MATRIX
 
-### Vote on Features
-
-Visit our [GitHub Discussions](https://github.com/sandbreak80/laptop_rag/discussions) to:
-- Request new features
-- Vote on proposals
-- Share use cases
-- Report bugs
-
-### Most Requested
-
-1. **PDF Support** (47 votes) → Planned for v3.0
-2. **Mobile App** (38 votes) → Planned for v4.1
-3. **Query Caching** (34 votes) → Planned for v2.3
-4. **Incremental Indexing** (31 votes) → Planned for v2.4
-5. **Browser Extension** (28 votes) → Planned for v4.2
-
----
-
-## Contributing
-
-Want to help? Here's how:
-
-### High-Impact Areas
-
-1. **Performance Optimization**
-   - Profile and optimize hot paths
-   - Implement caching strategies
-   - Parallel processing
-
-2. **UI/UX Improvements**
-   - Mobile-responsive design
-   - Accessibility features
-   - Keyboard shortcuts
-
-3. **Documentation**
-   - Tutorial videos
-   - Use case examples
-   - API documentation
-
-4. **Testing**
-   - More test coverage
-   - Performance benchmarks
-   - Edge case testing
-
-### Getting Started
-
-```bash
-# 1. Fork repository
-git clone https://github.com/YOUR_USERNAME/laptop_rag.git
-
-# 2. Create feature branch
-git checkout -b feature/amazing-feature
-
-# 3. Make changes, test, commit
-pytest
-git commit -m "feat: add amazing feature"
-
-# 4. Push and create PR
-git push origin feature/amazing-feature
-```
+| Feature | Lab Value | Complexity | Priority | Phase |
+|---------|-----------|------------|----------|-------|
+| Response Time Waterfall | ⭐⭐⭐⭐⭐ | Medium | CRITICAL | 1 |
+| Model vs Context Lab | ⭐⭐⭐⭐⭐ | Low | CRITICAL | 1 |
+| Chat Persistence | ⭐⭐⭐⭐☆ | Low | Must-Do | 1 |
+| Toggle Validation | ⭐⭐⭐⭐⭐ | Low | Must-Do | 1 |
+| Metadata Filtering | ⭐⭐⭐☆☆ | Low | Should-Do | 2 |
+| Query Decomposition | ⭐⭐⭐⭐☆ | Medium | Should-Do | 2 |
+| Prompt Logging | ⭐⭐⭐☆☆ | Low | Should-Do | 2 |
+| Token Tracking | ⭐⭐⭐☆☆ | Low | Should-Do | 2 |
+| Self-RAG | ⭐⭐⭐⭐☆ | High | Nice-to-Have | 3 |
+| LLM Routing | ⭐⭐⭐☆☆ | Medium | Nice-to-Have | 3 |
+| AI Security Lab | ⭐⭐⭐⭐☆ | High | Separate Offering | 4 |
+| Splunk O11y | ⭐⭐⭐⭐⭐ | High | Future State | 5 |
+| AWS Bedrock | ⭐⭐⭐☆☆ | Medium | Future State | 5 |
 
 ---
 
-## Release Schedule
+## 🎯 SUCCESS CRITERIA
 
-### v2.2 (Current Sprint)
-**Target:** February 2025  
-**Focus:** UI tests, API docs
+### Phase 1 Complete When:
+- ✅ Chat persists across page refreshes
+- ✅ All RAG toggles validated and working
+- ✅ Waterfall chart shows timing for each RAG component
+- ✅ Model/context comparison exercise documented
+- ✅ Students can see latency trade-offs visually
 
-### v2.3-2.7 (Q1 2025)
-**Target:** March-May 2025  
-**Focus:** Caching, incremental indexing, filters
+### Phase 2 Complete When:
+- ✅ Metadata filters working in UI
+- ✅ Query decomposition demonstrated
+- ✅ Prompt logging captured and displayed
+- ✅ Token usage tracked and shown
 
-### v3.0 (Q2 2025)
-**Target:** June 2025  
-**Focus:** Multi-modal RAG
-
-### v3.1-3.3 (Q3 2025)
-**Target:** July-September 2025  
-**Focus:** Collaboration, fine-tuning
-
-### v4.0+ (Q4 2025+)
-**Target:** October 2025+  
-**Focus:** Scale, mobile, enterprise
-
----
-
-## Feedback
-
-We'd love to hear from you!
-
-- **GitHub Issues**: Bug reports, feature requests
-- **GitHub Discussions**: Questions, ideas, showcase
-- **Email**: maintainer@example.com
-- **Discord**: [Join our community](https://discord.gg/laptop-rag)
+### Lab Ready for Field Delivery When:
+- Phase 1 complete ✅
+- All documentation updated ✅
+- Screenshots taken for lab guide ✅
+- End-to-end testing passed ✅
+- Instructor guide created ✅
 
 ---
 
-## Conclusion
+## 🚀 DELIVERY TIMELINE
 
-This roadmap is a living document. Priorities may change based on:
-- User feedback
-- Technical feasibility
-- Community contributions
-- Research breakthroughs
-
-**Our commitment:** Build the best local-first RAG system, one feature at a time.
+| Phase | Timeline | Hours | Status |
+|-------|----------|-------|--------|
+| **Phase 1 (Critical)** | Week 1 | 8-11 hours | 🚧 In Progress |
+| **Phase 2 (High Value)** | Week 2-3 | 10-18 hours | 📋 Planned |
+| **Phase 3 (Advanced)** | Month 2+ | 18-24 hours | 🔮 Research |
+| **Phase 4 (Security)** | Q2 2025 | TBD | 💭 Concept |
+| **Phase 5 (Production)** | Q2-Q3 2025 | TBD | 💭 Concept |
 
 ---
 
-*Last Updated: January 2025*  
-*Next Review: March 2025*
+## 💡 KEY INSIGHTS
+
+### What Makes This Lab Unique:
+1. **Not just a RAG demo** - students can toggle features and see impact
+2. **Multiple KG algorithms** - unique educational comparison
+3. **Full microservices architecture** - production-ready reference
+4. **Splunk integration roadmap** - product value demonstration
+5. **Built in 1 week by AI + 1 person** - case study for field teams
+
+### Core Learning Objectives:
+1. **Quality vs Latency Trade-offs** - Maximum preset takes 30 min, Balanced takes < 1s
+2. **Cost Optimization** - Small model + large context can beat large model + small context
+3. **Feature Impact** - Each RAG component has measurable effect on precision/recall
+4. **Production Considerations** - Monitoring, scaling, cost management
+5. **Splunk Value** - Where Splunk fits in AI/LLM observability
+
+### Critical Success Factor:
+**Students must SEE and FEEL the trade-offs, not just read about them.**
+→ This is why the waterfall chart is CRITICAL.
+
+---
+
+## 📝 NOTES
+
+- Lab is **85% ready** - strong foundation, missing critical teaching tools
+- **15% gap** is in visualization and teaching aids, not RAG features
+- Focus on **teaching tools** over **more RAG features**
+- Keep **self-referential**: Lab docs ingested into RAG for testing
+- Maintain **AI development case study**: Built in < 1 week by AI + 1 person
+
+---
+
+**Last Updated:** November 2, 2025
+**Next Review:** After Phase 1 completion

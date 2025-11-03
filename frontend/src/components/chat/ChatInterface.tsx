@@ -99,6 +99,17 @@ export function ChatInterface() {
           temperature: config.temperature,
           topK: config.topK,
           latency: data.metrics?.total_latency_ms,
+          performance: data.metrics ? {
+            query_expansion_ms: data.metrics.query_expansion_ms,
+            vector_search_ms: data.metrics.vector_search_ms,
+            bm25_search_ms: data.metrics.bm25_search_ms,
+            hybrid_fusion_ms: data.metrics.hybrid_fusion_ms,
+            graph_expansion_ms: data.metrics.graph_expansion_ms,
+            reranking_ms: data.metrics.reranking_ms,
+            web_search_ms: data.metrics.web_search_ms,
+            llm_generation_ms: data.metrics.llm_generation_ms,
+            total_latency_ms: data.metrics.total_latency_ms,
+          } : undefined,
         },
       };
 

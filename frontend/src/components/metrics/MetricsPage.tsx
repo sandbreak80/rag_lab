@@ -3,6 +3,7 @@ import { useMetricsStore } from '../../stores/metricsStore';
 import { QueryMetric } from '../../types/metrics';
 import { MetricsOverview } from './MetricsOverview';
 import { QueryHistoryTable } from './QueryHistoryTable';
+import { WaterfallChart } from './WaterfallChart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Download, Trash2, X } from 'lucide-react';
@@ -123,65 +124,8 @@ export function MetricsPage() {
 
               {/* Performance Breakdown */}
               <div>
-                <h4 className="text-sm font-medium mb-2">Performance Breakdown</h4>
-                <div className="space-y-2 text-sm">
-                  {selectedMetric.performance.query_expansion_ms && (
-                    <div className="flex justify-between bg-muted p-2 rounded">
-                      <span className="text-muted-foreground">Query Expansion</span>
-                      <span className="font-medium">
-                        {formatDuration(selectedMetric.performance.query_expansion_ms)}
-                      </span>
-                    </div>
-                  )}
-                  {selectedMetric.performance.vector_search_ms && (
-                    <div className="flex justify-between bg-muted p-2 rounded">
-                      <span className="text-muted-foreground">Vector Search</span>
-                      <span className="font-medium">
-                        {formatDuration(selectedMetric.performance.vector_search_ms)}
-                      </span>
-                    </div>
-                  )}
-                  {selectedMetric.performance.bm25_search_ms && (
-                    <div className="flex justify-between bg-muted p-2 rounded">
-                      <span className="text-muted-foreground">BM25 Search</span>
-                      <span className="font-medium">
-                        {formatDuration(selectedMetric.performance.bm25_search_ms)}
-                      </span>
-                    </div>
-                  )}
-                  {selectedMetric.performance.hybrid_fusion_ms && (
-                    <div className="flex justify-between bg-muted p-2 rounded">
-                      <span className="text-muted-foreground">Hybrid Fusion</span>
-                      <span className="font-medium">
-                        {formatDuration(selectedMetric.performance.hybrid_fusion_ms)}
-                      </span>
-                    </div>
-                  )}
-                  {selectedMetric.performance.graph_expansion_ms && (
-                    <div className="flex justify-between bg-muted p-2 rounded">
-                      <span className="text-muted-foreground">Graph Expansion</span>
-                      <span className="font-medium">
-                        {formatDuration(selectedMetric.performance.graph_expansion_ms)}
-                      </span>
-                    </div>
-                  )}
-                  {selectedMetric.performance.reranking_ms && (
-                    <div className="flex justify-between bg-muted p-2 rounded">
-                      <span className="text-muted-foreground">Reranking</span>
-                      <span className="font-medium">
-                        {formatDuration(selectedMetric.performance.reranking_ms)}
-                      </span>
-                    </div>
-                  )}
-                  {selectedMetric.performance.web_search_ms && (
-                    <div className="flex justify-between bg-muted p-2 rounded">
-                      <span className="text-muted-foreground">Web Search</span>
-                      <span className="font-medium">
-                        {formatDuration(selectedMetric.performance.web_search_ms)}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                <h4 className="text-sm font-medium mb-4">Performance Breakdown</h4>
+                <WaterfallChart metrics={selectedMetric.performance} />
               </div>
 
               {/* Results & Tokens */}

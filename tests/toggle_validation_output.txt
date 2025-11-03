@@ -1,0 +1,100 @@
+✅ API Gateway healthy: {'checks': {'core_services': {'healthy': True, 'status': 'pass'}}, 'service': 'api-gateway', 'status': 'healthy', 'timestamp': '2025-11-03T03:49:14.342036', 'uptime_seconds': 4407.953877210617}
+
+🧪 RAG Feature Toggle Validation
+Query: 'What are the key features of RAG?'
+Started: 2025-11-02 19:49:14
+
+============================================================
+Testing: Query Expansion
+============================================================
+
+📴 Testing with Query Expansion OFF...
+   ✅ OFF: 19ms, 5 sources
+
+✅ Testing with Query Expansion ON...
+   ❌ ON: HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)
+
+❌ Test FAILED: One or both requests failed
+
+============================================================
+Testing: BM25 Keyword Search
+============================================================
+
+📴 Testing with BM25 Keyword Search OFF...
+   ❌ OFF: HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)
+
+✅ Testing with BM25 Keyword Search ON...
+   ❌ ON: HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)
+
+❌ Test FAILED: One or both requests failed
+
+============================================================
+Testing: Hybrid Search (Vector + BM25)
+============================================================
+
+📴 Testing with Hybrid Search (Vector + BM25) OFF...
+   ❌ OFF: HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)
+
+✅ Testing with Hybrid Search (Vector + BM25) ON...
+   ❌ ON: HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)
+
+❌ Test FAILED: One or both requests failed
+
+============================================================
+Testing: Knowledge Graph
+============================================================
+
+📴 Testing with Knowledge Graph OFF...
+   ❌ OFF: HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)
+
+✅ Testing with Knowledge Graph ON...
+   ❌ ON: HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)
+
+❌ Test FAILED: One or both requests failed
+
+============================================================
+Testing: LLM Re-ranking
+============================================================
+
+📴 Testing with LLM Re-ranking OFF...
+   ✅ OFF: 28ms, 5 sources
+
+✅ Testing with LLM Re-ranking ON...
+   ❌ ON: HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)
+
+❌ Test FAILED: One or both requests failed
+
+============================================================
+Testing: Web Search
+============================================================
+
+📴 Testing with Web Search OFF...
+   ❌ OFF: HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)
+
+✅ Testing with Web Search ON...
+   ❌ ON: HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=180)
+
+❌ Test FAILED: One or both requests failed
+
+
+============================================================
+📊 TEST SUMMARY
+============================================================
+
+Total Tests: 6
+✅ Passed:   0
+⚠️  Warnings: 0
+❌ Failed:   6
+
+Feature                        Status     Latency Impact      
+------------------------------------------------------------
+Query Expansion                ❌ FAIL                         
+BM25 Keyword Search            ❌ FAIL                         
+Hybrid Search (Vector + BM25)  ❌ FAIL                         
+Knowledge Graph                ❌ FAIL                         
+LLM Re-ranking                 ❌ FAIL                         
+Web Search                     ❌ FAIL                         
+
+📄 Detailed results saved to: /Users/bmstoner/code_projects/rag_lab/tests/toggle_validation_results.json
+
+❌ TESTS FAILED: 6 feature(s) not working correctly.
