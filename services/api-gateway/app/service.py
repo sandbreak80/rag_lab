@@ -310,7 +310,7 @@ def cancel_request():
     try:
         import subprocess
         print("🛑 Cancel request received - restarting Ollama container...")
-        
+
         # Restart Ollama container
         result = subprocess.run(
             ['docker', 'restart', 'ollama'],
@@ -318,14 +318,14 @@ def cancel_request():
             text=True,
             timeout=10
         )
-        
+
         if result.returncode == 0:
             print("✅ Ollama container restarted successfully")
             return jsonify({'success': True, 'message': 'Request cancelled - Ollama restarted'}), 200
         else:
             print(f"❌ Failed to restart Ollama: {result.stderr}")
             return jsonify({'success': False, 'error': result.stderr}), 500
-            
+
     except subprocess.TimeoutExpired:
         return jsonify({'success': False, 'error': 'Restart timeout'}), 500
     except Exception as e:

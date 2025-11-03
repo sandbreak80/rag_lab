@@ -228,7 +228,7 @@ export function ChatInterface() {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-    
+
     // Restart Ollama container to cancel backend processing
     try {
       await api.cancelRequest();

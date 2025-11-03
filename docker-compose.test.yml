@@ -134,6 +134,7 @@ services:
       - ./services/api-gateway/app:/app
       - ./services/common:/workspace/services/common
       - ./config:/workspace/config
+      - /var/run/docker.sock:/var/run/docker.sock  # Allow Docker control
     working_dir: /app
     environment:
       - SERVICE_NAME=api-gateway
@@ -143,7 +144,7 @@ services:
       - VECTOR_DB_URL=http://vector-db:8005
       - EMBEDDING_SERVICE_URL=http://embedding-service:8006
       - PYTHONPATH=/workspace
-    command: bash -c "pip install -q flask flask-cors requests && python -u service.py"
+    command: bash -c "apt-get update -qq && apt-get install -y -qq docker.io && pip install -q flask flask-cors requests && python -u service.py"
     depends_on:
       - search-service
       - chat-service
