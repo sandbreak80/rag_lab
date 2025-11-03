@@ -47,9 +47,9 @@ class ApiClient {
   }
 
   // Document endpoints
-  async getDocuments(): Promise<string[]> {
+  async getDocuments(): Promise<{ documents: string[]; count: number }> {
     const response = await this.client.get('/documents');
-    return response.data.documents || [];
+    return response.data;
   }
 
   async uploadDocument(
