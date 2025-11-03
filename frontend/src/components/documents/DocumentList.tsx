@@ -46,7 +46,7 @@ const getFileColor = (filename: string) => {
 export function DocumentList() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const queryClient = useQueryClient();
-  
+
   const { data: response, isLoading, error } = useQuery({
     queryKey: ['documents'],
     queryFn: () => api.getDocuments(),

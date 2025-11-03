@@ -515,6 +515,23 @@ def admin_reset():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/admin/reset-kg', methods=['POST'])
+def admin_reset_kg():
+    """Reset the knowledge graph (admin only)"""
+    try:
+        # Get knowledge graph service URL from environment
+        kg_url = os.getenv('KNOWLEDGE_GRAPH_URL', 'http://knowledge-graph:8007')
+        
+        # Forward to knowledge graph service
+        response = requests.post(f"{kg_url}/reset", timeout=180)
+        response.raise_for_status()
+
+        metrics.increment('kg_resets')
+
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # === Root ===
 
 @app.route('/')

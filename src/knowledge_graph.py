@@ -1,16 +1,17 @@
 """
 Knowledge Graph: Build and traverse document relationships
 
-Uses:
-- Wikilinks: [[Document Name]] connections
-- Folder hierarchy: Parent-child relationships
-- Tags: Topic-based clustering
-- Co-occurrence: Documents mentioning same entities
+Supports multiple construction algorithms:
+- wikilinks: Explicit [[Document Name]] connections (fast, accurate)
+- semantic: Embedding similarity connections (slow, implicit)  
+- entity: Named entity co-occurrence (medium, entities)
+- hybrid: Combines all methods (slowest, most comprehensive)
 
 Benefits:
 - +2% recall on multi-hop queries
 - Relationship discovery
 - Context expansion
+- Algorithm comparison for education
 """
 
 import json
@@ -22,8 +23,46 @@ from collections import defaultdict
 import networkx as nx
 import chromadb
 from chromadb.config import Settings
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 import config
+
+# KG Algorithm configurations
+KG_ALGORITHMS = {
+    "wikilinks": {
+        "name": "Wikilink-based",
+        "speed": "Fast (< 1s)",
+        "accuracy": "High (explicit connections)",
+        "cost": "Low (no embeddings)",
+        "description": "Uses [[wikilinks]], tags, and folder hierarchy for explicit connections",
+        "best_for": "Documents with explicit cross-references"
+    },
+    "semantic": {
+        "name": "Semantic Similarity", 
+        "speed": "Slow (10-30s)",
+        "accuracy": "High (implicit connections)",
+        "cost": "High (requires embeddings)",
+        "description": "Connects documents with similar embeddings (cosine > 0.7)",
+        "best_for": "Discovering implicit topical relationships"
+    },
+    "entity": {
+        "name": "Entity Co-occurrence",
+        "speed": "Medium (5-15s)",
+        "accuracy": "Medium (entity-based)",
+        "cost": "Medium (simple NER)",
+        "description": "Connects documents mentioning the same entities (people, orgs, places)",
+        "best_for": "Tracking entities across documents"
+    },
+    "hybrid": {
+        "name": "Hybrid (All Methods)",
+        "speed": "Very Slow (30-60s)",
+        "accuracy": "Highest (comprehensive)",
+        "cost": "Highest (all methods)",
+        "description": "Combines wikilinks, semantic similarity, and entity extraction",
+        "best_for": "Maximum quality, research use cases"
+    }
+}
 
 
 class KnowledgeGraph:
@@ -71,9 +110,20 @@ class KnowledgeGraph:
             self.graph_path = path
         self._save_graph()
 
-    def build_graph(self):
-        """Build knowledge graph from ChromaDB collection"""
-        print("\n🔨 Building Knowledge Graph...")
+    def build_graph(self, algorithm: str = "wikilinks"):
+        """
+        Build knowledge graph from ChromaDB collection
+        
+        Args:
+            algorithm: Construction method ("wikilinks", "semantic", "entity", "hybrid")
+        """
+        if algorithm not in KG_ALGORITHMS:
+            print(f"❌ Unknown algorithm: {algorithm}. Using 'wikilinks'.")
+            algorithm = "wikilinks"
+            
+        print(f"\n🔨 Building Knowledge Graph with '{KG_ALGORITHMS[algorithm]['name']}' algorithm...")
+        print(f"   Speed: {KG_ALGORITHMS[algorithm]['speed']}")
+        print(f"   Best for: {KG_ALGORITHMS[algorithm]['best_for']}")
 
         # Initialize ChromaDB
         client = chromadb.PersistentClient(
@@ -89,27 +139,51 @@ class KnowledgeGraph:
 
         print(f"📄 Found {collection.count()} documents")
 
-        # Get all documents
-        all_docs = collection.get(include=['metadatas'])
+        # Get all documents with embeddings if needed
+        include = ['metadatas']
+        if algorithm in ['semantic', 'hybrid']:
+            include.append('embeddings')
+            
+        all_docs = collection.get(include=include)
 
         if not all_docs['metadatas']:
             print("❌ No documents found")
             return
 
-        # Build graph
-        print("🔗 Building relationships...")
+        # Build base graph structure (always needed)
+        self._build_base_structure(all_docs['metadatas'])
+        
+        # Add algorithm-specific connections
+        if algorithm == "wikilinks":
+            self._add_wikilink_connections(all_docs['metadatas'])
+        elif algorithm == "semantic":
+            self._add_semantic_connections(all_docs['metadatas'], all_docs.get('embeddings', []))
+        elif algorithm == "entity":
+            self._add_entity_connections(all_docs['metadatas'])
+        elif algorithm == "hybrid":
+            self._add_wikilink_connections(all_docs['metadatas'])
+            self._add_semantic_connections(all_docs['metadatas'], all_docs.get('embeddings', []))
+            self._add_entity_connections(all_docs['metadatas'])
 
-        # Track files and folders
-        files_by_name = {}  # file_name -> file_path
+        # Save graph
+        self._save_graph()
+
+        print("✅ Knowledge graph built successfully!")
+        self._print_stats()
+        
+    def _build_base_structure(self, metadatas: List[Dict]):
+        """Build base document, folder, and tag nodes"""
+        print("🔗 Building base structure...")
+        
+        files_by_name = {}
         folders = set()
 
         # Step 1: Add document nodes
-        for metadata in all_docs['metadatas']:
+        for metadata in metadatas:
             file_path = metadata.get('file_path', '')
             file_name = metadata.get('file_name', '')
             title = metadata.get('title', file_name)
 
-            # Add document node
             if file_name and file_name not in self.graph:
                 self.graph.add_node(
                     file_name,
@@ -126,7 +200,7 @@ class KnowledgeGraph:
 
         print(f"  Added {self.graph.number_of_nodes()} document nodes")
 
-        # Step 2: Add folder nodes and hierarchy
+        # Step 2: Add folder nodes
         for folder in folders:
             if folder and folder not in self.graph:
                 self.graph.add_node(
@@ -138,7 +212,7 @@ class KnowledgeGraph:
         print(f"  Added {len(folders)} folder nodes")
 
         # Step 3: Add folder-document relationships
-        for metadata in all_docs['metadatas']:
+        for metadata in metadatas:
             file_path = metadata.get('file_path', '')
             file_name = metadata.get('file_name', '')
 
@@ -146,38 +220,10 @@ class KnowledgeGraph:
                 folder = '/'.join(file_path.split('/')[:-1])
                 if folder in self.graph and file_name in self.graph:
                     self.graph.add_edge(folder, file_name, relation='contains')
-
-        # Step 4: Add wikilink relationships
-        wikilink_count = 0
-        for metadata in all_docs['metadatas']:
-            file_name = metadata.get('file_name', '')
-            wikilinks_str = metadata.get('wikilinks', '[]')
-
-            try:
-                wikilinks = json.loads(wikilinks_str) if isinstance(wikilinks_str, str) else wikilinks_str
-            except:
-                wikilinks = []
-
-            for link in wikilinks:
-                # Find target file
-                target_file = None
-
-                # Try exact match
-                if f"{link}.md" in files_by_name:
-                    target_file = f"{link}.md"
-                # Try with different extensions
-                elif link in files_by_name:
-                    target_file = link
-
-                if target_file and target_file in self.graph:
-                    self.graph.add_edge(file_name, target_file, relation='links_to')
-                    wikilink_count += 1
-
-        print(f"  Added {wikilink_count} wikilink edges")
-
-        # Step 5: Add tag-based relationships
+                    
+        # Step 4: Add tag nodes and connections
         tag_groups = defaultdict(list)
-        for metadata in all_docs['metadatas']:
+        for metadata in metadatas:
             file_name = metadata.get('file_name', '')
             tags_str = metadata.get('tags', '[]')
 
@@ -189,28 +235,133 @@ class KnowledgeGraph:
             for tag in tags:
                 tag_groups[tag].append(file_name)
 
-        # Connect documents with same tags
         tag_edge_count = 0
         for tag, files in tag_groups.items():
             if len(files) > 1:
-                # Add tag node
                 tag_node = f"tag:{tag}"
                 if tag_node not in self.graph:
                     self.graph.add_node(tag_node, type='tag', title=tag)
 
-                # Connect files to tag
                 for file_name in files:
                     if file_name in self.graph:
                         self.graph.add_edge(file_name, tag_node, relation='has_tag')
                         tag_edge_count += 1
 
         print(f"  Added {len(tag_groups)} tag nodes, {tag_edge_count} tag edges")
+        
+        return files_by_name
+        
+    def _add_wikilink_connections(self, metadatas: List[Dict]):
+        """Add wikilink-based connections"""
+        print("🔗 Adding wikilink connections...")
+        
+        files_by_name = {m.get('file_name'): m.get('file_path') for m in metadatas if m.get('file_name')}
+        
+        wikilink_count = 0
+        for metadata in metadatas:
+            file_name = metadata.get('file_name', '')
+            wikilinks_str = metadata.get('wikilinks', '[]')
 
-        # Save graph
-        self._save_graph()
+            try:
+                wikilinks = json.loads(wikilinks_str) if isinstance(wikilinks_str, str) else wikilinks_str
+            except:
+                wikilinks = []
 
-        print("✅ Knowledge graph built successfully!")
-        self._print_stats()
+            for link in wikilinks:
+                target_file = None
+                if f"{link}.md" in files_by_name:
+                    target_file = f"{link}.md"
+                elif link in files_by_name:
+                    target_file = link
+
+                if target_file and target_file in self.graph:
+                    self.graph.add_edge(file_name, target_file, relation='links_to')
+                    wikilink_count += 1
+
+        print(f"  Added {wikilink_count} wikilink edges")
+        
+    def _add_semantic_connections(self, metadatas: List[Dict], embeddings: List[List[float]]):
+        """Add semantic similarity connections based on embeddings"""
+        print("🔗 Adding semantic similarity connections...")
+        
+        if not embeddings or len(embeddings) == 0:
+            print("  ⚠️  No embeddings available")
+            return
+            
+        # Group embeddings by document
+        doc_embeddings = {}
+        for i, metadata in enumerate(metadatas):
+            file_name = metadata.get('file_name', '')
+            if file_name and i < len(embeddings):
+                if file_name not in doc_embeddings:
+                    doc_embeddings[file_name] = []
+                doc_embeddings[file_name].append(embeddings[i])
+        
+        # Average embeddings per document
+        doc_avg_embeddings = {}
+        for file_name, emb_list in doc_embeddings.items():
+            doc_avg_embeddings[file_name] = np.mean(emb_list, axis=0)
+        
+        # Calculate similarity matrix
+        file_names = list(doc_avg_embeddings.keys())
+        embedding_matrix = np.array([doc_avg_embeddings[fn] for fn in file_names])
+        
+        similarity_matrix = cosine_similarity(embedding_matrix)
+        
+        # Add edges for high similarity (>0.7 threshold)
+        semantic_count = 0
+        for i, file_a in enumerate(file_names):
+            for j, file_b in enumerate(file_names):
+                if i < j and similarity_matrix[i][j] > 0.7:
+                    self.graph.add_edge(file_a, file_b, 
+                                      relation='similar_to',
+                                      similarity=float(similarity_matrix[i][j]))
+                    semantic_count += 1
+        
+        print(f"  Added {semantic_count} semantic similarity edges")
+        
+    def _add_entity_connections(self, metadatas: List[Dict]):
+        """Add entity co-occurrence connections"""
+        print("🔗 Adding entity co-occurrence connections...")
+        
+        # Simple entity extraction (capitalized words that appear multiple times)
+        entity_docs = defaultdict(set)
+        
+        for metadata in metadatas:
+            file_name = metadata.get('file_name', '')
+            content = metadata.get('content', '')
+            
+            # Extract potential entities (sequences of capitalized words)
+            import re
+            entities = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', content)
+            
+            # Filter entities that appear at least 2 times
+            entity_counts = defaultdict(int)
+            for entity in entities:
+                if len(entity) > 3:  # Ignore short words
+                    entity_counts[entity] += 1
+            
+            for entity, count in entity_counts.items():
+                if count >= 2:  # Entity appears multiple times
+                    entity_docs[entity].add(file_name)
+        
+        # Add entity nodes and connections
+        entity_count = 0
+        entity_edge_count = 0
+        
+        for entity, docs in entity_docs.items():
+            if len(docs) > 1:  # Entity appears in multiple documents
+                entity_node = f"entity:{entity}"
+                if entity_node not in self.graph:
+                    self.graph.add_node(entity_node, type='entity', title=entity)
+                    entity_count += 1
+                
+                for doc in docs:
+                    if doc in self.graph:
+                        self.graph.add_edge(doc, entity_node, relation='mentions')
+                        entity_edge_count += 1
+        
+        print(f"  Added {entity_count} entity nodes, {entity_edge_count} entity edges")
 
     def find_related(self, file_name: str, max_hops: int = 2, limit: int = 10) -> List[Dict[str, Any]]:
         """

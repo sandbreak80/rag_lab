@@ -148,7 +148,7 @@ Should return information from lab documentation.
 
 ### Reset Fails with Error
 - **Issue**: "Failed to reset database"
-- **Check**: 
+- **Check**:
   - Is vector-db container running? `docker ps | grep vector-db`
   - Check logs: `docker logs rag-vector-db`
   - Try direct reset method

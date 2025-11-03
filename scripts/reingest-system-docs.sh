@@ -35,29 +35,29 @@ count=0
 
 for doc in "${SYSTEM_DOCS[@]}"; do
     count=$((count + 1))
-    
+
     if [ ! -f "$doc" ]; then
         echo "⚠️  Skipping missing file: $doc"
         continue
     fi
-    
+
     filename=$(basename "$doc")
     echo "[$count/$total] 📄 Ingesting: $filename"
-    
+
     response=$(curl -s -X POST "$INGEST_URL" \
         -F "file=@$doc" \
         -w "\n%{http_code}")
-    
+
     http_code=$(echo "$response" | tail -n1)
     body=$(echo "$response" | sed '$d')
-    
+
     if [ "$http_code" = "200" ]; then
         echo "    ✅ Success"
     else
         echo "    ❌ Failed (HTTP $http_code)"
         echo "    Response: $body"
     fi
-    
+
     # Small delay to avoid overwhelming the service
     sleep 0.5
 done
