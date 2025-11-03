@@ -142,13 +142,7 @@ export function ChatInterface() {
 
       // Check if request was cancelled by user
       if (error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
-        const cancelMessage: ChatMessage = {
-          id: generateId(),
-          role: 'assistant',
-          content: '⚠️ **Request Cancelled**\n\nYou cancelled the UI request. **Note:** Ollama may still be processing in the background and will complete eventually.\n\n**Why?** Ollama doesn\'t support mid-request cancellation. In a production system, you would:\n- Use streaming with early termination\n- Implement request queuing\n- Use multiple LLM instances\n\n💡 **Learning Point**: This shows why Maximum preset (5-10 min) is impractical. Try Balanced or Production presets instead (< 1 minute).',
-          timestamp: new Date(),
-        };
-        addMessage(cancelMessage);
+        // Message already added by handleCancelRequest
         setLoading(false);
         return;
       }
@@ -228,10 +222,25 @@ export function ChatInterface() {
     clearMessages();
   };
 
-  const handleCancelRequest = () => {
+  const handleCancelRequest = async () => {
+    // Abort the frontend request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
+    }
+    
+    // Restart Ollama container to cancel backend processing
+    try {
+      await api.cancelRequest();
+      const cancelMessage: ChatMessage = {
+        id: generateId(),
+        role: 'assistant',
+        content: '🛑 **Request Cancelled** - Ollama restarted.',
+        timestamp: new Date(),
+      };
+      addMessage(cancelMessage);
+    } catch (error) {
+      console.error('Failed to cancel request:', error);
     }
   };
 

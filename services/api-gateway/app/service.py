@@ -304,6 +304,34 @@ def chat():
         metrics.increment('chat_errors')
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/cancel', methods=['POST'])
+def cancel_request():
+    """Cancel active request by restarting Ollama"""
+    try:
+        import subprocess
+        print("🛑 Cancel request received - restarting Ollama container...")
+        
+        # Restart Ollama container
+        result = subprocess.run(
+            ['docker', 'restart', 'ollama'],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        
+        if result.returncode == 0:
+            print("✅ Ollama container restarted successfully")
+            return jsonify({'success': True, 'message': 'Request cancelled - Ollama restarted'}), 200
+        else:
+            print(f"❌ Failed to restart Ollama: {result.stderr}")
+            return jsonify({'success': False, 'error': result.stderr}), 500
+            
+    except subprocess.TimeoutExpired:
+        return jsonify({'success': False, 'error': 'Restart timeout'}), 500
+    except Exception as e:
+        print(f"❌ Error restarting Ollama: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/ask', methods=['POST'])
 @timed(metrics, 'ask_request')
 def ask():
@@ -331,12 +359,12 @@ def ask():
         }
         print(f"📤 Forwarding to chat service: {CHAT_SERVICE_URL}/ask")
 
-    # Forward to chat service
-    response = requests.post(
-        f"{CHAT_SERVICE_URL}/ask",
-        json=chat_request,
-        timeout=1800  # 30 minutes - allows Maximum preset to complete for quality demo
-    )
+        # Forward to chat service
+        response = requests.post(
+            f"{CHAT_SERVICE_URL}/ask",
+            json=chat_request,
+            timeout=1800  # 30 minutes - allows Maximum preset to complete for quality demo
+        )
 
         print(f"📬 Chat service responded with status: {response.status_code}")
         if response.status_code != 200:

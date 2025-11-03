@@ -30,6 +30,11 @@ class ApiClient {
     return response.data;
   }
 
+  async cancelRequest(): Promise<{ success: boolean; message: string }> {
+    const response = await this.client.post('/cancel');
+    return response.data;
+  }
+
   async searchDocuments(query: string, config: Partial<RAGConfig>): Promise<{
     results: Source[];
     metrics: any;
