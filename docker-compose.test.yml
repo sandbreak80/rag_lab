@@ -220,7 +220,7 @@ services:
       - VECTOR_DB_URL=http://vector-db:8005
       - KNOWLEDGE_GRAPH_PATH=/kg-data/knowledge_graph.pkl
       - PYTHONPATH=/workspace
-    command: bash -c "pip install -q flask flask-cors requests networkx chromadb && python -u service.py"
+    command: bash -c "pip install -q flask flask-cors requests networkx chromadb scikit-learn numpy && python -u service.py"
     depends_on:
       - vector-db
 

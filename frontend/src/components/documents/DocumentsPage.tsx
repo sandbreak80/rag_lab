@@ -139,7 +139,7 @@ export function DocumentsPage() {
                   <span className="font-medium">Best for:</span> {algorithmsData.algorithms[selectedAlgorithm]?.best_for}
                 </p>
                 <p>
-                  <span className="font-medium">Speed:</span> {algorithmsData.algorithms[selectedAlgorithm]?.speed} | 
+                  <span className="font-medium">Speed:</span> {algorithmsData.algorithms[selectedAlgorithm]?.speed} |
                   <span className="font-medium"> Accuracy:</span> {algorithmsData.algorithms[selectedAlgorithm]?.accuracy}
                 </p>
               </div>
