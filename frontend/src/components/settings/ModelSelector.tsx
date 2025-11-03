@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useConfigStore } from '../../stores/configStore';
@@ -16,9 +16,25 @@ export function ModelSelector() {
 
   const models = (modelsData as any)?.models || modelsData || [];
 
+  // Auto-fix invalid model: if saved model doesn't exist in Ollama, switch to first available
+  useEffect(() => {
+    if (models.length > 0 && model) {
+      const modelExists = models.some((m: any) => m.name === model);
+      if (!modelExists) {
+        console.warn(`⚠️  Model '${model}' not found in Ollama. Auto-switching to '${models[0].name}'`);
+        setModel(models[0].name);
+      }
+    }
+  }, [models, model, setModel]);
+
   return (
     <div className="space-y-2">
       <Label htmlFor="model-select">LLM Model</Label>
+      {models.length === 0 && !isLoading && (
+        <p className="text-xs text-orange-500 mb-2">
+          ⚠️ Ollama not responding or no models available
+        </p>
+      )}
       <Select
         id="model-select"
         value={model}

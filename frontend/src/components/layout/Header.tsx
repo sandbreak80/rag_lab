@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useConfigStore } from '../../stores/configStore';
@@ -7,6 +7,28 @@ import { Badge } from '../ui/badge';
 
 export function Header() {
   const model = useConfigStore((state) => state.model);
+  const setModel = useConfigStore((state) => state.setModel);
+
+  // Fetch available models
+  const { data: modelsData } = useQuery({
+    queryKey: ['models'],
+    queryFn: () => api.getModels(),
+    retry: 2,
+    retryDelay: 2000,
+  });
+
+  const models = (modelsData as any)?.models || modelsData || [];
+
+  // Validate that the selected model exists, auto-fix if not
+  useEffect(() => {
+    if (models.length > 0 && model) {
+      const modelExists = models.some((m: any) => m.name === model);
+      if (!modelExists) {
+        console.warn(`⚠️  Model '${model}' not found in Ollama. Switching to '${models[0].name}'`);
+        setModel(models[0].name);
+      }
+    }
+  }, [models, model, setModel]);
 
   const { data: stats } = useQuery({
     queryKey: ['stats'],
