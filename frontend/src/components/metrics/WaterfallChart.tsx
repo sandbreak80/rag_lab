@@ -118,7 +118,7 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
           Total Response Time: <span className="text-foreground font-semibold">{formatTime(totalTime)}</span>
         </div>
       )}
-      
+
       <ResponsiveContainer width="100%" height={compact ? 200 : 300}>
         <BarChart
           data={data}

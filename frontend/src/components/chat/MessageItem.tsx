@@ -16,7 +16,7 @@ interface MessageItemProps {
 export function MessageItem({ message }: MessageItemProps) {
   const isUser = message.role === 'user';
   const [showPerformance, setShowPerformance] = useState(false);
-  
+
   const hasPerformanceData = !isUser && message.metadata?.performance;
 
   return (
@@ -115,7 +115,7 @@ export function MessageItem({ message }: MessageItemProps) {
                 {showPerformance ? '▼ Hide' : '▶ Show'}
               </span>
             </button>
-            
+
             {showPerformance && (
               <div className="p-4 border-t border-border">
                 <WaterfallChart metrics={message.metadata!.performance!} compact />
