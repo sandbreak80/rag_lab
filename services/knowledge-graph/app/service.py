@@ -6,6 +6,7 @@ from flask import Flask, request, jsonify
 import sys
 import os
 import pickle
+import requests
 from pathlib import Path
 
 # Add common and src to path
@@ -316,17 +317,41 @@ def build_graph():
         # Get algorithm from request (default to wikilinks)
         data = request.get_json() or {}
         algorithm = data.get('algorithm', 'wikilinks')
-
+        
         print(f"🔨 Building knowledge graph with algorithm: {algorithm}...")
 
         if not KG_AVAILABLE:
             return jsonify({'error': 'Knowledge graph module not available'}), 503
 
+        # Get vector DB URL from environment
+        vector_db_url = os.getenv('VECTOR_DB_URL', 'http://vector-db:8005')
+        
+        # Fetch all documents from vector-db service
+        print(f"📥 Fetching documents from {vector_db_url}/get_all...")
+        response = requests.post(
+            f"{vector_db_url}/get_all",
+            json={},
+            timeout=180
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        metadatas = data.get('metadatas', [])
+        embeddings = data.get('embeddings', []) if algorithm in ['semantic', 'hybrid'] else None
+        
+        print(f"📚 Fetched {len(metadatas)} documents")
+
+        if not metadatas:
+            return jsonify({
+                'success': False,
+                'message': 'No documents in vector database'
+            }), 400
+
         # Create new graph
         kg = KnowledgeGraph()
 
-        # Build using the selected algorithm
-        kg.build_graph(algorithm=algorithm)
+        # Build using the selected algorithm with provided data
+        kg.build_graph(algorithm=algorithm, metadatas=metadatas, embeddings=embeddings)
 
         metrics.increment('builds')
 
@@ -335,13 +360,13 @@ def build_graph():
             'nodes': kg.graph.number_of_nodes(),
             'edges': kg.graph.number_of_edges(),
         }
-
+        
         # Count node types
         doc_nodes = [n for n in kg.graph.nodes() if kg.graph.nodes[n].get('type') == 'document']
         tag_nodes = [n for n in kg.graph.nodes() if kg.graph.nodes[n].get('type') == 'tag']
         entity_nodes = [n for n in kg.graph.nodes() if kg.graph.nodes[n].get('type') == 'entity']
         folder_nodes = [n for n in kg.graph.nodes() if kg.graph.nodes[n].get('type') == 'folder']
-
+        
         stats.update({
             'documents': len(doc_nodes),
             'tags': len(tag_nodes),

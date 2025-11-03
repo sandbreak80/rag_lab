@@ -110,60 +110,67 @@ class KnowledgeGraph:
             self.graph_path = path
         self._save_graph()
 
-    def build_graph(self, algorithm: str = "wikilinks"):
+    def build_graph(self, algorithm: str = "wikilinks", metadatas: List[Dict] = None, embeddings: List[List[float]] = None):
         """
-        Build knowledge graph from ChromaDB collection
-
+        Build knowledge graph from ChromaDB collection or provided data
+        
         Args:
             algorithm: Construction method ("wikilinks", "semantic", "entity", "hybrid")
+            metadatas: Optional list of document metadata (if None, fetches from ChromaDB)
+            embeddings: Optional list of embeddings (required for semantic/hybrid if metadatas provided)
         """
         if algorithm not in KG_ALGORITHMS:
             print(f"❌ Unknown algorithm: {algorithm}. Using 'wikilinks'.")
             algorithm = "wikilinks"
-
+            
         print(f"\n🔨 Building Knowledge Graph with '{KG_ALGORITHMS[algorithm]['name']}' algorithm...")
         print(f"   Speed: {KG_ALGORITHMS[algorithm]['speed']}")
         print(f"   Best for: {KG_ALGORITHMS[algorithm]['best_for']}")
 
-        # Initialize ChromaDB
-        client = chromadb.PersistentClient(
-            path=str(config.CHROMA_DB_PATH),
-            settings=Settings(anonymized_telemetry=False)
-        )
+        # If no metadatas provided, fetch from ChromaDB
+        if metadatas is None:
+            # Initialize ChromaDB
+            client = chromadb.PersistentClient(
+                path=str(config.CHROMA_DB_PATH),
+                settings=Settings(anonymized_telemetry=False)
+            )
 
-        try:
-            collection = client.get_collection(config.COLLECTION_NAME)
-        except Exception as e:
-            print(f"❌ Collection not found: {e}")
-            return
+            try:
+                collection = client.get_collection(config.COLLECTION_NAME)
+            except Exception as e:
+                print(f"❌ Collection not found: {e}")
+                return
 
-        print(f"📄 Found {collection.count()} documents")
+            print(f"📄 Found {collection.count()} documents")
 
-        # Get all documents with embeddings if needed
-        include = ['metadatas']
-        if algorithm in ['semantic', 'hybrid']:
-            include.append('embeddings')
-
-        all_docs = collection.get(include=include)
-
-        if not all_docs['metadatas']:
+            # Get all documents with embeddings if needed
+            include = ['metadatas']
+            if algorithm in ['semantic', 'hybrid']:
+                include.append('embeddings')
+                
+            all_docs = collection.get(include=include)
+            
+            metadatas = all_docs.get('metadatas', [])
+            embeddings = all_docs.get('embeddings', [])
+        
+        if not metadatas:
             print("❌ No documents found")
             return
 
         # Build base graph structure (always needed)
-        self._build_base_structure(all_docs['metadatas'])
-
+        self._build_base_structure(metadatas)
+        
         # Add algorithm-specific connections
         if algorithm == "wikilinks":
-            self._add_wikilink_connections(all_docs['metadatas'])
+            self._add_wikilink_connections(metadatas)
         elif algorithm == "semantic":
-            self._add_semantic_connections(all_docs['metadatas'], all_docs.get('embeddings', []))
+            self._add_semantic_connections(metadatas, embeddings or [])
         elif algorithm == "entity":
-            self._add_entity_connections(all_docs['metadatas'])
+            self._add_entity_connections(metadatas)
         elif algorithm == "hybrid":
-            self._add_wikilink_connections(all_docs['metadatas'])
-            self._add_semantic_connections(all_docs['metadatas'], all_docs.get('embeddings', []))
-            self._add_entity_connections(all_docs['metadatas'])
+            self._add_wikilink_connections(metadatas)
+            self._add_semantic_connections(metadatas, embeddings or [])
+            self._add_entity_connections(metadatas)
 
         # Save graph
         self._save_graph()
