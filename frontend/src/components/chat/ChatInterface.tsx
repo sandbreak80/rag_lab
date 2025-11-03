@@ -140,7 +140,7 @@ export function ChatInterface() {
     onError: (error: any) => {
       console.error('Chat error:', error);
 
-      // Check if request was cancelled
+      // Check if request was cancelled by user
       if (error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
         const cancelMessage: ChatMessage = {
           id: generateId(),
@@ -149,6 +149,19 @@ export function ChatInterface() {
           timestamp: new Date(),
         };
         addMessage(cancelMessage);
+        setLoading(false);
+        return;
+      }
+
+      // Check if request timed out
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        const timeoutMessage: ChatMessage = {
+          id: generateId(),
+          role: 'assistant',
+          content: '⏱️ **Request Timed Out (10 minutes)**\n\nThe Maximum preset took longer than 10 minutes and timed out. This happens because:\n\n**What Maximum does:**\n- Query Expansion (~100ms)\n- Hybrid Search (~200ms)\n- Knowledge Graph (~100ms)\n- **Re-ranking with LLM** (~3-5 seconds per batch)\n- **Web Search** (10 docs × 5 pages = 50 requests, ~30-60s)\n- **LLM Generation with llama3.1:8b** (~5-10 minutes for 1500 tokens with 20 context chunks)\n\n🎓 **Key Learning**: Maximum demonstrates what NOT to do. A 10-minute response time is completely unusable in production.\n\n✅ **Solution**: Use Balanced (< 1s) or Production (< 5s) presets for real applications.',
+          timestamp: new Date(),
+        };
+        addMessage(timeoutMessage);
         setLoading(false);
         return;
       }
