@@ -50,8 +50,6 @@ export function DocumentList() {
     refetchInterval: 10000, // Refetch every 10 seconds
   });
 
-  console.log('📦 Documents query state:', { response, isLoading, error });
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -61,11 +59,10 @@ export function DocumentList() {
   }
 
   if (error) {
-    console.error('❌ Documents error:', error);
     return (
       <Card>
         <CardContent className="p-6 text-center">
-          <p className="text-destructive">Failed to load documents: {String(error)}</p>
+          <p className="text-destructive">Failed to load documents</p>
         </CardContent>
       </Card>
     );
@@ -73,27 +70,17 @@ export function DocumentList() {
 
   // Extract documents array from response
   const documents = response?.documents || [];
-  const documentCount = response?.count || 0;
-  console.log('📄 Total documents from API:', documentCount);
-  console.log('📄 Documents array length:', documents.length);
-  console.log('📄 First 5 documents:', documents.slice(0, 5));
 
   // Filter out only test/debug documents (show everything else including lab docs)
-  const userDocuments = (documents as string[]).filter((doc: string) => {
+  const userDocuments = documents.filter((doc: string) => {
     const lower = doc.toLowerCase();
     // Only exclude test/debug files
-    const isTestDoc =
+    return !(
       doc.startsWith('test_') ||
       lower.includes('_summary') ||
-      lower.includes('archive/');
-
-    if (isTestDoc) {
-      console.log('🚫 Filtering out:', doc);
-    }
-    return !isTestDoc;
+      lower.includes('archive/')
+    );
   });
-  
-  console.log('✅ User documents after filter:', userDocuments.length);
 
   if (userDocuments.length === 0) {
     return (
