@@ -9,6 +9,7 @@ import { MetricsPage } from './components/metrics/MetricsPage';
 import { LabGuidePage } from './components/lab/LabGuidePage';
 import { QAPage } from './components/qa/QAPage';
 import { FeedbackPage } from './components/feedback/FeedbackPage';
+import { PromptLoggingPage } from './components/logging/PromptLoggingPage';
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -31,6 +32,7 @@ function App() {
             <Route path="documents" element={<DocumentsPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="metrics" element={<MetricsPage />} />
+            <Route path="logging" element={<PromptLoggingPage />} />
             <Route path="lab" element={<LabGuidePage />} />
             <Route path="qa" element={<QAPage />} />
             <Route path="feedback" element={<FeedbackPage />} />

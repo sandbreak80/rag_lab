@@ -25,7 +25,7 @@ export function MetricsOverview() {
     const totalLatency = queries.reduce((sum, q) => sum + q.performance.total_latency_ms, 0);
     const totalTokens = queries.reduce((sum, q) => sum + q.tokens.total_tokens, 0);
     const totalResults = queries.reduce((sum, q) => sum + q.results.total_results, 0);
-    
+
     // Calculate total cost across all queries
     const totalCost = queries.reduce((sum, q) => {
       const cost = estimateTokenCost(

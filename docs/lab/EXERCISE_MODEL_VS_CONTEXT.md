@@ -221,7 +221,7 @@ Example:
 - **Latency by configuration** → Performance analysis
 - **Quality by model** → Custom metrics (thumbs up/down)
 
-**Field Team Message:**  
+**Field Team Message:**
 "We help you find the optimal configuration for YOUR constraints, then monitor it in production."
 
 ---
@@ -262,7 +262,7 @@ Example:
 
 ---
 
-**Lab Version:** 1.0  
-**Last Updated:** November 2, 2025  
+**Lab Version:** 1.0
+**Last Updated:** November 2, 2025
 **Next Lab:** Query Decomposition & Agentic RAG
 

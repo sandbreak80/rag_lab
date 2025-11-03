@@ -14,21 +14,21 @@ const MODEL_PRICING = {
   // GPT-4 class (if using API)
   'gpt-4': { prompt: 30, completion: 60 },
   'gpt-4-turbo': { prompt: 10, completion: 30 },
-  
+
   // GPT-3.5 class
   'gpt-3.5-turbo': { prompt: 0.5, completion: 1.5 },
-  
-  // Claude class  
+
+  // Claude class
   'claude-3-opus': { prompt: 15, completion: 75 },
   'claude-3-sonnet': { prompt: 3, completion: 15 },
   'claude-3-haiku': { prompt: 0.25, completion: 1.25 },
-  
+
   // Local Ollama (free, but show hardware cost)
   'llama3.1:8b': { prompt: 0, completion: 0, note: 'Free (local)' },
   'llama3.2:3b': { prompt: 0, completion: 0, note: 'Free (local)' },
   'llama3.2:1b': { prompt: 0, completion: 0, note: 'Free (local)' },
   'mistral': { prompt: 0, completion: 0, note: 'Free (local)' },
-  
+
   // Default for unknown models
   'default': { prompt: 2, completion: 6, note: 'Estimated' },
 };
@@ -39,17 +39,17 @@ export function estimateTokenCost(
   model: string
 ): TokenCostEstimate {
   // Normalize model name
-  const modelKey = Object.keys(MODEL_PRICING).find(key => 
+  const modelKey = Object.keys(MODEL_PRICING).find(key =>
     model.toLowerCase().includes(key.toLowerCase())
   ) || 'default';
-  
+
   const pricing = MODEL_PRICING[modelKey as keyof typeof MODEL_PRICING];
-  
+
   // Calculate cost (pricing is per 1M tokens, so divide by 1,000,000)
   const promptCost = (promptTokens / 1_000_000) * pricing.prompt;
   const completionCost = (completionTokens / 1_000_000) * pricing.completion;
   const totalCost = promptCost + completionCost;
-  
+
   return {
     prompt_tokens: promptTokens,
     completion_tokens: completionTokens,
@@ -72,7 +72,7 @@ export function calculateMonthlyCost(
   model: string
 ): { daily: number; monthly: number; yearly: number } {
   const costPerQuery = estimateTokenCost(avgPromptTokens, avgCompletionTokens, model);
-  
+
   return {
     daily: costPerQuery.estimated_cost_usd * queriesPerDay,
     monthly: costPerQuery.estimated_cost_usd * queriesPerDay * 30,
@@ -127,7 +127,7 @@ export function getHardwareCostEstimate(
       reasoning: 'Small models run well on laptops (M2/M3)',
     };
   }
-  
+
   if (model.includes('7b') || model.includes('8b')) {
     if (queriesPerDay < 100) {
       return {
@@ -143,7 +143,7 @@ export function getHardwareCostEstimate(
       };
     }
   }
-  
+
   return {
     model,
     recommendation: HARDWARE_COSTS['aws-a10g'],
