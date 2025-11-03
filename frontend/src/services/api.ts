@@ -123,6 +123,12 @@ class ApiClient {
     });
   }
 
+  // Admin endpoints
+  async resetDatabase(): Promise<{ status: string; message: string }> {
+    const response = await this.client.post('/admin/reset');
+    return response.data;
+  }
+
   // Feedback endpoint
   async submitFeedback(feedback: {
     rating: number;
