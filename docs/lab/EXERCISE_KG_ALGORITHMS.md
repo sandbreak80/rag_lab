@@ -44,7 +44,7 @@ Review each algorithm's characteristics:
 - Best for: Discovering implicit topical relationships
 
 **3. Entity Co-occurrence**
-- Speed: Medium (5-15s)  
+- Speed: Medium (5-15s)
 - Accuracy: Medium (entity-based)
 - Cost: Medium (simple NER)
 - Best for: Tracking entities (people, orgs, places) across documents
@@ -94,7 +94,7 @@ Review each algorithm's characteristics:
    - Edges: ______
    - How many more/fewer edges than Wikilinks? ______
 
-7. Return to **Chat** tab  
+7. Return to **Chat** tab
 8. Ask the **same question**: "What documents are related to AI fundamentals?"
 9. Count sources: ______
 10. Rate relevance (1-5): ______
@@ -294,17 +294,17 @@ Use **Hybrid** when:
 To verify understanding, answer these questions:
 
 **1. Why does semantic similarity require more computational resources?**
-   a) It loads more documents  
-   b) It calculates similarity for all document pairs  
-   c) It uses a larger database  
-   d) It requires internet access  
+   a) It loads more documents
+   b) It calculates similarity for all document pairs
+   c) It uses a larger database
+   d) It requires internet access
    **Answer: ____ Explanation: __________**
 
 **2. What type of queries benefit most from entity co-occurrence?**
-   a) Topical similarity ("documents about AI")  
-   b) Specific mentions ("documents mentioning Apple")  
-   c) Wikilink navigation  
-   d) Semantic clustering  
+   a) Topical similarity ("documents about AI")
+   b) Specific mentions ("documents mentioning Apple")
+   c) Wikilink navigation
+   d) Semantic clustering
    **Answer: ____ Explanation: __________**
 
 **3. For a customer service chatbot with 10K docs, updating 50 docs/day:**

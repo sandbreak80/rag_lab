@@ -44,7 +44,7 @@ LLM:  "I don't have information about your specific API redesign."
 
 With RAG:
 User: "What did we decide about the API redesign?"
-System: 
+System:
   1. Search your notes for "API redesign"
   2. Find: "API-Redesign-Meeting-Notes.md" with decisions
   3. Add context to prompt
@@ -115,7 +115,7 @@ Machine learning is [[supervised]] or [[unsupervised]].
 
 **What:** Break documents into smaller, semantically coherent pieces
 
-**Why:** 
+**Why:**
 - LLM context windows are limited (8k tokens)
 - Better granularity = more precise retrieval
 - Smaller chunks = faster search
@@ -237,7 +237,7 @@ results = collection.query(
 
 **What:** Local language model for generation
 
-**Why:** 
+**Why:**
 - Privacy (no data sent to cloud)
 - Cost (no API fees)
 - Speed (low latency)
@@ -462,7 +462,7 @@ final_results = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 ```
 Original Query: "RAG"
 
-Expanded Query: "RAG retrieval augmented generation LLM context 
+Expanded Query: "RAG retrieval augmented generation LLM context
                  document embedding search semantic"
 
 Why Better:
@@ -495,11 +495,11 @@ CONTEXT_TERMS = {
 def expand_query(query):
     terms = extract_key_terms(query)
     expansions = []
-    
+
     for term in terms:
         if term in SYNONYMS:
             expansions.extend(SYNONYMS[term])
-    
+
     return query + " " + " ".join(expansions)
 ```
 
@@ -603,7 +603,7 @@ Additional Nodes (Algorithm-Specific):
 
 Edges (Wikilinks):
 - links_to: Wikilinks [[document]] → document
-- contains: Folder → document  
+- contains: Folder → document
 - has_tag: Document → tag
 
 Additional Edges (Algorithm-Specific):
@@ -620,7 +620,7 @@ Wikilinks Graph:
 AI-Intro.md → Machine-Learning.md (explicit [[link]])
 Total edges: 10
 
-Semantic Graph:  
+Semantic Graph:
 AI-Intro.md ←→ Machine-Learning.md (0.82 similarity)
 AI-Intro.md ←→ Deep-Learning.md (0.75 similarity)
 Total edges: 35 (discovers implicit connections!)
@@ -653,19 +653,19 @@ kg = KnowledgeGraph()
 if algorithm == "wikilinks":
     kg.build_graph(algorithm="wikilinks")
     # Fast: < 1s
-    
+
 elif algorithm == "semantic":
     kg.build_graph(algorithm="semantic")
     # Slow: requires embeddings from ChromaDB
     # Calculates cosine similarity for all doc pairs
     # Creates edges where similarity > 0.7
-    
+
 elif algorithm == "entity":
-    kg.build_graph(algorithm="entity") 
+    kg.build_graph(algorithm="entity")
     # Medium: simple regex NER
     # Finds capitalized phrases
     # Creates entity nodes
-    
+
 elif algorithm == "hybrid":
     kg.build_graph(algorithm="hybrid")
     # Very slow: runs all three
@@ -678,21 +678,21 @@ def find_related(start, max_hops=2):
     visited = set()
     queue = [(start, 0)]
     related = []
-    
+
     while queue:
         node, hops = queue.pop(0)
-        
+
         if hops > max_hops:
             continue
-        
+
         visited.add(node)
-        
+
         # Get neighbors (works regardless of algorithm!)
         for neighbor in graph.neighbors(node):
             if neighbor not in visited:
                 related.append(neighbor)
                 queue.append((neighbor, hops + 1))
-    
+
     return related
 ```
 
@@ -706,7 +706,7 @@ results = hybrid_search("Architecture")
 for doc in results[:5]:  # Top 5 only
     related = find_related(doc, max_hops=2)
     # ["Design.md", "Performance.md", "API.md", "Benchmarks.md"]
-    
+
     # Add to results
     results.extend(related)
 ```
@@ -736,7 +736,7 @@ Total: 2 docs
 
 Semantic Results:
 - AI-Intro.md
-- Machine-Learning.md  
+- Machine-Learning.md
 - Deep-Learning.md (0.78 similarity)
 - Neural-Networks.md (0.75 similarity)
 Total: 4 docs (finds implicit connections!)
@@ -764,7 +764,7 @@ Students can **rebuild the KG with each algorithm** and query the same question 
 **Try This Lab Exercise:**
 See `docs/lab/EXERCISE_KG_ALGORITHMS.md` for a hands-on comparison lab.
 
-**Result:** 
+**Result:**
 - Wikilinks: +2% recall (baseline)
 - Semantic: +5% recall (discovers implicit relationships)
 - Entity: +3% recall (entity-specific queries)
@@ -1231,7 +1231,7 @@ User: "What is prompt engineering?"
       """
       Source: Prompt-Engineering.md
       Content: Prompt engineering is the practice...
-      
+
       Source: LLM-Best-Practices.md
       Content: Effective prompts should be...
       """
@@ -1241,9 +1241,9 @@ User: "What is prompt engineering?"
    │  """
    │  Context:
    │  {assembled_context}
-   │  
+   │
    │  Question: What is prompt engineering?
-   │  
+   │
    │  Answer based only on the context:
    │  """
    │
@@ -1284,7 +1284,7 @@ User: "What is prompt engineering?"
 **User Experience:**
 - Search results: 65ms ⚡
 - First token: 100ms ⚡
-- Full answer: 1765ms 
+- Full answer: 1765ms
 - Feels instant due to streaming!
 
 ---
