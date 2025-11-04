@@ -41,15 +41,30 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# Project specific
+# Project specific - Runtime data (not committed)
 indices/
 *.pkl
 *.db
 *.sqlite
+uploads/
+test-results/
+screenshots/*
+!screenshots/.gitkeep
 
 # Docker
 .env.local
 docker-compose.override.yml
+docker-compose.*.yml.bak
 
 # Logs
 *.log
+
+# Frontend build artifacts
+frontend/dist/
+frontend/node_modules/
+frontend/.vite/
+
+# Test outputs
+tests/__pycache__/
+test_results.log
+toggle_validation_output.txt

@@ -1,257 +1,322 @@
-# RAG Lab Scripts
+# 🚀 RAG Lab Scripts
 
-Utility scripts for managing the RAG Lab application.
+**Clean, simple scripts for running the Enterprise Agentic AI Platform.**
 
-## Quick Start
+---
 
-### Build and Start Everything
+## 📋 Available Scripts
 
-```bash
-./scripts/build-and-start.sh
-```
+### 🏗️ Main Scripts
 
-This script will:
-1. Check Docker is running
-2. Stop any existing containers
-3. Build the React frontend
-4. Build all Docker images
-5. Start Ollama service
-6. Pull required Ollama models (llama3.2:3b, nomic-embed-text)
-7. Start all other services
-8. Check service health
-9. Display service URLs
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| **`build-and-start.sh`** | 🎯 **One-command setup** - Builds & starts everything | `./build-and-start.sh` |
+| **`stop.sh`** | Stop all services | `./stop.sh` |
+| **`pull-ollama-models.sh`** | Pull/update Ollama models | `./pull-ollama-models.sh` |
+| **`reingest-system-docs.sh`** | Re-ingest project documentation | `./reingest-system-docs.sh` |
 
-### Stop All Services
+---
+
+## 🎯 Quick Start (Ubuntu Server)
+
+### First Time Setup
 
 ```bash
-./scripts/stop.sh
+# 1. Clone the repo
+git clone https://github.com/sandbreak80/rag_lab.git
+cd rag_lab
+
+# 2. Run the all-in-one build script
+cd scripts
+./build-and-start.sh
 ```
 
-### Clean Build (Remove All Data)
+That's it! The script will:
+- ✅ Check Docker is installed
+- ✅ Stop any existing containers
+- ✅ Build all Docker images (including React frontend)
+- ✅ Start Ollama service
+- ✅ Pull required models (llama3.2:3b, nomic-embed-text)
+- ✅ Start all services with health checks
+- ✅ Display service URLs
+
+**No npm, Node.js, Python, or other dependencies needed on host!**
+
+---
+
+## 📖 Detailed Command Reference
+
+### 🏗️ build-and-start.sh
+
+**One-command deployment** - Builds everything and starts all services.
 
 ```bash
-./scripts/build-and-start.sh --clean
+# Standard start (keeps existing data)
+./build-and-start.sh
+
+# Clean start (removes all volumes - fresh install)
+./build-and-start.sh --clean
 ```
 
-⚠️ **WARNING:** This will delete all data including:
-- Vector embeddings
-- Uploaded documents
-- BM25 indices
-- Knowledge graph
-- Metrics
+**What it does:**
+1. Validates Docker & Docker Compose are installed
+2. Stops existing containers
+3. Builds Docker images (frontend build happens inside container)
+4. Starts Ollama service
+5. Waits for Ollama to be ready
+6. Pulls LLM models (llama3.2:3b, nomic-embed-text)
+7. Starts all services with dependencies
+8. Shows service URLs
 
-## Individual Scripts
+**Options:**
+- `--clean` - Remove all data volumes (fresh start)
 
-### Pull Ollama Models
+**Time:** ~5-10 minutes (first run with model downloads)
+
+---
+
+### 🛑 stop.sh
+
+**Stop all services cleanly.**
 
 ```bash
-./scripts/pull-ollama-models.sh
+# Stop all containers
+./stop.sh
+
+# Stop and remove volumes (clean slate)
+./stop.sh --clean
 ```
 
-Pulls required Ollama models:
-- **llama3.2:3b** - Chat/LLM model (~2GB)
-- **nomic-embed-text** - Embedding model (~274MB)
+**Options:**
+- `--clean` - Remove all data volumes
 
-Optional models (for testing):
-- llama3.2:1b - Smallest, fastest
-- llama3.1:8b - Medium, balanced
-- mistral:7b - Alternative chat model
+---
 
-### Check Status
+### 🤖 pull-ollama-models.sh
+
+**Pull or update Ollama models.**
 
 ```bash
-docker compose ps
+# Pull required models (llama3.2:3b, nomic-embed-text)
+./pull-ollama-models.sh
+
+# Pull all models including test models
+./pull-ollama-models.sh --all
 ```
 
-### View Logs
+**Required Models:**
+- `llama3.2:3b` - Fast chat model
+- `nomic-embed-text` - Embedding model
+
+**Optional Test Models:**
+- `llama3.2:1b` - Tiny model for testing
+- `llama3.1:8b` - Larger model for comparison
+- `llama3.2:latest` - Latest version
+
+---
+
+### 📚 reingest-system-docs.sh
+
+**Re-ingest project documentation into the RAG system.**
+
+Useful after updating documentation or changing chunking strategies.
 
 ```bash
-# All services
-docker compose logs -f
-
-# Specific service
-docker compose logs -f ollama
-docker compose logs -f api-gateway
-docker compose logs -f frontend
+./reingest-system-docs.sh
 ```
 
-### Restart a Service
+---
 
-```bash
-docker compose restart [service-name]
+## 🌐 Service URLs
 
-# Examples:
-docker compose restart ollama
-docker compose restart frontend
-docker compose restart api-gateway
-```
+After running `build-and-start.sh`, access services at:
 
-## Service URLs
-
-After starting, the following services will be available:
-
-| Service | URL | Description |
-|---------|-----|-------------|
-| **Frontend** | http://localhost:3000 | React UI |
-| **API Gateway** | http://localhost:8000 | Main API endpoint |
+| Service | URL | Purpose |
+|---------|-----|---------|
+| **Frontend** | http://localhost:3000 | Main React UI |
+| **API Gateway** | http://localhost:8000 | Backend API |
 | **Ollama** | http://localhost:11434 | LLM service |
 | **SearXNG** | http://localhost:8080 | Web search |
-| Vector DB | http://localhost:8005 | ChromaDB |
-| Embedding Service | http://localhost:8006 | Text embeddings |
-| Search Service | http://localhost:8002 | RAG search |
-| Chat Service | http://localhost:8003 | Chat/LLM |
-| Ingest Service | http://localhost:8001 | Document ingestion |
-| Docling Service | http://localhost:8004 | PDF processing |
-| Knowledge Graph | http://localhost:8007 | Graph relationships |
-| Reranker | http://localhost:8008 | Result reranking |
-| Web Search | http://localhost:8009 | Web search wrapper |
-| Metrics Store | http://localhost:8011 | Performance metrics |
 
-## Configuration
+### Microservices (Internal)
 
-Edit `config.env` to change settings:
+These services are accessed through the API Gateway:
 
+- Vector DB: `http://localhost:8005`
+- Embedding: `http://localhost:8006`
+- Knowledge Graph: `http://localhost:8007`
+- Search: `http://localhost:8002`
+- Chat: `http://localhost:8003`
+- Ingest: `http://localhost:8001`
+- Docling: `http://localhost:8004`
+- Reranker: `http://localhost:8008`
+- Web Search: `http://localhost:8009`
+- Metrics Store: `http://localhost:8011`
+
+---
+
+## 🔧 Troubleshooting
+
+### Docker Compose Not Found
+
+If you see `docker-compose not found`:
+
+**Modern Docker (Recommended):**
 ```bash
-# Change chat model
-CHAT_MODEL=llama3.2:3b
-
-# Change embedding model
-EMBEDDING_MODEL=nomic-embed-text
-
-# Enable/disable features
-ENABLE_KNOWLEDGE_GRAPH=true
-ENABLE_RERANKING=false
-ENABLE_WEB_SEARCH=true
+docker compose version
 ```
 
-## Troubleshooting
+The scripts now use `docker compose` (without dash) by default.
 
-### Ollama not starting
+**Legacy Docker:**
+If you have old `docker-compose` standalone:
+```bash
+sudo apt update
+sudo apt install docker-compose-plugin
+```
+
+### Ollama Models Fail to Pull
+
+If Ollama can't pull models:
 
 ```bash
+# Check Ollama is running
+docker compose ps ollama
+
 # Check Ollama logs
-docker compose logs -f ollama
+docker compose logs ollama
 
-# Restart Ollama
-docker compose restart ollama
+# Manually pull a model
+docker compose exec ollama ollama pull llama3.2:3b
 ```
 
-### Frontend not building
+### Services Won't Start
 
 ```bash
-# Rebuild frontend
-cd frontend
-npm install
-npm run build
-cd ..
-
-# Restart frontend container
-docker compose restart frontend
-```
-
-### Services not healthy
-
-```bash
-# Check all service status
+# Check service status
 docker compose ps
 
-# Check specific service logs
-docker compose logs -f [service-name]
+# Check logs for a specific service
+docker compose logs vector-db
+docker compose logs frontend
 
-# Restart unhealthy service
-docker compose restart [service-name]
+# Restart a specific service
+docker compose restart vector-db
 ```
 
-### Port conflicts
+### Port Conflicts
 
-If ports are already in use, edit `docker-compose.yml` to change port mappings:
-
-```yaml
-ports:
-  - "3001:80"  # Change 3000 to 3001 for frontend
-```
-
-### Out of disk space
+If ports are already in use:
 
 ```bash
-# Remove unused Docker resources
-docker system prune -a
+# Find what's using the port
+sudo lsof -i :3000
+sudo lsof -i :8000
 
-# Remove all volumes (⚠️ deletes all data)
-docker compose down -v
+# Kill the process or change ports in docker-compose.yml
 ```
 
-## Development
+### Fresh Start (Nuclear Option)
 
-### Run tests
+If everything is broken:
 
 ```bash
-# API tests
-python tests/test_api_unit.py
+# Stop everything and remove all data
+./stop.sh --clean
 
-# Integration tests
-python tests/test_integration.py
-
-# UI tests (requires services running)
-docker compose --profile testing up playwright-tests
+# Rebuild from scratch
+./build-and-start.sh --clean
 ```
 
-### Watch logs during development
+---
+
+## 🐳 Docker Compose Commands
+
+For manual control:
 
 ```bash
-# All services
+# Start all services
+docker compose up -d
+
+# Stop all services
+docker compose down
+
+# View logs (all services)
 docker compose logs -f
 
-# Multiple specific services
-docker compose logs -f api-gateway chat-service ollama
-```
+# View logs (specific service)
+docker compose logs -f frontend
 
-## GPU Support
+# Restart a service
+docker compose restart frontend
 
-To enable GPU support for Ollama (NVIDIA GPUs only):
+# Rebuild a service
+docker compose build frontend
+docker compose up -d frontend
 
-1. Install [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
+# Check service status
+docker compose ps
 
-2. Uncomment GPU section in `docker-compose.yml`:
-
-```yaml
-ollama:
-  deploy:
-    resources:
-      reservations:
-        devices:
-          - driver: nvidia
-            count: all
-            capabilities: [gpu]
-```
-
-3. Restart services:
-
-```bash
-docker compose down
-docker compose up -d
-```
-
-## Clean Uninstall
-
-To completely remove the RAG Lab:
-
-```bash
-# Stop and remove all containers and volumes
+# Remove everything including volumes
 docker compose down -v
-
-# Remove Docker images
-docker compose down --rmi all
-
-# Remove project directory
-cd ..
-rm -rf rag_lab
 ```
 
-## Support
+---
 
-For issues, check:
-- [GitHub Issues](https://github.com/sandbreak80/rag_lab/issues)
-- [Documentation](../docs/)
-- Service logs: `docker compose logs -f [service-name]`
+## 📦 What Gets Built
 
+### Docker Images
+
+- `rag_lab-frontend` - React UI (Vite + Nginx)
+- `python:3.11-slim` - Used by all backend services
+- `ollama/ollama:latest` - LLM inference engine
+- `searxng/searxng:latest` - Web search engine
+
+### Volumes (Data Persistence)
+
+- `chromadb-data` - Vector embeddings
+- `bm25-indices` - Keyword search indices
+- `knowledge-graph` - Graph relationships
+- `uploads` - Uploaded documents
+- `metrics-data` - Performance metrics
+- `ollama-models` - LLM models
+
+---
+
+## 🎓 Educational Use
+
+This setup is designed for **Splunk/Cisco field teams** to learn:
+- RAG architecture and microservices
+- LLM integration and observability
+- Security considerations for LLMs
+- Prompt engineering and optimization
+- Performance tuning and monitoring
+
+See `docs/lab/` for hands-on exercises.
+
+---
+
+## 🔐 Production Notes
+
+**This is an educational lab environment.**
+
+For production deployment:
+- Add authentication and authorization
+- Implement rate limiting
+- Enable SSL/TLS
+- Set up proper monitoring (Prometheus/Grafana)
+- Configure resource limits
+- Implement security controls (see `docs/SECURITY_ENHANCEMENT_PLAN.md`)
+
+---
+
+## 📚 Documentation
+
+- **Architecture:** `docs/ARCHITECTURE.md`
+- **Security:** `docs/SECURITY_ENHANCEMENT_PLAN.md`
+- **Lab Exercises:** `docs/lab/`
+- **Project Status:** `docs/PROJECT_COMPLETE.md`
+
+---
+
+**Questions?** See the main README or open an issue on GitHub.

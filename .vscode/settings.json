@@ -81,7 +81,8 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "containers.composeBuild": true,
-  "containers.composeDetached": true
+  "containers.composeDetached": true,
+  "makefile.configureOnOpen": false
 }
 
 

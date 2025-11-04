@@ -35,54 +35,66 @@ The Educational RAG Lab is a **production-ready reference architecture** for LLM
 
 ---
 
-## 🚀 Quick Start (5 Minutes)
+## 🚀 Quick Start (One Command!)
 
-### One-Command Startup
+### Ubuntu/Linux Server
 
 ```bash
-# Clone the repository
+# 1. Clone the repo
 git clone https://github.com/sandbreak80/rag_lab.git
-cd rag_lab
+cd rag_lab/scripts
 
-# Run the startup script
-./start.sh
+# 2. Run the all-in-one build script
+./build-and-start.sh
 ```
 
-The startup script will:
-- ✅ Check Docker is running
-- ✅ Start Ollama and verify models
-- ✅ Build and start all microservices
-- ✅ Wait for services to be healthy
-- ✅ Start the React UI
-- ✅ Display status and access URLs
+**That's it!** No npm, Node.js, Python, or other host dependencies needed. Everything runs in Docker.
 
-### Manual Startup
+The script will:
+- ✅ Build all Docker images (including React frontend)
+- ✅ Start Ollama service
+- ✅ Pull required LLM models (llama3.2:3b, nomic-embed-text)
+- ✅ Start all 14 microservices
+- ✅ Wait for health checks
+- ✅ Display service URLs
 
-```bash
-# Start Ollama
-docker start ollama
-
-# Start backend services
-docker-compose -f docker-compose.test.yml up -d
-
-# Start frontend (in a new terminal)
-cd frontend && npm run dev
-```
+**Time:** ~5-10 minutes (first run with model downloads)
 
 ### Access the Application
 
-- **React UI**: http://localhost:5173 (development)
-- **Production UI**: http://localhost:3000
+- **Frontend (React UI)**: http://localhost:3000
 - **API Gateway**: http://localhost:8000
+- **Ollama**: http://localhost:11434
+- **SearXNG (Web Search)**: http://localhost:8080
 
-### Useful Commands
+### Stop Everything
 
 ```bash
-./status.sh   # Check status of all services
-./stop.sh     # Stop all services
+cd scripts
+./stop.sh
 ```
 
-**That's it!** Follow the interactive lab guide (📖 button) in the UI.
+### Clean Start (Fresh Install)
+
+```bash
+# Remove all data and rebuild
+./build-and-start.sh --clean
+```
+
+### Docker Compose Commands
+
+```bash
+# View logs
+docker compose logs -f
+
+# Restart a service
+docker compose restart frontend
+
+# Check service status
+docker compose ps
+```
+
+---
 
 📖 **Full Quick Start Guide**: [docs/lab/QUICK_START.md](docs/lab/QUICK_START.md)
 
