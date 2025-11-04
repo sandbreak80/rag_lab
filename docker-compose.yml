@@ -1,34 +1,472 @@
+# Enterprise Agentic AI Platform with Advanced RAG
+# Production Docker Compose Configuration
+# Version: 3.0 - Consolidated & Cleaned
+
 version: '3.8'
 
-services:
-  markdown-rag-mcp:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: markdown-rag-mcp
-    volumes:
-      # Mount project code
-      - .:/workspace
-      # Mount your markdown vault (read-only for safety)
-      # CHANGE THIS to your vault path or use docker-compose.override.yml
-      - ${VAULT_PATH:-/path/to/your/vault}:/vault:ro
-      # Persistent indices
-      - markdown-rag-indices:/workspace/indices
-    ports:
-      - "5555:5555"  # Web UI
-    environment:
-      - VAULT_PATH=/vault
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
-      - EMBEDDING_MODEL=nomic-embed-text
-      - CHAT_MODEL=llama3.2:3b  # Lighter/faster model for web UI
-    working_dir: /workspace
-    command: sleep infinity  # Keep container running for development
-    stdin_open: true
-    tty: true
+networks:
+  rag-network:
+    driver: bridge
 
 volumes:
-  markdown-rag-indices:
-    name: markdown-rag-indices
+  # Core data persistence
+  chromadb-data:          # Vector embeddings
+  bm25-indices:           # BM25 keyword search indices
+  knowledge-graph:        # Knowledge graph relationships
+  uploads:                # Uploaded documents
+  metrics-data:           # Performance metrics database
+  security-models:        # Security ML models (future)
+  ollama-models:          # Ollama model storage
 
+services:
+  # ============================================================================
+  # OLLAMA - LLM Service (Integrated)
+  # ============================================================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: rag-ollama
+    networks:
+      - rag-network
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    restart: unless-stopped
+    # GPU support (uncomment if you have NVIDIA GPU)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
+  # ============================================================================
+  # CORE RAG SERVICES
+  # ============================================================================
 
+  # Vector Database Service (ChromaDB)
+  vector-db:
+    image: python:3.11-slim
+    container_name: rag-vector-db
+    networks:
+      - rag-network
+    ports:
+      - "8005:8005"
+    volumes:
+      - chromadb-data:/chroma/chroma
+      - ./services/vector-db/app:/app
+      - ./services/common:/workspace/services/common
+    working_dir: /app
+    env_file:
+      - config.env
+    environment:
+      - SERVICE_NAME=vector-db
+      - SERVICE_PORT=8005
+      - COLLECTION_NAME=markdown_vault
+      - CHROMA_DB_PATH=/chroma/chroma
+      - PYTHONPATH=/workspace
+      - PYTHONUNBUFFERED=1
+    command: bash -c "pip install -q chromadb flask flask-cors requests && python -u service.py"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Embedding Service
+  embedding-service:
+    image: python:3.11-slim
+    container_name: rag-embedding-service
+    networks:
+      - rag-network
+    ports:
+      - "8006:8006"
+    volumes:
+      - ./services/embedding/app:/app
+      - ./services/common:/workspace/services/common
+    working_dir: /app
+    env_file:
+      - config.env
+    environment:
+      - SERVICE_NAME=embedding-service
+      - SERVICE_PORT=8006
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - PYTHONPATH=/workspace
+      - PYTHONUNBUFFERED=1
+    command: bash -c "pip install -q flask flask-cors requests && python -u service.py"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Search Service
+  search-service:
+    image: python:3.11-slim
+    container_name: rag-search-service
+    networks:
+      - rag-network
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./services/search/app:/app
+      - ./services/common:/workspace/services/common
+      - ./src:/workspace/src
+      - bm25-indices:/indices
+      - uploads:/uploads
+    working_dir: /app
+    env_file:
+      - config.env
+    environment:
+      - SERVICE_NAME=search-service
+      - SERVICE_PORT=8002
+      - PYTHONPATH=/workspace
+      - PYTHONUNBUFFERED=1
+    command: bash -c "pip install -q flask flask-cors requests rank-bm25 && python -u service.py"
+    depends_on:
+      - vector-db
+      - embedding-service
+      - knowledge-graph
+      - reranker
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Chat Service
+  chat-service:
+    image: python:3.11-slim
+    container_name: rag-chat-service
+    networks:
+      - rag-network
+    ports:
+      - "8003:8003"
+    volumes:
+      - ./services/chat/app:/app
+      - ./services/common:/workspace/services/common
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=chat-service
+      - SERVICE_PORT=8003
+      - SEARCH_SERVICE_URL=http://search-service:8002
+      - LLM_SERVICE_URL=http://ollama:11434
+      - CHAT_MODEL=llama3.2:3b
+      - PYTHONPATH=/workspace
+    command: bash -c "pip install -q flask flask-cors requests && python -u service.py"
+    depends_on:
+      - search-service
+      - ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # DOCUMENT PROCESSING SERVICES
+  # ============================================================================
+
+  # Docling Service (PDF Processing)
+  docling-service:
+    image: python:3.11-slim
+    container_name: rag-docling-service
+    networks:
+      - rag-network
+    ports:
+      - "8004:8004"
+    volumes:
+      - ./services/docling/app:/app
+      - ./services/common:/workspace/services/common
+      - uploads:/uploads
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=docling-service
+      - SERVICE_PORT=8004
+      - PYTHONPATH=/workspace
+    command: bash -c "apt-get update -qq && apt-get install -y -qq poppler-utils tesseract-ocr && pip install -q flask flask-cors requests docling && python -u service.py"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Ingest Service (Document Ingestion)
+  ingest-service:
+    image: python:3.11-slim
+    container_name: rag-ingest-service
+    networks:
+      - rag-network
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./services/ingest/app:/app
+      - ./services/common:/workspace/services/common
+      - ./src:/workspace/src
+      - uploads:/uploads
+      - bm25-indices:/indices
+      - knowledge-graph:/kg-data
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=ingest-service
+      - SERVICE_PORT=8001
+      - DOCLING_SERVICE_URL=http://docling-service:8004
+      - EMBEDDING_SERVICE_URL=http://embedding-service:8006
+      - VECTOR_DB_URL=http://vector-db:8005
+      - PYTHONPATH=/workspace
+      - UPLOAD_FOLDER=/uploads
+    command: bash -c "pip install -q flask flask-cors requests chromadb ollama pyyaml && python -u service.py"
+    depends_on:
+      - docling-service
+      - embedding-service
+      - vector-db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # ADVANCED RAG SERVICES
+  # ============================================================================
+
+  # Knowledge Graph Service
+  knowledge-graph:
+    image: python:3.11-slim
+    container_name: rag-knowledge-graph
+    networks:
+      - rag-network
+    ports:
+      - "8007:8007"
+    volumes:
+      - ./services/knowledge-graph/app:/app
+      - ./services/common:/workspace/services/common
+      - ./src:/workspace/src
+      - knowledge-graph:/kg-data
+      - bm25-indices:/indices
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=knowledge-graph
+      - SERVICE_PORT=8007
+      - VECTOR_DB_URL=http://vector-db:8005
+      - KNOWLEDGE_GRAPH_PATH=/kg-data/knowledge_graph.pkl
+      - PYTHONPATH=/workspace
+    command: bash -c "pip install -q flask flask-cors requests networkx chromadb scikit-learn numpy && python -u service.py"
+    depends_on:
+      - vector-db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8007/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Re-ranking Service
+  reranker:
+    image: python:3.11-slim
+    container_name: rag-reranker
+    networks:
+      - rag-network
+    ports:
+      - "8008:8008"
+    volumes:
+      - ./services/reranker/app:/app
+      - ./services/common:/workspace/services/common
+      - ./src:/workspace/src
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=reranker-service
+      - SERVICE_PORT=8008
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - CHAT_MODEL=llama3.2:3b
+      - PYTHONPATH=/workspace
+    command: bash -c "pip install -q flask flask-cors requests && python -u service.py"
+    depends_on:
+      - ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # WEB SEARCH SERVICES
+  # ============================================================================
+
+  # SearXNG Web Search Engine
+  searxng:
+    image: searxng/searxng:latest
+    container_name: rag-searxng
+    networks:
+      - rag-network
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config/searxng:/etc/searxng:ro
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8080/
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Web Search Service (SearXNG Wrapper)
+  web-search:
+    image: python:3.11-slim
+    container_name: rag-web-search
+    networks:
+      - rag-network
+    ports:
+      - "8009:8009"
+    volumes:
+      - ./services/web-search/app:/app
+      - ./services/common:/workspace/services/common
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=web-search
+      - SERVICE_PORT=8009
+      - SEARXNG_URL=http://searxng:8080
+      - PYTHONPATH=/workspace
+    command: bash -c "pip install -q flask flask-cors requests && python -u service.py"
+    depends_on:
+      - searxng
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8009/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # MONITORING & METRICS
+  # ============================================================================
+
+  # Metrics Storage Service
+  metrics-store:
+    image: python:3.11-slim
+    container_name: rag-metrics-store
+    networks:
+      - rag-network
+    ports:
+      - "8011:8011"
+    volumes:
+      - metrics-data:/data/metrics
+      - ./services/metrics-store/app:/app
+      - ./services/common:/workspace/services/common
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=metrics-store
+      - SERVICE_PORT=8011
+      - METRICS_DB_PATH=/data/metrics/metrics.db
+      - PYTHONPATH=/workspace
+    command: bash -c "apt-get update -qq && apt-get install -y -qq docker.io && pip install -q flask flask-cors psutil && python -u service.py"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8011/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # API & FRONTEND
+  # ============================================================================
+
+  # API Gateway
+  api-gateway:
+    image: python:3.11-slim
+    container_name: rag-api-gateway
+    networks:
+      - rag-network
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./services/api-gateway/app:/app
+      - ./services/common:/workspace/services/common
+      - ./config:/workspace/config
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=api-gateway
+      - SERVICE_PORT=8000
+      - SEARCH_SERVICE_URL=http://search-service:8002
+      - CHAT_SERVICE_URL=http://chat-service:8003
+      - VECTOR_DB_URL=http://vector-db:8005
+      - EMBEDDING_SERVICE_URL=http://embedding-service:8006
+      - PYTHONPATH=/workspace
+    command: bash -c "apt-get update -qq && apt-get install -y -qq docker.io && pip install -q flask flask-cors requests && python -u service.py"
+    depends_on:
+      - search-service
+      - chat-service
+      - vector-db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # React Frontend (Production Build with Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rag-frontend
+    networks:
+      - rag-network
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # TESTING (Optional - for development)
+  # ============================================================================
+
+  # Playwright Testing Service
+  playwright-tests:
+    image: mcr.microsoft.com/playwright/python:v1.55.0-jammy
+    container_name: rag-playwright-tests
+    networks:
+      - rag-network
+    volumes:
+      - ./tests:/tests
+      - ./test-results:/test-results
+      - ./screenshots:/screenshots
+    working_dir: /tests
+    environment:
+      - BASE_URL=http://frontend:80
+      - PYTHONUNBUFFERED=1
+    command: bash -c "pip install -q pytest pytest-playwright && python -m pytest test_ui_playwright.py -v -s --tb=short"
+    depends_on:
+      - frontend
+      - api-gateway
+    profiles:
+      - testing

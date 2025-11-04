@@ -1,9 +1,9 @@
 # Enterprise Agentic AI Platform - Implementation Plan
 ## Security Hardening & Production Readiness
 
-**Date:** November 3, 2025  
-**Version:** 3.0 - Final Implementation Plan  
-**Project:** Enterprise Agentic AI Platform with Advanced RAG Capabilities  
+**Date:** November 3, 2025
+**Version:** 3.0 - Final Implementation Plan
+**Project:** Enterprise Agentic AI Platform with Advanced RAG Capabilities
 **Status:** Ready for Implementation
 
 ---
@@ -29,8 +29,8 @@
 
 ### Security Posture
 
-**Current:** 85/100 (Strong foundation, security gaps)  
-**Target:** 95/100 (Industry-leading security)  
+**Current:** 85/100 (Strong foundation, security gaps)
+**Target:** 95/100 (Industry-leading security)
 **Improvement:** +10 points (12% increase)
 
 ### Timeline Options
@@ -559,21 +559,21 @@ ollama==0.1.0
 
 class DocumentSanitizer:
     """Sanitize documents before ingestion"""
-    
+
     def sanitize(self, content: str, file_type: str) -> Tuple[str, List[str]]:
         """
         Sanitize document content
-        
+
         Returns:
             (cleaned_content, violations)
         """
         violations = []
         cleaned = content
-        
+
         # 1. Strip HTML/Markdown comments
         cleaned = re.sub(r'<!--.*?-->', '', cleaned, flags=re.DOTALL)
         cleaned = re.sub(r'\[//\]:#.*', '', cleaned)
-        
+
         # 2. Detect hidden instructions
         instruction_patterns = [
             r'if asked about.*say',
@@ -581,17 +581,17 @@ class DocumentSanitizer:
             r'ignore.*and',
             r'system:.*',
         ]
-        
+
         for pattern in instruction_patterns:
             if re.search(pattern, cleaned, re.IGNORECASE):
                 violations.append(f"hidden_instruction_{pattern}")
-        
+
         # 3. Malware scan (if ClamAV available)
         if self.clamav_available:
             scan_result = self.scan_malware(content)
             if scan_result['infected']:
                 violations.append('malware_detected')
-        
+
         return cleaned, violations
 ```
 
@@ -623,17 +623,17 @@ def security_middleware(query: str, config: Dict) -> Dict:
             'block_on_violation': True
         }
     )
-    
+
     if result['status'] == 'blocked':
         raise SecurityException(result)
-    
+
     return result
 
 def enhancement_middleware(query: str, config: Dict) -> str:
     """Enhance query with templates and context"""
     if not config.get('use_enhancement', True):
         return query
-    
+
     result = enhancement.enhance(
         query=query,
         context={},
@@ -642,7 +642,7 @@ def enhancement_middleware(query: str, config: Dict) -> str:
             'output_format': config.get('output_format', 'markdown')
         }
     )
-    
+
     return result['enhanced_prompt']
 ```
 
@@ -660,30 +660,30 @@ topics:
       examples:
         - "How does RAG work?"
         - "Explain vector search in RAG"
-    
+
     - id: ai_ml_concepts
       keywords: [AI, ML, machine learning, neural network, transformer]
       examples:
         - "What is a transformer model?"
         - "Explain attention mechanism"
-    
+
     - id: splunk_products
       keywords: [Splunk, observability, APM, monitoring, ITSI]
       examples:
         - "How does Splunk APM work?"
         - "What is Splunk Observability Cloud?"
-  
+
   disallowed:
     - id: medical_advice
       keywords: [diagnosis, treatment, medication, symptoms, disease]
       severity: high
       message: "I cannot provide medical advice. Please consult a healthcare professional."
-    
+
     - id: legal_advice
       keywords: [legal, lawsuit, contract review, attorney, litigation]
       severity: high
       message: "I cannot provide legal advice. Please consult a licensed attorney."
-    
+
     - id: illegal_activities
       keywords: [hack, exploit, bypass, illegal, fraud, piracy]
       severity: critical
@@ -695,7 +695,7 @@ policies:
     allowed_topics: [rag_architecture, ai_ml_concepts]
     disallowed_topics: [medical_advice, legal_advice, illegal_activities]
     strict_mode: false
-  
+
   production_mode:
     name: "Production Enterprise Mode"
     allowed_topics: [rag_architecture, ai_ml_concepts, splunk_products]
@@ -1187,10 +1187,10 @@ python tests/performance_test.py
 
 ---
 
-**Document Version:** 3.0 - Final Implementation Plan  
-**Last Updated:** November 3, 2025  
-**Status:** Ready for Implementation  
-**Approval Required:** YES  
+**Document Version:** 3.0 - Final Implementation Plan
+**Last Updated:** November 3, 2025
+**Status:** Ready for Implementation
+**Approval Required:** YES
 **Next Review:** After Week 2 completion
 
 ---
