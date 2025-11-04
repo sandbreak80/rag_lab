@@ -11,9 +11,10 @@ interface PerformanceMetrics {
   reranking_ms?: number;
   web_search_ms?: number;
   
-  // LLM Components
+  // LLM Components (from Ollama)
   llm_generation_ms?: number;
-  llm_eval_duration_ms?: number;
+  llm_prompt_eval_duration_ms?: number;  // Time to process prompt
+  llm_eval_duration_ms?: number;         // Time to generate tokens
   llm_tokens_generated?: number;
   llm_tokens_prompt?: number;
   llm_tokens_per_second?: number;
@@ -41,11 +42,11 @@ const COLORS = {
   'Graph Enhancement': '#ec4899', // pink
   'Re-ranking': '#ef4444', // red
   'Web Search': '#06b6d4', // cyan
-  
+
   // LLM Components
   'LLM: Prompt Eval': '#a855f7', // purple-500
   'LLM: Token Generation': '#6366f1', // indigo
-  
+
   // Service Latencies
   'Search Service': '#14b8a6', // teal
   'Chat Service Overhead': '#94a3b8', // slate-400
@@ -97,11 +98,18 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
       enabled: (metrics.web_search_ms || 0) > 0,
       category: 'search',
     },
-    // LLM Components
+    // LLM Components (detailed breakdown from Ollama)
     {
-      name: 'LLM Generation',
-      time: metrics.llm_generation_ms || 0,
-      enabled: (metrics.llm_generation_ms || 0) > 0,
+      name: 'LLM: Prompt Eval',
+      time: metrics.llm_prompt_eval_duration_ms || 0,
+      enabled: (metrics.llm_prompt_eval_duration_ms || 0) > 0,
+      category: 'llm',
+      tokens: metrics.llm_tokens_prompt,
+    },
+    {
+      name: 'LLM: Token Generation',
+      time: metrics.llm_eval_duration_ms || 0,
+      enabled: (metrics.llm_eval_duration_ms || 0) > 0,
       category: 'llm',
       tokens: metrics.llm_tokens_generated,
       tokensPerSec: metrics.llm_tokens_per_second,
