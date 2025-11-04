@@ -105,7 +105,7 @@ export function ChatInterface() {
             vector_search_ms: data.metrics.vector_search_ms,
             bm25_search_ms: data.metrics.bm25_search_ms,
             hybrid_fusion_ms: data.metrics.fusion_ms,
-            graph_enhancement_ms: data.metrics.graph_enhancement_ms,
+            graph_expansion_ms: data.metrics.graph_enhancement_ms,
             reranking_ms: data.metrics.reranking_ms,
             web_search_ms: data.metrics.web_search_ms,
             // LLM Components
@@ -144,7 +144,7 @@ export function ChatInterface() {
             vector_search_ms: data.metrics.vector_search_ms,
             bm25_search_ms: data.metrics.bm25_search_ms,
             hybrid_fusion_ms: data.metrics.fusion_ms,
-            graph_enhancement_ms: data.metrics.graph_enhancement_ms,
+            graph_expansion_ms: data.metrics.graph_enhancement_ms,
             reranking_ms: data.metrics.reranking_ms,
             web_search_ms: data.metrics.web_search_ms,
             llm_generation_ms: data.metrics.llm_generation_ms,
