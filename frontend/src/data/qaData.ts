@@ -10,7 +10,7 @@ export interface QAItem {
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   relatedQuestions?: string[];
   codeExample?: string;
-  links?: { text: string; url: string }[];
+  externalLinks?: { title: string; url: string }[];
   estimatedReadTime: number; // minutes
 }
 
@@ -20,13 +20,19 @@ export const QA_CATEGORIES = [
   { id: 'search-retrieval', name: 'Search & Retrieval', icon: '🔍' },
   { id: 'knowledge-graphs', name: 'Knowledge Graphs', icon: '🕸️' },
   { id: 'performance', name: 'Performance & Optimization', icon: '⚡' },
-  { id: 'models-config', name: 'Models & Configuration', icon: '🎛️' },
+  { id: 'models', name: 'Models & Configuration', icon: '🎛️' },
   { id: 'security', name: 'Security & Enterprise', icon: '🔒' },
   { id: 'troubleshooting', name: 'Troubleshooting', icon: '🔧' },
   { id: 'advanced', name: 'Advanced Topics', icon: '🎓' },
 ];
 
-export const QA_DATA: QAItem[] = [
+// Import extended Q&A data
+import QA_DATA_EXTENDED from './qaDataExtended';
+import QA_DATA_FINAL from './qaDataFinal';
+import QA_DATA_COMPLETE from './qaDataComplete';
+
+// Base Q&A data (Getting Started, RAG Fundamentals, Search & Retrieval)
+const QA_DATA_BASE: QAItem[] = [
   // ============================================================================
   // GETTING STARTED (10 Q&A)
   // ============================================================================
@@ -1215,26 +1221,34 @@ similarity(A, C) = 0.71  # Somewhat similar
 }`,
   },
 
-  // Continue with remaining categories...
-  // I'll create a separate file for the remaining 70+ Q&A to keep this manageable
 ];
 
-// Helper function to get Q&A by category
-export function getQAByCategory(categoryId: string): QAItem[] {
-  return QA_DATA.filter(qa => qa.category === categoryId);
-}
+// Merge all Q&A data
+export const QA_DATA: QAItem[] = [
+  ...QA_DATA_BASE,
+  ...QA_DATA_EXTENDED,
+  ...QA_DATA_FINAL,
+  ...QA_DATA_COMPLETE,
+];
 
-// Helper function to search Q&A
-export function searchQA(searchTerm: string): QAItem[] {
-  const term = searchTerm.toLowerCase();
-  return QA_DATA.filter(qa => 
-    qa.question.toLowerCase().includes(term) ||
-    qa.answer.toLowerCase().includes(term) ||
-    qa.tags.some(tag => tag.toLowerCase().includes(term))
+// Helper functions
+export function searchQA(query: string): QAItem[] {
+  const lowerQuery = query.toLowerCase();
+  return QA_DATA.filter(qa =>
+    qa.question.toLowerCase().includes(lowerQuery) ||
+    qa.answer.toLowerCase().includes(lowerQuery) ||
+    qa.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
   );
 }
 
-// Helper function to get related questions
+export function getQAByCategory(category: string): QAItem[] {
+  return QA_DATA.filter(qa => qa.category === category);
+}
+
+export function getQAByDifficulty(difficulty: 'beginner' | 'intermediate' | 'advanced'): QAItem[] {
+  return QA_DATA.filter(qa => qa.difficulty === difficulty);
+}
+
 export function getRelatedQuestions(qaId: string): QAItem[] {
   const qa = QA_DATA.find(q => q.id === qaId);
   if (!qa || !qa.relatedQuestions) return [];
@@ -1257,4 +1271,6 @@ export function getPopularQuestions(limit = 10): QAItem[] {
     .slice(0, limit)
     .map(item => item.qa);
 }
+
+export default QA_DATA;
 
