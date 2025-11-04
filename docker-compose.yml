@@ -34,14 +34,14 @@ services:
     environment:
       - OLLAMA_HOST=0.0.0.0
     restart: unless-stopped
-    # GPU support - COMMENT OUT for Mac, UNCOMMENT for Ubuntu with NVIDIA GPU
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all
-    #           capabilities: [gpu]
+    # GPU support - ENABLED by default for Ubuntu/NVIDIA. COMMENT OUT for Mac/CPU-only
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 30s
