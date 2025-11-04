@@ -161,6 +161,8 @@ services:
       - ./services/chat/app:/app
       - ./services/common:/workspace/services/common
     working_dir: /app
+    env_file:
+      - config.env
     environment:
       - SERVICE_NAME=chat-service
       - SERVICE_PORT=8003
@@ -196,6 +198,8 @@ services:
       - ./services/common:/workspace/services/common
       - uploads:/uploads
     working_dir: /app
+    env_file:
+      - config.env
     environment:
       - SERVICE_NAME=docling-service
       - SERVICE_PORT=8004
@@ -224,6 +228,8 @@ services:
       - bm25-indices:/indices
       - knowledge-graph:/kg-data
     working_dir: /app
+    env_file:
+      - config.env
     environment:
       - SERVICE_NAME=ingest-service
       - SERVICE_PORT=8001
@@ -263,6 +269,8 @@ services:
       - knowledge-graph:/kg-data
       - bm25-indices:/indices
     working_dir: /app
+    env_file:
+      - config.env
     environment:
       - SERVICE_NAME=knowledge-graph
       - SERVICE_PORT=8007
@@ -292,6 +300,8 @@ services:
       - ./services/common:/workspace/services/common
       - ./src:/workspace/src
     working_dir: /app
+    env_file:
+      - config.env
     environment:
       - SERVICE_NAME=reranker-service
       - SERVICE_PORT=8008
@@ -343,6 +353,8 @@ services:
       - ./services/web-search/app:/app
       - ./services/common:/workspace/services/common
     working_dir: /app
+    env_file:
+      - config.env
     environment:
       - SERVICE_NAME=web-search
       - SERVICE_PORT=8009
@@ -376,6 +388,8 @@ services:
       - ./services/common:/workspace/services/common
       - /var/run/docker.sock:/var/run/docker.sock:ro
     working_dir: /app
+    env_file:
+      - config.env
     environment:
       - SERVICE_NAME=metrics-store
       - SERVICE_PORT=8011
@@ -407,6 +421,8 @@ services:
       - ./config:/workspace/config
       - /var/run/docker.sock:/var/run/docker.sock
     working_dir: /app
+    env_file:
+      - config.env
     environment:
       - SERVICE_NAME=api-gateway
       - SERVICE_PORT=8000
