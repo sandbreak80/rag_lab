@@ -410,6 +410,7 @@ services:
     environment:
       - SERVICE_NAME=api-gateway
       - SERVICE_PORT=8000
+      - OLLAMA_BASE_URL=http://ollama:11434
       - SEARCH_SERVICE_URL=http://search-service:8002
       - CHAT_SERVICE_URL=http://chat-service:8003
       - VECTOR_DB_URL=http://vector-db:8005
