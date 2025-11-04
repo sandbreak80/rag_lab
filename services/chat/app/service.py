@@ -222,24 +222,28 @@ def ask_question():
                 'file_name': metadata.get('file_name', 'Unknown'),
                 'chunk_text': content[:200] + '...' if len(content) > 200 else content,
                 'score': round(score, 3),
+                'source': result.get('source', 'rag'),  # Pass through source type!
                 'metadata': metadata,
                 'page_number': metadata.get('page_number', 1)
             })
 
-        # Create prompt
-        prompt = f"""Based on the following information from the knowledge base, please answer this question:
+        # Create prompt - Enhanced for depth and detail
+        prompt = f"""You are an expert technical assistant with deep knowledge across multiple domains. Answer the following question using the provided context as your primary source, but feel free to draw on your training to provide comprehensive, detailed explanations.
 
 Question: {question}
 
 {context_text}
 
 Instructions:
-- Answer the question using ONLY the information provided above
-- If the information isn't sufficient, say so
-- Cite which sources you used (by source number)
-- Be concise but thorough
+- Provide a thorough, detailed answer that demonstrates deep understanding
+- Use the context provided as your foundation, but expand with additional relevant details and explanations
+- Include technical details, examples, and connections between concepts where appropriate
+- If discussing multiple concepts, explain each one comprehensively
+- Cite which sources you used (by source number) when referencing specific information from the context
+- Structure your answer with clear sections if covering multiple topics
+- Be educational and informative - assume the reader wants to truly understand the subject
 
-Answer:"""
+Provide a comprehensive, detailed answer:"""
 
         # Generate answer via Ollama
         model = data.get('model', CHAT_MODEL)
@@ -263,7 +267,9 @@ Answer:"""
                         "stream": False,
                         "options": {
                             "temperature": temperature,
-                            "num_predict": 500
+                            "num_predict": 2000,  # Increased for detailed responses
+                            "top_k": 40,
+                            "top_p": 0.9
                         }
                     },
                     timeout=900  # 15 minutes for slow LLM generation (Maximum preset)
