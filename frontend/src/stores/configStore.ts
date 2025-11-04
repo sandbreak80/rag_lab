@@ -70,15 +70,12 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
       set((state) => {
         const currentValue = state[feature];
         if (typeof currentValue === 'boolean') {
-          const newState = { [feature]: !currentValue };
-          // Save to localStorage after state update
-          setTimeout(() => {
-            saveToLocalStorage('rag_config', get().getConfig());
-          }, 0);
-          return newState;
+          return { [feature]: !currentValue };
         }
         return state;
       });
+      // Save immediately after state update
+      saveToLocalStorage('rag_config', get().getConfig());
     },
 
     setWebSearchDocs: (webSearchDocs) => {
