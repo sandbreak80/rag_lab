@@ -1,4 +1,5 @@
 import { RAGConfig } from './config';
+import { PerformanceMetrics } from './performance';
 
 // Query Metrics
 export interface QueryMetric {
@@ -10,23 +11,8 @@ export interface QueryMetric {
     total_results: number;
     sources_count: number;
   };
-  performance: {
-    total_latency_ms: number;
-    query_expansion_ms?: number;
-    vector_search_ms?: number;
-    bm25_search_ms?: number;
-    hybrid_fusion_ms?: number;
-    graph_expansion_ms?: number;
-    reranking_ms?: number;
-    web_search_ms?: number;
-    llm_generation_ms?: number;
-    llm_prompt_eval_duration_ms?: number;
-    llm_eval_duration_ms?: number;
-    llm_tokens_generated?: number;
-    llm_tokens_prompt?: number;
-    llm_tokens_per_second?: number;
-    search_service_latency_ms?: number;
-    chat_service_overhead_ms?: number;
+  performance: PerformanceMetrics & {
+    total_latency_ms: number;  // Required for QueryMetric
   };
   tokens: {
     prompt_tokens: number;
