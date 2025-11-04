@@ -367,7 +367,11 @@ Provide a comprehensive, detailed answer:"""
                 **perf_metrics,    # Chat service + LLM metrics
                 'model': model,
                 'temperature': temperature,
-                'context_chunks': len(sources)
+                'context_chunks': len(sources),
+                # Add token counts in frontend-expected format
+                'prompt_tokens': perf_metrics.get('llm_tokens_prompt', 0),
+                'completion_tokens': perf_metrics.get('llm_tokens_generated', 0),
+                'total_tokens': perf_metrics.get('llm_tokens_prompt', 0) + perf_metrics.get('llm_tokens_generated', 0),
             }
         })
 
