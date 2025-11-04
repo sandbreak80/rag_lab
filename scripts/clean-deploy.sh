@@ -101,15 +101,39 @@ done
 echo ""
 
 echo "▶ Step 8: Pulling Ollama models..."
-echo "   This will download ~5GB (llama3.1:8b + mxbai-embed-large)"
+echo "   Required models: llama3.1:8b + mxbai-embed-large (~5GB)"
 echo ""
 
-# Pull models
+# Pull required models
 docker compose exec ollama ollama pull llama3.1:8b
 docker compose exec ollama ollama pull mxbai-embed-large
 
 echo ""
-echo -e "${GREEN}✓ Models downloaded${NC}"
+echo -e "${GREEN}✓ Required models downloaded${NC}"
+echo ""
+
+# Ask about optional models
+echo "📦 Optional Models for Testing"
+echo "=============================="
+echo "Additional models available:"
+echo "  - llama3.2:1b  (1GB) - Smallest, fastest"
+echo "  - llama3.2:3b  (2GB) - Original default"
+echo "  - qwen2.5:14b  (9GB) - Best quality for 16GB GPU"
+echo "  - mistral:7b   (4GB) - Alternative chat model"
+echo ""
+read -p "Pull optional models? (y/N): " -n 1 -r
+echo ""
+
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "Pulling optional models..."
+    docker compose exec ollama ollama pull llama3.2:1b
+    docker compose exec ollama ollama pull llama3.2:3b
+    docker compose exec ollama ollama pull qwen2.5:14b
+    docker compose exec ollama ollama pull mistral:7b
+    echo -e "${GREEN}✓ Optional models downloaded${NC}"
+else
+    echo "Skipping optional models (you can pull them later with ./pull-ollama-models.sh)"
+fi
 echo ""
 
 echo "▶ Step 9: Starting all services..."
