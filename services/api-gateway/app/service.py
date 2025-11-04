@@ -367,20 +367,23 @@ def ask():
         data = request.json
         print(f"🌐 API Gateway received request: query={data.get('query', '')[:50]}, model={data.get('model')}")
 
-        # Transform to chat service format
+        # Transform to chat service format (frontend sends snake_case)
         chat_request = {
             'question': data.get('query', data.get('question', '')),
-            'num_contexts': data.get('topK', data.get('num_contexts', 5)),
-            # Add other config as needed
-            'use_query_expansion': data.get('useQueryExpansion', False),
-            'use_bm25': data.get('useBM25', False),
-            'use_hybrid': data.get('useHybrid', False),
-            'use_graph': data.get('useGraph', False),
-            'use_reranking': data.get('useReranking', False),
-            'use_web_search': data.get('useWebSearch', False),
+            'top_k': data.get('top_k', 5),
+            'use_query_expansion': data.get('use_query_expansion', False),
+            'use_bm25': data.get('use_bm25', False),
+            'use_hybrid': data.get('use_hybrid', False),
+            'use_graph': data.get('use_graph', False),
+            'use_reranking': data.get('use_reranking', False),
+            'use_web_search': data.get('use_web_search', False),
+            'web_search_docs': data.get('web_search_docs', 5),
+            'web_search_pages_per_doc': data.get('web_search_pages_per_doc', 1),
+            'rerank_top_k': data.get('rerank_top_k', 10),
             'model': data.get('model', 'llama3.2:3b'),
             'temperature': data.get('temperature', 0.7),
         }
+        print(f"🔍 API Gateway forwarding config: top_k={chat_request['top_k']}, use_web_search={chat_request['use_web_search']}, web_search_docs={chat_request['web_search_docs']}")
         print(f"📤 Forwarding to chat service: {CHAT_SERVICE_URL}/ask")
 
         # Forward to chat service
