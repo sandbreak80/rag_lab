@@ -37,26 +37,36 @@ The Educational RAG Lab is a **production-ready reference architecture** for LLM
 
 ## 🚀 Quick Start (One Command!)
 
-### Ubuntu/Linux Server
+### Fresh Deployment (Recommended)
 
 ```bash
 # 1. Clone the repo
 git clone https://github.com/sandbreak80/rag_lab.git
 cd rag_lab/scripts
 
-# 2. Run the all-in-one build script
+# 2. Run the clean deployment script
+./clean-deploy.sh
+```
+
+**This will:**
+- ✅ Stop all containers & prune Docker
+- ✅ Build fresh images (no cache)
+- ✅ Start Ollama with GPU support
+- ✅ Pull required models (llama3.1:8b + nomic-embed-text)
+- ✅ **Prompt for 8 optional models** (for lab exercises)
+- ✅ Start all 14 microservices
+- ✅ Verify health checks
+
+**Total time:** 15-30 minutes (depending on model downloads)
+
+### Quick Start (Existing Install)
+
+```bash
+cd rag_lab/scripts
 ./build-and-start.sh
 ```
 
-**That's it!** No npm, Node.js, Python, or other host dependencies needed. Everything runs in Docker.
-
-The script will:
-- ✅ Build all Docker images (including React frontend)
-- ✅ Start Ollama service
-- ✅ Pull required LLM models (llama3.2:3b, nomic-embed-text)
-- ✅ Start all 14 microservices
-- ✅ Wait for health checks
-- ✅ Display service URLs
+**No npm, Node.js, Python, or other host dependencies needed.** Everything runs in Docker.
 
 **Time:** ~5-10 minutes (first run with model downloads)
 
@@ -96,7 +106,13 @@ docker compose ps
 
 ---
 
-📖 **Full Quick Start Guide**: [docs/lab/QUICK_START.md](docs/lab/QUICK_START.md)
+## 📚 Documentation
+
+- 🚀 **[Quick Start Guide](docs/QUICK_START.md)** - Get up and running in minutes
+- 🎯 **[Model Selection Guide](docs/MODEL_SELECTION_GUIDE.md)** - Choose the right model for your use case
+- 🖥️ **[GPU Setup](docs/deployment/GPU_SETUP.md)** - NVIDIA GPU configuration
+- 🐧 **[Ubuntu Deployment](docs/deployment/UBUNTU_DEPLOYMENT.md)** - Server deployment guide
+- 📖 **[Complete Project Summary](docs/PROJECT_COMPLETE.md)** - Everything we built
 
 ---
 
