@@ -2,14 +2,28 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 
 interface PerformanceMetrics {
+  // Search Service Components
   query_expansion_ms?: number;
   vector_search_ms?: number;
   bm25_search_ms?: number;
-  hybrid_fusion_ms?: number;
-  graph_expansion_ms?: number;
+  fusion_ms?: number;  // Updated from hybrid_fusion_ms
+  graph_enhancement_ms?: number;  // Updated from graph_expansion_ms
   reranking_ms?: number;
   web_search_ms?: number;
+  
+  // LLM Components
   llm_generation_ms?: number;
+  llm_prompt_eval_duration_ms?: number;
+  llm_eval_duration_ms?: number;
+  llm_tokens_generated?: number;
+  llm_tokens_prompt?: number;
+  llm_tokens_per_second?: number;
+  
+  // Service Latencies
+  search_service_latency_ms?: number;
+  chat_service_overhead_ms?: number;
+  
+  // Total
   total_latency_ms?: number;
 }
 
@@ -20,58 +34,92 @@ interface WaterfallChartProps {
 
 // Color palette for each RAG component
 const COLORS = {
+  // Search Service Components
   'Query Expansion': '#10b981', // green
   'Vector Search': '#3b82f6', // blue
   'BM25 Search': '#8b5cf6', // purple
   'Hybrid Fusion': '#f59e0b', // amber
-  'Graph Expansion': '#ec4899', // pink
+  'Graph Enhancement': '#ec4899', // pink
   'Re-ranking': '#ef4444', // red
   'Web Search': '#06b6d4', // cyan
-  'LLM Generation': '#6366f1', // indigo
+  
+  // LLM Components
+  'LLM: Prompt Eval': '#a855f7', // purple-500
+  'LLM: Token Generation': '#6366f1', // indigo
+  
+  // Service Latencies
+  'Search Service': '#14b8a6', // teal
+  'Chat Service Overhead': '#94a3b8', // slate-400
 };
 
 export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps) {
   // Transform metrics into chart data
   const data = [
+    // Search Service Components (in order of execution)
     {
       name: 'Query Expansion',
       time: metrics.query_expansion_ms || 0,
       enabled: (metrics.query_expansion_ms || 0) > 0,
+      category: 'search',
     },
     {
       name: 'Vector Search',
       time: metrics.vector_search_ms || 0,
       enabled: (metrics.vector_search_ms || 0) > 0,
+      category: 'search',
     },
     {
       name: 'BM25 Search',
       time: metrics.bm25_search_ms || 0,
       enabled: (metrics.bm25_search_ms || 0) > 0,
+      category: 'search',
     },
     {
       name: 'Hybrid Fusion',
-      time: metrics.hybrid_fusion_ms || 0,
-      enabled: (metrics.hybrid_fusion_ms || 0) > 0,
+      time: metrics.fusion_ms || 0,
+      enabled: (metrics.fusion_ms || 0) > 0,
+      category: 'search',
     },
     {
-      name: 'Graph Expansion',
-      time: metrics.graph_expansion_ms || 0,
-      enabled: (metrics.graph_expansion_ms || 0) > 0,
+      name: 'Graph Enhancement',
+      time: metrics.graph_enhancement_ms || 0,
+      enabled: (metrics.graph_enhancement_ms || 0) > 0,
+      category: 'search',
     },
     {
       name: 'Re-ranking',
       time: metrics.reranking_ms || 0,
       enabled: (metrics.reranking_ms || 0) > 0,
+      category: 'search',
     },
     {
       name: 'Web Search',
       time: metrics.web_search_ms || 0,
       enabled: (metrics.web_search_ms || 0) > 0,
+      category: 'search',
+    },
+    // LLM Components (detailed breakdown)
+    {
+      name: 'LLM: Prompt Eval',
+      time: metrics.llm_prompt_eval_duration_ms || 0,
+      enabled: (metrics.llm_prompt_eval_duration_ms || 0) > 0,
+      category: 'llm',
+      tokens: metrics.llm_tokens_prompt,
     },
     {
-      name: 'LLM Generation',
-      time: metrics.llm_generation_ms || 0,
-      enabled: (metrics.llm_generation_ms || 0) > 0,
+      name: 'LLM: Token Generation',
+      time: metrics.llm_eval_duration_ms || 0,
+      enabled: (metrics.llm_eval_duration_ms || 0) > 0,
+      category: 'llm',
+      tokens: metrics.llm_tokens_generated,
+      tokensPerSec: metrics.llm_tokens_per_second,
+    },
+    // Service Overhead
+    {
+      name: 'Chat Service Overhead',
+      time: metrics.chat_service_overhead_ms || 0,
+      enabled: (metrics.chat_service_overhead_ms || 0) > 0,
+      category: 'overhead',
     },
   ].filter(item => item.enabled); // Only show enabled features
 
@@ -89,7 +137,7 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
       const data = payload[0].payload;
       const percentage = totalTime > 0 ? ((data.time / totalTime) * 100).toFixed(1) : '0.0';
       return (
-        <div className="bg-card border rounded-lg shadow-lg p-3">
+        <div className="bg-card border rounded-lg shadow-lg p-3 min-w-[200px]">
           <p className="font-semibold">{data.name}</p>
           <p className="text-sm text-muted-foreground">
             Time: <span className="text-foreground font-medium">{formatTime(data.time)}</span>
@@ -97,6 +145,16 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
           <p className="text-sm text-muted-foreground">
             Percentage: <span className="text-foreground font-medium">{percentage}%</span>
           </p>
+          {data.tokens !== undefined && (
+            <p className="text-sm text-muted-foreground">
+              Tokens: <span className="text-foreground font-medium">{data.tokens}</span>
+            </p>
+          )}
+          {data.tokensPerSec !== undefined && (
+            <p className="text-sm text-muted-foreground">
+              Speed: <span className="text-foreground font-medium">{data.tokensPerSec} tok/s</span>
+            </p>
+          )}
         </div>
       );
     }
@@ -144,10 +202,10 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
 
       {!compact && (
         <div className="grid grid-cols-2 gap-2 mt-4 text-xs">
-          {data.map((item) => (
+          {data.map((item: any) => (
             <div key={item.name} className="flex items-center gap-2">
               <div
-                className="w-3 h-3 rounded"
+                className="w-3 h-3 rounded flex-shrink-0"
                 style={{ backgroundColor: COLORS[item.name as keyof typeof COLORS] || '#888' }}
               />
               <span className="text-muted-foreground">{item.name}:</span>
@@ -155,6 +213,11 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
               <span className="text-muted-foreground">
                 ({totalTime > 0 ? ((item.time / totalTime) * 100).toFixed(1) : '0'}%)
               </span>
+              {item.tokensPerSec && (
+                <span className="text-muted-foreground ml-1">
+                  @ {item.tokensPerSec} tok/s
+                </span>
+              )}
             </div>
           ))}
         </div>

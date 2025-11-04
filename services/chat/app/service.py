@@ -175,8 +175,13 @@ def ask_question():
         }
         print(f"⚙️  RAG config: {search_config}")
 
+        # Track detailed timing
+        perf_metrics = {}
+        overall_start = time.time()
+
         # Get context with config
         print(f"🔍 Calling search service at {SEARCH_SERVICE_URL}/search_with_config")
+        search_start = time.time()
         context_response = requests.post(
             f"{SEARCH_SERVICE_URL}/search_with_config",
             json={
@@ -186,7 +191,8 @@ def ask_question():
             timeout=900  # 15 minutes for complex RAG pipelines (Maximum preset)
         )
         context_response.raise_for_status()
-        print(f"✅ Search completed")
+        perf_metrics['search_service_latency_ms'] = round((time.time() - search_start) * 1000, 2)
+        print(f"✅ Search completed in {perf_metrics['search_service_latency_ms']}ms")
 
         search_data = context_response.json()
         results = search_data.get('results', [])
@@ -256,6 +262,7 @@ Provide a comprehensive, detailed answer:"""
         retry_delay = 3  # Increased to 3 seconds
         llm_response = None
 
+        llm_start = time.time()
         for attempt in range(max_retries):
             try:
                 print(f"🔄 Attempt {attempt + 1}/{max_retries}: Calling Ollama...")
@@ -320,10 +327,35 @@ Provide a comprehensive, detailed answer:"""
             else:
                 raise Exception("Failed to get response from Ollama after all retries")
 
-        print(f"✅ LLM generation completed")
+        perf_metrics['llm_generation_ms'] = round((time.time() - llm_start) * 1000, 2)
+        print(f"✅ LLM generation completed in {perf_metrics['llm_generation_ms']}ms")
 
-        answer = llm_response.json()['response']
+        llm_json = llm_response.json()
+        answer = llm_json['response']
         print(f"📝 Answer length: {len(answer)} characters")
+        
+        # Extract Ollama-specific metrics if available
+        if 'eval_count' in llm_json:
+            perf_metrics['llm_tokens_generated'] = llm_json.get('eval_count', 0)
+            perf_metrics['llm_tokens_prompt'] = llm_json.get('prompt_eval_count', 0)
+            perf_metrics['llm_eval_duration_ms'] = round(llm_json.get('eval_duration', 0) / 1_000_000, 2)  # Convert ns to ms
+            perf_metrics['llm_prompt_eval_duration_ms'] = round(llm_json.get('prompt_eval_duration', 0) / 1_000_000, 2)
+            
+            # Calculate tokens per second
+            if perf_metrics['llm_eval_duration_ms'] > 0:
+                perf_metrics['llm_tokens_per_second'] = round(
+                    (perf_metrics['llm_tokens_generated'] / perf_metrics['llm_eval_duration_ms']) * 1000, 2
+                )
+            
+            print(f"📊 Ollama metrics: {perf_metrics['llm_tokens_generated']} tokens @ {perf_metrics.get('llm_tokens_per_second', 0)} tok/s")
+        
+        # Calculate total latency
+        perf_metrics['total_latency_ms'] = round((time.time() - overall_start) * 1000, 2)
+        perf_metrics['chat_service_overhead_ms'] = round(
+            perf_metrics['total_latency_ms'] - 
+            perf_metrics['search_service_latency_ms'] - 
+            perf_metrics['llm_generation_ms'], 2
+        )
 
         metrics.increment('ask_success')
 
@@ -331,7 +363,8 @@ Provide a comprehensive, detailed answer:"""
             'answer': answer,
             'sources': sources,
             'metrics': {
-                **search_metrics,
+                **search_metrics,  # All the search service metrics
+                **perf_metrics,    # Chat service + LLM metrics
                 'model': model,
                 'temperature': temperature,
                 'context_chunks': len(sources)
