@@ -634,9 +634,10 @@ def search_with_config():
         use_hybrid = config.get('use_hybrid', True)
         use_graph = config.get('use_graph', False)
         use_reranking = config.get('use_reranking', False)
+        use_web_search = config.get('use_web_search', False)
         top_k = config.get('top_k', 10)
 
-        print(f"Config: QE={use_query_expansion}, BM25={use_bm25}, Hybrid={use_hybrid}, Graph={use_graph}, Rerank={use_reranking}, K={top_k}")
+        print(f"Config: QE={use_query_expansion}, BM25={use_bm25}, Hybrid={use_hybrid}, Graph={use_graph}, Rerank={use_reranking}, WebSearch={use_web_search}, K={top_k}")
 
         # Performance tracking
         perf_metrics = {}
@@ -743,7 +744,6 @@ def search_with_config():
             print(f"⊘ Knowledge Graph: SKIPPED")
 
         # Step 3.5: Web Search (if enabled)
-        use_web_search = config.get('use_web_search', False)
         if use_web_search:
             web_start = time.time()
             web_search_url = os.getenv('WEB_SEARCH_URL', 'http://web-search:8009')
