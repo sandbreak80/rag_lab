@@ -166,6 +166,10 @@ def ask_question():
             return jsonify({'error': 'question required'}), 400
 
         print(f"📥 Received question: {question[:100]}...")
+        print(f"🔍 DEBUG - Full request data keys: {list(data.keys())}")
+        print(f"🔍 DEBUG - top_k from request: {data.get('top_k', 'NOT PROVIDED')}")
+        print(f"🔍 DEBUG - use_web_search from request: {data.get('use_web_search', 'NOT PROVIDED')}")
+        print(f"🔍 DEBUG - web_search_docs from request: {data.get('web_search_docs', 'NOT PROVIDED')}")
         metrics.increment('ask_requests')
 
         # Get RAG config from request (use ALL parameters from frontend)
