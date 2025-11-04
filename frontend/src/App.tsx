@@ -7,7 +7,7 @@ import { DocumentsPage } from './components/documents/DocumentsPage';
 import { SettingsPage } from './components/settings/SettingsPage';
 import { MetricsPage } from './components/metrics/MetricsPage';
 import { LabGuidePage } from './components/lab/LabGuidePage';
-import { QAPage } from './components/qa/QAPage';
+import { LearningHubPage } from './components/learning/LearningHubPage';
 import { FeedbackPage } from './components/feedback/FeedbackPage';
 import { PromptLoggingPage } from './components/logging/PromptLoggingPage';
 
@@ -34,7 +34,7 @@ function App() {
             <Route path="metrics" element={<MetricsPage />} />
             <Route path="logging" element={<PromptLoggingPage />} />
             <Route path="lab" element={<LabGuidePage />} />
-            <Route path="qa" element={<QAPage />} />
+            <Route path="learning" element={<LearningHubPage />} />
             <Route path="feedback" element={<FeedbackPage />} />
           </Route>
         </Routes>

@@ -19,7 +19,7 @@ const tabs = [
   { id: 'metrics', label: 'Metrics', icon: BarChart3, path: '/metrics' },
   { id: 'logging', label: 'Prompt Logs', icon: FileText, path: '/logging' },
   { id: 'lab', label: 'Lab Guide', icon: BookOpen, path: '/lab' },
-  { id: 'qa', label: 'Q&A', icon: HelpCircle, path: '/qa' },
+  { id: 'learning', label: 'Learning Hub', icon: HelpCircle, path: '/learning' },
   { id: 'feedback', label: 'Feedback', icon: MessageCircle, path: '/feedback' },
 ];
 
