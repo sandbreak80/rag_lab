@@ -80,20 +80,7 @@ if [ "$1" == "--clean" ]; then
     echo ""
 fi
 
-# Build frontend
-print_step "Building React frontend..."
-cd frontend
-if [ ! -d "node_modules" ]; then
-    print_step "Installing frontend dependencies..."
-    npm install
-fi
-print_step "Building production frontend..."
-npm run build
-cd ..
-print_success "Frontend built"
-echo ""
-
-# Build Docker images
+# Build Docker images (includes frontend build inside container)
 print_step "Building Docker images..."
 docker compose build --parallel
 print_success "Docker images built"
