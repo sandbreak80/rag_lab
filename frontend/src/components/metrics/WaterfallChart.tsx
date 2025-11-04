@@ -176,20 +176,20 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
       </ResponsiveContainer>
 
       {!compact && (
-        <div className="grid grid-cols-2 gap-2 mt-4 text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 mt-4 text-[11px]">
           {data.map((item: any) => (
-            <div key={item.name} className="flex items-center gap-2">
+            <div key={item.name} className="flex items-center gap-1.5 min-w-0">
               <div
-                className="w-3 h-3 rounded flex-shrink-0"
+                className="w-2.5 h-2.5 rounded flex-shrink-0"
                 style={{ backgroundColor: COLORS[item.name as keyof typeof COLORS] || '#888' }}
               />
-              <span className="text-muted-foreground">{item.name}:</span>
-              <span className="font-medium">{formatTime(item.time)}</span>
-              <span className="text-muted-foreground">
+              <span className="text-muted-foreground truncate">{item.name}:</span>
+              <span className="font-medium whitespace-nowrap">{formatTime(item.time)}</span>
+              <span className="text-muted-foreground whitespace-nowrap">
                 ({totalTime > 0 ? ((item.time / totalTime) * 100).toFixed(1) : '0'}%)
               </span>
               {item.tokensPerSec && (
-                <span className="text-muted-foreground ml-1">
+                <span className="text-muted-foreground whitespace-nowrap">
                   @ {item.tokensPerSec} tok/s
                 </span>
               )}

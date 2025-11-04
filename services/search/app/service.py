@@ -761,11 +761,14 @@ def search_with_config():
                     web_results = web_data.get('results', [])
 
                     # Convert web results to standard format and add to fused results
-                    for web_result in web_results:
+                    # Give web results competitive scores so they appear in top results
+                    for idx, web_result in enumerate(web_results):
+                        # Score decreases from 0.95 to 0.75 for top 5 web results
+                        web_score = 0.95 - (idx * 0.05)
                         fused.append({
                             'id': web_result.get('url', ''),
                             'content': web_result.get('content', web_result.get('snippet', '')),
-                            'score': 0.3,  # Lower score for web results
+                            'score': web_score,  # Competitive score for web results
                             'source': 'web_search',
                             'metadata': {
                                 'title': web_result.get('title', 'Web Result'),
