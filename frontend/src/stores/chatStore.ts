@@ -18,7 +18,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
 
   return {
     messages: savedMessages,
-    isLoading: false,
+    isLoading: false,  // Always start with isLoading=false on page load
 
     addMessage: (message) => {
       const messages = [...get().messages, message];
@@ -28,6 +28,8 @@ export const useChatStore = create<ChatStore>((set, get) => {
 
     setLoading: (isLoading) => {
       set({ isLoading });
+      // Don't persist isLoading state - always reset to false on page refresh
+      // This prevents stuck "Thinking..." state after refresh
     },
 
     clearMessages: () => {
