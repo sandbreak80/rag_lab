@@ -101,25 +101,35 @@ done
 echo ""
 
 echo "▶ Step 8: Pulling Ollama models..."
-echo "   Required models: llama3.1:8b + mxbai-embed-large (~5GB)"
+echo "   Required models: llama3.1:8b + nomic-embed-text (~5GB)"
 echo ""
 
 # Pull required models
 docker compose exec ollama ollama pull llama3.1:8b
-docker compose exec ollama ollama pull mxbai-embed-large
+docker compose exec ollama ollama pull nomic-embed-text
 
 echo ""
 echo -e "${GREEN}✓ Required models downloaded${NC}"
 echo ""
 
 # Ask about optional models
-echo "📦 Optional Models for Testing"
-echo "=============================="
-echo "Additional models available:"
-echo "  - llama3.2:1b  (1GB) - Smallest, fastest"
-echo "  - llama3.2:3b  (2GB) - Original default"
-echo "  - qwen2.5:14b  (9GB) - Best quality for 16GB GPU"
-echo "  - mistral:7b   (4GB) - Alternative chat model"
+echo "📦 Optional Models for Lab Exercises"
+echo "======================================"
+echo "Small models (fast, large context):"
+echo "  - llama3.2:1b  (1GB) - Smallest, 128K context, 100+ tok/s"
+echo "  - llama3.2:3b  (2GB) - Small, 128K context, 60 tok/s"
+echo "  - gemma2:2b    (2GB) - Google efficient, high quality"
+echo ""
+echo "Medium models (production sweet spot):"
+echo "  - gemma2:9b    (5.5GB) - Google high-performance"
+echo "  - mistral:7b   (4GB) - Fast alternative, 32K context"
+echo ""
+echo "Large models (best quality):"
+echo "  - qwen2.5:14b  (9GB) - Best for 16GB GPU"
+echo ""
+echo "Embedding alternatives:"
+echo "  - mxbai-embed-large (335MB) - Best retrieval (may have errors)"
+echo "  - all-minilm        (23MB) - Tiny, fast, demos"
 echo ""
 read -p "Pull optional models? (y/N): " -n 1 -r
 echo ""
@@ -128,8 +138,12 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Pulling optional models..."
     docker compose exec ollama ollama pull llama3.2:1b
     docker compose exec ollama ollama pull llama3.2:3b
-    docker compose exec ollama ollama pull qwen2.5:14b
+    docker compose exec ollama ollama pull gemma2:2b
+    docker compose exec ollama ollama pull gemma2:9b
     docker compose exec ollama ollama pull mistral:7b
+    docker compose exec ollama ollama pull qwen2.5:14b
+    docker compose exec ollama ollama pull mxbai-embed-large
+    docker compose exec ollama ollama pull all-minilm
     echo -e "${GREEN}✓ Optional models downloaded${NC}"
 else
     echo "Skipping optional models (you can pull them later with ./pull-ollama-models.sh)"
@@ -157,9 +171,9 @@ SERVICES=(
 for service in "${SERVICES[@]}"; do
     name="${service%%:*}"
     port="${service##*:}"
-    
+
     echo -n "   Checking $name... "
-    
+
     # Wait up to 60 seconds for service
     for i in {1..30}; do
         if docker compose ps "$name" 2>/dev/null | grep -q "Up"; then

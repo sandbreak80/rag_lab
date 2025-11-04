@@ -23,14 +23,25 @@ echo ""
 
 # Define required models (optimized for 16GB GPU)
 CHAT_MODEL="llama3.1:8b"
-EMBEDDING_MODEL="mxbai-embed-large"
+EMBEDDING_MODEL="nomic-embed-text"  # Changed: mxbai-embed-large has 500 errors
 
-# Optional models (for testing different sizes)
+# Optional models (for lab exercises and comparison)
 OPTIONAL_MODELS=(
-    "llama3.2:1b"      # Smallest, fastest (1GB) - for testing
-    "llama3.2:3b"      # Small, fast (2GB) - original default
-    "qwen2.5:14b"      # Large, high quality (9GB) - best for 16GB GPU
-    "mistral:7b"       # Alternative chat model (4GB)
+    # Small models (fast, large context) - Lab: Speed vs Quality
+    "llama3.2:1b"      # Smallest (1GB) - 128K context, 100+ tok/s
+    "llama3.2:3b"      # Small (2GB) - 128K context, 60 tok/s
+    "gemma2:2b"        # Google efficient (2GB) - High quality for size
+    
+    # Medium models (production sweet spot)
+    "gemma2:9b"        # Google high-performance (5.5GB) - Excellent quality
+    "mistral:7b"       # Fast alternative (4GB) - 32K context
+    
+    # Large models (best quality) - Lab: Quality vs Memory
+    "qwen2.5:14b"      # Best for 16GB GPU (9GB) - Top quality
+    
+    # Embedding alternatives (if mxbai fails)
+    "mxbai-embed-large"  # Keep as option (335MB) - Best retrieval
+    "all-minilm"       # Tiny, fast (23MB) - Good for demos
 )
 
 # Function to pull a model
