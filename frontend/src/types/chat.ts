@@ -12,10 +12,14 @@ export interface Source {
   file_name: string;
   chunk_text: string;
   score: number;
+  source?: 'rag' | 'web_search';  // Source type
   metadata?: {
     tags?: string[];
     page?: number;
     section?: string;
+    url?: string;  // For web sources
+    engine?: string;  // Search engine (google, bing, etc.)
+    title?: string;  // Web page title
   };
 }
 
