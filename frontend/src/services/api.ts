@@ -43,6 +43,12 @@ class ApiClient {
       metadata_filters: config.metadataFilters,
     };
 
+    console.log('🔍 API sending request with config:', {
+      top_k: backendConfig.top_k,
+      use_web_search: backendConfig.use_web_search,
+      web_search_docs: backendConfig.web_search_docs,
+    });
+
     const response = await this.client.post('/ask', backendConfig, { signal });
     return response.data;
   }
