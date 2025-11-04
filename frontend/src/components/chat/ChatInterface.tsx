@@ -110,7 +110,6 @@ export function ChatInterface() {
             web_search_ms: data.metrics.web_search_ms,
             // LLM Components
             llm_generation_ms: data.metrics.llm_generation_ms,
-            llm_prompt_eval_duration_ms: data.metrics.llm_prompt_eval_duration_ms,
             llm_eval_duration_ms: data.metrics.llm_eval_duration_ms,
             llm_tokens_generated: data.metrics.llm_tokens_generated,
             llm_tokens_prompt: data.metrics.llm_tokens_prompt,
@@ -148,7 +147,6 @@ export function ChatInterface() {
             reranking_ms: data.metrics.reranking_ms,
             web_search_ms: data.metrics.web_search_ms,
             llm_generation_ms: data.metrics.llm_generation_ms,
-            llm_prompt_eval_duration_ms: data.metrics.llm_prompt_eval_duration_ms,
             llm_eval_duration_ms: data.metrics.llm_eval_duration_ms,
             llm_tokens_generated: data.metrics.llm_tokens_generated,
             llm_tokens_prompt: data.metrics.llm_tokens_prompt,

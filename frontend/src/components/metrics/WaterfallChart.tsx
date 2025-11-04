@@ -6,14 +6,13 @@ interface PerformanceMetrics {
   query_expansion_ms?: number;
   vector_search_ms?: number;
   bm25_search_ms?: number;
-  fusion_ms?: number;  // Updated from hybrid_fusion_ms
-  graph_enhancement_ms?: number;  // Updated from graph_expansion_ms
+  hybrid_fusion_ms?: number;
+  graph_expansion_ms?: number;
   reranking_ms?: number;
   web_search_ms?: number;
   
   // LLM Components
   llm_generation_ms?: number;
-  llm_prompt_eval_duration_ms?: number;
   llm_eval_duration_ms?: number;
   llm_tokens_generated?: number;
   llm_tokens_prompt?: number;
@@ -76,14 +75,14 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
     },
     {
       name: 'Hybrid Fusion',
-      time: metrics.fusion_ms || 0,
-      enabled: (metrics.fusion_ms || 0) > 0,
+      time: metrics.hybrid_fusion_ms || 0,
+      enabled: (metrics.hybrid_fusion_ms || 0) > 0,
       category: 'search',
     },
     {
       name: 'Graph Enhancement',
-      time: metrics.graph_enhancement_ms || 0,
-      enabled: (metrics.graph_enhancement_ms || 0) > 0,
+      time: metrics.graph_expansion_ms || 0,
+      enabled: (metrics.graph_expansion_ms || 0) > 0,
       category: 'search',
     },
     {
@@ -98,18 +97,11 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
       enabled: (metrics.web_search_ms || 0) > 0,
       category: 'search',
     },
-    // LLM Components (detailed breakdown)
+    // LLM Components
     {
-      name: 'LLM: Prompt Eval',
-      time: metrics.llm_prompt_eval_duration_ms || 0,
-      enabled: (metrics.llm_prompt_eval_duration_ms || 0) > 0,
-      category: 'llm',
-      tokens: metrics.llm_tokens_prompt,
-    },
-    {
-      name: 'LLM: Token Generation',
-      time: metrics.llm_eval_duration_ms || 0,
-      enabled: (metrics.llm_eval_duration_ms || 0) > 0,
+      name: 'LLM Generation',
+      time: metrics.llm_generation_ms || 0,
+      enabled: (metrics.llm_generation_ms || 0) > 0,
       category: 'llm',
       tokens: metrics.llm_tokens_generated,
       tokensPerSec: metrics.llm_tokens_per_second,
