@@ -751,7 +751,7 @@ def search_with_config():
                     f"{web_search_url}/search",
                     json={
                         'query': original_query,
-                        'max_results': web_docs_limit,
+                        'limit': web_docs_limit,  # Fixed: use 'limit' not 'max_results'
                         'pages_per_result': web_pages_per_doc
                     },
                     timeout=180

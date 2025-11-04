@@ -23,10 +23,27 @@ class ApiClient {
     sources: Source[];
     metrics: any;
   }> {
-    const response = await this.client.post('/ask', {
+    // Convert camelCase to snake_case for backend
+    const backendConfig = {
       query,
-      ...config,
-    }, { signal });
+      model: config.model,
+      temperature: config.temperature,
+      top_k: config.topK,
+      context_window: config.contextWindow,
+      use_query_expansion: config.useQueryExpansion,
+      use_bm25: config.useBM25,
+      use_hybrid: config.useHybrid,
+      use_graph: config.useGraph,
+      use_reranking: config.useReranking,
+      use_web_search: config.useWebSearch,
+      use_agentic_chunking: config.useAgenticChunking,
+      web_search_docs: config.webSearchDocs,
+      web_search_pages_per_doc: config.webSearchPages,
+      rerank_top_k: config.rerankTopK,
+      metadata_filters: config.metadataFilters,
+    };
+    
+    const response = await this.client.post('/ask', backendConfig, { signal });
     return response.data;
   }
 
