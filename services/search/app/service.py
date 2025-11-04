@@ -839,8 +839,9 @@ def search_with_config():
             perf_metrics['reranking_success'] = False
             print(f"⊘ Reranking: SKIPPED (enabled={use_reranking}, results={len(fused)})")
 
-        # Final results
-        final_results = fused[:top_k]
+        # Final results - sort by score DESC to mix RAG and web results
+        fused_sorted = sorted(fused, key=lambda x: x.get('score', 0), reverse=True)
+        final_results = fused_sorted[:top_k]
 
         # Total time
         perf_metrics['total_latency_ms'] = round((time.time() - start_time) * 1000, 2)
