@@ -1,8 +1,8 @@
 # Security Coverage Gap Analysis
 ## OWASP LLM Top 10 & Advanced Attack Vectors
 
-**Date:** November 3, 2025  
-**Version:** 1.0  
+**Date:** November 3, 2025
+**Version:** 1.0
 **Status:** Comprehensive Security Audit
 
 ---
@@ -100,7 +100,7 @@ Malicious data injected into training sets to manipulate model behavior or creat
 def validate_document_content(file_path: str) -> Dict:
     """
     Scan uploaded documents for malicious content
-    
+
     Checks:
     - Malware scanning (ClamAV)
     - Adversarial text detection
@@ -341,7 +341,7 @@ class UnicodeSanitizer:
     """
     Detect and neutralize Unicode-based attacks
     """
-    
+
     # Zero-width characters
     ZERO_WIDTH_CHARS = [
         '\u200B',  # Zero Width Space
@@ -350,7 +350,7 @@ class UnicodeSanitizer:
         '\u2060',  # Word Joiner
         '\uFEFF',  # Zero Width No-Break Space
     ]
-    
+
     # Directional override characters
     DIRECTIONAL_CHARS = [
         '\u202A',  # Left-to-Right Embedding
@@ -359,7 +359,7 @@ class UnicodeSanitizer:
         '\u202D',  # Left-to-Right Override
         '\u202E',  # Right-to-Left Override
     ]
-    
+
     # Common homoglyphs (Cyrillic → Latin)
     HOMOGLYPHS = {
         'А': 'A', 'В': 'B', 'Е': 'E', 'К': 'K', 'М': 'M',
@@ -373,56 +373,56 @@ class UnicodeSanitizer:
         'Ι': 'I', 'Κ': 'K', 'Μ': 'M', 'Ν': 'N', 'Ο': 'O',
         'Ρ': 'P', 'Τ': 'T', 'Υ': 'Y', 'Χ': 'X',
     }
-    
+
     def sanitize(self, text: str) -> Tuple[str, List[str]]:
         """
         Sanitize text and return cleaned version + violations found
-        
+
         Returns:
             (cleaned_text, violations)
         """
         violations = []
         cleaned = text
-        
+
         # 1. Detect and remove zero-width characters
         for char in self.ZERO_WIDTH_CHARS:
             if char in cleaned:
                 violations.append(f"zero_width_character_{ord(char):04x}")
                 cleaned = cleaned.replace(char, '')
-        
+
         # 2. Detect and remove directional overrides
         for char in self.DIRECTIONAL_CHARS:
             if char in cleaned:
                 violations.append(f"directional_override_{ord(char):04x}")
                 cleaned = cleaned.replace(char, '')
-        
+
         # 3. Replace homoglyphs
         for fake, real in self.HOMOGLYPHS.items():
             if fake in cleaned:
                 violations.append(f"homoglyph_{fake}_to_{real}")
                 cleaned = cleaned.replace(fake, real)
-        
+
         # 4. Normalize Unicode (NFC form)
         cleaned = unicodedata.normalize('NFC', cleaned)
-        
+
         # 5. Detect suspicious emoji patterns
         emoji_pattern = r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF]'
         emojis = re.findall(emoji_pattern, text)
         if len(emojis) > 10:  # Suspicious if > 10 emojis
             violations.append(f"suspicious_emoji_count_{len(emojis)}")
-        
+
         # 6. Check for mixed scripts (potential obfuscation)
         scripts = set()
         for char in text:
             if char.isalpha():
                 script = unicodedata.name(char, '').split()[0]
                 scripts.add(script)
-        
+
         if len(scripts) > 2:  # Mixed scripts (Latin + Cyrillic + Greek = suspicious)
             violations.append(f"mixed_scripts_{len(scripts)}")
-        
+
         return cleaned, violations
-    
+
     def is_suspicious(self, text: str) -> bool:
         """Quick check if text contains suspicious Unicode"""
         _, violations = self.sanitize(text)
@@ -439,11 +439,11 @@ from unicode_sanitizer import UnicodeSanitizer
 class InputValidator:
     def __init__(self):
         self.unicode_sanitizer = UnicodeSanitizer()
-    
+
     def validate(self, query: str) -> Dict:
         # Step 1: Unicode sanitization (NEW)
         cleaned_query, unicode_violations = self.unicode_sanitizer.sanitize(query)
-        
+
         if unicode_violations:
             return {
                 'status': 'warning',  # or 'blocked' if strict
@@ -456,7 +456,7 @@ class InputValidator:
                     }
                 ]
             }
-        
+
         # Step 2: Continue with other validations...
         # (PII, injection, topics, etc.)
 ```
@@ -505,7 +505,7 @@ class DocumentSanitizer:
     """
     Sanitize documents before embedding/retrieval
     """
-    
+
     def sanitize_document(self, content: str) -> str:
         """
         Remove hidden instructions from documents
@@ -513,10 +513,10 @@ class DocumentSanitizer:
         # 1. Strip HTML/Markdown comments
         content = re.sub(r'<!--.*?-->', '', content, flags=re.DOTALL)
         content = re.sub(r'\[//\]:#.*', '', content)  # Markdown comments
-        
+
         # 2. Remove hidden text (white text on white background, etc.)
         # (This would require parsing HTML/CSS if applicable)
-        
+
         # 3. Detect instruction-like patterns
         instruction_patterns = [
             r'if asked about.*say',
@@ -524,12 +524,12 @@ class DocumentSanitizer:
             r'ignore.*and',
             r'system:.*',
         ]
-        
+
         for pattern in instruction_patterns:
             if re.search(pattern, content, re.IGNORECASE):
                 # Flag document as suspicious
                 raise ValueError(f"Suspicious instruction pattern detected: {pattern}")
-        
+
         return content
 ```
 
@@ -564,16 +564,16 @@ def detect_repetitive_pattern(text: str) -> bool:
     words = text.split()
     if len(words) < 10:
         return False
-    
+
     # Check for repeated phrases
     for phrase_len in [2, 3, 4, 5]:
         phrases = [' '.join(words[i:i+phrase_len]) for i in range(len(words)-phrase_len)]
         phrase_counts = Counter(phrases)
         max_count = max(phrase_counts.values())
-        
+
         if max_count > 10:  # Same phrase repeated > 10 times
             return True
-    
+
     return False
 ```
 
@@ -783,8 +783,8 @@ def detect_repetitive_pattern(text: str) -> bool:
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** November 3, 2025  
-**Status:** Ready for Review  
+**Document Version:** 1.0
+**Last Updated:** November 3, 2025
+**Status:** Ready for Review
 **Next Action:** Approve additions and update implementation plan
 
