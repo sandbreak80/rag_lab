@@ -50,18 +50,19 @@ fi
 print_success "Docker is running"
 echo ""
 
-# Check if docker-compose is available
-print_step "Checking docker-compose..."
-if ! command -v docker-compose &> /dev/null; then
-    print_error "docker-compose not found. Please install docker-compose."
+# Check if docker compose is available
+print_step "Checking Docker Compose..."
+if ! docker compose version &> /dev/null; then
+    print_error "Docker Compose plugin not found. Please install Docker Compose."
+    print_error "See: https://docs.docker.com/compose/install/"
     exit 1
 fi
-print_success "docker-compose is available"
+print_success "Docker Compose is available"
 echo ""
 
 # Stop any running containers
 print_step "Stopping any running containers..."
-docker-compose down 2>/dev/null || true
+docker compose down 2>/dev/null || true
 print_success "Containers stopped"
 echo ""
 
@@ -71,7 +72,7 @@ if [ "$1" == "--clean" ]; then
     read -p "This will delete all data (documents, embeddings, metrics). Continue? (y/N): " -n 1 -r
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        docker-compose down -v
+        docker compose down -v
         print_success "Volumes removed"
     else
         print_warning "Skipping volume removal"
@@ -94,13 +95,13 @@ echo ""
 
 # Build Docker images
 print_step "Building Docker images..."
-docker-compose build --parallel
+docker compose build --parallel
 print_success "Docker images built"
 echo ""
 
 # Start core services (Ollama first)
 print_step "Starting Ollama service..."
-docker-compose up -d ollama
+docker compose up -d ollama
 print_success "Ollama started"
 echo ""
 
@@ -129,7 +130,7 @@ echo ""
 
 # Start all other services
 print_step "Starting all services..."
-docker-compose up -d
+docker compose up -d
 print_success "All services started"
 echo ""
 
@@ -163,8 +164,8 @@ echo ""
 
 if [ "$ALL_HEALTHY" = false ]; then
     print_warning "Some services are not ready yet. They may still be starting up."
-    print_warning "Check status with: docker-compose ps"
-    print_warning "Check logs with: docker-compose logs -f [service-name]"
+    print_warning "Check status with: docker compose ps"
+    print_warning "Check logs with: docker compose logs -f [service-name]"
     echo ""
 fi
 
@@ -191,10 +192,10 @@ echo "   Web Search:         http://localhost:8009"
 echo "   Metrics Store:      http://localhost:8011"
 echo ""
 echo -e "${BLUE}📝 Useful Commands:${NC}"
-echo "   View logs:          docker-compose logs -f"
-echo "   Stop services:      docker-compose down"
-echo "   Restart service:    docker-compose restart [service-name]"
-echo "   Check status:       docker-compose ps"
+echo "   View logs:          docker compose logs -f"
+echo "   Stop services:      docker compose down"
+echo "   Restart service:    docker compose restart [service-name]"
+echo "   Check status:       docker compose ps"
 echo ""
 echo -e "${BLUE}🔧 Configuration:${NC}"
 echo "   Edit config.env to change settings"

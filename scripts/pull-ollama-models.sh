@@ -36,9 +36,9 @@ OPTIONAL_MODELS=(
 pull_model() {
     local model=$1
     local description=$2
-    
+
     echo "📥 Pulling $model ($description)..."
-    
+
     if docker exec rag-ollama ollama pull "$model"; then
         echo "✅ Successfully pulled $model"
     else

@@ -3,6 +3,16 @@ done - Need a way to reset ingested documents (only use the system docs we previ
 
 HIGH PRIORITY - oohhh, we need like a water fall or stack bar to show response time across features!!!!!!
 
+bug - need a highlight box to show preset selected
+bug - sent prompt - refresh page, ui no longer shows waiting for response and response never gets in UI
+ollama metrics? seperate response from embeddings and main model call? ollama still work?
+we really need to see timings for each API and step in the process.
+
+work tools - upload doc in prompt ands ask question to doc. can we do this?
+What about model routing? Should we try to decide the mest model based on settings, contexct sixe, and prompt?
+
+
+
 
 We also need a lap section that highlights the difference between response quality using a small vs large model and a small vs large con text window. The laptops running this only have 16GB so 8-12 GB for the model. We want to highlight using a smaller model and stuff a larger context window for a great response (is that the case?).
 Have students find what they consider optimal - pole classs if thats the learning environment

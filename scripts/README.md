@@ -60,30 +60,30 @@ Optional models (for testing):
 ### Check Status
 
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 ### View Logs
 
 ```bash
 # All services
-docker-compose logs -f
+docker compose logs -f
 
 # Specific service
-docker-compose logs -f ollama
-docker-compose logs -f api-gateway
-docker-compose logs -f frontend
+docker compose logs -f ollama
+docker compose logs -f api-gateway
+docker compose logs -f frontend
 ```
 
 ### Restart a Service
 
 ```bash
-docker-compose restart [service-name]
+docker compose restart [service-name]
 
 # Examples:
-docker-compose restart ollama
-docker-compose restart frontend
-docker-compose restart api-gateway
+docker compose restart ollama
+docker compose restart frontend
+docker compose restart api-gateway
 ```
 
 ## Service URLs
@@ -130,10 +130,10 @@ ENABLE_WEB_SEARCH=true
 
 ```bash
 # Check Ollama logs
-docker-compose logs -f ollama
+docker compose logs -f ollama
 
 # Restart Ollama
-docker-compose restart ollama
+docker compose restart ollama
 ```
 
 ### Frontend not building
@@ -146,20 +146,20 @@ npm run build
 cd ..
 
 # Restart frontend container
-docker-compose restart frontend
+docker compose restart frontend
 ```
 
 ### Services not healthy
 
 ```bash
 # Check all service status
-docker-compose ps
+docker compose ps
 
 # Check specific service logs
-docker-compose logs -f [service-name]
+docker compose logs -f [service-name]
 
 # Restart unhealthy service
-docker-compose restart [service-name]
+docker compose restart [service-name]
 ```
 
 ### Port conflicts
@@ -178,7 +178,7 @@ ports:
 docker system prune -a
 
 # Remove all volumes (⚠️ deletes all data)
-docker-compose down -v
+docker compose down -v
 ```
 
 ## Development
@@ -193,17 +193,17 @@ python tests/test_api_unit.py
 python tests/test_integration.py
 
 # UI tests (requires services running)
-docker-compose --profile testing up playwright-tests
+docker compose --profile testing up playwright-tests
 ```
 
 ### Watch logs during development
 
 ```bash
 # All services
-docker-compose logs -f
+docker compose logs -f
 
 # Multiple specific services
-docker-compose logs -f api-gateway chat-service ollama
+docker compose logs -f api-gateway chat-service ollama
 ```
 
 ## GPU Support
@@ -228,8 +228,8 @@ ollama:
 3. Restart services:
 
 ```bash
-docker-compose down
-docker-compose up -d
+docker compose down
+docker compose up -d
 ```
 
 ## Clean Uninstall
@@ -238,10 +238,10 @@ To completely remove the RAG Lab:
 
 ```bash
 # Stop and remove all containers and volumes
-docker-compose down -v
+docker compose down -v
 
 # Remove Docker images
-docker-compose down --rmi all
+docker compose down --rmi all
 
 # Remove project directory
 cd ..
@@ -253,5 +253,5 @@ rm -rf rag_lab
 For issues, check:
 - [GitHub Issues](https://github.com/sandbreak80/rag_lab/issues)
 - [Documentation](../docs/)
-- Service logs: `docker-compose logs -f [service-name]`
+- Service logs: `docker compose logs -f [service-name]`
 

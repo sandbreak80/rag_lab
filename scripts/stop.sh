@@ -21,13 +21,13 @@ echo ""
 
 # Stop services
 echo -e "${YELLOW}⏸  Stopping all services...${NC}"
-docker-compose down
+docker compose down
 
 echo ""
 echo -e "${GREEN}✓ All services stopped${NC}"
 echo ""
 echo -e "${BLUE}💡 TIP:${NC} To remove all data (volumes), run:"
-echo "   docker-compose down -v"
+echo "   docker compose down -v"
 echo ""
 echo -e "${BLUE}💡 TIP:${NC} To start again, run:"
 echo "   ./scripts/build-and-start.sh"
