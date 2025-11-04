@@ -42,7 +42,7 @@ class ApiClient {
       rerank_top_k: config.rerankTopK,
       metadata_filters: config.metadataFilters,
     };
-    
+
     const response = await this.client.post('/ask', backendConfig, { signal });
     return response.data;
   }
@@ -99,6 +99,11 @@ class ApiClient {
 
   async getStats(): Promise<SystemStats> {
     const response = await this.client.get('/stats');
+    return response.data;
+  }
+
+  async getVersions(): Promise<any> {
+    const response = await this.client.get('/version');
     return response.data;
   }
 

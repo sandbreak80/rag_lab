@@ -50,6 +50,11 @@ def health_check():
     """Health check endpoint"""
     return jsonify(health.get_health())
 
+@app.route('/version', methods=['GET'])
+def get_version():
+    """Version endpoint"""
+    return jsonify(health.get_version())
+
 @app.route('/metrics', methods=['GET'])
 def get_metrics():
     """Metrics endpoint"""
@@ -333,27 +338,27 @@ Provide a comprehensive, detailed answer:"""
         llm_json = llm_response.json()
         answer = llm_json['response']
         print(f"📝 Answer length: {len(answer)} characters")
-        
+
         # Extract Ollama-specific metrics if available
         if 'eval_count' in llm_json:
             perf_metrics['llm_tokens_generated'] = llm_json.get('eval_count', 0)
             perf_metrics['llm_tokens_prompt'] = llm_json.get('prompt_eval_count', 0)
             perf_metrics['llm_eval_duration_ms'] = round(llm_json.get('eval_duration', 0) / 1_000_000, 2)  # Convert ns to ms
             perf_metrics['llm_prompt_eval_duration_ms'] = round(llm_json.get('prompt_eval_duration', 0) / 1_000_000, 2)
-            
+
             # Calculate tokens per second
             if perf_metrics['llm_eval_duration_ms'] > 0:
                 perf_metrics['llm_tokens_per_second'] = round(
                     (perf_metrics['llm_tokens_generated'] / perf_metrics['llm_eval_duration_ms']) * 1000, 2
                 )
-            
+
             print(f"📊 Ollama metrics: {perf_metrics['llm_tokens_generated']} tokens @ {perf_metrics.get('llm_tokens_per_second', 0)} tok/s")
-        
+
         # Calculate total latency
         perf_metrics['total_latency_ms'] = round((time.time() - overall_start) * 1000, 2)
         perf_metrics['chat_service_overhead_ms'] = round(
-            perf_metrics['total_latency_ms'] - 
-            perf_metrics['search_service_latency_ms'] - 
+            perf_metrics['total_latency_ms'] -
+            perf_metrics['search_service_latency_ms'] -
             perf_metrics['llm_generation_ms'], 2
         )
 

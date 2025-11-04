@@ -10,6 +10,7 @@ import { LabGuidePage } from './components/lab/LabGuidePage';
 import { LearningHubPage } from './components/learning/LearningHubPage';
 import { FeedbackPage } from './components/feedback/FeedbackPage';
 import { PromptLoggingPage } from './components/logging/PromptLoggingPage';
+import { VersionFooter } from './components/layout/VersionFooter';
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -38,6 +39,7 @@ function App() {
             <Route path="feedback" element={<FeedbackPage />} />
           </Route>
         </Routes>
+        <VersionFooter />
       </BrowserRouter>
     </QueryClientProvider>
   );

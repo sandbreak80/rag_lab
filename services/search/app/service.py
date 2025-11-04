@@ -131,6 +131,11 @@ def health_check():
     """Health check endpoint"""
     return jsonify(health.get_health())
 
+@app.route('/version', methods=['GET'])
+def get_version():
+    """Version endpoint"""
+    return jsonify(health.get_version())
+
 @app.route('/metrics', methods=['GET'])
 def get_metrics():
     """Metrics endpoint"""

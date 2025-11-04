@@ -2,6 +2,7 @@
 Health check utilities for microservices
 """
 import time
+import os
 from datetime import datetime
 from typing import Dict, Any, Callable, List
 from enum import Enum
@@ -68,4 +69,22 @@ class HealthCheck:
         """Quick health check"""
         health = self.get_health()
         return health['status'] == HealthStatus.HEALTHY
+
+    def get_version(self) -> Dict[str, str]:
+        """Get service version info"""
+        # Try to read VERSION file from project root
+        version = "unknown"
+        try:
+            version_file = os.path.join('/workspace', 'VERSION')
+            if os.path.exists(version_file):
+                with open(version_file, 'r') as f:
+                    version = f.read().strip()
+        except Exception:
+            pass
+        
+        return {
+            'service': self.service_name,
+            'version': version,
+            'timestamp': datetime.utcnow().isoformat()
+        }
 

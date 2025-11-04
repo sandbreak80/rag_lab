@@ -34,14 +34,14 @@ services:
     environment:
       - OLLAMA_HOST=0.0.0.0
     restart: unless-stopped
-    # GPU support - ENABLED for Ubuntu server with NVIDIA GPU
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+    # GPU support - COMMENT OUT for Mac, UNCOMMENT for Ubuntu with NVIDIA GPU
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 30s
@@ -126,6 +126,7 @@ services:
       - ./services/search/app:/app
       - ./services/common:/workspace/services/common
       - ./src:/workspace/src
+      - ./VERSION:/workspace/VERSION:ro
       - bm25-indices:/indices
       - uploads:/uploads
     working_dir: /app
@@ -160,6 +161,7 @@ services:
     volumes:
       - ./services/chat/app:/app
       - ./services/common:/workspace/services/common
+      - ./VERSION:/workspace/VERSION:ro
     working_dir: /app
     env_file:
       - config.env
@@ -419,6 +421,7 @@ services:
       - ./services/api-gateway/app:/app
       - ./services/common:/workspace/services/common
       - ./config:/workspace/config
+      - ./VERSION:/workspace/VERSION:ro
       - /var/run/docker.sock:/var/run/docker.sock
     working_dir: /app
     env_file:

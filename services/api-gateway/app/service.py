@@ -56,6 +56,30 @@ def health_check():
     """Health check endpoint"""
     return jsonify(health.get_health())
 
+@app.route('/version', methods=['GET'])
+def get_version():
+    """Version endpoint - aggregates versions from all services"""
+    try:
+        all_versions = {
+            'gateway': health.get_version(),
+            'services': {}
+        }
+
+        # Collect versions from all services
+        for name, url in SERVICES.items():
+            try:
+                response = requests.get(f"{url}/version", timeout=5)
+                if response.status_code == 200:
+                    all_versions['services'][name] = response.json()
+                else:
+                    all_versions['services'][name] = {'service': name, 'version': 'unavailable'}
+            except:
+                all_versions['services'][name] = {'service': name, 'version': 'unavailable'}
+
+        return jsonify(all_versions)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/metrics', methods=['GET'])
 def get_metrics():
     """Metrics endpoint - aggregates metrics from all services"""
