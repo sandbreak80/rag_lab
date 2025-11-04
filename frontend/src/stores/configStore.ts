@@ -20,6 +20,9 @@ const DEFAULT_CONFIG: RAGConfig = {
 };
 
 interface ConfigStore extends RAGConfig {
+  // Current preset name (for highlighting)
+  currentPreset?: string;
+  
   // Actions
   setModel: (model: string) => void;
   setTemperature: (temperature: number) => void;
@@ -125,6 +128,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
         rerankTopK: config.rerank_top_k || get().rerankTopK,
         webSearchDocs: config.web_search_docs || get().webSearchDocs,
         webSearchPages: config.web_search_pages_per_doc || get().webSearchPages,
+        currentPreset: presetData.name,  // Track which preset is active
       };
 
       set(newConfig);
