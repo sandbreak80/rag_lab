@@ -5,8 +5,12 @@ HIGH PRIORITY - oohhh, we need like a water fall or stack bar to show response t
 
 bug - need a highlight box to show preset selected
 bug - sent prompt - refresh page, ui no longer shows waiting for response and response never gets in UI
-ollama metrics? seperate response from embeddings and main model call? ollama still work?
+
+
+ollama metrics! We need them. seperate response from embeddings and main model call? ollama still work?
 we really need to see timings for each API and step in the process.
+right now our waterfall lacks detail. We need timing for each API call / docker container. Component. Deep understanding of timing is required.
+
 
 work tools - upload doc in prompt ands ask question to doc. can we do this?
 What about model routing? Should we try to decide the mest model based on settings, contexct sixe, and prompt?
