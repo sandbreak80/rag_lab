@@ -168,15 +168,18 @@ def ask_question():
         print(f"📥 Received question: {question[:100]}...")
         metrics.increment('ask_requests')
 
-        # Get RAG config
+        # Get RAG config from request (use ALL parameters from frontend)
         search_config = {
-            'top_k': num_contexts,
+            'top_k': data.get('top_k', num_contexts),  # Use frontend value or fallback
             'use_query_expansion': data.get('use_query_expansion', False),
             'use_bm25': data.get('use_bm25', False),
             'use_hybrid': data.get('use_hybrid', False),
             'use_graph': data.get('use_graph', False),
             'use_reranking': data.get('use_reranking', False),
             'use_web_search': data.get('use_web_search', False),
+            'web_search_docs': data.get('web_search_docs', 5),
+            'web_search_pages_per_doc': data.get('web_search_pages_per_doc', 1),
+            'rerank_top_k': data.get('rerank_top_k', 10),
         }
         print(f"⚙️  RAG config: {search_config}")
 
