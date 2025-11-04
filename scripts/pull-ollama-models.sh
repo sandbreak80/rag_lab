@@ -21,15 +21,16 @@ fi
 echo "✅ Ollama is running"
 echo ""
 
-# Define required models
-CHAT_MODEL="llama3.2:3b"
-EMBEDDING_MODEL="nomic-embed-text"
+# Define required models (optimized for 16GB GPU)
+CHAT_MODEL="llama3.1:8b"
+EMBEDDING_MODEL="mxbai-embed-large"
 
 # Optional models (for testing different sizes)
 OPTIONAL_MODELS=(
-    "llama3.2:1b"      # Smallest, fastest
-    "llama3.1:8b"      # Medium, balanced
-    "mistral:7b"       # Alternative chat model
+    "llama3.2:1b"      # Smallest, fastest (1GB) - for testing
+    "llama3.2:3b"      # Small, fast (2GB) - original default
+    "qwen2.5:14b"      # Large, high quality (9GB) - best for 16GB GPU
+    "mistral:7b"       # Alternative chat model (4GB)
 )
 
 # Function to pull a model
