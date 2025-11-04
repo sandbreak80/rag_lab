@@ -10,7 +10,8 @@
 
 | Script | Purpose | Usage |
 |--------|---------|-------|
-| **`build-and-start.sh`** | 🎯 **One-command setup** - Builds & starts everything | `./build-and-start.sh` |
+| **`clean-deploy.sh`** | 🧹 **Clean slate deployment** - Removes everything & rebuilds | `./clean-deploy.sh` |
+| **`build-and-start.sh`** | 🎯 **Quick setup** - Builds & starts (keeps existing images) | `./build-and-start.sh` |
 | **`stop.sh`** | Stop all services | `./stop.sh` |
 | **`pull-ollama-models.sh`** | Pull/update Ollama models | `./pull-ollama-models.sh` |
 | **`reingest-system-docs.sh`** | Re-ingest project documentation | `./reingest-system-docs.sh` |
@@ -19,32 +20,82 @@
 
 ## 🎯 Quick Start (Ubuntu Server)
 
-### First Time Setup
+### First Time Setup (Clean Install)
 
 ```bash
 # 1. Clone the repo
 git clone https://github.com/sandbreak80/rag_lab.git
-cd rag_lab
+cd rag_lab/scripts
 
-# 2. Run the all-in-one build script
+# 2. Run the clean deployment script
+./clean-deploy.sh
+```
+
+This will:
+- ✅ Stop any existing containers
+- ✅ Remove old images
+- ✅ Prune Docker system
+- ✅ Build fresh images (no cache)
+- ✅ Start Ollama with GPU
+- ✅ Pull models (llama3.1:8b, mxbai-embed-large)
+- ✅ Start all services
+- ✅ Run health checks
+
+**Time:** ~10-15 minutes (first run with model downloads)
+
+### Quick Update (Keeps Existing Images)
+
+```bash
+cd ~/rag_lab
+git pull origin main
 cd scripts
 ./build-and-start.sh
 ```
 
-That's it! The script will:
-- ✅ Check Docker is installed
-- ✅ Stop any existing containers
-- ✅ Build all Docker images (including React frontend)
-- ✅ Start Ollama service
-- ✅ Pull required models (llama3.2:3b, nomic-embed-text)
-- ✅ Start all services with health checks
-- ✅ Display service URLs
+Faster than clean deploy, but may use cached images.
 
 **No npm, Node.js, Python, or other dependencies needed on host!**
 
 ---
 
 ## 📖 Detailed Command Reference
+
+### 🧹 clean-deploy.sh (NEW!)
+
+**Complete fresh start** - Removes everything and rebuilds from scratch.
+
+```bash
+# Clean deployment (removes all images, prunes system)
+./clean-deploy.sh
+```
+
+**What it does:**
+1. Stops all RAG Lab containers
+2. Removes all RAG Lab Docker images
+3. Prunes Docker system (unused images, networks, build cache)
+4. Asks if you want to remove data volumes
+5. Builds all images with --no-cache
+6. Starts Ollama and waits for health check
+7. Pulls models (llama3.1:8b, mxbai-embed-large)
+8. Starts all services
+9. Verifies all services are healthy
+
+**Interactive prompts:**
+- Confirmation before proceeding
+- Option to keep or remove data volumes
+
+**When to use:**
+- ✅ Fresh install on new server
+- ✅ After major updates
+- ✅ When build cache causes issues
+- ✅ When images are corrupted
+- ✅ For troubleshooting
+
+**Time:** ~10-15 minutes (includes model downloads)
+
+**Warning:** This removes ALL Docker images and prunes the system!
+
+---
 
 ### 🏗️ build-and-start.sh
 
