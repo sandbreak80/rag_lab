@@ -245,7 +245,7 @@ Please provide a clear, accurate, and helpful response."""
         return prompt
 
     def _inject_documents(self, prompt: str, documents: List[Dict]) -> str:
-        """Inject RAG documents into prompt"""
+        """Inject RAG documents into prompt with strict citation controls"""
         docs_text = self._format_documents(documents)
 
         injected = f"""You have access to the following relevant documents:
@@ -254,23 +254,49 @@ Please provide a clear, accurate, and helpful response."""
 
 ---
 
+{self.templates.CITATION_CONTROLS}
+
+---
+
 {prompt}
 
-Base your answer on the provided documents where relevant."""
+IMPORTANT: Base your answer ONLY on the provided documents above. Cite sources using [Source N] format. Do NOT generate fictional references or citations."""
         return injected
 
     def _format_documents(self, documents: List[Dict]) -> str:
-        """Format retrieved documents for context"""
+        """Format retrieved documents for context with rich metadata"""
         if not documents:
             return ""
 
         formatted = []
         for i, doc in enumerate(documents[:5], 1):  # Max 5 documents
             content = doc.get('content', doc.get('text', ''))
-            source = doc.get('source', doc.get('file_name', 'Unknown'))
-            formatted.append(f"[Document {i}] {source}:\n{content}\n")
+            metadata = doc.get('metadata', {})
+            
+            # Extract metadata fields
+            title = metadata.get('title', metadata.get('source', doc.get('file_name', 'Unknown')))
+            source_type = metadata.get('source_type', metadata.get('type', 'document'))
+            url = metadata.get('url', metadata.get('pdf_url', ''))
+            date = metadata.get('published_date', metadata.get('updated_date', ''))
+            authors = metadata.get('authors', metadata.get('author_list', ''))
+            
+            # Build document header with rich metadata
+            header_parts = [f"[Source {i}: {title}]"]
+            if source_type:
+                header_parts.append(f"Type: {source_type}")
+            if date:
+                header_parts.append(f"Date: {date}")
+            if authors:
+                if isinstance(authors, list):
+                    authors = ', '.join(authors[:3])  # First 3 authors
+                header_parts.append(f"Authors: {authors}")
+            if url:
+                header_parts.append(f"URL: {url}")
+            
+            header = '\n'.join(header_parts)
+            formatted.append(f"{header}\n\nContent:\n{content}\n")
 
-        return "\n".join(formatted)
+        return "\n---\n\n".join(formatted)
 
     def _format_history(self, history: List[Dict]) -> str:
         """Format conversation history"""

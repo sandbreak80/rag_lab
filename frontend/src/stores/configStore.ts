@@ -22,6 +22,7 @@ const DEFAULT_CONFIG: RAGConfig = {
   // New intelligence features (Nov 5, 2025) - All optional, off by default for now
   usePromptEnhancement: false,
   useAutoModelRouting: false,
+  showReasoningProcess: true,  // Show reasoning by default for transparency
 
   // Data source toggles - All enabled by default
   useVectorDB: true,
@@ -208,6 +209,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
         // New intelligence features
         usePromptEnhancement: state.usePromptEnhancement,
         useAutoModelRouting: state.useAutoModelRouting,
+        showReasoningProcess: state.showReasoningProcess,
 
         // Data source toggles (ensure all are included)
         useVectorDB: state.useVectorDB,

@@ -20,6 +20,7 @@ export interface RAGConfig {
   // New intelligence features (Nov 5, 2025)
   usePromptEnhancement?: boolean;  // Enable intelligent prompt enhancement
   useAutoModelRouting?: boolean;   // Enable automatic model selection
+  showReasoningProcess?: boolean;  // Show/hide ReAct framework scaffolding
 
   // Data source toggles
   useVectorDB?: boolean;           // Search uploaded/ingested documents

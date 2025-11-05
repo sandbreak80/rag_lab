@@ -26,6 +26,7 @@ export function SettingsPanel() {
   // New intelligence features
   const usePromptEnhancement = useConfigStore((state) => state.usePromptEnhancement);
   const useAutoModelRouting = useConfigStore((state) => state.useAutoModelRouting);
+  const showReasoningProcess = useConfigStore((state) => state.showReasoningProcess);
   const useVectorDB = useConfigStore((state) => state.useVectorDB);
   const useResearchAgent = useConfigStore((state) => state.useResearchAgent);
   const useWebSearch = useConfigStore((state) => state.useWebSearch);
@@ -260,6 +261,39 @@ export function SettingsPanel() {
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform pointer-events-none ${
                   useAutoModelRouting
+                    ? 'translate-x-6'
+                    : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="show-reasoning" className="text-base font-medium">
+                🔬 Show Reasoning Process
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Display step-by-step thinking (CoT/ReAct scaffolding) in responses
+              </p>
+            </div>
+            <button
+              type="button"
+              id="show-reasoning"
+              onClick={(e) => {
+                e.preventDefault();
+                console.log('🔍 Show Reasoning toggle clicked');
+                toggleFeature('showReasoningProcess');
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                showReasoningProcess
+                  ? 'bg-primary'
+                  : 'bg-muted'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform pointer-events-none ${
+                  showReasoningProcess
                     ? 'translate-x-6'
                     : 'translate-x-1'
                 }`}

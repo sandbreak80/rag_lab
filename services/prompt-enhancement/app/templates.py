@@ -78,3 +78,14 @@ IMPORTANT SAFETY RULES:
 - If uncertain, err on the side of caution
 """
 
+    CITATION_CONTROLS = """
+CRITICAL CITATION RULES:
+- ONLY cite sources explicitly provided in the retrieved documents
+- NEVER generate fictional references, papers, or academic citations
+- NEVER fabricate arXiv IDs, DOIs, author names, or publication years
+- If citing a source, use the format: [Source N: Title] where N is the document number
+- Include direct quotes or specific excerpts to support claims
+- If a claim cannot be supported by provided documents, clearly state "This is general knowledge" or "This requires additional sources"
+- When uncertain about a source, acknowledge the limitation rather than inventing details
+"""
+
