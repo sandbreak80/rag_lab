@@ -341,11 +341,17 @@ def build_graph():
         data = response.json()
 
         metadatas = data.get('metadatas', [])
+        documents = data.get('documents', [])
         embeddings = data.get('embeddings', []) if need_embeddings else None
 
         print(f"📚 Fetched {len(metadatas)} documents")
         if need_embeddings:
             print(f"   Embeddings: {len(embeddings) if embeddings else 0}")
+        
+        # Add document content to metadatas for entity extraction
+        for i, metadata in enumerate(metadatas):
+            if i < len(documents):
+                metadata['content'] = documents[i]
 
         if not metadatas:
             return jsonify({
