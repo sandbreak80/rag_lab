@@ -219,7 +219,7 @@ def delete_documents():
 def get_all_documents():
     """
     Get all documents from the collection
-    
+
     Body (optional):
     {
         "include_embeddings": true  // Default: false
@@ -236,12 +236,16 @@ def get_all_documents():
     try:
         data = request.json or {}
         include_embeddings = data.get('include_embeddings', False)
-        
+
+        print(f"📥 /get_all request: include_embeddings={include_embeddings}")
+
         # Build include list
         include = ['documents', 'metadatas']
         if include_embeddings:
             include.append('embeddings')
-        
+
+        print(f"   Fetching with include={include}")
+
         # Get all documents
         result = collection.get(include=include)
 
@@ -251,14 +255,21 @@ def get_all_documents():
             'ids': result['ids'],
             'count': len(result['documents'])
         }
-        
+
         # Add embeddings if requested
         if include_embeddings:
-            response['embeddings'] = result.get('embeddings', [])
+            embeddings = result.get('embeddings', [])
+            response['embeddings'] = embeddings
+            print(f"   ✅ Returning {len(embeddings)} embeddings")
+        else:
+            print(f"   ✅ Returning {len(result['documents'])} documents (no embeddings)")
 
         return jsonify(response)
     except Exception as e:
         metrics.increment('errors')
+        import traceback
+        print(f"❌ /get_all error: {e}")
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/get', methods=['POST'])
