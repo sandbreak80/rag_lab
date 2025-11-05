@@ -597,21 +597,21 @@ def get_gpu_status():
     try:
         import subprocess
         import os
-        
+
         # Try to detect GPU from Ollama container
         ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://ollama:11434')
-        
+
         # Check if Ollama is accessible
         try:
             response = requests.get(f"{ollama_url}/api/tags", timeout=5)
             ollama_accessible = response.status_code == 200
         except:
             ollama_accessible = False
-        
+
         # Try to check GPU via docker exec (if running in Docker)
         gpu_available = False
         gpu_info = "Unknown"
-        
+
         try:
             # Try nvidia-smi command
             result = subprocess.run(
@@ -626,7 +626,7 @@ def get_gpu_status():
         except:
             # If nvidia-smi fails, GPU is not available
             pass
-        
+
         return jsonify({
             'gpu_available': gpu_available,
             'gpu_enabled': gpu_available,  # If nvidia-smi works, GPU is enabled

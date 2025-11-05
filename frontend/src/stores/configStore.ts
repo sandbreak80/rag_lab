@@ -40,41 +40,43 @@ interface ConfigStore extends RAGConfig {
 }
 
 export const useConfigStore = create<ConfigStore>((set, get) => {
-  // Load initial config from localStorage
-  const savedConfig = loadFromLocalStorage<RAGConfig>('rag_config', DEFAULT_CONFIG);
+  // Load initial config from localStorage (including currentPreset)
+  const savedConfig = loadFromLocalStorage<RAGConfig & { currentPreset?: string }>('rag_config', DEFAULT_CONFIG);
 
   // DEBUG: Log what config is being loaded
   console.log('🔍 ConfigStore initialized with:', {
     topK: savedConfig.topK,
     useWebSearch: savedConfig.useWebSearch,
     webSearchDocs: savedConfig.webSearchDocs,
+    currentPreset: savedConfig.currentPreset,
     source: savedConfig === DEFAULT_CONFIG ? 'DEFAULT' : 'LOCALSTORAGE'
   });
 
   return {
     ...savedConfig,
+    currentPreset: savedConfig.currentPreset, // Restore active preset
 
     setModel: (model) => {
-      set({ model });
-      saveToLocalStorage('rag_config', get().getConfig());
+      set({ model, currentPreset: undefined }); // Clear preset when manually changed
+      saveToLocalStorage('rag_config', { ...get().getConfig(), currentPreset: undefined });
     },
 
     setTemperature: (temperature) => {
-      set({ temperature });
-      saveToLocalStorage('rag_config', get().getConfig());
+      set({ temperature, currentPreset: undefined }); // Clear preset when manually changed
+      saveToLocalStorage('rag_config', { ...get().getConfig(), currentPreset: undefined });
     },
 
     setTopK: (topK) => {
       console.log('🔍 setTopK called with:', topK);
-      set({ topK });
-      const newConfig = get().getConfig();
+      set({ topK, currentPreset: undefined }); // Clear preset when manually changed
+      const newConfig = { ...get().getConfig(), currentPreset: undefined };
       console.log('🔍 Saving config to localStorage:', { topK: newConfig.topK });
       saveToLocalStorage('rag_config', newConfig);
     },
 
     setContextWindow: (contextWindow) => {
-      set({ contextWindow });
-      saveToLocalStorage('rag_config', get().getConfig());
+      set({ contextWindow, currentPreset: undefined }); // Clear preset when manually changed
+      saveToLocalStorage('rag_config', { ...get().getConfig(), currentPreset: undefined });
     },
 
     toggleFeature: (feature) => {
@@ -83,39 +85,39 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
         const currentValue = state[feature];
         if (typeof currentValue === 'boolean') {
           console.log(`🔍 Toggling ${feature} from ${currentValue} to ${!currentValue}`);
-          return { [feature]: !currentValue };
+          return { [feature]: !currentValue, currentPreset: undefined }; // Clear preset
         }
         return state;
       });
       // Save immediately after state update
-      const newConfig = get().getConfig();
+      const newConfig = { ...get().getConfig(), currentPreset: undefined };
       console.log('🔍 Saving config to localStorage:', { [feature]: newConfig[feature as keyof RAGConfig] });
       saveToLocalStorage('rag_config', newConfig);
     },
 
     setWebSearchDocs: (webSearchDocs) => {
-      set({ webSearchDocs });
-      saveToLocalStorage('rag_config', get().getConfig());
+      set({ webSearchDocs, currentPreset: undefined }); // Clear preset when manually changed
+      saveToLocalStorage('rag_config', { ...get().getConfig(), currentPreset: undefined });
     },
 
     setWebSearchPages: (webSearchPages) => {
-      set({ webSearchPages });
-      saveToLocalStorage('rag_config', get().getConfig());
+      set({ webSearchPages, currentPreset: undefined }); // Clear preset when manually changed
+      saveToLocalStorage('rag_config', { ...get().getConfig(), currentPreset: undefined });
     },
 
     setRerankTopK: (rerankTopK) => {
-      set({ rerankTopK });
-      saveToLocalStorage('rag_config', get().getConfig());
+      set({ rerankTopK, currentPreset: undefined }); // Clear preset when manually changed
+      saveToLocalStorage('rag_config', { ...get().getConfig(), currentPreset: undefined });
     },
 
     setMetadataFilters: (metadataFilters) => {
-      set({ metadataFilters });
-      saveToLocalStorage('rag_config', get().getConfig());
+      set({ metadataFilters, currentPreset: undefined }); // Clear preset when manually changed
+      saveToLocalStorage('rag_config', { ...get().getConfig(), currentPreset: undefined });
     },
 
     updateConfig: (config) => {
-      set(config);
-      saveToLocalStorage('rag_config', get().getConfig());
+      set({ ...config, currentPreset: undefined }); // Clear preset when manually changed
+      saveToLocalStorage('rag_config', { ...get().getConfig(), currentPreset: undefined });
     },
 
     loadPreset: (presetData: any) => {
@@ -144,7 +146,8 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
       };
 
       set(newConfig);
-      saveToLocalStorage('rag_config', get().getConfig());
+      // Save with currentPreset included
+      saveToLocalStorage('rag_config', { ...get().getConfig(), currentPreset: presetData.name });
     },
 
     reset: () => {

@@ -1,4 +1,4 @@
-import React, { useState, KeyboardEvent } from 'react';
+import React, { useState, KeyboardEvent, useEffect } from 'react';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { Send, Sparkles } from 'lucide-react';
@@ -15,15 +15,43 @@ const SUGGESTED_QUERIES = [
   "What is the difference between vector and keyword search?",
 ];
 
+const DRAFT_KEY = 'chat_draft_message';
+
 export function InputBar({ onSend, disabled }: InputBarProps) {
-  const [input, setInput] = useState('');
+  // Load draft from localStorage on mount
+  const [input, setInput] = useState(() => {
+    try {
+      return localStorage.getItem(DRAFT_KEY) || '';
+    } catch {
+      return '';
+    }
+  });
   const [showSuggestions, setShowSuggestions] = useState(true);
+
+  // Save draft to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      if (input) {
+        localStorage.setItem(DRAFT_KEY, input);
+      } else {
+        localStorage.removeItem(DRAFT_KEY);
+      }
+    } catch (error) {
+      console.error('Failed to save draft:', error);
+    }
+  }, [input]);
 
   const handleSend = () => {
     if (input.trim() && !disabled) {
       onSend(input.trim());
       setInput('');
       setShowSuggestions(false);
+      // Clear draft from localStorage
+      try {
+        localStorage.removeItem(DRAFT_KEY);
+      } catch (error) {
+        console.error('Failed to clear draft:', error);
+      }
     }
   };
 

@@ -11,10 +11,10 @@ export function SettingsPage() {
           Configure your RAG system to experiment with different features and parameters
         </p>
       </div>
-      
+
       {/* GPU Status Card */}
       <GPUStatus />
-      
+
       {/* Settings Panel */}
       <SettingsPanel />
     </div>
