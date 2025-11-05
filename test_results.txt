@@ -1,0 +1,31 @@
+🧪 Security Services Test Suite
+============================================================
+
+🔒 Testing Security Guardrails Service
+============================================================
+✅ Health check: PASS
+
+📝 Testing validation cases:
+  ✅ Normal Query: allowed (violations: 0)
+  ❌ PII Detection: Expected warning, got blocked
+  ✅ Prompt Injection: blocked (violations: 2)
+  ✅ Unicode Attack (Zero-width): warning (violations: 1)
+  ❌ Emoji Smuggling: Expected warning, got allowed
+  ❌ Medical Advice (Topic Violation): Expected warning, got allowed
+
+📊 Results: 3 passed, 3 failed
+
+✨ Testing Prompt Enhancement Service
+============================================================
+✅ Health check: PASS
+✅ Enhancement: PASS
+   Original: What's RAG?
+   Enhanced: 754 chars, 3 enhancements
+
+============================================================
+📊 FINAL RESULTS
+============================================================
+Security Guardrails            ❌ FAIL
+Prompt Enhancement             ✅ PASS
+
+❌ Some tests failed

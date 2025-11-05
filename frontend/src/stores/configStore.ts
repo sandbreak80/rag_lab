@@ -14,9 +14,18 @@ const DEFAULT_CONFIG: RAGConfig = {
   useReranking: false,
   useWebSearch: false,
   useAgenticChunking: false,
+  useSecurity: true, // Security enabled by default
   webSearchDocs: 5,
   webSearchPages: 1,
   rerankTopK: 10,
+
+  // New intelligence features (Nov 5, 2025) - All optional, off by default for now
+  usePromptEnhancement: false,
+  useAutoModelRouting: false,
+
+  // Data source toggles - All enabled by default
+  useVectorDB: true,
+  useResearchAgent: true,
 };
 
 interface ConfigStore extends RAGConfig {
@@ -40,21 +49,40 @@ interface ConfigStore extends RAGConfig {
 }
 
 export const useConfigStore = create<ConfigStore>((set, get) => {
+  // CONFIG VERSION CHECK - Force reset if localStorage is outdated
+  const CONFIG_VERSION = 2; // Increment this when adding new config properties
+  const savedVersion = localStorage.getItem('rag_config_version');
+
+  if (savedVersion !== String(CONFIG_VERSION)) {
+    console.log('🔄 Config version mismatch. Resetting to defaults with new features...');
+    localStorage.removeItem('rag_config');
+    localStorage.setItem('rag_config_version', String(CONFIG_VERSION));
+  }
+
   // Load initial config from localStorage (including currentPreset)
   const savedConfig = loadFromLocalStorage<RAGConfig & { currentPreset?: string }>('rag_config', DEFAULT_CONFIG);
 
+  // CRITICAL: Merge with DEFAULT_CONFIG to ensure new properties exist
+  // This handles when localStorage has old config without new intelligence features
+  const mergedConfig = {
+    ...DEFAULT_CONFIG,
+    ...savedConfig,
+  };
+
   // DEBUG: Log what config is being loaded
   console.log('🔍 ConfigStore initialized with:', {
-    topK: savedConfig.topK,
-    useWebSearch: savedConfig.useWebSearch,
-    webSearchDocs: savedConfig.webSearchDocs,
-    currentPreset: savedConfig.currentPreset,
-    source: savedConfig === DEFAULT_CONFIG ? 'DEFAULT' : 'LOCALSTORAGE'
+    topK: mergedConfig.topK,
+    useWebSearch: mergedConfig.useWebSearch,
+    webSearchDocs: mergedConfig.webSearchDocs,
+    usePromptEnhancement: mergedConfig.usePromptEnhancement,
+    useAutoModelRouting: mergedConfig.useAutoModelRouting,
+    currentPreset: mergedConfig.currentPreset,
+    source: savedConfig === DEFAULT_CONFIG ? 'DEFAULT' : 'LOCALSTORAGE_MERGED'
   });
 
   return {
-    ...savedConfig,
-    currentPreset: savedConfig.currentPreset, // Restore active preset
+    ...mergedConfig,
+    currentPreset: mergedConfig.currentPreset, // Restore active preset
 
     setModel: (model) => {
       set({ model, currentPreset: undefined }); // Clear preset when manually changed
@@ -138,6 +166,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
         useReranking: config.use_reranking !== undefined ? config.use_reranking : get().useReranking,
         useWebSearch: config.use_web_search !== undefined ? config.use_web_search : get().useWebSearch,
         useAgenticChunking: config.use_agentic_chunking !== undefined ? config.use_agentic_chunking : get().useAgenticChunking,
+        useSecurity: config.use_security !== undefined ? config.use_security : get().useSecurity,
         topK: config.top_k || get().topK,
         rerankTopK: config.rerank_top_k || get().rerankTopK,
         webSearchDocs: config.web_search_docs || get().webSearchDocs,
@@ -169,11 +198,21 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
         useReranking: state.useReranking,
         useWebSearch: state.useWebSearch,
         useAgenticChunking: state.useAgenticChunking,
+        useSecurity: state.useSecurity,
         webSearchDocs: state.webSearchDocs,
         webSearchPages: state.webSearchPages,
         rerankTopK: state.rerankTopK,
         metadataFilters: state.metadataFilters,
         currentPreset: state.currentPreset, // Include currentPreset in config
+
+        // New intelligence features
+        usePromptEnhancement: state.usePromptEnhancement,
+        useAutoModelRouting: state.useAutoModelRouting,
+
+        // Data source toggles (ensure all are included)
+        useVectorDB: state.useVectorDB,
+        useResearchAgent: state.useResearchAgent,
+        // Note: useWebSearch and useGraph already included above in legacy location
       };
     },
   };

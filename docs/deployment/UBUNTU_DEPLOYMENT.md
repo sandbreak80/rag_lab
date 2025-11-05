@@ -1,527 +1,649 @@
-# 🚀 Ubuntu Server Deployment Guide
+# Ubuntu Server Deployment Guide
+## Deploy Latest RAG Lab to AWS Ubuntu Server
 
-**Clean deployment guide for running the RAG Lab on Ubuntu Server 20.04+**
-
----
-
-## ✅ Prerequisites
-
-### What You Need
-
-- Ubuntu 20.04 or later
-- Docker installed
-- Internet connection
-- At least 8GB RAM (16GB recommended)
-- 20GB free disk space
-
-### What You DON'T Need
-
-- ❌ Node.js / npm (frontend builds inside Docker)
-- ❌ Python / pip (services run in containers)
-- ❌ Virtual environments
-- ❌ System package installations
-
-**Everything runs in Docker!**
+**Date:** November 4, 2025
+**Target:** Ubuntu Server with NVIDIA GPU (AWS)
+**Branch:** `main`
+**Status:** Ready for Deployment
 
 ---
 
-## 🔧 Step 1: Install Docker
+## 🎯 Overview
 
-If Docker is not already installed:
+This guide walks you through deploying the latest RAG Lab code to your Ubuntu server running on AWS with NVIDIA GPU support.
+
+### What's New in This Version
+
+**Major Features:**
+- ✅ **Learning Hub** - 100+ Q&A entries across 9 categories
+- ✅ **Enhanced Metrics** - Detailed per-component timing + Ollama metrics
+- ✅ **Model Expansion** - 10 Ollama models (2 required + 8 optional)
+- ✅ **GPU Support** - NVIDIA GPU integration for Ollama
+- ✅ **Web Sources** - Visual distinction for web search results
+- ✅ **Improved Responses** - Enhanced prompts for detailed answers
+- ✅ **Better UI/UX** - Preset selection indicators, fixed loading states
+
+**Recent Commits (Last 8):**
+1. `a710b74` - chore: Clean up devcontainer and update prompts
+2. `6cedaab` - docs: Add session summary for Learning Hub development
+3. `f7c20b9` - docs: Add comprehensive project status document
+4. `ae6bddc` - docs: Learning Hub completion summary
+5. `7fb1db8` - feat: Build Learning Hub UI components (Phase 3 Complete!)
+6. `475760d` - docs: Add Q&A data completion summary
+7. `a5889ff` - wip: Start Lab & QA redesign - Plan + Q&A data structure
+8. `53798ec` - feat: Add detailed per-component timing metrics to waterfall chart
+
+---
+
+## 📋 Pre-Deployment Checklist
+
+### On Your Local Machine
+
+**1. Push Latest Code to GitHub:**
+```bash
+cd ~/code_projects/rag_lab
+git checkout main
+git push origin main
+```
+
+**2. Verify Commits:**
+```bash
+git log --oneline -10
+# Should show commits up to a710b74
+```
+
+**3. Optional: Push Security Branch (for future):**
+```bash
+git push origin security
+```
+
+---
+
+## 🚀 Deployment Steps
+
+### Step 1: Connect to Ubuntu Server
 
 ```bash
-# Update package list
-sudo apt update
+# SSH into your AWS Ubuntu server
+ssh ubuntu@<your-server-ip>
 
-# Install Docker
-sudo apt install -y docker.io
-
-# Start and enable Docker
-sudo systemctl start docker
-sudo systemctl enable docker
-
-# Add your user to docker group (optional, avoids sudo)
-sudo usermod -aG docker $USER
-newgrp docker
-
-# Verify Docker is running
-docker --version
-docker compose version
-```
-
-**Expected output:**
-```
-Docker version 24.0.0 or higher
-Docker Compose version v2.x.x
+# Or if using key file:
+ssh -i /path/to/your-key.pem ubuntu@<your-server-ip>
 ```
 
 ---
 
-## 📥 Step 2: Clone the Repository
+### Step 2: Navigate to Project Directory
 
 ```bash
-# Clone from GitHub
-git clone https://github.com/sandbreak80/rag_lab.git
-
-# Navigate to the project
-cd rag_lab
+cd ~/rag_lab
 ```
 
 ---
 
-## 🚀 Step 3: Deploy (One Command!)
+### Step 3: Stop Current Services
 
 ```bash
-# Run the all-in-one build script
-cd scripts
-./build-and-start.sh
+# Stop all running containers
+docker compose down
+
+# Optional: Clean up old images (saves space)
+docker system prune -f
 ```
-
-### What This Does
-
-The script will automatically:
-
-1. ✅ **Check Docker** - Verify Docker and Docker Compose are available
-2. ✅ **Stop Existing** - Clean up any running containers
-3. ✅ **Build Images** - Build all 14 microservices + React frontend
-4. ✅ **Start Ollama** - Launch the LLM inference engine
-5. ✅ **Pull Models** - Download llama3.2:3b and nomic-embed-text
-6. ✅ **Start Services** - Launch all services with health checks
-7. ✅ **Display URLs** - Show you where to access the application
-
-### Expected Output
-
-```
-╔════════════════════════════════════════════════════════════╗
-║  Enterprise Agentic AI Platform with Advanced RAG         ║
-║  Build and Start Script                                    ║
-╚════════════════════════════════════════════════════════════╝
-
-▶ Checking Docker...
-✓ Docker is running
-
-▶ Checking Docker Compose...
-✓ Docker Compose is available
-
-▶ Stopping any running containers...
-✓ Containers stopped
-
-▶ Building Docker images...
-[+] Building 127.3s (85/85) FINISHED
-✓ Docker images built
-
-▶ Starting Ollama service...
-✓ Ollama started
-
-▶ Waiting for Ollama to be ready...
-✓ Ollama is responding
-
-▶ Pulling Ollama models...
-Pulling llama3.2:3b...
-✓ Model llama3.2:3b pulled successfully
-
-Pulling nomic-embed-text...
-✓ Model nomic-embed-text pulled successfully
-
-▶ Starting all services...
-✓ All services started
-
-▶ Waiting for services to be healthy...
-Waiting for vector-db...      ✓
-Waiting for embedding-service... ✓
-Waiting for frontend...       ✓
-
-╔════════════════════════════════════════════════════════════╗
-║  🚀 RAG Lab is Running!                                   ║
-╚════════════════════════════════════════════════════════════╝
-
-📱 Frontend:           http://localhost:3000
-🔌 API Gateway:        http://localhost:8000
-🤖 Ollama:             http://localhost:11434
-🔍 SearXNG:            http://localhost:8080
-
-✅ All services are healthy and ready!
-```
-
-### Deployment Time
-
-- **First run (with model downloads):** ~5-10 minutes
-- **Subsequent runs (models cached):** ~2-3 minutes
 
 ---
 
-## 🌐 Step 4: Access the Application
-
-### From the Server (localhost)
+### Step 4: Pull Latest Code
 
 ```bash
-# Test API Gateway
+# Fetch latest from GitHub
+git fetch origin
+
+# Check what's new
+git log --oneline HEAD..origin/main
+
+# Pull latest main branch
+git pull origin main
+```
+
+**Expected Output:**
+```
+Updating <old-hash>..a710b74
+Fast-forward
+ frontend/src/components/learning/LearningHubPage.tsx | 245 ++++++++++++++++++
+ frontend/src/components/learning/QACard.tsx | 89 +++++++
+ frontend/src/components/learning/QADetailModal.tsx | 156 +++++++++++
+ frontend/src/data/qaData.ts | 1500+ lines
+ docs/PROJECT_STATUS.md | 200 ++++++++++++++
+ ... (many more files)
+```
+
+---
+
+### Step 5: Verify Configuration
+
+**Check environment variables:**
+```bash
+cat config.env
+```
+
+**Should show:**
+```bash
+# Core Models
+CHAT_MODEL=llama3.1:8b
+EMBEDDING_MODEL=nomic-embed-text
+
+# Context & Generation
+DEFAULT_CONTEXT_WINDOW=32768
+DEFAULT_TEMPERATURE=0.7
+DEFAULT_TOP_K=5
+
+# Search Configuration
+DEFAULT_SEARCH_TYPE=hybrid
+DEFAULT_TOP_N=5
+DEFAULT_BM25_K1=1.5
+DEFAULT_BM25_B=0.75
+
+# Services
+OLLAMA_BASE_URL=http://ollama:11434
+```
+
+**Verify GPU support is enabled:**
+```bash
+grep -A 10 "ollama:" docker-compose.yml | grep -A 5 "deploy:"
+```
+
+**Should show:**
+```yaml
+deploy:
+  resources:
+    reservations:
+      devices:
+        - driver: nvidia
+          count: all
+          capabilities: [gpu]
+```
+
+---
+
+### Step 6: Build Fresh Images
+
+```bash
+# Build with no cache to ensure latest code
+docker compose build --no-cache
+
+# This will take 5-10 minutes
+```
+
+---
+
+### Step 7: Start Services
+
+```bash
+# Start all services
+docker compose up -d
+
+# Watch logs
+docker compose logs -f
+```
+
+**Wait for all services to be healthy (2-3 minutes):**
+- ✅ `rag-ollama` - Ollama service
+- ✅ `rag-chromadb` - Vector database
+- ✅ `rag-frontend` - React UI
+- ✅ `rag-api-gateway` - API Gateway
+- ✅ All microservices (chat, search, ingest, etc.)
+
+---
+
+### Step 8: Pull Required Ollama Models
+
+```bash
+# Pull required models (this will take 5-10 minutes)
+docker compose exec ollama ollama pull llama3.1:8b
+docker compose exec ollama ollama pull nomic-embed-text
+```
+
+**Verify models:**
+```bash
+docker compose exec ollama ollama list
+```
+
+**Expected Output:**
+```
+NAME                    ID              SIZE    MODIFIED
+llama3.1:8b            <hash>          4.7 GB  X seconds ago
+nomic-embed-text       <hash>          274 MB  X seconds ago
+```
+
+---
+
+### Step 9: Optional - Pull Additional Models
+
+**For lab exercises, pull optional models:**
+```bash
+# Small models (fast inference)
+docker compose exec ollama ollama pull llama3.2:1b
+docker compose exec ollama ollama pull llama3.2:3b
+docker compose exec ollama ollama pull gemma2:2b
+
+# Medium models (balanced)
+docker compose exec ollama ollama pull gemma2:9b
+docker compose exec ollama ollama pull mistral:7b
+
+# Large models (high quality)
+docker compose exec ollama ollama pull qwen2.5:14b
+
+# Alternative embedding models
+docker compose exec ollama ollama pull mxbai-embed-large
+docker compose exec ollama ollama pull all-minilm
+```
+
+**Note:** Each model takes 2-10 minutes to download depending on size.
+
+---
+
+### Step 10: Verify Deployment
+
+**1. Check all containers are running:**
+```bash
+docker compose ps
+```
+
+**Expected Output:**
+```
+NAME                    STATUS              PORTS
+rag-ollama             Up (healthy)        0.0.0.0:11434->11434/tcp
+rag-chromadb           Up (healthy)        0.0.0.0:8001->8000/tcp
+rag-frontend           Up                  0.0.0.0:3000->80/tcp
+rag-api-gateway        Up (healthy)        0.0.0.0:8000->8000/tcp
+rag-chat-service       Up (healthy)        0.0.0.0:8003->8003/tcp
+... (all other services)
+```
+
+**2. Check GPU is being used:**
+```bash
+nvidia-smi
+```
+
+**Should show Ollama process using GPU memory.**
+
+**3. Test API Gateway:**
+```bash
 curl http://localhost:8000/health
+```
 
-# Test Ollama
+**Expected:** `{"status": "healthy"}`
+
+**4. Test Ollama:**
+```bash
 curl http://localhost:11434/api/tags
 ```
 
-### From Your Computer (Remote Access)
+**Should list all pulled models.**
 
-If deploying on a remote Ubuntu server (like AWS EC2):
+---
 
-**Option 1: SSH Tunnel (Recommended)**
+### Step 11: Access the Application
 
-```bash
-# From your local machine
-ssh -L 3000:localhost:3000 ubuntu@your-server-ip
-
-# Now access http://localhost:3000 in your browser
+**Open in browser:**
+```
+http://<your-server-ip>:3000
 ```
 
-**Option 2: Configure Security Group / Firewall**
+**Test the new features:**
+1. ✅ **Learning Hub** - Navigate to "Learning Hub" tab
+   - Search for topics
+   - Filter by category and difficulty
+   - Click on Q&A cards to see details
 
+2. ✅ **Enhanced Metrics** - Go to Chat tab
+   - Ask a question
+   - Check the waterfall chart
+   - Verify you see detailed timing metrics
+
+3. ✅ **Web Sources** - In Chat tab
+   - Enable "Web Search" in settings
+   - Ask a question
+   - Verify web sources show with globe icon
+
+4. ✅ **Model Selection** - In Settings
+   - Change chat model
+   - Verify new models are available
+
+---
+
+## 🔧 Troubleshooting
+
+### Issue: Frontend Not Loading
+
+**Symptoms:** Browser shows "Cannot connect" or blank page
+
+**Solution:**
 ```bash
-# On the server, allow port 3000
-sudo ufw allow 3000/tcp
-sudo ufw reload
+# Check frontend logs
+docker compose logs frontend
 
-# Add inbound rule in AWS/Cloud provider console
-# Allow TCP port 3000 from your IP
-
-# Access http://your-server-ip:3000
+# Rebuild frontend
+docker compose build --no-cache frontend
+docker compose up -d frontend
 ```
 
 ---
 
-## 🛑 Stopping the Application
+### Issue: Models Not Loading
 
+**Symptoms:** "Failed to load models" in UI
+
+**Solution:**
 ```bash
-cd scripts
-./stop.sh
-```
-
-This stops all containers but **keeps your data** (uploaded documents, vector database, etc.).
-
-### Clean Stop (Remove All Data)
-
-```bash
-cd scripts
-./stop.sh --clean
-```
-
-This removes all Docker volumes (uploaded docs, embeddings, etc.). Use for a completely fresh start.
-
----
-
-## 🔄 Updating the Application
-
-```bash
-# Pull latest code
-cd ~/rag_lab
-git pull origin main
-
-# Rebuild and restart
-cd scripts
-./stop.sh
-./build-and-start.sh
-```
-
----
-
-## 🐛 Troubleshooting
-
-### Port Already in Use
-
-```bash
-# Find what's using port 3000
-sudo lsof -i :3000
-
-# Kill the process (replace PID)
-sudo kill -9 <PID>
-
-# Or change port in docker-compose.yml
-# frontend: ports: - "8080:80"  # Change 3000 to 8080
-```
-
-### Docker Permission Denied
-
-```bash
-# Add user to docker group
-sudo usermod -aG docker $USER
-newgrp docker
-
-# Or use sudo
-sudo ./build-and-start.sh
-```
-
-### Ollama Won't Start
-
-```bash
-# Check if Ollama container is running
+# Check Ollama is running
 docker compose ps ollama
 
 # Check Ollama logs
 docker compose logs ollama
 
-# Restart Ollama
-docker compose restart ollama
-```
+# Verify models are pulled
+docker compose exec ollama ollama list
 
-### Models Won't Download
-
-```bash
-# Manually pull models
-docker compose exec ollama ollama pull llama3.2:3b
+# If empty, pull models again
+docker compose exec ollama ollama pull llama3.1:8b
 docker compose exec ollama ollama pull nomic-embed-text
-
-# Check disk space
-df -h
-
-# Check Ollama is accessible
-curl http://localhost:11434/api/tags
-```
-
-### Frontend Won't Build
-
-```bash
-# Check frontend logs
-docker compose logs frontend
-
-# Rebuild frontend only
-docker compose build frontend
-docker compose up -d frontend
-```
-
-### Services Won't Start
-
-```bash
-# Check which services are failing
-docker compose ps
-
-# Check logs for a specific service
-docker compose logs vector-db
-docker compose logs api-gateway
-
-# Restart a specific service
-docker compose restart vector-db
-```
-
-### Out of Memory
-
-```bash
-# Check memory usage
-free -h
-docker stats --no-stream
-
-# Restart with memory limits
-docker compose down
-docker compose up -d
-```
-
-### Complete Reset (Nuclear Option)
-
-If everything is broken:
-
-```bash
-# Stop everything and remove all data
-cd scripts
-./stop.sh --clean
-
-# Remove all Docker images
-docker system prune -a --volumes -f
-
-# Rebuild from scratch
-./build-and-start.sh --clean
 ```
 
 ---
 
-## 📊 Monitoring
+### Issue: GPU Not Being Used
 
-### Check Service Status
+**Symptoms:** Slow inference, nvidia-smi shows no GPU usage
 
+**Solution:**
 ```bash
-# View all services
+# Check GPU support is enabled in docker-compose.yml
+grep -A 10 "ollama:" docker-compose.yml | grep -A 5 "deploy:"
+
+# Restart Ollama
+docker compose restart ollama
+
+# Check nvidia-container-toolkit is installed
+docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
+```
+
+---
+
+### Issue: Services Failing to Start
+
+**Symptoms:** Some containers show "Exited" status
+
+**Solution:**
+```bash
+# Check which service is failing
 docker compose ps
 
-# Expected output: All services "Up" and "healthy"
-NAME                    STATUS
-rag-api-gateway         Up (healthy)
-rag-chat-service        Up (healthy)
-rag-frontend            Up (healthy)
-rag-ollama              Up (healthy)
-...
+# Check logs for that service
+docker compose logs <service-name>
+
+# Common fixes:
+# 1. Port already in use
+sudo lsof -i :<port-number>
+
+# 2. Out of memory
+free -h
+
+# 3. Missing dependencies
+docker compose build --no-cache <service-name>
+docker compose up -d <service-name>
 ```
 
-### View Logs
+---
 
+### Issue: Web Search Not Working
+
+**Symptoms:** Web search toggle enabled but no web results
+
+**Solution:**
 ```bash
-# All services (live tail)
-docker compose logs -f
+# Check web-search service is running
+docker compose ps web-search
 
-# Specific service
-docker compose logs -f frontend
-docker compose logs -f api-gateway
+# Check logs
+docker compose logs web-search
 
-# Last 100 lines
-docker compose logs --tail=100 frontend
+# Restart service
+docker compose restart web-search
 ```
 
-### Check Resource Usage
+---
+
+## 📊 Post-Deployment Verification
+
+### Run Health Checks
 
 ```bash
-# Real-time stats
+# Check all service health
+curl http://localhost:8000/health
+
+# Check individual services
+curl http://localhost:8003/health  # chat-service
+curl http://localhost:8005/health  # vector-db
+curl http://localhost:8007/health  # knowledge-graph
+curl http://localhost:8009/health  # reranker
+curl http://localhost:8011/health  # web-search
+```
+
+---
+
+### Test Core Functionality
+
+**1. Document Upload:**
+```bash
+# Upload a test document
+curl -X POST http://localhost:8000/api/upload \
+  -F "file=@/path/to/test.pdf"
+```
+
+**2. Chat Query:**
+```bash
+# Test chat endpoint
+curl -X POST http://localhost:8000/api/ask \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What is RAG?",
+    "config": {
+      "use_vector_search": true,
+      "use_bm25": true,
+      "use_reranking": true
+    }
+  }'
+```
+
+**3. Model List:**
+```bash
+# Get available models
+curl http://localhost:8000/api/models
+```
+
+---
+
+### Monitor Performance
+
+**1. Check container resource usage:**
+```bash
 docker stats
+```
 
-# Disk usage
+**2. Check GPU usage:**
+```bash
+watch -n 1 nvidia-smi
+```
+
+**3. Check disk usage:**
+```bash
+df -h
 docker system df
+```
+
+---
+
+## 🔄 Rollback Procedure (If Needed)
+
+If something goes wrong, you can rollback to the previous version:
+
+```bash
+# Stop current services
+docker compose down
+
+# Check previous commits
+git log --oneline -20
+
+# Rollback to previous commit (replace <commit-hash>)
+git reset --hard <previous-commit-hash>
+
+# Rebuild and restart
+docker compose build --no-cache
+docker compose up -d
+
+# Pull models again if needed
+docker compose exec ollama ollama pull llama3.1:8b
+docker compose exec ollama ollama pull nomic-embed-text
+```
+
+---
+
+## 📈 Performance Benchmarks
+
+### Expected Performance (with GPU)
+
+**LLM Inference (llama3.1:8b):**
+- Tokens per second: 40-60 tok/s (with GPU)
+- Response latency: 2-5 seconds (typical query)
+
+**Embedding (nomic-embed-text):**
+- Embedding latency: 50-100ms per document
+- Batch processing: 10-20 docs/second
+
+**RAG Pipeline:**
+- Total latency: 2-10 seconds
+- Vector search: 50-200ms
+- BM25 search: 20-100ms
+- Reranking: 100-500ms
+- Knowledge graph: 50-200ms
+- Web search: 1-3 seconds (if enabled)
+
+---
+
+## 🎯 Success Criteria
+
+**Deployment is successful when:**
+- ✅ All containers are running and healthy
+- ✅ Frontend loads at http://<server-ip>:3000
+- ✅ Learning Hub shows 100+ Q&A entries
+- ✅ Chat works with detailed responses
+- ✅ Waterfall chart shows detailed metrics
+- ✅ Web search returns results (when enabled)
+- ✅ GPU is being utilized (nvidia-smi shows usage)
+- ✅ Models load in UI settings
+
+---
+
+## 📝 Deployment Log Template
+
+Keep a log of your deployment:
+
+```
+DEPLOYMENT LOG
+==============
+Date: November 4, 2025
+Server: <your-server-ip>
+Branch: main
+Commit: a710b74
+
+Pre-Deployment:
+- [ ] Code pushed to GitHub
+- [ ] SSH access verified
+- [ ] Backup taken (if needed)
+
+Deployment Steps:
+- [ ] Connected to server
+- [ ] Stopped old services
+- [ ] Pulled latest code
+- [ ] Built new images
+- [ ] Started services
+- [ ] Pulled Ollama models
+- [ ] Verified all services healthy
+
+Post-Deployment:
+- [ ] Frontend accessible
+- [ ] Learning Hub working
+- [ ] Chat working
+- [ ] Metrics working
+- [ ] GPU being used
+- [ ] All health checks passing
+
+Issues Encountered:
+- None / <describe issues and solutions>
+
+Performance Notes:
+- LLM tok/s: <value>
+- Average response time: <value>
+- GPU utilization: <value>
+
+Deployment Status: SUCCESS / FAILED
+Deployed By: <your-name>
 ```
 
 ---
 
 ## 🔐 Security Notes
 
-### This is an Educational Lab
+**For Production Deployment:**
+1. ⚠️ **No authentication** - Currently no API authentication
+2. ⚠️ **No rate limiting** - Anyone can make unlimited requests
+3. ⚠️ **No HTTPS** - Traffic is not encrypted
+4. ⚠️ **No PII protection** - No PII detection/redaction
 
-**NOT production-ready** without additional security:
-
-- ⚠️ No authentication
-- ⚠️ No rate limiting
-- ⚠️ No SSL/TLS
-- ⚠️ Services exposed to localhost only
-
-### For Production
-
-See `docs/SECURITY_ENHANCEMENT_PLAN.md` for:
-- Authentication & authorization
-- API key management
-- Rate limiting
-- SSL/TLS certificates
-- Prompt injection prevention
-- Content filtering
+**Recommendations:**
+- Use AWS security groups to restrict access
+- Set up NGINX reverse proxy with SSL
+- Implement rate limiting at load balancer
+- For production use, implement security features from `security` branch
 
 ---
 
-## 📈 Performance Tips
+## 📚 Additional Resources
 
-### GPU Support
+**Documentation:**
+- [Quick Start Guide](./QUICK_START.md)
+- [Model Selection Guide](./MODEL_SELECTION_GUIDE.md)
+- [GPU Setup Guide](./deployment/GPU_SETUP.md)
+- [Project Status](./PROJECT_STATUS.md)
 
-If you have an NVIDIA GPU:
+**Scripts:**
+- `scripts/clean-deploy.sh` - Fresh deployment script
+- `scripts/pull-ollama-models.sh` - Pull all models
+- `scripts/health-check.sh` - Verify all services
 
-1. Install NVIDIA Docker runtime:
-```bash
-sudo apt install nvidia-docker2
-sudo systemctl restart docker
-```
-
-2. Uncomment GPU section in `docker-compose.yml`:
-```yaml
-ollama:
-  deploy:
-    resources:
-      reservations:
-        devices:
-          - driver: nvidia
-            count: all
-            capabilities: [gpu]
-```
-
-3. Restart services:
-```bash
-docker compose down
-docker compose up -d
-```
-
-### Reduce Memory Usage
-
-Use smaller models:
-
-```bash
-# Pull a smaller model
-docker compose exec ollama ollama pull llama3.2:1b
-
-# Update config.env
-CHAT_MODEL=llama3.2:1b
-```
-
-### Improve Performance
-
-1. Use SSD storage (not HDD)
-2. Allocate more RAM to Docker
-3. Use GPU for inference
-4. Pre-pull models before startup
+**Monitoring:**
+- Metrics endpoint: http://localhost:8000/api/metrics
+- Prometheus: (not yet configured)
+- Grafana: (not yet configured)
 
 ---
 
-## 📚 Next Steps
+## 🎉 Next Steps After Deployment
 
-Once deployed:
-
-1. **Upload Documents** - Go to Documents tab, upload PDFs/Markdown
-2. **Ask Questions** - Go to Chat tab, ask about your documents
-3. **Try Labs** - Explore educational exercises in Lab tab
-4. **Tune Settings** - Experiment with RAG configurations
-5. **Monitor Metrics** - View performance in Metrics tab
-
-### Educational Labs
-
-See `docs/lab/` for hands-on exercises:
-- `QUICK_START.md` - Getting started guide
-- `EXERCISE_MODEL_VS_CONTEXT.md` - Model comparison
-- RAG configuration tuning
-- Knowledge graph experiments
-- Security testing
+1. **Test all features** - Go through Learning Hub, Chat, Settings
+2. **Upload documents** - Add your own documents for RAG
+3. **Try different models** - Compare llama3.1:8b vs llama3.2:3b
+4. **Monitor performance** - Watch GPU usage and response times
+5. **Provide feedback** - Note any issues or improvements
+6. **Plan security implementation** - Review `security` branch for next phase
 
 ---
 
-## 🆘 Getting Help
+**Deployment Guide Version:** 1.0
+**Last Updated:** November 4, 2025
+**Status:** Ready for Use
 
-### Logs to Check
-
-When reporting issues, include:
-
-```bash
-# Service status
-docker compose ps > status.txt
-
-# Service logs
-docker compose logs > logs.txt
-
-# System info
-docker --version > sysinfo.txt
-docker compose version >> sysinfo.txt
-uname -a >> sysinfo.txt
-free -h >> sysinfo.txt
-```
-
-### Common Issues
-
-| Issue | Solution |
-|-------|----------|
-| Port in use | Change port in docker-compose.yml |
-| Permission denied | Add user to docker group |
-| Out of memory | Use smaller model or add RAM |
-| Models won't download | Check internet, disk space |
-| Frontend 404 | Wait for build, check logs |
-
----
-
-## ✅ Verification Checklist
-
-After deployment, verify:
-
-- [ ] All services show "Up (healthy)" in `docker compose ps`
-- [ ] Frontend accessible at http://localhost:3000
-- [ ] API Gateway returns JSON at http://localhost:8000/health
-- [ ] Ollama lists models at http://localhost:11434/api/tags
-- [ ] Can upload a document in Documents tab
-- [ ] Can ask a question in Chat tab
-- [ ] Metrics show in Metrics tab
-
----
-
-**🎉 You're ready to use the RAG Lab!**
-
-For more documentation, see:
-- `docs/PROJECT_COMPLETE.md` - Full project overview
-- `docs/ARCHITECTURE.md` - System architecture
-- `docs/lab/` - Educational exercises
-- `scripts/README.md` - Script documentation
+**Good luck with your deployment!** 🚀
 

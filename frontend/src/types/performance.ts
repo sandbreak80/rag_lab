@@ -27,6 +27,15 @@ export interface PerformanceMetrics {
   search_service_latency_ms?: number;
   chat_service_overhead_ms?: number;
 
+  // Security & Enhancement (NEW - for learning lab visibility)
+  security_validation_ms?: number;
+  prompt_enhancement_ms?: number;
+  model_routing_ms?: number;
+
+  // Infrastructure (NEW - API Gateway overhead)
+  rate_limit_check_ms?: number;
+  api_gateway_overhead_ms?: number;
+
   // Total
   total_latency_ms?: number;
 }

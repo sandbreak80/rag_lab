@@ -4,6 +4,7 @@ import { api } from '../../services/api';
 import { useConfigStore } from '../../stores/configStore';
 import { formatNumber } from '../../utils/formatting';
 import { Badge } from '../ui/badge';
+import { UserMenu } from '../auth/UserMenu';
 
 export function Header() {
   const model = useConfigStore((state) => state.model);
@@ -55,6 +56,9 @@ export function Header() {
                 </div>
               </>
             )}
+
+            <div className="h-4 w-px bg-border" />
+            <UserMenu />
           </div>
         </div>
       </div>

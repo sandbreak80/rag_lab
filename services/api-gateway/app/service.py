@@ -13,6 +13,8 @@ sys.path.insert(0, '/workspace/services/common')
 from config import *
 from metrics import ServiceMetrics, timed
 from health import HealthCheck
+from security_client import SecurityClient, EnhancementClient
+from rate_limiter import RateLimiter
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend
@@ -23,6 +25,21 @@ metrics = ServiceMetrics("api-gateway")
 # Initialize health checks
 health = HealthCheck("api-gateway")
 
+# Initialize rate limiter
+try:
+    rate_limiter = RateLimiter()
+    print("✅ Rate limiter initialized")
+except Exception as e:
+    print(f"⚠️ Rate limiter initialization failed: {e}")
+    rate_limiter = None
+
+# Initialize security clients
+SECURITY_GUARDRAILS_URL = os.getenv('SECURITY_GUARDRAILS_URL', 'http://security-guardrails:8013')
+PROMPT_ENHANCEMENT_URL = os.getenv('PROMPT_ENHANCEMENT_URL', 'http://prompt-enhancement:8012')
+
+security_client = SecurityClient(SECURITY_GUARDRAILS_URL)
+enhancement_client = EnhancementClient(PROMPT_ENHANCEMENT_URL)
+
 # Service registry
 SERVICES = {
     'ingest': INGEST_SERVICE_URL,
@@ -31,6 +48,8 @@ SERVICES = {
     'vector_db': VECTOR_DB_URL,
     'embedding': EMBEDDING_SERVICE_URL,
     'docling': DOCLING_SERVICE_URL,
+    'security': SECURITY_GUARDRAILS_URL,
+    'enhancement': PROMPT_ENHANCEMENT_URL,
 }
 
 def check_services():
@@ -360,16 +379,114 @@ def cancel_request():
 @timed(metrics, 'ask_request')
 def ask():
     """Ask question (non-streaming) - Transform React UI format to chat service format"""
+    import time
+
     try:
         metrics.increment('ask_requests')
 
+        # Track timing for performance metrics
+        timing_metrics = {}
+        gateway_start = time.time()
+
+        # RATE LIMITING: Check if request is within limits
+        rate_limit_start = time.time()
+        if rate_limiter:
+            rate_check = rate_limiter.check_rate_limit(request)
+
+            # Add rate limit headers
+            if not rate_check['allowed']:
+                metrics.increment('rate_limit_exceeded')
+                return jsonify({
+                    'error': 'Rate limit exceeded',
+                    'message': f"Too many requests. Please try again in {rate_check['retry_after']} seconds.",
+                    'retry_after': rate_check['retry_after'],
+                    'limit': rate_check['limit']
+                }), 429, {
+                    'X-RateLimit-Limit': str(rate_check['limit']),
+                    'X-RateLimit-Remaining': '0',
+                    'X-RateLimit-Reset': str(rate_check['reset_at']),
+                    'Retry-After': str(rate_check['retry_after'])
+                }
+
+            # Log rate limit info
+            print(f"🔒 Rate limit: {rate_check['remaining']}/{rate_check['limit']} remaining")
+
+        timing_metrics['rate_limit_check_ms'] = (time.time() - rate_limit_start) * 1000
+
         # Get React UI format
         data = request.json
-        print(f"🌐 API Gateway received request: query={data.get('query', '')[:50]}, model={data.get('model')}")
+        original_query = data.get('query', data.get('question', ''))
+        print(f"🌐 API Gateway received request: query={original_query[:50]}, model={data.get('model')}")
+
+        # SECURITY: Step 1 - Validate input
+        use_security = data.get('use_security', True)  # Enable by default
+        security_violations = []
+        cleaned_query = original_query
+        timing_metrics['security_validation_ms'] = 0
+
+        if use_security:
+            print(f"🔒 Security validation enabled")
+            security_start = time.time()
+
+            security_result = security_client.validate_input(
+                query=original_query,
+                use_case='educational',
+                config={
+                    'check_pii': True,
+                    'check_injection': True,
+                    'check_topics': True,
+                    'check_unicode': True,
+                    'block_on_violation': False  # Warn instead of block
+                }
+            )
+
+            timing_metrics['security_validation_ms'] = (time.time() - security_start) * 1000
+            print(f"⏱️  Security validation took {timing_metrics['security_validation_ms']:.1f}ms")
+
+            # Check if blocked
+            if security_result['status'] == 'blocked':
+                metrics.increment('security_blocked_requests')
+                print(f"🚫 Request blocked by security: {security_result['violations']}")
+                return jsonify({
+                    'error': 'Query blocked by security policy',
+                    'violations': security_result['violations'],
+                    'status': 'blocked'
+                }), 403
+
+            # Use cleaned query and track violations
+            cleaned_query = security_result.get('cleaned_query', original_query)
+            security_violations = security_result.get('violations', [])
+
+            if security_violations:
+                print(f"⚠️  Security warnings: {len(security_violations)} violations detected")
+
+        # ENHANCEMENT: Step 2 - Enhance prompt (optional)
+        use_enhancement = data.get('use_enhancement', False)  # Disabled by default for now
+        timing_metrics['prompt_enhancement_ms'] = 0
+
+        if use_enhancement:
+            print(f"✨ Prompt enhancement enabled")
+            enhancement_start = time.time()
+
+            enhancement_result = enhancement_client.enhance(
+                query=cleaned_query,
+                config={
+                    'enhancement_level': 'standard',
+                    'output_format': 'markdown',
+                    'query_type': 'default'
+                }
+            )
+
+            timing_metrics['prompt_enhancement_ms'] = (time.time() - enhancement_start) * 1000
+            print(f"⏱️  Prompt enhancement took {timing_metrics['prompt_enhancement_ms']:.1f}ms")
+
+            enhanced_query = enhancement_result.get('enhanced_prompt', cleaned_query)
+        else:
+            enhanced_query = cleaned_query
 
         # Transform to chat service format (frontend sends snake_case)
         chat_request = {
-            'question': data.get('query', data.get('question', '')),
+            'question': enhanced_query,
             'top_k': data.get('top_k', 5),
             'use_query_expansion': data.get('use_query_expansion', False),
             'use_bm25': data.get('use_bm25', False),
@@ -401,7 +518,30 @@ def ask():
 
         metrics.increment('ask_success')
 
-        return jsonify(response.json())
+        # Add security information and timing metrics to response
+        chat_response = response.json()
+
+        # Calculate total API Gateway overhead
+        gateway_overhead_ms = (time.time() - gateway_start) * 1000
+        # Subtract the chat service time to get just gateway overhead
+        chat_service_time = chat_response.get('metrics', {}).get('total_latency_ms', 0)
+        timing_metrics['api_gateway_overhead_ms'] = max(0, gateway_overhead_ms - chat_service_time)
+
+        # Merge timing metrics into response
+        if 'metrics' not in chat_response:
+            chat_response['metrics'] = {}
+
+        chat_response['metrics'].update(timing_metrics)
+        print(f"⏱️  Total gateway overhead: {timing_metrics['api_gateway_overhead_ms']:.1f}ms")
+
+        # Add security information
+        if use_security and security_violations:
+            chat_response['security'] = {
+                'violations': security_violations,
+                'cleaned_query_used': cleaned_query != original_query
+            }
+
+        return jsonify(chat_response)
     except Exception as e:
         error_msg = str(e)
         print(f"❌ API Gateway error: {error_msg}")

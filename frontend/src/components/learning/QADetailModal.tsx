@@ -85,9 +85,9 @@ export function QADetailModal({ qa, onClose, onSelectRelated }: QADetailModalPro
               <ReactMarkdown
                 components={{
                   // Custom code block styling
-                  code: ({ node, className, children, ...props }) => {
-                    const isInline = !className;
-                    if (isInline) {
+                  code: ({ node, className, children, ...props }: any) => {
+                    const inline = !className;
+                    if (inline) {
                       return (
                         <code className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-sm" {...props}>
                           {children}

@@ -23,6 +23,25 @@ export function SettingsPanel() {
   const setRerankTopK = useConfigStore((state) => state.setRerankTopK);
   const reset = useConfigStore((state) => state.reset);
 
+  // New intelligence features
+  const usePromptEnhancement = useConfigStore((state) => state.usePromptEnhancement);
+  const useAutoModelRouting = useConfigStore((state) => state.useAutoModelRouting);
+  const useVectorDB = useConfigStore((state) => state.useVectorDB);
+  const useResearchAgent = useConfigStore((state) => state.useResearchAgent);
+  const useWebSearch = useConfigStore((state) => state.useWebSearch);
+  const useGraph = useConfigStore((state) => state.useGraph);
+  const toggleFeature = useConfigStore((state) => state.toggleFeature);
+
+  // Debug logging
+  console.log('🔍 SettingsPanel render - Intelligence Features:', {
+    usePromptEnhancement,
+    useAutoModelRouting,
+    useVectorDB,
+    useResearchAgent,
+    useWebSearch,
+    useGraph,
+  });
+
   return (
     <div className="space-y-6">
       {/* Quick Presets */}
@@ -169,6 +188,226 @@ export function SettingsPanel() {
             <p className="text-xs text-muted-foreground">
               Results to keep after reranking
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Intelligence Features - NEW Nov 5, 2025 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>🧠 Intelligence Features</CardTitle>
+          <CardDescription>
+            Enable AI-powered query processing and optimization
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="prompt-enhancement" className="text-base font-medium">
+                🔮 Prompt Enhancement
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Automatically enhance queries using CoT, ReAct, or Few-Shot frameworks
+              </p>
+            </div>
+            <button
+              type="button"
+              id="prompt-enhancement"
+              onClick={(e) => {
+                e.preventDefault();
+                console.log('🔍 Prompt Enhancement toggle clicked');
+                toggleFeature('usePromptEnhancement');
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                usePromptEnhancement
+                  ? 'bg-primary'
+                  : 'bg-muted'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform pointer-events-none ${
+                  usePromptEnhancement
+                    ? 'translate-x-6'
+                    : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="auto-routing" className="text-base font-medium">
+                🎯 Auto Model Routing
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Automatically select optimal LLM model based on query complexity
+              </p>
+            </div>
+            <button
+              type="button"
+              id="auto-routing"
+              onClick={(e) => {
+                e.preventDefault();
+                console.log('🔍 Auto Model Routing toggle clicked');
+                toggleFeature('useAutoModelRouting');
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                useAutoModelRouting
+                  ? 'bg-primary'
+                  : 'bg-muted'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform pointer-events-none ${
+                  useAutoModelRouting
+                    ? 'translate-x-6'
+                    : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Data Sources - NEW Nov 5, 2025 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>📚 Data Sources</CardTitle>
+          <CardDescription>
+            Control which data sources are used for retrieval
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="vector-db" className="text-base font-medium">
+                📄 Vector Database
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Search uploaded documents and ingested content
+              </p>
+            </div>
+            <button
+              type="button"
+              id="vector-db"
+              onClick={(e) => {
+                e.preventDefault();
+                console.log('🔍 Vector DB toggle clicked');
+                toggleFeature('useVectorDB');
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                useVectorDB
+                  ? 'bg-primary'
+                  : 'bg-muted'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform pointer-events-none ${
+                  useVectorDB
+                    ? 'translate-x-6'
+                    : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="research-agent" className="text-base font-medium">
+                🔬 Research Agent
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Include auto-discovered research content (91 items, 6 sources)
+              </p>
+            </div>
+            <button
+              type="button"
+              id="research-agent"
+              onClick={(e) => {
+                e.preventDefault();
+                console.log('🔍 Research Agent toggle clicked');
+                toggleFeature('useResearchAgent');
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                useResearchAgent
+                  ? 'bg-primary'
+                  : 'bg-muted'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform pointer-events-none ${
+                  useResearchAgent
+                    ? 'translate-x-6'
+                    : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="web-search-source" className="text-base font-medium">
+                🌐 Web Search
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Include real-time web search results (SearXNG)
+              </p>
+            </div>
+            <button
+              type="button"
+              id="web-search-source"
+              onClick={(e) => {
+                e.preventDefault();
+                console.log('🔍 Web Search toggle clicked');
+                toggleFeature('useWebSearch');
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                useWebSearch
+                  ? 'bg-primary'
+                  : 'bg-muted'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform pointer-events-none ${
+                  useWebSearch
+                    ? 'translate-x-6'
+                    : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="knowledge-graph-source" className="text-base font-medium">
+                🕸️ Knowledge Graph
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Include related entities from knowledge graph
+              </p>
+            </div>
+            <button
+              type="button"
+              id="knowledge-graph-source"
+              onClick={(e) => {
+                e.preventDefault();
+                console.log('🔍 Knowledge Graph toggle clicked');
+                toggleFeature('useGraph');
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                useGraph
+                  ? 'bg-primary'
+                  : 'bg-muted'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform pointer-events-none ${
+                  useGraph
+                    ? 'translate-x-6'
+                    : 'translate-x-1'
+                }`}
+              />
+            </button>
           </div>
         </CardContent>
       </Card>

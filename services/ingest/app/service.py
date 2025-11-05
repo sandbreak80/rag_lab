@@ -6,6 +6,7 @@ from flask import Flask, request, jsonify
 import requests
 import sys
 import os
+import time
 from pathlib import Path
 import tempfile
 import json
@@ -477,6 +478,115 @@ def upload_from_url():
 
     except Exception as e:
         metrics.increment('url_upload_errors')
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/ingest', methods=['POST'])
+@timed(metrics, 'ingest_process')
+def ingest_content():
+    """
+    Programmatic content ingestion (for research agent, web scrapers, etc.)
+
+    JSON body:
+    {
+        "content": "# Markdown content here...",
+        "filename": "research_paper.md",
+        "metadata": {
+            "source": "research-agent",
+            "external_id": "arxiv:2311.12345",
+            "title": "Paper Title",
+            "url": "https://...",
+            ...
+        }
+    }
+
+    Returns:
+    {
+        "success": true,
+        "filename": "research_paper.md",
+        "chunks_created": 15,
+        "processing_time_ms": 1234
+    }
+    """
+    try:
+        print(f"📥 Programmatic ingest request received")
+
+        # Get JSON body
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No JSON body provided'}), 400
+
+        content = data.get('content')
+        filename = data.get('filename', 'document.md')
+        metadata = data.get('metadata', {})
+
+        if not content:
+            return jsonify({'error': 'No content provided'}), 400
+
+        print(f"   Filename: {filename}")
+        print(f"   Content length: {len(content)} characters")
+        print(f"   Metadata fields: {list(metadata.keys())}")
+
+        # Save content to temp file
+        import tempfile
+        import io
+
+        # Determine file type from filename
+        file_ext = filename.split('.')[-1].lower()
+        if file_ext not in SUPPORTED_EXTENSIONS:
+            file_ext = 'md'  # Default to markdown
+
+        start_time = time.time()
+
+        # Process content based on type
+        if file_ext in ['md', 'txt']:
+            # For markdown/text, chunk the content directly
+            # Prepare base metadata
+            base_metadata = {
+                'title': metadata.get('title', filename),
+                'file_name': filename,
+                'tags': metadata.get('tags', []),
+                'wikilinks': []
+            }
+            base_metadata.update(metadata)  # Merge in all custom metadata
+
+            chunks = chunk_content(content, base_metadata)
+        elif file_ext == 'pdf':
+            # For PDF, we'd need the binary content
+            return jsonify({'error': 'PDF ingestion requires file upload via /upload endpoint'}), 400
+        else:
+            return jsonify({'error': f'Unsupported file type: {file_ext}'}), 400
+
+        # Add metadata to chunks
+        for chunk in chunks:
+            if 'metadata' not in chunk:
+                chunk['metadata'] = {}
+            chunk['metadata'].update(metadata)
+
+        # Step 2: Generate embeddings
+        print(f"🔢 Generating embeddings for {len(chunks)} chunks...")
+        chunks = embed_chunks(chunks)
+
+        # Step 3: Store in vector database
+        print(f"📊 Storing {len(chunks)} chunks in vector database...")
+        store_result = store_in_vector_db(chunks, base_metadata)
+
+        processing_time = (time.time() - start_time) * 1000
+
+        print(f"✅ Ingestion complete: {len(chunks)} chunks, {processing_time:.1f}ms")
+        metrics.increment('ingests_success')
+
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'chunks_created': len(chunks),
+            'processing_time_ms': round(processing_time, 1)
+        })
+
+    except Exception as e:
+        print(f"❌ Ingestion error: {e}")
+        metrics.increment('ingests_failed')
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/list', methods=['GET'])

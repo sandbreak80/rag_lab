@@ -25,11 +25,39 @@ const COLORS = {
   // Service Latencies
   'Search Service': '#14b8a6', // teal
   'Chat Service Overhead': '#94a3b8', // slate-400
+
+  // Security & Enhancement (NEW - for learning lab)
+  'Input Validation': '#dc2626', // red-600 (security)
+  'Prompt Enhancement': '#16a34a', // green-600 (enhancement)
+  'Model Routing': '#f97316', // orange-500 (routing)
+
+  // Infrastructure (NEW)
+  'Rate Limit Check': '#7c3aed', // violet-600
+  'API Gateway': '#475569', // slate-600
 };
 
 export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps) {
   // Transform metrics into chart data
   const data = [
+    // Security & Enhancement (happens FIRST)
+    {
+      name: 'Input Validation',
+      time: metrics.security_validation_ms || 0,
+      enabled: (metrics.security_validation_ms || 0) > 0,
+      category: 'security',
+    },
+    {
+      name: 'Prompt Enhancement',
+      time: metrics.prompt_enhancement_ms || 0,
+      enabled: (metrics.prompt_enhancement_ms || 0) > 0,
+      category: 'enhancement',
+    },
+    {
+      name: 'Model Routing',
+      time: metrics.model_routing_ms || 0,
+      enabled: (metrics.model_routing_ms || 0) > 0,
+      category: 'routing',
+    },
     // Search Service Components (in order of execution)
     {
       name: 'Query Expansion',
@@ -95,6 +123,19 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
       time: metrics.chat_service_overhead_ms || 0,
       enabled: (metrics.chat_service_overhead_ms || 0) > 0,
       category: 'overhead',
+    },
+    // Infrastructure Overhead (happens throughout)
+    {
+      name: 'Rate Limit Check',
+      time: metrics.rate_limit_check_ms || 0,
+      enabled: (metrics.rate_limit_check_ms || 0) > 0,
+      category: 'infrastructure',
+    },
+    {
+      name: 'API Gateway',
+      time: metrics.api_gateway_overhead_ms || 0,
+      enabled: (metrics.api_gateway_overhead_ms || 0) > 0,
+      category: 'infrastructure',
     },
   ].filter(item => item.enabled); // Only show enabled features
 

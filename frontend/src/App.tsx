@@ -12,6 +12,11 @@ import { FeedbackPage } from './components/feedback/FeedbackPage';
 import { PromptLoggingPage } from './components/logging/PromptLoggingPage';
 import { VersionFooter } from './components/layout/VersionFooter';
 import { ToastProvider } from './components/ui/toast';
+import { AuthProvider } from './contexts/AuthContext';
+import { LoginPage } from './components/auth/LoginPage';
+import { RegisterPage } from './components/auth/RegisterPage';
+import { UserProfile } from './components/auth/UserProfile';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -28,21 +33,35 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<AppLayout />}>
-              <Route index element={<ChatPage />} />
-              <Route path="documents" element={<DocumentsPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-              <Route path="metrics" element={<MetricsPage />} />
-              <Route path="logging" element={<PromptLoggingPage />} />
-              <Route path="lab" element={<LabGuidePage />} />
-              <Route path="learning" element={<LearningHubPage />} />
-              <Route path="feedback" element={<FeedbackPage />} />
-            </Route>
-          </Routes>
-          <VersionFooter />
-        </BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+
+              {/* Protected Routes */}
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <UserProfile />
+                </ProtectedRoute>
+              } />
+
+              {/* App Routes (Chat accessible to guests, others optional) */}
+              <Route path="/" element={<AppLayout />}>
+                <Route index element={<ChatPage />} />
+                <Route path="documents" element={<DocumentsPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+                <Route path="metrics" element={<MetricsPage />} />
+                <Route path="logging" element={<PromptLoggingPage />} />
+                <Route path="lab" element={<LabGuidePage />} />
+                <Route path="learning" element={<LearningHubPage />} />
+                <Route path="feedback" element={<FeedbackPage />} />
+              </Route>
+            </Routes>
+            <VersionFooter />
+          </BrowserRouter>
+        </AuthProvider>
       </ToastProvider>
     </QueryClientProvider>
   );

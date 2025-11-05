@@ -15,8 +15,11 @@ volumes:
   knowledge-graph:        # Knowledge graph relationships
   uploads:                # Uploaded documents
   metrics-data:           # Performance metrics database
-  security-models:        # Security ML models (future)
+  security-models:        # Security ML models
   ollama-models:          # Ollama model storage
+  auth-data:              # Authentication database
+  redis-data:             # Redis cache and rate limit data
+  research-agent-data:    # Research agent database and cache
 
 services:
   # ============================================================================
@@ -48,6 +51,50 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+
+  # vLLM - High-Performance LLM Serving (OpenAI-compatible API)
+  # ============================================================================
+  # NOTE: Disabled for now - Tesla T4 (compute 7.5) has compatibility issues with vLLM v0.11.0
+  # Requires GPU with compute capability >= 8.0 for full feature support (Flash Attention 2)
+  # NVIDIA A4000 (compute 8.6) would be fully compatible
+  # Uncomment below when hardware is upgraded:
+  #
+  # vllm:
+  #   build:
+  #     context: ./services/vllm
+  #     dockerfile: Dockerfile
+  #   container_name: rag-vllm
+  #   networks:
+  #     - rag-network
+  #   ports:
+  #     - "8100:8000"  # OpenAI-compatible API
+  #   volumes:
+  #     - ollama-models:/root/.cache/huggingface
+  #   environment:
+  #     - HF_HOME=/root/.cache/huggingface
+  #   command: >
+  #     --model hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4
+  #     --quantization awq
+  #     --host 0.0.0.0
+  #     --port 8000
+  #     --max-model-len 8192
+  #     --gpu-memory-utilization 0.85
+  #     --enable-prefix-caching
+  #     --max-num-seqs 16
+  #   restart: unless-stopped
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: all
+  #             capabilities: [gpu]
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     start_period: 180s
+  #     retries: 3
 
   # ============================================================================
   # CORE RAG SERVICES
@@ -406,6 +453,218 @@ services:
       retries: 3
 
   # ============================================================================
+  # SECURITY SERVICES (Enterprise LLM Security)
+  # ============================================================================
+
+  # Security Guardrails Service (Port 8013)
+  security-guardrails:
+    image: python:3.11-slim
+    container_name: rag-security-guardrails
+    networks:
+      - rag-network
+    ports:
+      - "8013:8013"
+    volumes:
+      - ./services/security-guardrails/app:/app
+      - ./services/security-guardrails/requirements.txt:/requirements.txt
+      - ./services/security-guardrails/download_models.sh:/download_models.sh
+      - ./services/common:/workspace/services/common
+      - ./config:/workspace/config
+      - security-models:/models
+    working_dir: /app
+    env_file:
+      - config.env
+    environment:
+      - SERVICE_NAME=security-guardrails
+      - SERVICE_PORT=8013
+      - MODEL_CACHE_DIR=/models
+      - HF_HOME=/models/huggingface
+      - TRANSFORMERS_CACHE=/models/huggingface
+      - PYTHONPATH=/workspace
+    command: bash -c "apt-get update -qq && apt-get install -y -qq curl && pip install -q -r /requirements.txt && chmod +x /download_models.sh && /download_models.sh && python -u service.py"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8013/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prompt Enhancement Service (Port 8012)
+  prompt-enhancement:
+    image: python:3.11-slim
+    container_name: rag-prompt-enhancement
+    networks:
+      - rag-network
+    ports:
+      - "8012:8012"
+    volumes:
+      - ./services/prompt-enhancement/app:/app
+      - ./services/prompt-enhancement/requirements.txt:/requirements.txt
+      - ./services/common:/workspace/services/common
+      - ./config:/workspace/config
+      - ./templates:/workspace/templates
+    working_dir: /app
+    env_file:
+      - config.env
+    environment:
+      - SERVICE_NAME=prompt-enhancement
+      - SERVICE_PORT=8012
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - PROMPT_CLASSIFIER_URL=http://prompt-classifier:8017
+      - PYTHONPATH=/workspace
+    command: bash -c "apt-get update -qq && apt-get install -y -qq curl && pip install -q -r /requirements.txt && python -u service.py"
+    depends_on:
+      - ollama
+      - prompt-classifier
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8012/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis (for rate limiting and caching)
+  redis:
+    image: redis:7-alpine
+    container_name: rag-redis
+    networks:
+      - rag-network
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Authentication Service (Port 8014)
+  auth-service:
+    image: python:3.11-slim
+    container_name: rag-auth-service
+    networks:
+      - rag-network
+    ports:
+      - "8014:8014"
+    volumes:
+      - ./services/auth-service/app:/app
+      - ./services/auth-service/requirements.txt:/requirements.txt
+      - ./services/common:/workspace/services/common
+      - ./config:/workspace/config
+      - auth-data:/data
+    working_dir: /app
+    env_file:
+      - config.env
+    environment:
+      - SERVICE_NAME=auth-service
+      - SERVICE_PORT=8014
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-this-in-production}
+      - DB_PATH=/data/auth.db
+      - PYTHONPATH=/workspace
+    command: bash -c "apt-get update -qq && apt-get install -y -qq curl && pip install -q -r /requirements.txt && python -u service.py"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8014/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Research Agent (Port 8015) - Autonomous AI Research Discovery
+  research-agent:
+    image: python:3.11-slim
+    container_name: rag-research-agent
+    networks:
+      - rag-network
+    ports:
+      - "8015:8015"
+    volumes:
+      - ./services/research-agent/app:/app
+      - ./services/research-agent/requirements.txt:/requirements.txt
+      - ./services/common:/workspace/services/common
+      - ./config:/workspace/config
+      - research-agent-data:/data
+    working_dir: /app
+    env_file:
+      - config.env
+    environment:
+      - SERVICE_NAME=research-agent
+      - SERVICE_PORT=8015
+      - INGEST_SERVICE_URL=http://ingest-service:8001
+      - DOCLING_SERVICE_URL=http://docling-service:8004
+      - DB_PATH=/data/research_agent.db
+      - PYTHONPATH=/workspace
+      # PDF Processing Options
+      - USE_DOCLING_FOR_PDFS=false  # Set to 'true' to process full PDFs (slower but more complete)
+      - MAX_PDF_SIZE_MB=10  # Skip PDFs larger than this
+    command: bash -c "apt-get update -qq && apt-get install -y -qq curl && pip install -q -r /requirements.txt && python -u service.py"
+    depends_on:
+      - ingest-service
+      - docling-service
+    restart: unless-stopped
+
+  # Prompt Classifier (Port 8017) - Intelligent Query Categorization
+  prompt-classifier:
+    image: python:3.11-slim
+    container_name: rag-prompt-classifier
+    networks:
+      - rag-network
+    ports:
+      - "8017:8017"
+    volumes:
+      - ./services/prompt-classifier/app:/app
+      - ./services/prompt-classifier/requirements.txt:/requirements.txt
+      - ./services/common:/workspace/services/common
+    working_dir: /app
+    env_file:
+      - config.env
+    environment:
+      - SERVICE_NAME=prompt-classifier
+      - SERVICE_PORT=8017
+      - PYTHONPATH=/workspace
+    command: bash -c "pip install -q -r /requirements.txt && python -u service.py"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8017/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Model Router (Port 8018) - Intelligent Model Selection
+  model-router:
+    image: python:3.11-slim
+    container_name: rag-model-router
+    networks:
+      - rag-network
+    ports:
+      - "8018:8018"
+    volumes:
+      - ./services/model-router/app:/app
+      - ./services/model-router/requirements.txt:/requirements.txt
+      - ./services/common:/workspace/services/common
+    working_dir: /app
+    env_file:
+      - config.env
+    environment:
+      - SERVICE_NAME=model-router
+      - SERVICE_PORT=8018
+      - OLLAMA_URL=http://ollama:11434
+      - PROMPT_CLASSIFIER_URL=http://prompt-classifier:8017
+      - PYTHONPATH=/workspace
+    command: bash -c "apt-get update -qq && apt-get install -y -qq curl && pip install -q -r /requirements.txt && python -u service.py"
+    depends_on:
+      - ollama
+      - prompt-classifier
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8018/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
   # API & FRONTEND
   # ============================================================================
 
@@ -419,6 +678,7 @@ services:
       - "8000:8000"
     volumes:
       - ./services/api-gateway/app:/app
+      - ./services/api-gateway/requirements.txt:/workspace/services/api-gateway/requirements.txt:ro
       - ./services/common:/workspace/services/common
       - ./config:/workspace/config
       - ./VERSION:/workspace/VERSION:ro
@@ -434,12 +694,20 @@ services:
       - CHAT_SERVICE_URL=http://chat-service:8003
       - VECTOR_DB_URL=http://vector-db:8005
       - EMBEDDING_SERVICE_URL=http://embedding-service:8006
+      - SECURITY_GUARDRAILS_URL=http://security-guardrails:8013
+      - PROMPT_ENHANCEMENT_URL=http://prompt-enhancement:8012
+      - AUTH_SERVICE_URL=http://auth-service:8014
+      - REDIS_URL=redis://redis:6379/0
       - PYTHONPATH=/workspace
-    command: bash -c "apt-get update -qq && apt-get install -y -qq docker.io && pip install -q flask flask-cors requests && python -u service.py"
+    command: bash -c "apt-get update -qq && apt-get install -y -qq docker.io && pip install -q -r /workspace/services/api-gateway/requirements.txt && python -u service.py"
     depends_on:
       - search-service
       - chat-service
       - vector-db
+      - security-guardrails
+      - prompt-enhancement
+      - auth-service
+      - redis
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

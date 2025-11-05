@@ -1,0 +1,10 @@
+flask==3.0.0
+flask-cors==4.0.0
+requests==2.31.0
+jinja2==3.1.2
+pyyaml==6.0.1
+python-dotenv==1.0.0
+
+# Optional: LLM rewrite
+ollama==0.1.0
+

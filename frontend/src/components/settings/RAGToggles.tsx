@@ -5,6 +5,12 @@ import { Label } from '../ui/label';
 
 const RAG_FEATURES = [
   {
+    key: 'useSecurity' as const,
+    label: '🔒 Security Guardrails',
+    description: 'PII detection, prompt injection blocking, content filtering',
+    impact: 'Enterprise-grade security',
+  },
+  {
     key: 'useQueryExpansion' as const,
     label: 'Query Expansion',
     description: 'Expand queries with synonyms and related terms',

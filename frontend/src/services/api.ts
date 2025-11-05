@@ -22,6 +22,10 @@ class ApiClient {
     answer: string;
     sources: Source[];
     metrics: any;
+    security?: {
+      violations: any[];
+      cleaned_query_used: boolean;
+    };
   }> {
     // Convert camelCase to snake_case for backend
     const backendConfig = {
@@ -37,16 +41,27 @@ class ApiClient {
       use_reranking: config.useReranking,
       use_web_search: config.useWebSearch,
       use_agentic_chunking: config.useAgenticChunking,
+      use_security: config.useSecurity,
       web_search_docs: config.webSearchDocs,
       web_search_pages_per_doc: config.webSearchPages,
       rerank_top_k: config.rerankTopK,
       metadata_filters: config.metadataFilters,
+      // Intelligence features
+      use_enhancement: config.usePromptEnhancement,
+      use_auto_routing: config.useAutoModelRouting,
+      // Data source toggles
+      use_vector_db: config.useVectorDB,
+      use_research_agent: config.useResearchAgent,
     };
 
     console.log('🔍 API sending request with config:', {
       top_k: backendConfig.top_k,
       use_web_search: backendConfig.use_web_search,
       web_search_docs: backendConfig.web_search_docs,
+      use_enhancement: backendConfig.use_enhancement,
+      use_auto_routing: backendConfig.use_auto_routing,
+      use_vector_db: backendConfig.use_vector_db,
+      use_research_agent: backendConfig.use_research_agent,
     });
 
     const response = await this.client.post('/ask', backendConfig, { signal });

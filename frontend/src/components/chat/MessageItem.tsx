@@ -6,6 +6,7 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { ChatMessage } from '../../types/chat';
 import { SourceCard } from './SourceCard';
 import { WaterfallChart } from '../metrics/WaterfallChart';
+import { SecurityStatus } from '../security/SecurityStatus';
 import { formatDate } from '../../utils/formatting';
 import { User, Bot, BarChart3 } from 'lucide-react';
 
@@ -97,6 +98,17 @@ export function MessageItem({ message }: MessageItemProps) {
                 <SourceCard key={index} source={source} index={index + 1} />
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Security Status */}
+        {!isUser && message.metadata?.security && (
+          <div className="mt-4">
+            <SecurityStatus
+              violations={message.metadata.security.violations}
+              cleanedQueryUsed={message.metadata.security.cleaned_query_used}
+              enabled={true}
+            />
           </div>
         )}
 

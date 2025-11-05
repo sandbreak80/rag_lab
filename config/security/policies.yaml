@@ -1,0 +1,117 @@
+# Security Policies Configuration
+# Enterprise LLM Security Settings
+
+# Topic Taxonomy
+topics:
+  # Allowed Topics (Educational/Enterprise)
+  allowed:
+    - id: rag_architecture
+      keywords: [RAG, retrieval, augmented, generation, vector, embedding]
+      examples:
+        - "How does RAG work?"
+        - "Explain vector search in RAG"
+
+    - id: ai_ml_concepts
+      keywords: [AI, ML, machine learning, neural network, transformer]
+      examples:
+        - "What is a transformer model?"
+        - "Explain attention mechanism"
+
+    - id: technical_architecture
+      keywords: [architecture, system, design, microservice, API]
+      examples:
+        - "How is the system architected?"
+        - "Explain the microservices"
+
+    - id: security_best_practices
+      keywords: [security, authentication, encryption, compliance]
+      examples:
+        - "What are LLM security best practices?"
+        - "How to prevent prompt injection?"
+
+  # Disallowed Topics (Out of Scope)
+  disallowed:
+    - id: medical_advice
+      keywords: [diagnosis, treatment, medication, symptoms, disease]
+      severity: high
+      message: "I cannot provide medical advice. Please consult a healthcare professional."
+
+    - id: legal_advice
+      keywords: [legal, lawsuit, contract review, attorney, litigation]
+      severity: high
+      message: "I cannot provide legal advice. Please consult a licensed attorney."
+
+    - id: financial_advice
+      keywords: [investment, stock, trading, financial planning, tax]
+      severity: medium
+      message: "I cannot provide financial advice. Please consult a financial advisor."
+
+    - id: personal_relationships
+      keywords: [dating, marriage, breakup, relationship advice]
+      severity: low
+      message: "This system is designed for technical and educational queries."
+
+    - id: illegal_activities
+      keywords: [hack, exploit, bypass, illegal, fraud, piracy]
+      severity: critical
+      message: "I cannot assist with illegal activities."
+
+# Use Case Policies
+use_case_policies:
+  educational:
+    name: "Educational Lab Mode"
+    allowed_topics: [rag_architecture, ai_ml_concepts, technical_architecture, security_best_practices]
+    disallowed_topics: [medical_advice, legal_advice, financial_advice, personal_relationships, illegal_activities]
+    strict_mode: false  # Allow warnings instead of hard blocks
+
+  demo:
+    name: "Customer Demo Mode"
+    allowed_topics: [rag_architecture, ai_ml_concepts, security_best_practices]
+    disallowed_topics: [medical_advice, legal_advice, financial_advice, personal_relationships, illegal_activities]
+    strict_mode: true  # Hard block on violations
+
+  production:
+    name: "Production Enterprise Mode"
+    allowed_topics: [rag_architecture, ai_ml_concepts, technical_architecture, security_best_practices]
+    disallowed_topics: [medical_advice, legal_advice, financial_advice, illegal_activities]
+    strict_mode: true
+    require_authentication: true
+    log_all_queries: true
+
+# Validation Settings
+validation:
+  max_query_length: 10000  # characters
+  min_query_length: 1
+  max_emojis: 10  # Suspicious if more than this
+  enable_unicode_sanitization: true
+  enable_pii_detection: true
+  enable_injection_detection: true
+  enable_topic_classification: true
+
+# PII Detection Settings
+pii:
+  redact: true  # Redact PII instead of blocking
+  log_detections: true
+  supported_types:
+    - EMAIL
+    - PHONE
+    - SSN
+    - CREDIT_CARD
+    - IP_ADDRESS
+    - ZIP_CODE
+
+# Injection Detection Settings
+injection:
+  enable_pattern_matching: true
+  enable_heuristic_analysis: true
+  enable_ml_classifier: false  # TODO: Enable when model is trained
+  block_threshold: 0.7  # Confidence threshold for blocking
+  log_attempts: true
+  alert_on_high_confidence: true
+
+# Rate Limiting (TODO: Implement in Phase 5)
+rate_limiting:
+  enabled: false
+  requests_per_minute: 100
+  burst_allowance: 10
+

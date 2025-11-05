@@ -11,10 +11,26 @@ export interface RAGConfig {
   useReranking: boolean;
   useWebSearch: boolean;
   useAgenticChunking: boolean;
+  useSecurity: boolean;
   webSearchDocs: number;
   webSearchPages: number;
   rerankTopK: number;
   metadataFilters?: MetadataFilters;
+
+  // New intelligence features (Nov 5, 2025)
+  usePromptEnhancement?: boolean;  // Enable intelligent prompt enhancement
+  useAutoModelRouting?: boolean;   // Enable automatic model selection
+
+  // Data source toggles
+  useVectorDB?: boolean;           // Search uploaded/ingested documents
+  useResearchAgent?: boolean;      // Include research agent discoveries
+}
+
+export interface DataSourceFilters {
+  vectorDB: boolean;       // Uploaded documents
+  researchAgent: boolean;  // Auto-discovered research
+  webSearch: boolean;      // Web search results
+  knowledgeGraph: boolean; // Knowledge graph entities
 }
 
 export interface MetadataFilters {

@@ -1,0 +1,150 @@
+# Production Docker Compose Configuration
+# Fast Track Phase 8 - Production Architecture
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# This file overrides development settings for production deployment
+
+version: '3.8'
+
+services:
+  # ============================================================================
+  # NGINX REVERSE PROXY (Standalone)
+  # ============================================================================
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: rag-nginx-proxy
+    networks:
+      - rag-network
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Nginx configuration
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+
+      # Frontend static files
+      - frontend-dist:/usr/share/nginx/html:ro
+
+      # Logs and cache
+      - nginx-cache:/var/cache/nginx
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - api-gateway-1
+      - api-gateway-2
+      - auth-service
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "com.rag-lab.service=nginx-proxy"
+      - "com.rag-lab.version=1.0"
+
+  # ============================================================================
+  # API GATEWAY (Multiple Instances - Load Balanced)
+  # ============================================================================
+
+  # Override base api-gateway to remove port mapping (we use instances instead)
+  api-gateway:
+    ports: []  # Remove port exposure - instances will handle it
+    deploy:
+      replicas: 0  # Don't actually run this one
+
+  api-gateway-1:
+    extends:
+      file: docker-compose.yml
+      service: api-gateway
+    container_name: rag-api-gateway-1
+    ports:
+      - "8000:8000"  # Expose for debugging
+    environment:
+      - INSTANCE_ID=1
+    labels:
+      - "com.rag-lab.service=api-gateway"
+      - "com.rag-lab.instance=1"
+
+  api-gateway-2:
+    extends:
+      file: docker-compose.yml
+      service: api-gateway
+    container_name: rag-api-gateway-2
+    ports:
+      - "8001:8000"  # Different external port
+    environment:
+      - INSTANCE_ID=2
+    labels:
+      - "com.rag-lab.service=api-gateway"
+      - "com.rag-lab.instance=2"
+
+  # ============================================================================
+  # FRONTEND (Build Once, Serve via Nginx)
+  # ============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: builder  # Only build stage
+    volumes:
+      - frontend-dist:/app/dist
+    command: sh -c "npm run build && cp -r /app/dist/* /app/dist/"
+    # This container exits after building
+    restart: "no"
+
+  # ============================================================================
+  # REDIS (Production tuning)
+  # ============================================================================
+  redis:
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru --save 60 1000
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # ============================================================================
+  # SECURITY SERVICES (Production tuning)
+  # ============================================================================
+  security-guardrails:
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2'
+    environment:
+      - WORKERS=4  # Multiple worker processes
+
+  # ============================================================================
+  # SERVICES SCALING (Optional - uncomment to scale)
+  # ============================================================================
+  # Uncomment to add more search service instances
+  # search-service-2:
+  #   extends:
+  #     file: docker-compose.yml
+  #     service: search-service
+  #   container_name: rag-search-service-2
+
+  # Uncomment to add more chat service instances
+  # chat-service-2:
+  #   extends:
+  #     file: docker-compose.yml
+  #     service: chat-service
+  #   container_name: rag-chat-service-2
+
+volumes:
+  frontend-dist:  # Built frontend files
+  nginx-cache:    # Nginx cache
+  nginx-logs:     # Nginx logs
+
+# Production-specific networks (optional)
+# networks:
+#   rag-network:
+#     driver: bridge
+#     ipam:
+#       config:
+#         - subnet: 172.28.0.0/16
+

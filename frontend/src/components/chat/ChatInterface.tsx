@@ -21,11 +21,11 @@ export function ChatInterface() {
 
   // Track if component is mounted to prevent error messages on page refresh
   const isMountedRef = useRef(true);
-  
+
   useEffect(() => {
     // Force loading state to false on mount (in case of page refresh during request)
     setLoading(false);
-    
+
     return () => {
       isMountedRef.current = false;
       // Abort any pending requests on unmount (page refresh/navigation)
@@ -49,10 +49,17 @@ export function ChatInterface() {
   const useReranking = useConfigStore((state) => state.useReranking);
   const useWebSearch = useConfigStore((state) => state.useWebSearch);
   const useAgenticChunking = useConfigStore((state) => state.useAgenticChunking);
+  const useSecurity = useConfigStore((state) => state.useSecurity);
   const webSearchDocs = useConfigStore((state) => state.webSearchDocs);
   const webSearchPages = useConfigStore((state) => state.webSearchPages);
   const rerankTopK = useConfigStore((state) => state.rerankTopK);
   const metadataFilters = useConfigStore((state) => state.metadataFilters);
+
+  // New intelligence features
+  const usePromptEnhancement = useConfigStore((state) => state.usePromptEnhancement);
+  const useAutoModelRouting = useConfigStore((state) => state.useAutoModelRouting);
+  const useVectorDB = useConfigStore((state) => state.useVectorDB);
+  const useResearchAgent = useConfigStore((state) => state.useResearchAgent);
 
   // Memoize config object - only recreates when values actually change
   const config = useMemo(() => ({
@@ -67,10 +74,15 @@ export function ChatInterface() {
     useReranking,
     useWebSearch,
     useAgenticChunking,
+    useSecurity,
     webSearchDocs,
     webSearchPages,
     rerankTopK,
     metadataFilters,
+    usePromptEnhancement,
+    useAutoModelRouting,
+    useVectorDB,
+    useResearchAgent,
   }), [
     model,
     temperature,
@@ -83,10 +95,15 @@ export function ChatInterface() {
     useReranking,
     useWebSearch,
     useAgenticChunking,
+    useSecurity,
     webSearchDocs,
     webSearchPages,
     rerankTopK,
     metadataFilters,
+    usePromptEnhancement,
+    useAutoModelRouting,
+    useVectorDB,
+    useResearchAgent,
   ]);
 
   const addMetric = useMetricsStore((state) => state.addQuery);
@@ -138,6 +155,11 @@ export function ChatInterface() {
             chat_service_overhead_ms: data.metrics.chat_service_overhead_ms,
             // Total
             total_latency_ms: data.metrics.total_latency_ms,
+          } : undefined,
+          // Security Information
+          security: data.security ? {
+            violations: data.security.violations,
+            cleaned_query_used: data.security.cleaned_query_used,
           } : undefined,
         },
       };

@@ -1,6 +1,4 @@
 // Chat Message Types
-import { PerformanceMetrics } from './performance';
-
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -25,6 +23,17 @@ export interface Source {
   };
 }
 
+export interface SecurityViolation {
+  type: string;
+  severity: string;
+  details: string;
+}
+
+export interface SecurityInfo {
+  violations?: SecurityViolation[];
+  cleaned_query_used?: boolean;
+}
+
 export interface MessageMetadata {
   model?: string;
   temperature?: number;
@@ -33,6 +42,38 @@ export interface MessageMetadata {
   latency?: number;
   token_count?: number;
   performance?: PerformanceMetrics;
+  security?: SecurityInfo;
+}
+
+export interface PerformanceMetrics {
+  // Search Service Components
+  query_expansion_ms?: number;
+  vector_search_ms?: number;
+  bm25_search_ms?: number;
+  fusion_ms?: number;
+  hybrid_fusion_ms?: number;
+  graph_enhancement_ms?: number;
+  graph_expansion_ms?: number;
+  reranking_ms?: number;
+  web_search_ms?: number;
+  // LLM Components
+  llm_generation_ms?: number;
+  llm_prompt_eval_duration_ms?: number;
+  llm_eval_duration_ms?: number;
+  llm_tokens_generated?: number;
+  llm_tokens_prompt?: number;
+  llm_tokens_per_second?: number;
+  // Service Latencies
+  search_service_latency_ms?: number;
+  chat_service_overhead_ms?: number;
+  // Security & Enhancement (NEW - for learning lab visibility)
+  security_validation_ms?: number;
+  prompt_enhancement_ms?: number;
+  // Infrastructure (NEW - API Gateway overhead)
+  rate_limit_check_ms?: number;
+  api_gateway_overhead_ms?: number;
+  // Total
+  total_latency_ms?: number;
 }
 
 // Chat Session

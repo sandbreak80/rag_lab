@@ -1,0 +1,23 @@
+flask==3.0.0
+flask-cors==4.0.0
+requests==2.31.0
+apscheduler==3.10.4
+python-dotenv==1.0.0
+python-dateutil==2.8.2
+arxiv==2.0.0
+PyPDF2==3.0.1
+markdown==3.5.1
+
+# Web Scraping Stack (World-Class!)
+trafilatura==1.7.0
+newspaper3k==0.2.8
+fake-useragent==1.4.0
+feedparser==6.0.10
+beautifulsoup4==4.12.2
+lxml==5.1.0
+
+# Note: Scrapy and Playwright excluded for now due to dependency conflicts
+# They require complex dependency trees that conflict with other packages
+# trafilatura + newspaper3k provides excellent scraping capabilities
+# Can add Scrapy later if needed in a dedicated scraping container
+
