@@ -11,6 +11,7 @@ import { LearningHubPage } from './components/learning/LearningHubPage';
 import { FeedbackPage } from './components/feedback/FeedbackPage';
 import { PromptLoggingPage } from './components/logging/PromptLoggingPage';
 import { VersionFooter } from './components/layout/VersionFooter';
+import { ToastProvider } from './components/ui/toast';
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -26,21 +27,23 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<AppLayout />}>
-            <Route index element={<ChatPage />} />
-            <Route path="documents" element={<DocumentsPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-            <Route path="metrics" element={<MetricsPage />} />
-            <Route path="logging" element={<PromptLoggingPage />} />
-            <Route path="lab" element={<LabGuidePage />} />
-            <Route path="learning" element={<LearningHubPage />} />
-            <Route path="feedback" element={<FeedbackPage />} />
-          </Route>
-        </Routes>
-        <VersionFooter />
-      </BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<AppLayout />}>
+              <Route index element={<ChatPage />} />
+              <Route path="documents" element={<DocumentsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="metrics" element={<MetricsPage />} />
+              <Route path="logging" element={<PromptLoggingPage />} />
+              <Route path="lab" element={<LabGuidePage />} />
+              <Route path="learning" element={<LearningHubPage />} />
+              <Route path="feedback" element={<FeedbackPage />} />
+            </Route>
+          </Routes>
+          <VersionFooter />
+        </BrowserRouter>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

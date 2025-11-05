@@ -14,7 +14,7 @@ export interface PerformanceMetrics {
   graph_expansion_ms?: number;
   reranking_ms?: number;
   web_search_ms?: number;
-  
+
   // LLM Components (from Ollama)
   llm_generation_ms?: number;
   llm_prompt_eval_duration_ms?: number;  // Time to process prompt
@@ -22,11 +22,11 @@ export interface PerformanceMetrics {
   llm_tokens_generated?: number;
   llm_tokens_prompt?: number;
   llm_tokens_per_second?: number;
-  
+
   // Service Latencies
   search_service_latency_ms?: number;
   chat_service_overhead_ms?: number;
-  
+
   // Total
   total_latency_ms?: number;
 }

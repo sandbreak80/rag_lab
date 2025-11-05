@@ -5,6 +5,7 @@ import { DocumentUpload } from './DocumentUpload';
 import { DocumentList } from './DocumentList';
 import { api } from '../../services/api';
 import { Network, RefreshCw } from 'lucide-react';
+import { useToast } from '../ui/toast';
 
 export function DocumentsPage() {
   const [selectedAlgorithm, setSelectedAlgorithm] = useState(() => {
@@ -12,6 +13,7 @@ export function DocumentsPage() {
   });
   const [showKGResetConfirm, setShowKGResetConfirm] = useState(false);
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   // Save algorithm to localStorage when it changes
   const handleAlgorithmChange = (algo: string) => {
@@ -30,10 +32,10 @@ export function DocumentsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stats'] });
       setShowKGResetConfirm(false);
-      alert('✅ Knowledge Graph reset successfully!');
+      showToast('success', '✅ Knowledge Graph reset successfully!');
     },
     onError: (error) => {
-      alert(`❌ KG Reset failed: ${error}`);
+      showToast('error', `❌ KG Reset failed: ${error}`);
       setShowKGResetConfirm(false);
     },
   });
@@ -43,10 +45,10 @@ export function DocumentsPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['stats'] });
       const stats = data.stats || {};
-      alert(`✅ Knowledge Graph built successfully!\n\nNodes: ${stats.nodes}\nEdges: ${stats.edges}\nAlgorithm: ${stats.algorithm}`);
+      showToast('success', `✅ Knowledge Graph built successfully!\n\nNodes: ${stats.nodes}\nEdges: ${stats.edges}\nAlgorithm: ${stats.algorithm}`);
     },
     onError: (error) => {
-      alert(`❌ KG Build failed: ${error}`);
+      showToast('error', `❌ KG Build failed: ${error}`);
     },
   });
 

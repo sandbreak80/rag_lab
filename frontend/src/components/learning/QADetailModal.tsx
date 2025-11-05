@@ -23,7 +23,7 @@ export function QADetailModal({ qa, onClose, onSelectRelated }: QADetailModalPro
       intermediate: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', icon: '🟡', label: 'Intermediate' },
       advanced: { color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', icon: '🔴', label: 'Advanced' },
     };
-    
+
     return badges[qa.difficulty];
   };
 
@@ -32,7 +32,7 @@ export function QADetailModal({ qa, onClose, onSelectRelated }: QADetailModalPro
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
-      <div 
+      <div
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={onClose}
       />

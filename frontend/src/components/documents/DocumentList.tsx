@@ -4,6 +4,7 @@ import { api } from '../../services/api';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { FileText, FileImage, FileSpreadsheet, File as FileIcon, RefreshCw, AlertTriangle } from 'lucide-react';
+import { useToast } from '../ui/toast';
 
 const getFileIcon = (filename: string) => {
   const ext = filename.split('.').pop()?.toLowerCase();
@@ -46,6 +47,7 @@ const getFileColor = (filename: string) => {
 export function DocumentList() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: response, isLoading, error } = useQuery({
     queryKey: ['documents'],
@@ -59,10 +61,10 @@ export function DocumentList() {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
       setShowResetConfirm(false);
-      alert('✅ Database reset successfully! System docs will be re-ingested automatically.');
+      showToast('success', '✅ Database reset successfully! System docs will be re-ingested automatically.');
     },
     onError: (error) => {
-      alert(`❌ Reset failed: ${error}`);
+      showToast('error', `❌ Reset failed: ${error}`);
       setShowResetConfirm(false);
     },
   });

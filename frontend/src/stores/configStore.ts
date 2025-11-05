@@ -42,7 +42,7 @@ interface ConfigStore extends RAGConfig {
 export const useConfigStore = create<ConfigStore>((set, get) => {
   // Load initial config from localStorage
   const savedConfig = loadFromLocalStorage<RAGConfig>('rag_config', DEFAULT_CONFIG);
-  
+
   // DEBUG: Log what config is being loaded
   console.log('🔍 ConfigStore initialized with:', {
     topK: savedConfig.topK,
