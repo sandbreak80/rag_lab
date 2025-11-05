@@ -497,26 +497,44 @@ def decompose_query_to_multi_queries(query: str, query_expander) -> List[str]:
     try:
         print(f"🔍 Multi-Query Decomposition: Breaking down {word_count}-word query...")
 
-        decomposition_prompt = f"""You are a query decomposition expert. Break this complex query into 3-5 focused sub-queries that can be searched independently.
+        decomposition_prompt = f"""Break this complex query into 3-5 simple search queries. Each query should be 5-10 words and focus on ONE topic.
 
-RULES:
-1. Each sub-query should focus on ONE main topic/concept
-2. Return ONLY the sub-queries, one per line
-3. No numbering, no explanations, no extra text
-4. Each query should be 5-10 words
-5. Make queries specific and searchable
+EXAMPLE:
+Input: "Explain LLMs, RAG, and neural networks"
+Output:
+Large Language Models architecture
+Retrieval Augmented Generation systems
+Neural network training methods
 
-COMPLEX QUERY:
+Now break down this query:
 {query[:1000]}
 
-SUB-QUERIES:"""
+Output (one query per line):"""
 
         response = query_expander.expand_with_context(decomposition_prompt)
-
+        
         # Parse response into list of queries
         sub_queries = []
+        
+        # Filter out instruction lines (common patterns to skip)
+        skip_patterns = [
+            'you are', 'break this', 'rules:', 'each sub-query', 'return only',
+            'no numbering', 'no explanations', 'make queries', 'complex query',
+            'sub-queries:', 'should focus', 'one per line', 'specific and searchable'
+        ]
+        
         for line in response.strip().split('\n'):
             line = line.strip()
+            
+            # Skip empty lines
+            if not line:
+                continue
+            
+            # Skip instruction lines
+            line_lower = line.lower()
+            if any(pattern in line_lower for pattern in skip_patterns):
+                continue
+            
             # Remove numbering (1., 2., etc.)
             line = re.sub(r'^\d+[\.\)]\s*', '', line)
             # Remove quotes
@@ -524,13 +542,15 @@ SUB-QUERIES:"""
             # Remove bullet points
             line = line.lstrip('•-*')
             line = line.strip()
-
-            if line and len(line.split()) >= 3:  # At least 3 words
+            
+            # Must be 5-50 words (reasonable query length)
+            word_count = len(line.split())
+            if line and 5 <= word_count <= 50:
                 sub_queries.append(line)
-
+        
         # Limit to 3-5 queries
         sub_queries = sub_queries[:5]
-
+        
         if len(sub_queries) >= 2:
             print(f"✅ Decomposed into {len(sub_queries)} sub-queries:")
             for i, sq in enumerate(sub_queries, 1):
