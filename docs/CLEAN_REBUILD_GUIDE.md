@@ -1,9 +1,9 @@
 # Clean Rebuild Guide - Ubuntu Server
 ## Complete From-Scratch Deployment & Validation
 
-**Date:** November 4, 2025  
-**Purpose:** Rebuild entire RAG Lab from scratch on Ubuntu server  
-**Target:** AWS Ubuntu Server with NVIDIA GPU  
+**Date:** November 4, 2025
+**Purpose:** Rebuild entire RAG Lab from scratch on Ubuntu server
+**Target:** AWS Ubuntu Server with NVIDIA GPU
 **Status:** Ready for Clean Deployment
 
 ---
@@ -324,23 +324,23 @@ echo
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Pulling optional models (this takes 10-20 minutes)..."
-    
+
     # Small models (fast)
     docker compose exec ollama ollama pull llama3.2:1b
     docker compose exec ollama ollama pull llama3.2:3b
     docker compose exec ollama ollama pull gemma2:2b
-    
+
     # Medium models
     docker compose exec ollama ollama pull gemma2:9b
     docker compose exec ollama ollama pull mistral:7b
-    
+
     # Large models
     docker compose exec ollama ollama pull qwen2.5:14b
-    
+
     # Alternative embeddings
     docker compose exec ollama ollama pull mxbai-embed-large
     docker compose exec ollama ollama pull all-minilm
-    
+
     echo "✅ Optional models downloaded"
 else
     echo "⏭️  Skipping optional models (you can pull them later)"
@@ -645,7 +645,7 @@ echo "=== Performance Benchmark ==="
 for i in {1..5}; do
   echo "Query $i..."
   START=$(date +%s.%N)
-  
+
   curl -s -X POST http://localhost:8000/api/ask \
     -H "Content-Type: application/json" \
     -d '{
@@ -656,7 +656,7 @@ for i in {1..5}; do
         "use_reranking": true
       }
     }' > /dev/null
-  
+
   END=$(date +%s.%N)
   LATENCY=$(echo "$END - $START" | bc)
   echo "  Latency: ${LATENCY}s"
@@ -953,8 +953,8 @@ _______________________________________________
 
 ---
 
-**Clean Rebuild Guide Version:** 1.0  
-**Last Updated:** November 4, 2025  
+**Clean Rebuild Guide Version:** 1.0
+**Last Updated:** November 4, 2025
 **Status:** Ready for Use
 
 **Good luck with your clean rebuild!** 🚀

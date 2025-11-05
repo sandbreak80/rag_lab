@@ -250,7 +250,7 @@ echo
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     print_step "   Pulling optional models (10-20 minutes)..."
-    
+
     docker compose exec -T ollama ollama pull llama3.2:1b &
     docker compose exec -T ollama ollama pull llama3.2:3b &
     docker compose exec -T ollama ollama pull gemma2:2b &
@@ -259,7 +259,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     docker compose exec -T ollama ollama pull qwen2.5:14b &
     docker compose exec -T ollama ollama pull mxbai-embed-large &
     docker compose exec -T ollama ollama pull all-minilm &
-    
+
     wait
     print_success "   Optional models downloaded"
 else

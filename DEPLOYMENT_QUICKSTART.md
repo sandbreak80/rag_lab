@@ -157,7 +157,7 @@ docker compose up -d
 
 ---
 
-**Commit to deploy:** `2754f55`  
-**Time required:** 20-30 minutes  
+**Commit to deploy:** `2754f55`
+**Time required:** 20-30 minutes
 **Status:** ✅ Ready for deployment
 

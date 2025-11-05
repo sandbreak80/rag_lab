@@ -460,6 +460,216 @@ def bm25_search_internal(query: str, limit: int) -> List[Dict]:
     print(f"🔍 BM25: Returning {len(results)} results (filtered from {len(top_indices)})")
     return results
 
+def decompose_query_to_multi_queries(query: str, query_expander) -> List[str]:
+    """
+    🚀 FRONTIER MODEL TECHNIQUE: Multi-Query Decomposition
+    
+    Break complex prompts into 3-5 focused sub-queries for parallel search.
+    This is how GPT-4, Claude, and Perplexity handle complex multi-topic questions.
+    
+    Example:
+    Input: "Explain LLMs, RAG, backpropagation, knowledge graphs, and prompt injection attacks"
+    Output: [
+        "Large Language Models architecture and training",
+        "Retrieval Augmented Generation RAG systems",
+        "Backpropagation neural networks",
+        "Knowledge graphs for LLM applications",
+        "Prompt injection security attacks"
+    ]
+    
+    Args:
+        query: Original complex query
+        query_expander: LLM-based query expander
+        
+    Returns:
+        List of 3-5 focused sub-queries
+    """
+    if not query_expander:
+        print("⚠️  Query decomposition: No LLM available, returning original query")
+        return [query]
+    
+    # Only decompose complex queries (> 30 words or multiple topics)
+    word_count = len(query.split())
+    if word_count < 30:
+        print(f"⚠️  Query decomposition: Query too short ({word_count} words), skipping")
+        return [query]
+    
+    try:
+        print(f"🔍 Multi-Query Decomposition: Breaking down {word_count}-word query...")
+        
+        decomposition_prompt = f"""You are a query decomposition expert. Break this complex query into 3-5 focused sub-queries that can be searched independently.
+
+RULES:
+1. Each sub-query should focus on ONE main topic/concept
+2. Return ONLY the sub-queries, one per line
+3. No numbering, no explanations, no extra text
+4. Each query should be 5-10 words
+5. Make queries specific and searchable
+
+COMPLEX QUERY:
+{query[:1000]}
+
+SUB-QUERIES:"""
+
+        response = query_expander.expand_with_context(decomposition_prompt)
+        
+        # Parse response into list of queries
+        sub_queries = []
+        for line in response.strip().split('\n'):
+            line = line.strip()
+            # Remove numbering (1., 2., etc.)
+            line = re.sub(r'^\d+[\.\)]\s*', '', line)
+            # Remove quotes
+            line = line.strip('"\'')
+            # Remove bullet points
+            line = line.lstrip('•-*')
+            line = line.strip()
+            
+            if line and len(line.split()) >= 3:  # At least 3 words
+                sub_queries.append(line)
+        
+        # Limit to 3-5 queries
+        sub_queries = sub_queries[:5]
+        
+        if len(sub_queries) >= 2:
+            print(f"✅ Decomposed into {len(sub_queries)} sub-queries:")
+            for i, sq in enumerate(sub_queries, 1):
+                print(f"   {i}. {sq}")
+            return sub_queries
+        else:
+            print(f"⚠️  Decomposition returned {len(sub_queries)} queries, using original")
+            return [query]
+            
+    except Exception as e:
+        print(f"❌ Query decomposition failed: {e}, using original query")
+        return [query]
+
+def multi_query_web_search(queries: List[str], web_search_url: str, docs_per_query: int = 2, timeout: int = 180) -> List[Dict]:
+    """
+    🚀 FRONTIER MODEL TECHNIQUE: Parallel Multi-Query Search
+    
+    Run multiple focused searches in parallel and combine results.
+    This is how Perplexity AI handles complex multi-topic questions.
+    
+    Args:
+        queries: List of focused sub-queries
+        web_search_url: Web search service URL
+        docs_per_query: Number of results per query (default: 2)
+        timeout: Request timeout in seconds
+        
+    Returns:
+        Combined and deduplicated web results
+    """
+    all_results = []
+    seen_urls = set()
+    
+    print(f"🌐 Running {len(queries)} parallel web searches...")
+    
+    for i, query in enumerate(queries, 1):
+        try:
+            print(f"   🔍 Query {i}/{len(queries)}: {query[:60]}...")
+            
+            response = requests.post(
+                f"{web_search_url}/search",
+                json={
+                    'query': query,
+                    'limit': docs_per_query,
+                    'pages_per_result': 1
+                },
+                timeout=timeout
+            )
+            
+            if response.status_code == 200:
+                web_data = response.json()
+                results = web_data.get('results', [])
+                
+                # Deduplicate by URL
+                new_results = 0
+                for result in results:
+                    url = result.get('url', '')
+                    if url and url not in seen_urls:
+                        seen_urls.add(url)
+                        all_results.append(result)
+                        new_results += 1
+                
+                print(f"      ✅ {len(results)} results ({new_results} new)")
+            else:
+                print(f"      ⚠️  HTTP {response.status_code}")
+                
+        except Exception as e:
+            print(f"      ❌ Error: {e}")
+            continue
+    
+    print(f"✅ Multi-query search complete: {len(all_results)} unique results from {len(queries)} queries")
+    return all_results
+
+def filter_web_results_by_quality(results: List[Dict]) -> List[Dict]:
+    """
+    🚀 BEST PRACTICE: Quality Filtering for Web Results
+    
+    Boost high-quality sources (.edu, .gov, Wikipedia, arXiv) and filter spam.
+    
+    Args:
+        results: Raw web search results
+        
+    Returns:
+        Filtered and re-scored results
+    """
+    # Quality domains (boost these)
+    quality_domains = {
+        'wikipedia.org': 1.3,
+        'arxiv.org': 1.4,
+        '.edu': 1.3,
+        '.gov': 1.2,
+        'stackoverflow.com': 1.2,
+        'github.com': 1.1,
+    }
+    
+    # Spam indicators (filter these)
+    spam_indicators = [
+        'click here',
+        'buy now',
+        'limited time',
+        'subscribe',
+        'advertisement',
+    ]
+    
+    filtered = []
+    
+    for result in results:
+        url = result.get('url', '').lower()
+        content = result.get('content', '').lower()
+        title = result.get('title', '').lower()
+        
+        # Filter spam
+        is_spam = any(indicator in content or indicator in title for indicator in spam_indicators)
+        if is_spam:
+            print(f"   🚫 Filtered spam: {result.get('title', 'Unknown')[:50]}")
+            continue
+        
+        # Filter short content (< 100 chars)
+        if len(content) < 100:
+            print(f"   🚫 Filtered short content: {result.get('title', 'Unknown')[:50]}")
+            continue
+        
+        # Boost quality domains
+        score = result.get('score', 0.5)
+        boost = 1.0
+        for domain, domain_boost in quality_domains.items():
+            if domain in url:
+                boost = domain_boost
+                print(f"   ⭐ Boosted quality source ({domain}): {result.get('title', 'Unknown')[:50]}")
+                break
+        
+        result['score'] = score * boost
+        filtered.append(result)
+    
+    # Sort by score
+    filtered.sort(key=lambda x: x.get('score', 0), reverse=True)
+    
+    print(f"✅ Quality filter: {len(results)} → {len(filtered)} results")
+    return filtered
+
 @app.route('/search', methods=['POST'])
 @timed(metrics, 'search')
 def search():
@@ -751,70 +961,95 @@ def search_with_config():
             web_pages_per_doc = config.get('web_search_pages_per_doc', 1)
 
             try:
-                # For long queries, use query expansion to generate better search terms
-                # This matches frontier model behavior (GPT-4, Claude, Perplexity)
-                web_query = original_query
+                word_count = len(original_query.split())
                 
-                if len(original_query.split()) > 50 and query_expander:
-                    # Use LLM to extract key search terms from complex prompts
-                    print(f"🔍 Complex query detected ({len(original_query.split())} words), extracting search terms...")
-                    try:
-                        # Ask LLM to extract 3-5 key topics/terms for web search
-                        extraction_prompt = f"""Extract 3-5 key search terms or topics from this query that would be good for web search. Return only the terms, comma-separated, no explanation:
-
-{original_query[:500]}"""  # Limit to first 500 chars to avoid token limits
-                        
-                        web_query = query_expander.expand_with_context(extraction_prompt)
-                        # Clean up response (remove quotes, extra text)
-                        web_query = web_query.strip().strip('"\'').split('\n')[0]
-                        print(f"🔍 Extracted search terms: {web_query[:100]}")
-                    except Exception as e:
-                        # Fallback to first sentence if extraction fails
-                        print(f"⚠️ Query extraction failed: {e}, using first sentence")
-                        sentences = original_query.split('.')
-                        web_query = sentences[0] if sentences else original_query[:200]
-                
-                print(f"🌐 Calling web search: {web_search_url}/search (docs={web_docs_limit}, pages={web_pages_per_doc})")
-                response = requests.post(
-                    f"{web_search_url}/search",
-                    json={
-                        'query': web_query,
-                        'limit': web_docs_limit,
-                        'pages_per_result': web_pages_per_doc
-                    },
-                    timeout=180
-                )
-                if response.status_code == 200:
-                    web_data = response.json()
-                    web_results = web_data.get('results', [])
-
-                    # Convert web results to standard format and add to fused results
-                    # Give web results competitive scores so they appear in top results
-                    for idx, web_result in enumerate(web_results):
-                        # Score decreases from 0.95 to 0.75 for top 5 web results
-                        web_score = 0.95 - (idx * 0.05)
-                        fused.append({
-                            'id': web_result.get('url', ''),
-                            'content': web_result.get('content', web_result.get('snippet', '')),
-                            'score': web_score,  # Competitive score for web results
-                            'source': 'web_search',
-                            'metadata': {
-                                'title': web_result.get('title', 'Web Result'),
-                                'file_name': web_result.get('url', 'web'),
-                                'url': web_result.get('url', ''),
-                                'engine': web_result.get('engine', 'searxng')
-                            }
-                        })
-
-                    perf_metrics['web_search_ms'] = round((time.time() - web_start) * 1000, 2)
-                    perf_metrics['web_results_count'] = len(web_results)
-                    perf_metrics['web_search_success'] = True
-                    print(f"✓ Web Search: {perf_metrics['web_search_ms']}ms ({perf_metrics['web_results_count']} results)")
+                # 🚀 FRONTIER MODEL TECHNIQUE: Multi-Query Decomposition
+                # For complex queries (> 30 words), break into 3-5 sub-queries
+                # This is how GPT-4, Claude, and Perplexity handle complex prompts
+                if word_count > 30 and query_expander:
+                    print(f"🚀 MULTI-QUERY MODE: {word_count}-word query detected")
+                    
+                    # Step 1: Decompose into sub-queries
+                    sub_queries = decompose_query_to_multi_queries(original_query, query_expander)
+                    perf_metrics['web_search_queries_generated'] = len(sub_queries)
+                    
+                    # Step 2: Run parallel searches (2 results per query)
+                    docs_per_query = max(2, web_docs_limit // len(sub_queries))
+                    web_results = multi_query_web_search(sub_queries, web_search_url, docs_per_query, timeout=180)
+                    
+                    # Step 3: Quality filtering
+                    web_results = filter_web_results_by_quality(web_results)
+                    
+                    # Limit to requested number
+                    web_results = web_results[:web_docs_limit]
+                    
                 else:
-                    perf_metrics['web_search_ms'] = 0
-                    perf_metrics['web_results_count'] = 0
-                    perf_metrics['web_search_success'] = False
-                    print(f"⚠️  Web Search: HTTP {response.status_code}")
+                    # 🔍 SINGLE-QUERY MODE: Simple queries or short prompts
+                    print(f"🔍 SINGLE-QUERY MODE: {word_count}-word query")
+                    
+                    # For long single queries (> 50 words), extract key terms
+                    web_query = original_query
+                    if word_count > 50 and query_expander:
+                        print(f"🔍 Extracting key search terms from long query...")
+                        try:
+                            extraction_prompt = f"""Extract 3-5 key search terms or topics from this query that would be good for web search. Return only the terms, comma-separated, no explanation:
+
+{original_query[:500]}"""
+                            web_query = query_expander.expand_with_context(extraction_prompt)
+                            web_query = web_query.strip().strip('"\'').split('\n')[0]
+                            print(f"🔍 Extracted: {web_query[:100]}")
+                        except Exception as e:
+                            print(f"⚠️ Extraction failed: {e}, using first sentence")
+                            sentences = original_query.split('.')
+                            web_query = sentences[0] if sentences else original_query[:200]
+                    
+                    perf_metrics['web_search_queries_generated'] = 1
+                    
+                    # Single search
+                    print(f"🌐 Calling web search: {web_search_url}/search")
+                    response = requests.post(
+                        f"{web_search_url}/search",
+                        json={
+                            'query': web_query,
+                            'limit': web_docs_limit,
+                            'pages_per_result': web_pages_per_doc
+                        },
+                        timeout=180
+                    )
+                    
+                    if response.status_code == 200:
+                        web_data = response.json()
+                        web_results = web_data.get('results', [])
+                        
+                        # Quality filtering
+                        web_results = filter_web_results_by_quality(web_results)
+                    else:
+                        print(f"⚠️  Web Search: HTTP {response.status_code}")
+                        web_results = []
+
+                # Convert web results to standard format and add to fused results
+                # Give web results competitive scores so they appear in top results
+                for idx, web_result in enumerate(web_results):
+                    # Score decreases from 0.95 to 0.75
+                    web_score = 0.95 - (idx * 0.05)
+                    fused.append({
+                        'id': web_result.get('url', ''),
+                        'content': web_result.get('content', web_result.get('snippet', '')),
+                        'score': web_score,  # Competitive score for web results
+                        'source': 'web_search',
+                        'metadata': {
+                            'title': web_result.get('title', 'Web Result'),
+                            'file_name': web_result.get('url', 'web'),
+                            'url': web_result.get('url', ''),
+                            'engine': web_result.get('engine', 'searxng')
+                        }
+                    })
+
+                perf_metrics['web_search_ms'] = round((time.time() - web_start) * 1000, 2)
+                perf_metrics['web_results_count'] = len(web_results)
+                perf_metrics['web_search_success'] = True
+                print(f"✓ Web Search: {perf_metrics['web_search_ms']}ms ({perf_metrics['web_results_count']} results from {perf_metrics.get('web_search_queries_generated', 1)} queries)")
+                
             except Exception as e:
                 perf_metrics['web_search_ms'] = 0
                 perf_metrics['web_results_count'] = 0

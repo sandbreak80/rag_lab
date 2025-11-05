@@ -81,7 +81,7 @@ class HealthCheck:
                     version = f.read().strip()
         except Exception:
             pass
-        
+
         return {
             'service': self.service_name,
             'version': version,
