@@ -173,6 +173,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
         webSearchPages: state.webSearchPages,
         rerankTopK: state.rerankTopK,
         metadataFilters: state.metadataFilters,
+        currentPreset: state.currentPreset, // Include currentPreset in config
       };
     },
   };
