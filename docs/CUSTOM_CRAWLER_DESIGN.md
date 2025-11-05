@@ -249,7 +249,7 @@ class SkillManager:
         self.skills_dir = Path("/data/skills")
         self.skills = {}
         self.load_skills()
-        
+
     def load_skills(self):
         """Load all skill configurations"""
         for skill_dir in self.skills_dir.iterdir():
@@ -259,13 +259,13 @@ class SkillManager:
                     with open(config_path) as f:
                         config = json.load(f)
                         self.skills[config['skill_id']] = Skill(config, skill_dir)
-    
+
     def schedule_crawls(self):
         """Schedule crawls for all enabled skills"""
         for skill in self.skills.values():
             if skill.enabled:
                 schedule.every().day.at(skill.schedule_time).do(skill.crawl)
-    
+
     def crawl_all(self):
         """Manually trigger crawl for all skills"""
         results = {}
@@ -283,7 +283,7 @@ class Skill:
         self.enabled = config.get('enabled', True)
         self.schedule_time = config['schedule']['time']
         self.sources = config['sources']
-        
+
     def crawl(self):
         """Execute crawl for this skill"""
         print(f"🕷️  Crawling skill: {self.name}")
@@ -292,27 +292,27 @@ class Skill:
             'started_at': time.time(),
             'sources': []
         }
-        
+
         for source in self.sources:
             if source.get('enabled', True):
                 source_result = self.crawl_source(source)
                 results['sources'].append(source_result)
-        
+
         results['completed_at'] = time.time()
         results['duration_seconds'] = results['completed_at'] - results['started_at']
-        
+
         # Save results
         self.save_crawl_results(results)
-        
+
         # Trigger ingestion
         self.ingest_new_documents()
-        
+
         return results
-    
+
     def crawl_source(self, source):
         """Crawl a specific source"""
         source_type = source['type']
-        
+
         if source_type == 'arxiv':
             return self.crawl_arxiv(source)
         elif source_type == 'rss':
@@ -321,12 +321,12 @@ class Skill:
             return self.crawl_web(source)
         else:
             return {'error': f'Unknown source type: {source_type}'}
-    
+
     def crawl_arxiv(self, source):
         """Crawl arXiv API"""
         import requests
         import xml.etree.ElementTree as ET
-        
+
         url = source['url']
         params = {
             'search_query': source['query'],
@@ -334,10 +334,10 @@ class Skill:
             'sortBy': 'submittedDate',
             'sortOrder': 'descending'
         }
-        
+
         response = requests.get(url, params=params)
         root = ET.fromstring(response.content)
-        
+
         papers = []
         for entry in root.findall('{http://www.w3.org/2005/Atom}entry'):
             paper = {
@@ -347,25 +347,25 @@ class Skill:
                 'published': entry.find('{http://www.w3.org/2005/Atom}published').text,
                 'pdf_url': entry.find('{http://www.w3.org/2005/Atom}link[@title="pdf"]').attrib['href']
             }
-            
+
             # Download PDF
             pdf_path = self.download_pdf(paper['pdf_url'], paper['id'])
             paper['local_path'] = str(pdf_path)
-            
+
             papers.append(paper)
-        
+
         return {
             'source_type': 'arxiv',
             'papers_fetched': len(papers),
             'papers': papers
         }
-    
+
     def crawl_rss(self, source):
         """Crawl RSS feed"""
         import feedparser
-        
+
         feed = feedparser.parse(source['url'])
-        
+
         items = []
         for entry in feed.entries[:source.get('max_items', 20)]:
             item = {
@@ -374,29 +374,29 @@ class Skill:
                 'published': entry.get('published', ''),
                 'summary': entry.get('summary', '')
             }
-            
+
             # Download content
             content_path = self.download_html(entry.link, entry.title)
             item['local_path'] = str(content_path)
-            
+
             items.append(item)
-        
+
         return {
             'source_type': 'rss',
             'items_fetched': len(items),
             'items': items
         }
-    
+
     def crawl_web(self, source):
         """Crawl web page with selector"""
         import requests
         from bs4 import BeautifulSoup
-        
+
         response = requests.get(source['url'])
         soup = BeautifulSoup(response.content, 'html.parser')
-        
+
         elements = soup.select(source['selector'])
-        
+
         items = []
         for elem in elements:
             item = {
@@ -404,57 +404,57 @@ class Skill:
                 'html': str(elem)
             }
             items.append(item)
-        
+
         return {
             'source_type': 'web',
             'items_fetched': len(items),
             'items': items
         }
-    
+
     def download_pdf(self, url, paper_id):
         """Download PDF to raw directory"""
         import requests
-        
+
         raw_dir = self.skill_dir / "raw" / "arxiv"
         raw_dir.mkdir(parents=True, exist_ok=True)
-        
+
         filename = f"{paper_id.replace('/', '_')}.pdf"
         filepath = raw_dir / filename
-        
+
         if not filepath.exists():
             response = requests.get(url)
             with open(filepath, 'wb') as f:
                 f.write(response.content)
-        
+
         return filepath
-    
+
     def download_html(self, url, title):
         """Download HTML to raw directory"""
         import requests
         import hashlib
-        
+
         raw_dir = self.skill_dir / "raw" / "html"
         raw_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Use hash of URL as filename
         url_hash = hashlib.md5(url.encode()).hexdigest()
         filename = f"{url_hash}.html"
         filepath = raw_dir / filename
-        
+
         if not filepath.exists():
             response = requests.get(url)
             with open(filepath, 'wb') as f:
                 f.write(response.content)
-        
+
         return filepath
-    
+
     def ingest_new_documents(self):
         """Trigger ingestion for new documents"""
         # Call ingest service
         import requests
-        
+
         ingest_url = "http://ingest-service:8001/ingest_directory"
-        
+
         response = requests.post(ingest_url, json={
             'directory': str(self.skill_dir / "raw"),
             'skill_id': self.skill_id,
@@ -464,26 +464,26 @@ class Skill:
                 'tags': self.config.get('metadata', {}).get('tags', [])
             }
         })
-        
+
         return response.json()
-    
+
     def save_crawl_results(self, results):
         """Save crawl results to stats file"""
         stats_file = self.skill_dir / "stats.json"
-        
+
         # Load existing stats
         if stats_file.exists():
             with open(stats_file) as f:
                 stats = json.load(f)
         else:
             stats = {'crawls': []}
-        
+
         # Append new crawl
         stats['crawls'].append(results)
-        
+
         # Keep only last 100 crawls
         stats['crawls'] = stats['crawls'][-100:]
-        
+
         # Save
         with open(stats_file, 'w') as f:
             json.dump(stats, f, indent=2)
@@ -512,7 +512,7 @@ def crawl_skill(skill_id):
     skill = skill_manager.skills.get(skill_id)
     if not skill:
         return jsonify({'error': 'Skill not found'}), 404
-    
+
     results = skill.crawl()
     return jsonify(results)
 
@@ -529,10 +529,10 @@ if __name__ == '__main__':
         while True:
             schedule.run_pending()
             time.sleep(60)
-    
+
     scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
     scheduler_thread.start()
-    
+
     # Start Flask app
     app.run(host='0.0.0.0', port=8012, debug=False)
 ```
@@ -698,9 +698,9 @@ if __name__ == '__main__':
 
 ---
 
-**Version:** 1.0.0 (Design)  
-**Date:** November 5, 2025  
-**Status:** 📋 Design Complete → 🚧 Ready to Implement  
-**Estimated Effort:** 6-8 hours for Phase 1  
+**Version:** 1.0.0 (Design)
+**Date:** November 5, 2025
+**Status:** 📋 Design Complete → 🚧 Ready to Implement
+**Estimated Effort:** 6-8 hours for Phase 1
 **Recommended First Skill:** AI Research Papers (arXiv + Hugging Face)
 

@@ -66,7 +66,7 @@ Perplexity AI is essentially a **sophisticated RAG system with web search**. By 
 ### **Phase 1: Quick Wins (1-2 hours)** 🟢 HIGH PRIORITY
 
 #### **1.1 Inline Citation Format**
-**Current:** Source cards at bottom  
+**Current:** Source cards at bottom
 **Target:** Perplexity-style `[1]`, `[2]` inline citations
 
 ```python
@@ -75,9 +75,9 @@ Perplexity AI is essentially a **sophisticated RAG system with web search**. By 
 def format_answer_with_inline_citations(answer, sources):
     """
     Transform answer to include inline citations like Perplexity
-    
+
     Example:
-    "RAG stands for Retrieval-Augmented Generation [1]. It combines 
+    "RAG stands for Retrieval-Augmented Generation [1]. It combines
     vector search [2] with LLM generation [3]."
     """
     # Use LLM to insert citations
@@ -90,7 +90,7 @@ SOURCES:
 {format_sources_for_citation(sources)}
 
 Return the answer with [N] citations inserted after each fact. Be precise."""
-    
+
     return llm_generate(citation_prompt)
 ```
 
@@ -100,7 +100,7 @@ Return the answer with [N] citations inserted after each fact. Be precise."""
 - Hover citation → show source preview
 
 #### **1.2 Follow-up Question Suggestions**
-**Current:** User must think of next question  
+**Current:** User must think of next question
 **Target:** Generate 3-5 related questions automatically
 
 ```python
@@ -109,11 +109,11 @@ Return the answer with [N] citations inserted after each fact. Be precise."""
 def generate_follow_up_questions(query, answer, sources):
     """
     Generate 3-5 related questions based on the conversation
-    
+
     Example:
     Q: "What is RAG?"
     A: "RAG stands for..."
-    
+
     Follow-ups:
     1. "How does vector search work in RAG?"
     2. "What are the limitations of RAG systems?"
@@ -131,7 +131,7 @@ Rules:
 4. No yes/no questions
 
 FOLLOW-UP QUESTIONS:"""
-    
+
     questions = llm_generate(follow_up_prompt)
     return parse_questions(questions)
 ```
@@ -142,7 +142,7 @@ FOLLOW-UP QUESTIONS:"""
 - Track which follow-ups are popular (analytics)
 
 #### **1.3 Dynamic Model Selection**
-**Current:** User manually selects model  
+**Current:** User manually selects model
 **Target:** Auto-pick best model based on query type
 
 ```python
@@ -151,7 +151,7 @@ FOLLOW-UP QUESTIONS:"""
 def classify_query_intent(query):
     """
     Classify query to select best model
-    
+
     Categories:
     - coding: Code examples, debugging, algorithms
     - math: Calculations, proofs, equations
@@ -172,7 +172,7 @@ CATEGORIES:
 QUERY: {query}
 
 CATEGORY:"""
-    
+
     category = llm_generate(classification_prompt, model="llama3.2:1b")
     return category.strip().lower()
 
@@ -414,13 +414,13 @@ Response to User
    - Implement model selection logic
    - Update UI to show model choice
 
-**Total Time:** ~2 hours  
+**Total Time:** ~2 hours
 **Impact:** 🚀 **HUGE** - Feels like Perplexity!
 
 ---
 
-**Version:** 1.2.0  
-**Date:** November 5, 2025  
-**Status:** 📋 Planning → 🚧 Ready to Implement  
+**Version:** 1.2.0
+**Date:** November 5, 2025
+**Status:** 📋 Planning → 🚧 Ready to Implement
 **Next:** Custom Crawler / "Skill" System (see CUSTOM_CRAWLER_DESIGN.md)
 
