@@ -181,6 +181,19 @@ class ApiClient {
     const response = await this.client.post('/feedback', feedback);
     return response.data;
   }
+
+  // GPU status endpoint
+  async getGPUStatus(): Promise<{
+    gpu_available: boolean;
+    gpu_enabled: boolean;
+    gpu_info: string;
+    ollama_accessible: boolean;
+    mode: string;
+    recommendation: string;
+  }> {
+    const response = await this.client.get('/gpu_status');
+    return response.data;
+  }
 }
 
 export const api = new ApiClient();

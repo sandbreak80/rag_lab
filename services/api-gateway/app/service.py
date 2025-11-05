@@ -591,6 +591,60 @@ def build_kg():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/gpu_status', methods=['GET'])
+def get_gpu_status():
+    """Check if Ollama is using GPU"""
+    try:
+        import subprocess
+        import os
+        
+        # Try to detect GPU from Ollama container
+        ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://ollama:11434')
+        
+        # Check if Ollama is accessible
+        try:
+            response = requests.get(f"{ollama_url}/api/tags", timeout=5)
+            ollama_accessible = response.status_code == 200
+        except:
+            ollama_accessible = False
+        
+        # Try to check GPU via docker exec (if running in Docker)
+        gpu_available = False
+        gpu_info = "Unknown"
+        
+        try:
+            # Try nvidia-smi command
+            result = subprocess.run(
+                ['docker', 'exec', 'rag-ollama', 'nvidia-smi', '--query-gpu=name,utilization.gpu,memory.used,memory.total', '--format=csv,noheader'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0 and result.stdout:
+                gpu_available = True
+                gpu_info = result.stdout.strip()
+        except:
+            # If nvidia-smi fails, GPU is not available
+            pass
+        
+        return jsonify({
+            'gpu_available': gpu_available,
+            'gpu_enabled': gpu_available,  # If nvidia-smi works, GPU is enabled
+            'gpu_info': gpu_info,
+            'ollama_accessible': ollama_accessible,
+            'mode': 'GPU' if gpu_available else 'CPU',
+            'recommendation': 'Optimal performance' if gpu_available else '⚠️ GPU not detected - running on CPU (slower)'
+        })
+    except Exception as e:
+        return jsonify({
+            'gpu_available': False,
+            'gpu_enabled': False,
+            'gpu_info': f'Error: {str(e)}',
+            'ollama_accessible': False,
+            'mode': 'Unknown',
+            'recommendation': 'Unable to detect GPU status'
+        }), 500
+
 # === Root ===
 
 @app.route('/')

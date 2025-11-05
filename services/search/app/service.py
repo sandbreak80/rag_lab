@@ -512,29 +512,29 @@ Now break down this query:
 Output (one query per line):"""
 
         response = query_expander.expand_with_context(decomposition_prompt)
-        
+
         # Parse response into list of queries
         sub_queries = []
-        
+
         # Filter out instruction lines (common patterns to skip)
         skip_patterns = [
             'you are', 'break this', 'rules:', 'each sub-query', 'return only',
             'no numbering', 'no explanations', 'make queries', 'complex query',
             'sub-queries:', 'should focus', 'one per line', 'specific and searchable'
         ]
-        
+
         for line in response.strip().split('\n'):
             line = line.strip()
-            
+
             # Skip empty lines
             if not line:
                 continue
-            
+
             # Skip instruction lines
             line_lower = line.lower()
             if any(pattern in line_lower for pattern in skip_patterns):
                 continue
-            
+
             # Remove numbering (1., 2., etc.)
             line = re.sub(r'^\d+[\.\)]\s*', '', line)
             # Remove quotes
@@ -542,15 +542,15 @@ Output (one query per line):"""
             # Remove bullet points
             line = line.lstrip('•-*')
             line = line.strip()
-            
+
             # Must be 5-50 words (reasonable query length)
             word_count = len(line.split())
             if line and 5 <= word_count <= 50:
                 sub_queries.append(line)
-        
+
         # Limit to 3-5 queries
         sub_queries = sub_queries[:5]
-        
+
         if len(sub_queries) >= 2:
             print(f"✅ Decomposed into {len(sub_queries)} sub-queries:")
             for i, sq in enumerate(sub_queries, 1):
