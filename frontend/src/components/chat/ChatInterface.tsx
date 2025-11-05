@@ -18,6 +18,19 @@ export function ChatInterface() {
 
   // Cancel token for aborting requests
   const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // Track if component is mounted to prevent error messages on page refresh
+  const isMountedRef = useRef(true);
+  
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      // Abort any pending requests on unmount (page refresh/navigation)
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // Select individual properties to avoid creating new objects
   const model = useConfigStore((state) => state.model);
@@ -168,6 +181,12 @@ export function ChatInterface() {
     },
     onError: (error: any) => {
       console.error('Chat error:', error);
+
+      // Don't add error messages if component is unmounting (page refresh/navigation)
+      if (!isMountedRef.current) {
+        setLoading(false);
+        return;
+      }
 
       // Check if request was cancelled by user
       if (error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
