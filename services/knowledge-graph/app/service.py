@@ -347,7 +347,7 @@ def build_graph():
         print(f"📚 Fetched {len(metadatas)} documents")
         if need_embeddings:
             print(f"   Embeddings: {len(embeddings) if embeddings else 0}")
-        
+
         # Add document content to metadatas for entity extraction
         for i, metadata in enumerate(metadatas):
             if i < len(documents):
