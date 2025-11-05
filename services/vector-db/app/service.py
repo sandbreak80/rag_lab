@@ -259,6 +259,9 @@ def get_all_documents():
         # Add embeddings if requested
         if include_embeddings:
             embeddings = result.get('embeddings', [])
+            # Convert NumPy arrays to lists for JSON serialization
+            if embeddings and len(embeddings) > 0:
+                embeddings = [emb.tolist() if hasattr(emb, 'tolist') else emb for emb in embeddings]
             response['embeddings'] = embeddings
             print(f"   ✅ Returning {len(embeddings)} embeddings")
         else:
