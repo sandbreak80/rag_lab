@@ -260,10 +260,10 @@ def get_all_documents():
         if include_embeddings:
             embeddings = result.get('embeddings', [])
             # Convert NumPy arrays to lists for JSON serialization
-            if embeddings and len(embeddings) > 0:
+            if embeddings is not None and len(embeddings) > 0:
                 embeddings = [emb.tolist() if hasattr(emb, 'tolist') else emb for emb in embeddings]
             response['embeddings'] = embeddings
-            print(f"   ✅ Returning {len(embeddings)} embeddings")
+            print(f"   ✅ Returning {len(embeddings) if embeddings else 0} embeddings")
         else:
             print(f"   ✅ Returning {len(result['documents'])} documents (no embeddings)")
 
