@@ -751,12 +751,35 @@ def search_with_config():
             web_pages_per_doc = config.get('web_search_pages_per_doc', 1)
 
             try:
+                # For long queries, use query expansion to generate better search terms
+                # This matches frontier model behavior (GPT-4, Claude, Perplexity)
+                web_query = original_query
+                
+                if len(original_query.split()) > 50 and query_expander:
+                    # Use LLM to extract key search terms from complex prompts
+                    print(f"🔍 Complex query detected ({len(original_query.split())} words), extracting search terms...")
+                    try:
+                        # Ask LLM to extract 3-5 key topics/terms for web search
+                        extraction_prompt = f"""Extract 3-5 key search terms or topics from this query that would be good for web search. Return only the terms, comma-separated, no explanation:
+
+{original_query[:500]}"""  # Limit to first 500 chars to avoid token limits
+                        
+                        web_query = query_expander.expand_with_context(extraction_prompt)
+                        # Clean up response (remove quotes, extra text)
+                        web_query = web_query.strip().strip('"\'').split('\n')[0]
+                        print(f"🔍 Extracted search terms: {web_query[:100]}")
+                    except Exception as e:
+                        # Fallback to first sentence if extraction fails
+                        print(f"⚠️ Query extraction failed: {e}, using first sentence")
+                        sentences = original_query.split('.')
+                        web_query = sentences[0] if sentences else original_query[:200]
+                
                 print(f"🌐 Calling web search: {web_search_url}/search (docs={web_docs_limit}, pages={web_pages_per_doc})")
                 response = requests.post(
                     f"{web_search_url}/search",
                     json={
-                        'query': original_query,
-                        'limit': web_docs_limit,  # Fixed: use 'limit' not 'max_results'
+                        'query': web_query,
+                        'limit': web_docs_limit,
                         'pages_per_result': web_pages_per_doc
                     },
                     timeout=180
