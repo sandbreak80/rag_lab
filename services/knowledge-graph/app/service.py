@@ -326,20 +326,26 @@ def build_graph():
         # Get vector DB URL from environment
         vector_db_url = os.getenv('VECTOR_DB_URL', 'http://vector-db:8005')
 
+        # Determine if we need embeddings for this algorithm
+        need_embeddings = algorithm in ['semantic', 'hybrid']
+
         # Fetch all documents from vector-db service
         print(f"📥 Fetching documents from {vector_db_url}/get_all...")
+        print(f"   Algorithm: {algorithm}, Requesting embeddings: {need_embeddings}")
         response = requests.post(
             f"{vector_db_url}/get_all",
-            json={},
+            json={'include_embeddings': need_embeddings},
             timeout=180
         )
         response.raise_for_status()
         data = response.json()
 
         metadatas = data.get('metadatas', [])
-        embeddings = data.get('embeddings', []) if algorithm in ['semantic', 'hybrid'] else None
+        embeddings = data.get('embeddings', []) if need_embeddings else None
 
         print(f"📚 Fetched {len(metadatas)} documents")
+        if need_embeddings:
+            print(f"   Embeddings: {len(embeddings) if embeddings else 0}")
 
         if not metadatas:
             return jsonify({

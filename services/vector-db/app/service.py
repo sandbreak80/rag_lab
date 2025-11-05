@@ -219,24 +219,44 @@ def delete_documents():
 def get_all_documents():
     """
     Get all documents from the collection
+    
+    Body (optional):
+    {
+        "include_embeddings": true  // Default: false
+    }
 
     Returns:
     {
         "documents": [...],
         "metadatas": [...],
+        "embeddings": [...],  // Only if include_embeddings=true
         "ids": [...]
     }
     """
     try:
+        data = request.json or {}
+        include_embeddings = data.get('include_embeddings', False)
+        
+        # Build include list
+        include = ['documents', 'metadatas']
+        if include_embeddings:
+            include.append('embeddings')
+        
         # Get all documents
-        result = collection.get(include=['documents', 'metadatas'])
+        result = collection.get(include=include)
 
-        return jsonify({
+        response = {
             'documents': result['documents'],
             'metadatas': result['metadatas'],
             'ids': result['ids'],
             'count': len(result['documents'])
-        })
+        }
+        
+        # Add embeddings if requested
+        if include_embeddings:
+            response['embeddings'] = result.get('embeddings', [])
+
+        return jsonify(response)
     except Exception as e:
         metrics.increment('errors')
         return jsonify({'error': str(e)}), 500
