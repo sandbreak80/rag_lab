@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { DocumentUpload } from './DocumentUpload';
 import { DocumentList } from './DocumentList';
 import { api } from '../../services/api';
-import { Network, RefreshCw } from 'lucide-react';
+import { Network, RefreshCw, GitBranch } from 'lucide-react';
 import { useToast } from '../ui/toast';
 
 export function DocumentsPage() {
@@ -14,6 +14,13 @@ export function DocumentsPage() {
   const [showKGResetConfirm, setShowKGResetConfirm] = useState(false);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+
+  // Fetch system stats for KG info
+  const { data: stats } = useQuery({
+    queryKey: ['stats'],
+    queryFn: () => api.getStats(),
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
 
   // Save algorithm to localStorage when it changes
   const handleAlgorithmChange = (algo: string) => {
@@ -60,6 +67,51 @@ export function DocumentsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Knowledge Graph Stats Card */}
+      <Card className="border-purple-500/50 bg-purple-500/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <GitBranch className="h-5 w-5 text-purple-500" />
+            📊 Knowledge Graph Status
+          </CardTitle>
+          <CardDescription>
+            Graph-based document relationships for enhanced retrieval
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Nodes</p>
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                {stats?.knowledge_graph_nodes?.toLocaleString() || 0}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Edges</p>
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                {stats?.knowledge_graph_edges?.toLocaleString() || 0}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Algorithm</p>
+              <p className="text-sm font-medium capitalize">
+                {selectedAlgorithm || 'Not Built'}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Status</p>
+              <p className="text-sm font-medium">
+                {stats?.knowledge_graph_nodes && stats.knowledge_graph_nodes > 0 ? (
+                  <span className="text-green-600 dark:text-green-400">✓ Active</span>
+                ) : (
+                  <span className="text-gray-500">○ Empty</span>
+                )}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>📁 Upload Documents</CardTitle>
