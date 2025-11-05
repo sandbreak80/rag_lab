@@ -18,19 +18,24 @@ export function ChatInterface() {
 
   // Cancel token for aborting requests
   const abortControllerRef = useRef<AbortController | null>(null);
-  
+
   // Track if component is mounted to prevent error messages on page refresh
   const isMountedRef = useRef(true);
   
   useEffect(() => {
+    // Force loading state to false on mount (in case of page refresh during request)
+    setLoading(false);
+    
     return () => {
       isMountedRef.current = false;
       // Abort any pending requests on unmount (page refresh/navigation)
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
+      // Force loading state to false on unmount
+      setLoading(false);
     };
-  }, []);
+  }, [setLoading]);
 
   // Select individual properties to avoid creating new objects
   const model = useConfigStore((state) => state.model);
