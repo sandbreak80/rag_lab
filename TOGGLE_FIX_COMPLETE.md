@@ -115,7 +115,7 @@ If toggles still don't work:
    ```javascript
    localStorage.getItem('rag_config')
    ```
-3. **Clear LocalStorage**: 
+3. **Clear LocalStorage**:
    ```javascript
    localStorage.clear()
    location.reload()

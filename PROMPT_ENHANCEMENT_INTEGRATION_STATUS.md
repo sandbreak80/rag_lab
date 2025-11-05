@@ -246,7 +246,7 @@ prompt-enhancement:
 **Solution**: Check browser console for localStorage errors. Clear cache.
 
 ### Issue: No enhancement logs in API Gateway
-**Solution**: 
+**Solution**:
 1. Check frontend console: `use_enhancement` should be `true` in API request
 2. Verify API Gateway has `PROMPT_ENHANCEMENT_URL` env var set
 3. Test service directly: `curl http://localhost:8012/health`
