@@ -17,7 +17,7 @@ interface ChartDataPoint {
 
 const COLORS: Record<string, string> = {
   'Security Validation': '#10b981',      // green-600
-  'Prompt Enhancement': '#16a34a',      // green-600  
+  'Prompt Enhancement': '#16a34a',      // green-600
   'Model Routing': '#f97316',           // orange-500
   'Query Expansion': '#eab308',         // yellow-500
   'Vector Search': '#ef4444',           // red-500
@@ -108,14 +108,14 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
           margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
-          <XAxis 
-            type="number" 
+          <XAxis
+            type="number"
             label={{ value: 'Time (ms)', position: 'insideBottom', offset: -5 }}
             stroke="#9ca3af"
           />
-          <YAxis 
-            type="category" 
-            dataKey="name" 
+          <YAxis
+            type="category"
+            dataKey="name"
             width={150}
             stroke="#9ca3af"
             style={{ fontSize: '12px' }}
@@ -193,7 +193,7 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
               const categoryStages = data.filter(s => s.category === category);
               const categoryTotal = categoryStages.reduce((sum, s) => sum + s.duration, 0);
               const categoryPct = ((categoryTotal / metrics.total_latency_ms) * 100).toFixed(1);
-              
+
               if (categoryTotal === 0) return null;
 
               const categoryLabels: Record<string, string> = {

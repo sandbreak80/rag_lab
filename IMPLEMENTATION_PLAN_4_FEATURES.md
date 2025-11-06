@@ -1,7 +1,7 @@
 # 🚀 Implementation Plan: 4 World-Class Features
 
-**Goal:** Transform RAG lab into world-class teaching tool  
-**Timeline:** 18-24 hours total (can be split across sessions)  
+**Goal:** Transform RAG lab into world-class teaching tool
+**Timeline:** 18-24 hours total (can be split across sessions)
 **Status:** 📋 Planning Complete → Ready to Execute
 
 ---
@@ -15,15 +15,15 @@
 | 3 | **Self-RAG** | 8-10h | HIGH | Feature 2 complete |
 | 4 | **Metadata Filtering** | 2h | MEDIUM | Can do anytime |
 
-**Total Time:** 18-24 hours  
-**Approach:** Sequential implementation with testing between each  
+**Total Time:** 18-24 hours
+**Approach:** Sequential implementation with testing between each
 **Result:** World-class RAG teaching lab
 
 ---
 
 # 🎨 FEATURE 1: Response Time Waterfall Chart
 
-**Time:** 4-6 hours  
+**Time:** 4-6 hours
 **Impact:** ⭐⭐⭐⭐⭐ (Core teaching tool)
 
 ## 1.1 Architecture Design
@@ -58,7 +58,7 @@ export interface PerformanceMetrics {
   security_validation_ms?: number;
   prompt_enhancement_ms?: number;
   model_routing_ms?: number;
-  
+
   // Search pipeline
   query_expansion_ms?: number;
   vector_search_ms?: number;
@@ -67,10 +67,10 @@ export interface PerformanceMetrics {
   knowledge_graph_ms?: number;
   reranking_ms?: number;
   web_search_ms?: number;
-  
+
   // Generation
   llm_inference_ms?: number;
-  
+
   // Totals
   total_latency_ms: number;
   search_total_ms?: number;
@@ -292,7 +292,7 @@ perf_metrics['vector_search_ms'] = (time.time() - start) * 1000
 
 # 🧩 FEATURE 2: Query Decomposition
 
-**Time:** 4-6 hours  
+**Time:** 4-6 hours
 **Impact:** +18% on complex questions
 
 ## 2.1 Architecture Design
@@ -344,10 +344,10 @@ def decompose_query():
     data = request.json
     query = data.get('query', '')
     max_subqueries = data.get('max_subqueries', 3)
-    
+
     # First: Assess if decomposition is needed
     complexity = assess_complexity(query)
-    
+
     if complexity == 'simple':
         return jsonify({
             'original_query': query,
@@ -355,7 +355,7 @@ def decompose_query():
             'sub_queries': [query],
             'strategy': 'single'
         })
-    
+
     # Decompose using LLM
     decomposition_prompt = f"""Analyze this question and break it into 2-3 simpler sub-questions:
 
@@ -382,13 +382,13 @@ Sub-questions:"""
             'options': {'temperature': 0.3}
         }
     )
-    
+
     if response.status_code != 200:
         return jsonify({'error': 'LLM decomposition failed'}), 500
-    
+
     llm_output = response.json()['response']
     sub_queries = parse_subqueries(llm_output, max_subqueries)
-    
+
     return jsonify({
         'original_query': query,
         'needs_decomposition': True,
@@ -402,10 +402,10 @@ def assess_complexity(query: str) -> str:
     # Check for multiple concepts
     indicators = ['and', 'compare', 'contrast', 'both', 'also', 'additionally']
     has_multiple = any(ind in query.lower() for ind in indicators)
-    
+
     # Check length
     word_count = len(query.split())
-    
+
     if has_multiple or word_count > 20:
         return 'complex'
     return 'simple'
@@ -414,7 +414,7 @@ def parse_subqueries(llm_output: str, max_count: int) -> list:
     """Extract numbered sub-questions from LLM output"""
     lines = llm_output.strip().split('\n')
     sub_queries = []
-    
+
     for line in lines:
         line = line.strip()
         # Match patterns like "1. question" or "- question"
@@ -423,10 +423,10 @@ def parse_subqueries(llm_output: str, max_count: int) -> list:
             clean = line.lstrip('0123456789.-) ').strip()
             if len(clean) > 10:  # Minimum length for valid question
                 sub_queries.append(clean)
-        
+
         if len(sub_queries) >= max_count:
             break
-    
+
     return sub_queries if sub_queries else [llm_output]
 
 @app.route('/health', methods=['GET'])
@@ -474,26 +474,26 @@ def handle_query_with_decomposition(query, config):
         f"{DECOMPOSER_URL}/decompose",
         json={'query': query, 'max_subqueries': 3}
     )
-    
+
     decomposition = decomp_response.json()
-    
+
     if not decomposition['needs_decomposition']:
         # Simple query - normal flow
         return handle_single_query(query, config)
-    
+
     # Complex query - parallel search
     sub_queries = decomposition['sub_queries']
     print(f"🧩 Decomposed into {len(sub_queries)} sub-queries")
-    
+
     # Search all sub-queries in parallel (or sequentially for now)
     all_results = []
     for sub_q in sub_queries:
         results = search_service.search(sub_q, config)
         all_results.extend(results)
-    
+
     # Deduplicate by content similarity
     unique_results = deduplicate_results(all_results)
-    
+
     # Synthesize answer using all results
     synthesis_prompt = f"""Original question: {query}
 
@@ -506,10 +506,10 @@ Retrieved information:
 {format_results(unique_results)}
 
 Answer:"""
-    
+
     # Generate with LLM
     answer = generate_llm_response(synthesis_prompt, config)
-    
+
     return {
         'answer': answer,
         'decomposition': decomposition,
@@ -547,7 +547,7 @@ Test with complex queries:
 
 # 🔄 FEATURE 3: Self-RAG (Iterative Refinement)
 
-**Time:** 8-10 hours  
+**Time:** 8-10 hours
 **Impact:** +20% complex, -15% hallucination, ⭐⭐⭐⭐⭐ wow factor
 
 ## 3.1 Architecture Design
@@ -586,15 +586,15 @@ class RAGCritic:
     """
     Critiques retrieval quality and suggests refinements
     """
-    
+
     def __init__(self, llm_url, model='llama3.1:8b'):
         self.llm_url = llm_url
         self.model = model
-    
+
     def critique_retrieval(self, query: str, documents: list) -> dict:
         """
         Assess if retrieved documents are sufficient to answer query
-        
+
         Returns:
             {
                 'sufficient': bool,
@@ -606,7 +606,7 @@ class RAGCritic:
         """
         # Build critique prompt
         docs_summary = self._summarize_documents(documents)
-        
+
         critique_prompt = f"""You are evaluating retrieval quality.
 
 Original Question: "{query}"
@@ -640,12 +640,12 @@ Assessment:"""
                 'options': {'temperature': 0.2}  # Lower temp for consistency
             }
         )
-        
+
         llm_output = response.json()['response']
-        
+
         # Parse structured output
         return self._parse_critique(llm_output, query)
-    
+
     def _summarize_documents(self, documents: list) -> str:
         """Create concise summary of retrieved documents"""
         summaries = []
@@ -654,7 +654,7 @@ Assessment:"""
             content_preview = doc.get('content', '')[:200]
             summaries.append(f"{i}. [{title}]: {content_preview}...")
         return '\n'.join(summaries)
-    
+
     def _parse_critique(self, llm_output: str, original_query: str) -> dict:
         """Parse LLM critique output"""
         lines = llm_output.split('\n')
@@ -665,7 +665,7 @@ Assessment:"""
             'refined_query': original_query,
             'missing_aspects': []
         }
-        
+
         for line in lines:
             line = line.strip()
             if line.startswith('SUFFICIENT:'):
@@ -683,7 +683,7 @@ Assessment:"""
                     result['missing_aspects'] = [missing]
             elif line.startswith('REFINED_QUERY:'):
                 result['refined_query'] = line.split(':', 1)[1].strip()
-        
+
         return result
 
 
@@ -710,23 +710,23 @@ def self_rag_query():
     query = data.get('query', '')
     config = data.get('config', {})
     max_iterations = data.get('max_iterations', 3)
-    
+
     iterations = []
     current_query = query
-    
+
     for iteration in range(max_iterations):
         print(f"🔄 Self-RAG Iteration {iteration + 1}")
-        
+
         # Step 1: Retrieve documents
         search_response = requests.post(
             f"{SEARCH_URL}/search",
             json={'query': current_query, 'top_k': 10, **config}
         )
         documents = search_response.json().get('results', [])
-        
+
         # Step 2: Critique retrieval
         critique = critic.critique_retrieval(current_query, documents)
-        
+
         iteration_data = {
             'iteration': iteration + 1,
             'query': current_query,
@@ -734,16 +734,16 @@ def self_rag_query():
             'critique': critique
         }
         iterations.append(iteration_data)
-        
+
         # Step 3: Decision
         if critique['sufficient'] or critique['confidence'] > 0.7:
             print(f"✅ Retrieval sufficient (confidence: {critique['confidence']:.2f})")
             break
-        
+
         # Step 4: Refine query for next iteration
         current_query = critique['refined_query']
         print(f"🔧 Refining query: {current_query}")
-    
+
     # Final generation with best documents
     final_response = requests.post(
         f"{CHAT_URL}/chat",
@@ -753,7 +753,7 @@ def self_rag_query():
             'config': config
         }
     )
-    
+
     return jsonify({
         'answer': final_response.json().get('answer', ''),
         'iterations': iterations,
@@ -787,7 +787,7 @@ Add self-rag service to docker-compose.yml (port 8020)
 
 # 🎛️ FEATURE 4: Metadata Filtering UI
 
-**Time:** 2 hours  
+**Time:** 2 hours
 **Impact:** +5% precision, better UX
 
 ## 4.1 Implementation Steps
@@ -803,7 +803,7 @@ export function MetadataFilters() {
     sources: ['user_upload', 'research_agent', 'web_search'],
     tags: []
   });
-  
+
   return (
     <Card>
       <CardHeader>
@@ -821,7 +821,7 @@ export function MetadataFilters() {
             ))}
           </div>
         </div>
-        
+
         {/* Date Range */}
         <div>
           <Label>Date Range</Label>
@@ -838,7 +838,7 @@ export function MetadataFilters() {
             </SelectContent>
           </Select>
         </div>
-        
+
         {/* Source */}
         <div>
           <Label>Source</Label>
@@ -880,27 +880,27 @@ def apply_metadata_filters(query, filters):
     Apply ChromaDB metadata filters
     """
     where_clause = {}
-    
+
     # Document type filter
     if filters.get('document_types'):
         where_clause['file_type'] = {'$in': filters['document_types']}
-    
+
     # Date range filter
     if filters.get('date_range') and filters['date_range'] != 'all':
         cutoff_date = get_cutoff_date(filters['date_range'])
         where_clause['upload_date'] = {'$gte': cutoff_date}
-    
+
     # Source filter
     if filters.get('sources'):
         where_clause['source_type'] = {'$in': filters['sources']}
-    
+
     # Search with filters
     results = vector_db.query(
         query_embeddings=embed(query),
         n_results=top_k,
         where=where_clause
     )
-    
+
     return results
 ```
 
