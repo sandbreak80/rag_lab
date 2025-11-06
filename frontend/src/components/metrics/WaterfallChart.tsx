@@ -95,7 +95,7 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
 
   // Calculate max value for chart scale
   const maxValue = Math.max(...data.map(d => d.start + d.duration));
-  
+
   const height = compact ? 180 : 250;
   const showLegend = !compact;
 
@@ -116,37 +116,35 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
       <ResponsiveContainer width="100%" height={height}>
         <BarChart
           data={data}
-          layout="horizontal"
-          margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-          barCategoryGap="20%"
+          layout="vertical"
+          margin={{ top: 10, right: 30, left: 120, bottom: 20 }}
+          barSize={20}
+          barGap={2}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
           <XAxis
             type="number"
             domain={[0, maxValue]}
-            label={{ value: 'Time (ms)', position: 'insideBottom', offset: -3, style: { fontSize: '11px' } }}
+            label={{ value: 'Time (ms)', position: 'insideBottom', offset: -10, style: { fontSize: '11px', fill: '#9ca3af' } }}
             stroke="#9ca3af"
             tick={{ fontSize: 10 }}
           />
           <YAxis
             type="category"
             dataKey="name"
-            width={120}
+            width={115}
             stroke="#9ca3af"
             tick={{ fontSize: 10 }}
           />
-          {/* Invisible bars for offset */}
-          <Bar dataKey="start" stackId="a" fill="transparent" />
-          {/* Visible bars for duration */}
-          <Bar dataKey="duration" stackId="a" radius={[0, 4, 4, 0]}>
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[entry.name]} />
-            ))}
-          </Bar>
           <Tooltip
+            cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
             content={({ active, payload }) => {
               if (active && payload && payload.length) {
-                const item = payload[0].payload as ChartDataPoint;
+                // Find the duration bar (not the transparent start bar)
+                const durationBar = payload.find(p => p.dataKey === 'duration');
+                if (!durationBar) return null;
+
+                const item = durationBar.payload as ChartDataPoint;
                 if (!item || !item.duration) return null;
 
                 return (
@@ -180,6 +178,14 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
               return null;
             }}
           />
+          {/* Transparent bars for positioning (start offset) */}
+          <Bar dataKey="start" stackId="a" fill="transparent" isAnimationActive={false} />
+          {/* Colored bars showing actual duration */}
+          <Bar dataKey="duration" stackId="a" radius={[0, 4, 4, 0]} isAnimationActive={true}>
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[entry.name]} />
+            ))}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
 

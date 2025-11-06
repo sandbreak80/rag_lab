@@ -320,7 +320,7 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] bg-card rounded-lg border">
+    <div className="flex flex-col h-[calc(100vh-40px)] bg-card rounded-lg border">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         <div>
