@@ -2,6 +2,50 @@
 
 All notable changes to RAG Lab will be documented in this file.
 
+## [1.3.0] - 2025-11-06
+
+### Added
+- **Metadata Filtering UI**: User-controlled document filtering by type, date, source, tags, and authors
+  - Collapsible filter panel with active filter badge
+  - Pill-style filter buttons with real-time updates
+  - Persistent state saved to localStorage
+  - Backend support in search and vector-db services
+- **Self-RAG Service**: New microservice (port 8020) for quality assessment
+  - Multi-dimensional critique (relevance, accuracy, completeness, grounding)
+  - Quality scoring (0-1 scale) with weighted dimensions
+  - Suggestion generation for improvement
+  - Optional auto-improvement of responses
+  - Re-retrieval detection for low-quality answers
+- **Enhanced Markdown Rendering**: Professional chat message formatting
+  - Code blocks with copy buttons and line numbers
+  - Math equation support (KaTeX: inline $...$ and display $$...$$)
+  - Improved styling for headings, lists, tables, blockquotes
+  - Interactive hover effects on code blocks
+  - Syntax highlighting for 50+ languages
+- **Query Decomposition UI**: Complete implementation from Phase 1
+  - Settings toggle for complex query handling
+  - Sub-query display in chat interface
+  - Metrics integration in waterfall chart
+
+### Changed
+- **Frontend Build**: Switched from `npm ci` to `npm install` in Dockerfile for easier updates
+- **CSS Import Order**: Fixed KaTeX import to prevent PostCSS warnings
+- **Project Organization**: Moved 40+ status/session docs to `docs/archive/` for cleaner structure
+
+### Technical Details
+- FilterPanel component with MetadataFilters state management
+- ChromaDB where clause generation for vector search
+- BM25 post-scoring filters for keyword search
+- Self-RAG Flask service with gunicorn (2 workers)
+- KaTeX, remark-math, rehype-katex dependencies added
+- Enhanced ReactMarkdown with custom component renderers
+
+### Documentation
+- METADATA_FILTERING_COMPLETE.md - Feature documentation
+- PHASE_2_COMPLETE_SUMMARY.md - Session summary
+- MARKDOWN_IMPROVEMENTS_COMPLETE.md - Rendering improvements
+- SESSION_COMPLETE_NOV_6_2025.md - Full session report
+
 ## [1.2.4] - 2025-11-06
 
 ### Added

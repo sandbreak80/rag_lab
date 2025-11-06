@@ -1,6 +1,6 @@
 # RAG Lab - Current Status Report
 **Last Updated:** November 6, 2025
-**Version:** 1.2.4
+**Version:** 1.3.0
 **Branch:** security
 
 ## 🎯 Executive Summary
@@ -21,6 +21,9 @@ RAG Lab is a fully functional, production-ready educational platform for explori
 - ✅ **Auto Model Routing** - Intelligent LLM selection based on query complexity
 - ✅ **Query Categorization** - Intent, domain, and complexity classification
 - ✅ **Query Expansion** - BM25-based query augmentation
+- ✅ **Query Decomposition** - Break complex queries into simpler sub-queries
+- ✅ **Metadata Filtering** - User-controlled filtering by type, date, source, tags
+- ✅ **Self-RAG** - Quality assessment with multi-dimensional critique
 - ✅ **Hybrid Search** - Combined vector and keyword search with RRF fusion
 - ✅ **Knowledge Graph Enhancement** - Graph-based related document discovery
 - ✅ **Citation Hallucination Detection** - Validates citations against sources
@@ -37,8 +40,11 @@ RAG Lab is a fully functional, production-ready educational platform for explori
 ### User Interface
 - ✅ **Modern React Frontend** - TypeScript, Tailwind CSS, Zustand state management
 - ✅ **Real-time Chat Interface** - Streaming responses with sources
+- ✅ **Enhanced Markdown Rendering** - Code blocks with copy buttons, math equations (KaTeX)
 - ✅ **Performance Waterfall Chart** - Visualize RAG pipeline latency by stage
-- ✅ **Configuration Toggles** - UI controls for all RAG features
+- ✅ **Metadata Filtering Panel** - Collapsible filters with active badge
+- ✅ **Configuration Toggles** - UI controls for all RAG features including Self-RAG
+- ✅ **Query Decomposition Display** - Visual sub-query breakdown
 - ✅ **Baseline Prompts** - Pre-built low/medium/high complexity queries
 - ✅ **Reasoning Process Toggle** - Show/hide step-by-step thought process
 - ✅ **Source Cards** - Rich metadata display with scores and citations
@@ -55,13 +61,13 @@ RAG Lab is a fully functional, production-ready educational platform for explori
 
 ## 🏗️ Architecture
 
-### Microservices (14 services)
+### Microservices (15 services)
 ```
 API Gateway (Port 8000) - Central request orchestration
 ├── Frontend (Port 3000) - React SPA with Nginx
 ├── Auth Service (Port 8014) - User authentication
 ├── Chat Service (Port 8003) - Conversation management
-├── Search Service (Port 8002) - Hybrid retrieval
+├── Search Service (Port 8002) - Hybrid retrieval with metadata filters
 ├── Embedding Service (Port 8006) - Vector embeddings
 ├── Vector DB (Port 6333) - Qdrant database
 ├── Knowledge Graph (Port 8011) - Entity relationships
@@ -72,7 +78,8 @@ API Gateway (Port 8000) - Central request orchestration
 ├── Prompt Enhancement (Port 8012) - Prompt engineering
 ├── Model Router (Port 8018) - LLM selection
 ├── Prompt Classifier (Port 8010) - Query categorization
-└── Query Decomposer (Port 8019) - Sub-query generation
+├── Query Decomposer (Port 8019) - Sub-query generation
+└── Self-RAG (Port 8020) - Quality assessment & critique
 ```
 
 ### Technology Stack

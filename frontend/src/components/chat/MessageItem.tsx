@@ -60,7 +60,7 @@ export function MessageItem({ message }: MessageItemProps) {
                     const inline = props.inline;
                     const codeString = String(children).replace(/\n$/, '');
                     const codeId = `code-${Math.random().toString(36).substr(2, 9)}`;
-                    
+
                     return !inline && match ? (
                       <div className="relative group my-4">
                         <div className="absolute right-2 top-2 z-10">

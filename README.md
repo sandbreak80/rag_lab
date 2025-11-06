@@ -6,7 +6,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Docker](https://img.shields.io/badge/docker-required-blue.svg)](https://www.docker.com/)
 [![Status](https://img.shields.io/badge/status-production%20ready-success.svg)](docs/CURRENT_STATUS.md)
-[![Version](https://img.shields.io/badge/version-1.2.4-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](CHANGELOG.md)
 
 > 📘 **[Read Current Status](docs/CURRENT_STATUS.md)** | **[View Changelog](CHANGELOG.md)** - Latest features and improvements
 
