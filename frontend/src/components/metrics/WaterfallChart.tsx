@@ -44,6 +44,15 @@ const STAGE_CATEGORIES: Record<string, string> = {
 };
 
 export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps) {
+  // Safety check
+  if (!metrics || !metrics.total_latency_ms) {
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        No timing data available
+      </div>
+    );
+  }
+
   // Build data array with cumulative timing
   const data: ChartDataPoint[] = [];
   let cumulative = 0;
@@ -64,7 +73,7 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
 
   stages.forEach(stage => {
     if (stage.ms && stage.ms > 0) {
-      const percentage = ((stage.ms / metrics.total_latency_ms) * 100).toFixed(1);
+      const percentage = ((stage.ms / metrics.total_latency_ms!) * 100).toFixed(1);
       data.push({
         name: stage.name,
         start: cumulative,
@@ -124,28 +133,30 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
             content={({ active, payload }) => {
               if (active && payload && payload.length) {
                 const item = payload[0].payload as ChartDataPoint;
+                if (!item || !item.duration) return null;
+                
                 return (
                   <div className="bg-card border border-border rounded-lg p-3 shadow-xl">
                     <p className="font-semibold text-sm mb-1">{item.name}</p>
                     <div className="space-y-1 text-xs">
                       <p className="text-muted-foreground">
                         Duration: <span className="font-mono text-foreground font-semibold">
-                          {item.duration.toFixed(0)}ms
+                          {(item.duration || 0).toFixed(0)}ms
                         </span>
                       </p>
                       <p className="text-muted-foreground">
                         Percentage: <span className="text-foreground font-semibold">
-                          {item.percentage}
+                          {item.percentage || '0%'}
                         </span>
                       </p>
                       <p className="text-muted-foreground">
                         Start: <span className="font-mono text-foreground">
-                          {item.start.toFixed(0)}ms
+                          {(item.start || 0).toFixed(0)}ms
                         </span>
                       </p>
                       <p className="text-muted-foreground">
                         End: <span className="font-mono text-foreground">
-                          {(item.start + item.duration).toFixed(0)}ms
+                          {((item.start || 0) + (item.duration || 0)).toFixed(0)}ms
                         </span>
                       </p>
                     </div>
@@ -176,9 +187,9 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
                 />
                 <span className="text-muted-foreground truncate">{stage.name}:</span>
                 <span className="font-mono font-semibold ml-auto">
-                  {stage.duration.toFixed(0)}ms
+                  {(stage.duration || 0).toFixed(0)}ms
                 </span>
-                <span className="text-muted-foreground">({stage.percentage})</span>
+                <span className="text-muted-foreground">({stage.percentage || '0%'})</span>
               </div>
             ))}
           </div>
@@ -191,8 +202,8 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
           <div className="grid grid-cols-4 gap-4 text-xs">
             {['security', 'enhancement', 'search', 'generation'].map(category => {
               const categoryStages = data.filter(s => s.category === category);
-              const categoryTotal = categoryStages.reduce((sum, s) => sum + s.duration, 0);
-              const categoryPct = ((categoryTotal / metrics.total_latency_ms) * 100).toFixed(1);
+              const categoryTotal = categoryStages.reduce((sum, s) => sum + (s.duration || 0), 0);
+              const categoryPct = metrics.total_latency_ms ? ((categoryTotal / metrics.total_latency_ms) * 100).toFixed(1) : '0';
 
               if (categoryTotal === 0) return null;
 
