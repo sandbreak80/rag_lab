@@ -1,7 +1,7 @@
 # 🧪 Feature 1: Waterfall Chart - Testing Instructions
 
-**Status:** ✅ Deployed and ready to test  
-**URL:** http://localhost:3000  
+**Status:** ✅ Deployed and ready to test
+**URL:** http://localhost:3000
 **Date:** November 6, 2025
 
 ---

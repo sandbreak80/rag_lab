@@ -194,18 +194,18 @@ def ask_question():
         # QUERY DECOMPOSITION (Optional): Break complex queries into sub-queries
         use_decomposition = data.get('use_query_decomposition', False)
         decomposition_data = None
-        
+
         if use_decomposition:
             try:
                 decomposer_url = os.getenv('QUERY_DECOMPOSER_URL', 'http://query-decomposer:8019')
                 decomp_start = time.time()
-                
+
                 decomp_response = requests.post(
                     f"{decomposer_url}/decompose",
                     json={'query': question, 'max_subqueries': 3},
                     timeout=30
                 )
-                
+
                 if decomp_response.status_code == 200:
                     decomposition_data = decomp_response.json()
                     perf_metrics['query_decomposition_ms'] = round((time.time() - decomp_start) * 1000, 2)
@@ -214,7 +214,7 @@ def ask_question():
                     print(f"⚠️  Query decomposition failed: {decomp_response.status_code}")
             except Exception as e:
                 print(f"⚠️  Query decomposition error: {e}")
-        
+
         # Determine search strategy based on decomposition
         if decomposition_data and decomposition_data.get('needs_decomposition'):
             # Complex query: Use sub-queries for parallel search
@@ -419,7 +419,7 @@ Provide a comprehensive, detailed answer:"""
                 'total_tokens': perf_metrics.get('llm_tokens_prompt', 0) + perf_metrics.get('llm_tokens_generated', 0),
             }
         }
-        
+
         # Add decomposition data if available
         if decomposition_data:
             response_data['decomposition'] = {
@@ -428,7 +428,7 @@ Provide a comprehensive, detailed answer:"""
                 'sub_queries': decomposition_data.get('sub_queries', []),
                 'original_query': decomposition_data.get('original_query', question)
             }
-        
+
         return jsonify(response_data)
 
     except requests.exceptions.ConnectionError as e:

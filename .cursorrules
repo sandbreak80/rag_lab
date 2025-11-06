@@ -1,0 +1,97 @@
+# Cursor Rules for RAG Lab Development
+
+## CRITICAL: Testing Requirements
+
+**MANDATORY TESTING BEFORE DECLARING FEATURES COMPLETE:**
+
+1. **Unit Tests**: Test individual functions and components
+2. **Integration Tests**: Test service interactions
+3. **API Tests**: Test all endpoints return valid responses
+4. **Frontend Tests**: Test UI renders without errors
+5. **End-to-End Tests**: Test complete user workflows
+
+### Testing Checklist (MUST complete ALL before saying "ready")
+
+- [ ] Code compiles without errors
+- [ ] Linter passes with no errors
+- [ ] TypeScript type checking passes
+- [ ] Frontend builds successfully
+- [ ] Homepage loads without blank page
+- [ ] Console has no JavaScript errors
+- [ ] API endpoints return 200 status
+- [ ] Services are healthy
+- [ ] Data flows correctly between services
+- [ ] UI components render correctly
+- [ ] User interactions work as expected
+
+### Testing Commands to Run
+
+```bash
+# Frontend
+cd frontend && npm run build  # Must succeed
+docker compose build frontend  # Must succeed
+docker compose up -d frontend  # Must start
+curl http://localhost:3000  # Must return HTML
+# Check browser console for errors
+
+# Backend
+docker compose ps  # All services must be "healthy"
+curl http://localhost:8000/health  # Must return 200
+curl http://localhost:8000/services  # Check all services
+
+# Integration
+# Make actual API call and verify response
+curl -X POST http://localhost:8000/api/ask -H "Content-Type: application/json" -d '{"query":"test"}'
+```
+
+## Development Workflow
+
+1. **Design** → Plan the feature
+2. **Implement** → Write the code
+3. **TEST** → Run ALL tests above ⚠️  **CRITICAL STEP**
+4. **Fix** → Fix any failures
+5. **Verify** → Re-test until all pass
+6. **Document** → Update docs
+7. **Commit** → Only commit working code
+
+## Common Testing Mistakes to Avoid
+
+❌ **DON'T**:
+- Say "ready to test" without testing first
+- Assume code works because it compiles
+- Skip frontend testing
+- Ignore console errors
+- Deploy without verification
+
+✅ **DO**:
+- Test every change before committing
+- Check browser console for errors
+- Verify services are healthy
+- Test API responses
+- Run end-to-end workflows
+- Test on actual UI, not just in theory
+
+## Error Detection
+
+If any of these occur, **STOP and FIX**:
+- Build fails
+- Linter errors
+- TypeScript errors
+- Blank page
+- Console errors
+- 500 API responses
+- Services unhealthy
+- Missing data in responses
+
+## Quality Standards
+
+- **Zero tolerance** for blank pages
+- **Zero tolerance** for console errors in production
+- **All services must be healthy** before declaring done
+- **APIs must return expected data** before declaring done
+- **UI must render correctly** before declaring done
+
+---
+
+**Remember: If you haven't tested it, it's not done.**
+
