@@ -41,6 +41,8 @@ security_client = SecurityClient(SECURITY_GUARDRAILS_URL)
 enhancement_client = EnhancementClient(PROMPT_ENHANCEMENT_URL)
 
 # Service registry
+AUTH_SERVICE_URL = os.getenv('AUTH_SERVICE_URL', 'http://auth-service:8014')
+
 SERVICES = {
     'ingest': INGEST_SERVICE_URL,
     'search': SEARCH_SERVICE_URL,
@@ -50,6 +52,7 @@ SERVICES = {
     'docling': DOCLING_SERVICE_URL,
     'security': SECURITY_GUARDRAILS_URL,
     'enhancement': PROMPT_ENHANCEMENT_URL,
+    'auth': AUTH_SERVICE_URL,
 }
 
 def _detect_hallucinated_citations(answer: str, sources: list) -> list:
@@ -931,6 +934,36 @@ def get_gpu_status():
 
 # === Root ===
 
+# ============================================================
+# Authentication Proxy Routes
+# ============================================================
+
+@app.route('/api/auth/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def proxy_auth(subpath):
+    """Proxy all auth requests to auth service"""
+    try:
+        # Build target URL
+        target_url = f"{AUTH_SERVICE_URL}/{subpath}"
+        
+        # Forward the request
+        if request.method == 'GET':
+            response = requests.get(target_url, params=request.args, headers=dict(request.headers))
+        elif request.method == 'POST':
+            response = requests.post(target_url, json=request.json, headers=dict(request.headers))
+        elif request.method == 'PUT':
+            response = requests.put(target_url, json=request.json, headers=dict(request.headers))
+        elif request.method == 'DELETE':
+            response = requests.delete(target_url, headers=dict(request.headers))
+        
+        # Return response
+        return Response(
+            response.content,
+            status=response.status_code,
+            headers=dict(response.headers)
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/')
 def root():
     """API Gateway info"""
@@ -946,7 +979,8 @@ def root():
             'upload': '/api/upload',
             'search': '/api/search',
             'chat': '/api/chat',
-            'ask': '/api/ask'
+            'ask': '/api/ask',
+            'auth': '/api/auth/*'
         }
     })
 

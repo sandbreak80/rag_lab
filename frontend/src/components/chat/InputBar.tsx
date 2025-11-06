@@ -16,7 +16,7 @@ const BASELINE_PROMPTS = [
     description: "Simple concept, low detail"
   },
   {
-    label: "🟡 Medium", 
+    label: "🟡 Medium",
     query: "How do transformers work in LLMs? Explain attention mechanisms, tokenization, and the training process.",
     description: "Multi-part, medium detail"
   },
