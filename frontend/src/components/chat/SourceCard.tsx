@@ -33,10 +33,14 @@ export function SourceCard({ source, index }: SourceCardProps) {
               <span className="text-xs font-medium text-muted-foreground">
                 {isWebSource ? 'Web' : 'RAG'} {index}
               </span>
-              <span className="text-xs text-muted-foreground">•</span>
-              <span className="text-xs font-medium text-primary">
-                Score: {source.score.toFixed(3)}
-              </span>
+              {source.score !== undefined && (
+                <>
+                  <span className="text-xs text-muted-foreground">•</span>
+                  <span className="text-xs font-medium text-primary">
+                    Score: {source.score.toFixed(3)}
+                  </span>
+                </>
+              )}
               {engine && (
                 <>
                   <span className="text-xs text-muted-foreground">•</span>

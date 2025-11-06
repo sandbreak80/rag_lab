@@ -134,7 +134,7 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
               if (active && payload && payload.length) {
                 const item = payload[0].payload as ChartDataPoint;
                 if (!item || !item.duration) return null;
-                
+
                 return (
                   <div className="bg-card border border-border rounded-lg p-3 shadow-xl">
                     <p className="font-semibold text-sm mb-1">{item.name}</p>
