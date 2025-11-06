@@ -93,8 +93,8 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
     );
   }
 
-  // Calculate max value for chart scale
-  const maxValue = Math.max(...data.map(d => d.start + d.duration));
+  // Calculate max value for chart scale with 10% padding
+  const maxValue = Math.max(...data.map(d => d.start + d.duration)) * 1.1;
 
   const height = compact ? 180 : 250;
   const showLegend = !compact;
@@ -103,7 +103,7 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
     <div className="space-y-3">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h3 className="text-sm font-semibold">⏱️ Performance Waterfall</h3>
+        <h3 className="text-sm font-semibold">⏱️ Performance Breakdown</h3>
         <div className="text-xs text-muted-foreground">
           Total: <span className="font-bold text-foreground font-mono">
             {(metrics.total_latency_ms / 1000).toFixed(2)}s
@@ -112,20 +112,18 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
         </div>
       </div>
 
-      {/* Chart */}
+      {/* Chart - Simple Duration Bars */}
       <ResponsiveContainer width="100%" height={height}>
         <BarChart
           data={data}
           layout="vertical"
           margin={{ top: 10, right: 30, left: 120, bottom: 20 }}
-          barSize={20}
-          barGap={2}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
           <XAxis
             type="number"
-            domain={[0, maxValue]}
-            label={{ value: 'Time (ms)', position: 'insideBottom', offset: -10, style: { fontSize: '11px', fill: '#9ca3af' } }}
+            domain={[0, 'dataMax']}
+            label={{ value: 'Duration (ms)', position: 'insideBottom', offset: -10, style: { fontSize: '11px', fill: '#9ca3af' } }}
             stroke="#9ca3af"
             tick={{ fontSize: 10 }}
           />
@@ -140,11 +138,7 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
             cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
             content={({ active, payload }) => {
               if (active && payload && payload.length) {
-                // Find the duration bar (not the transparent start bar)
-                const durationBar = payload.find(p => p.dataKey === 'duration');
-                if (!durationBar) return null;
-
-                const item = durationBar.payload as ChartDataPoint;
+                const item = payload[0].payload as ChartDataPoint;
                 if (!item || !item.duration) return null;
 
                 return (
@@ -161,16 +155,6 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
                           {item.percentage || '0%'}
                         </span>
                       </p>
-                      <p className="text-muted-foreground">
-                        Start: <span className="font-mono text-foreground">
-                          {(item.start || 0).toFixed(0)}ms
-                        </span>
-                      </p>
-                      <p className="text-muted-foreground">
-                        End: <span className="font-mono text-foreground">
-                          {((item.start || 0) + (item.duration || 0)).toFixed(0)}ms
-                        </span>
-                      </p>
                     </div>
                   </div>
                 );
@@ -178,10 +162,12 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
               return null;
             }}
           />
-          {/* Transparent bars for positioning (start offset) */}
-          <Bar dataKey="start" stackId="a" fill="transparent" isAnimationActive={false} />
-          {/* Colored bars showing actual duration */}
-          <Bar dataKey="duration" stackId="a" radius={[0, 4, 4, 0]} isAnimationActive={true}>
+          {/* Simple bars showing duration only */}
+          <Bar 
+            dataKey="duration" 
+            radius={[0, 4, 4, 0]}
+            minPointSize={2}
+          >
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[entry.name]} />
             ))}
