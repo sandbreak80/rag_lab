@@ -944,7 +944,7 @@ def proxy_auth(subpath):
     try:
         # Build target URL
         target_url = f"{AUTH_SERVICE_URL}/{subpath}"
-        
+
         # Forward the request
         if request.method == 'GET':
             response = requests.get(target_url, params=request.args, headers=dict(request.headers))
@@ -954,7 +954,7 @@ def proxy_auth(subpath):
             response = requests.put(target_url, json=request.json, headers=dict(request.headers))
         elif request.method == 'DELETE':
             response = requests.delete(target_url, headers=dict(request.headers))
-        
+
         # Return response
         return Response(
             response.content,

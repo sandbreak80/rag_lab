@@ -1,13 +1,14 @@
 # 🎓 Educational RAG Lab
 
-**An enterprise-grade RAG system for Splunk/Cisco Field Teams - Built in < 1 week by AI + 1 person**
+**An enterprise-grade RAG system for learning and experimentation - Built with modern AI architecture**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Docker](https://img.shields.io/badge/docker-required-blue.svg)](https://www.docker.com/)
-[![Status](https://img.shields.io/badge/status-production%20ready-success.svg)](docs/PROJECT_COMPLETE.md)
+[![Status](https://img.shields.io/badge/status-production%20ready-success.svg)](docs/CURRENT_STATUS.md)
+[![Version](https://img.shields.io/badge/version-1.2.4-blue.svg)](CHANGELOG.md)
 
-> 📘 **[Read the Full Project Summary](docs/PROJECT_COMPLETE.md)** - Comprehensive overview of what we built, why it matters, and how to use it.
+> 📘 **[Read Current Status](docs/CURRENT_STATUS.md)** | **[View Changelog](CHANGELOG.md)** - Latest features and improvements
 
 ---
 
@@ -16,12 +17,15 @@
 The Educational RAG Lab is a **production-ready reference architecture** for LLM deployments, designed for hands-on learning and customer demonstrations. It features:
 
 - **14 Microservices** - Complete production-grade RAG architecture
-- **Interactive UI** - Real-time performance waterfall charts, metrics dashboard
-- **6 Configuration Presets** - From minimal (200ms) to maximum quality (30 min)
-- **Splunk Integration** - Prompt logging, cost tracking, observability demo
-- **4 Knowledge Graph Algorithms** - Compare approaches and see trade-offs
-- **Educational Labs** - Model optimization, feature comparison, security analysis
-- **Comprehensive Documentation** - 2,270+ lines across 9 files
+- **Modern React UI** - TypeScript, Tailwind CSS, real-time streaming
+- **Performance Waterfall Chart** - Visualize RAG pipeline latency breakdown
+- **Authentication System** - JWT-based user auth with security controls
+- **Citation Validation** - Hallucination detection for accurate sourcing
+- **Baseline Prompts** - Pre-built queries for performance testing
+- **Configuration Toggles** - UI controls for all RAG features
+- **Security Guardrails** - PII detection, rate limiting, input sanitization
+- **Research Agent** - Autonomous AI paper discovery and ingestion
+- **Comprehensive Documentation** - Architecture, deployment, testing guides
 
 **Unique Value:**
 > "This isn't just a RAG lab - it's a reference architecture for production LLM deployments, instrumented for Splunk from day one."
