@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { ChatMessage } from '../../types/chat';
@@ -8,7 +10,7 @@ import { SourceCard } from './SourceCard';
 import { WaterfallChart } from '../metrics/WaterfallChart';
 import { SecurityStatus } from '../security/SecurityStatus';
 import { formatDate } from '../../utils/formatting';
-import { User, Bot, BarChart3 } from 'lucide-react';
+import { User, Bot, BarChart3, Copy, Check } from 'lucide-react';
 
 interface MessageItemProps {
   message: ChatMessage;
@@ -17,8 +19,15 @@ interface MessageItemProps {
 export function MessageItem({ message }: MessageItemProps) {
   const isUser = message.role === 'user';
   const [showPerformance, setShowPerformance] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const hasPerformanceData = !isUser && message.metadata?.performance;
+
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCode(id);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
 
   return (
     <div className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -37,31 +46,121 @@ export function MessageItem({ message }: MessageItemProps) {
           }`}
         >
           {/* Message content */}
-          <div className="prose prose-invert max-w-none">
+          <div className={`prose max-w-none ${isUser ? 'prose-invert' : 'prose-slate dark:prose-invert'}`}>
             {isUser ? (
               <p className="whitespace-pre-wrap">{message.content}</p>
             ) : (
               <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeKatex]}
                 components={{
+                  // Enhanced code blocks with copy button
                   code({ node, className, children, ...props }: any) {
                     const match = /language-(\w+)/.exec(className || '');
                     const inline = props.inline;
+                    const codeString = String(children).replace(/\n$/, '');
+                    const codeId = `code-${Math.random().toString(36).substr(2, 9)}`;
+                    
                     return !inline && match ? (
-                      <SyntaxHighlighter
-                        style={vscDarkPlus as any}
-                        language={match[1]}
-                        PreTag="div"
-                        {...props}
-                      >
-                        {String(children).replace(/\n$/, '')}
-                      </SyntaxHighlighter>
+                      <div className="relative group my-4">
+                        <div className="absolute right-2 top-2 z-10">
+                          <button
+                            onClick={() => copyToClipboard(codeString, codeId)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs text-slate-200 flex items-center gap-1"
+                            title="Copy code"
+                          >
+                            {copiedCode === codeId ? (
+                              <>
+                                <Check className="h-3 w-3" />
+                                Copied!
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3 w-3" />
+                                Copy
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <SyntaxHighlighter
+                          style={vscDarkPlus as any}
+                          language={match[1]}
+                          PreTag="div"
+                          className="rounded-lg !my-0"
+                          showLineNumbers={codeString.split('\n').length > 3}
+                          {...props}
+                        >
+                          {codeString}
+                        </SyntaxHighlighter>
+                      </div>
                     ) : (
-                      <code className={className} {...props}>
+                      <code className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-sm font-mono" {...props}>
                         {children}
                       </code>
                     );
                   },
+                  // Enhanced headings
+                  h1: ({ children }) => (
+                    <h1 className="text-2xl font-bold mt-6 mb-4 pb-2 border-b border-border">{children}</h1>
+                  ),
+                  h2: ({ children }) => (
+                    <h2 className="text-xl font-semibold mt-5 mb-3 pb-1 border-b border-border/50">{children}</h2>
+                  ),
+                  h3: ({ children }) => (
+                    <h3 className="text-lg font-semibold mt-4 mb-2">{children}</h3>
+                  ),
+                  // Enhanced lists
+                  ul: ({ children }) => (
+                    <ul className="list-disc list-outside ml-6 my-3 space-y-1">{children}</ul>
+                  ),
+                  ol: ({ children }) => (
+                    <ol className="list-decimal list-outside ml-6 my-3 space-y-1">{children}</ol>
+                  ),
+                  li: ({ children }) => (
+                    <li className="pl-1">{children}</li>
+                  ),
+                  // Enhanced blockquotes
+                  blockquote: ({ children }) => (
+                    <blockquote className="border-l-4 border-primary pl-4 py-2 my-4 italic bg-muted/30 rounded-r">
+                      {children}
+                    </blockquote>
+                  ),
+                  // Enhanced tables
+                  table: ({ children }) => (
+                    <div className="overflow-x-auto my-4">
+                      <table className="min-w-full divide-y divide-border border border-border rounded-lg">
+                        {children}
+                      </table>
+                    </div>
+                  ),
+                  thead: ({ children }) => (
+                    <thead className="bg-muted">{children}</thead>
+                  ),
+                  th: ({ children }) => (
+                    <th className="px-4 py-2 text-left text-sm font-semibold">{children}</th>
+                  ),
+                  td: ({ children }) => (
+                    <td className="px-4 py-2 text-sm border-t border-border">{children}</td>
+                  ),
+                  // Enhanced links
+                  a: ({ href, children }) => (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
+                    >
+                      {children}
+                    </a>
+                  ),
+                  // Enhanced paragraphs
+                  p: ({ children }) => (
+                    <p className="my-3 leading-7">{children}</p>
+                  ),
+                  // Enhanced horizontal rules
+                  hr: () => (
+                    <hr className="my-6 border-t-2 border-border" />
+                  ),
                 }}
               >
                 {message.content}
