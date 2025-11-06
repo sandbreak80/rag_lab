@@ -23,6 +23,7 @@ const DEFAULT_CONFIG: RAGConfig = {
   usePromptEnhancement: false,
   useAutoModelRouting: false,
   useQueryDecomposition: false,
+  useSelfRAG: false,
   showReasoningProcess: true,  // Show reasoning by default for transparency
 
   // Data source toggles - All enabled by default
@@ -212,6 +213,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
         usePromptEnhancement: state.usePromptEnhancement,
         useAutoModelRouting: state.useAutoModelRouting,
         useQueryDecomposition: state.useQueryDecomposition,
+        useSelfRAG: state.useSelfRAG,
         showReasoningProcess: state.showReasoningProcess,
 
         // Data source toggles (ensure all are included)

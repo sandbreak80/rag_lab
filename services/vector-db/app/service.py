@@ -142,7 +142,8 @@ def search():
     {
         "query_embeddings": [[0.1, 0.2, ...]],
         "n_results": 10,
-        "where": {"file_name": "example.md"}  // optional
+        "where": {"file_name": "example.md"},  // optional (legacy)
+        "metadata_filters": {...}              // optional (new format)
     }
     """
     try:
@@ -151,9 +152,16 @@ def search():
         query_embeddings = data.get('query_embeddings', [])
         n_results = data.get('n_results', DEFAULT_SEARCH_LIMIT)
         where = data.get('where', None)
+        metadata_filters = data.get('metadata_filters', None)
 
         if not query_embeddings:
             return jsonify({'error': 'query_embeddings required'}), 400
+
+        # Convert metadata_filters to ChromaDB where clause
+        if metadata_filters and not where:
+            where = _build_chroma_where_clause(metadata_filters)
+            if where:
+                print(f"🔍 Applying metadata filters: {where}")
 
         results = collection.query(
             query_embeddings=query_embeddings,
@@ -167,6 +175,65 @@ def search():
     except Exception as e:
         metrics.increment('errors')
         return jsonify({'error': str(e)}), 500
+
+def _build_chroma_where_clause(filters: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Convert metadata filters to ChromaDB where clause format
+
+    ChromaDB where clause format:
+    - {"field": "value"} - exact match
+    - {"field": {"$in": ["value1", "value2"]}} - OR match
+    - {"$and": [{"field1": "value1"}, {"field2": "value2"}]} - AND multiple conditions
+    """
+    conditions = []
+
+    # Document types filter
+    if filters.get('documentTypes'):
+        conditions.append({
+            "$or": [
+                {"type": {"$in": filters['documentTypes']}},
+                {"file_type": {"$in": filters['documentTypes']}}
+            ]
+        })
+
+    # Sources filter
+    if filters.get('sources'):
+        conditions.append({"source": {"$in": filters['sources']}})
+
+    # Tags filter (check if any tag matches)
+    if filters.get('tags'):
+        # Note: ChromaDB might not support array contains, so this may need adjustment
+        conditions.append({"tags": {"$in": filters['tags']}})
+
+    # Date range filter
+    if filters.get('dateRange'):
+        date_range = filters['dateRange']
+        if date_range.get('start'):
+            conditions.append({
+                "$or": [
+                    {"created_at": {"$gte": date_range['start']}},
+                    {"date": {"$gte": date_range['start']}}
+                ]
+            })
+        if date_range.get('end'):
+            conditions.append({
+                "$or": [
+                    {"created_at": {"$lte": date_range['end']}},
+                    {"date": {"$lte": date_range['end']}}
+                ]
+            })
+
+    # Authors filter
+    if filters.get('authors'):
+        conditions.append({"author": {"$in": filters['authors']}})
+
+    # Combine all conditions with AND
+    if not conditions:
+        return None
+    elif len(conditions) == 1:
+        return conditions[0]
+    else:
+        return {"$and": conditions}
 
 @app.route('/delete', methods=['POST'])
 @timed(metrics, 'delete_documents')

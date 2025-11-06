@@ -391,8 +391,8 @@ def hybrid_search():
         metrics.increment('hybrid_search_errors')
         return jsonify({'error': str(e)}), 500
 
-def vector_search_internal(query: str, limit: int) -> List[Dict]:
-    """Internal vector search"""
+def vector_search_internal(query: str, limit: int, metadata_filters: Optional[Dict] = None) -> List[Dict]:
+    """Internal vector search with optional metadata filters"""
     # Get config values
     embedding_url = os.getenv('EMBEDDING_SERVICE_URL', 'http://embedding-service:8006')
     vector_db_url = os.getenv('VECTOR_DB_URL', 'http://vector-db:8005')
@@ -406,13 +406,20 @@ def vector_search_internal(query: str, limit: int) -> List[Dict]:
     embed_response.raise_for_status()
     query_embedding = embed_response.json()['embedding']
 
+    # Prepare search request
+    search_body = {
+        'query_embeddings': [query_embedding],
+        'n_results': limit
+    }
+
+    # Add metadata filters if provided
+    if metadata_filters:
+        search_body['metadata_filters'] = metadata_filters
+
     # Search
     search_response = requests.post(
         f"{vector_db_url}/search",
-        json={
-            'query_embeddings': [query_embedding],
-            'n_results': limit
-        },
+        json=search_body,
         timeout=180
     )
     search_response.raise_for_status()
@@ -431,8 +438,8 @@ def vector_search_internal(query: str, limit: int) -> List[Dict]:
 
     return formatted
 
-def bm25_search_internal(query: str, limit: int) -> List[Dict]:
-    """Internal BM25 search"""
+def bm25_search_internal(query: str, limit: int, metadata_filters: Optional[Dict] = None) -> List[Dict]:
+    """Internal BM25 search with optional metadata filters"""
     if not bm25_index:
         print("⚠️  BM25: No index available")
         return []
@@ -444,21 +451,70 @@ def bm25_search_internal(query: str, limit: int) -> List[Dict]:
     scores = bm25_index.get_scores(query_tokens)
     print(f"🔍 BM25: Score range: {min(scores):.4f} - {max(scores):.4f}")
 
-    top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:limit]
-    print(f"🔍 BM25: Top {len(top_indices)} indices with scores: {[f'{scores[i]:.4f}' for i in top_indices[:5]]}")
+    # Get all scored indices
+    scored_indices = [(i, scores[i]) for i in range(len(scores)) if scores[i] > 0]
+    scored_indices.sort(key=lambda x: x[1], reverse=True)
 
     results = []
-    for idx in top_indices:
-        if scores[idx] > 0:
-            results.append({
-                'content': bm25_docs[idx],
-                'metadata': bm25_metadata[idx],
-                'score': float(scores[idx]),
-                'id': bm25_metadata[idx].get('file_name', f'doc_{idx}')
-            })
+    for idx, score in scored_indices:
+        metadata = bm25_metadata[idx]
 
-    print(f"🔍 BM25: Returning {len(results)} results (filtered from {len(top_indices)})")
+        # Apply metadata filters if provided
+        if metadata_filters:
+            if not _matches_filters(metadata, metadata_filters):
+                continue
+
+        results.append({
+            'content': bm25_docs[idx],
+            'metadata': metadata,
+            'score': float(score),
+            'id': metadata.get('file_name', f'doc_{idx}')
+        })
+
+        # Stop when we have enough results
+        if len(results) >= limit:
+            break
+
+    print(f"🔍 BM25: Returning {len(results)} results (filtered: {len(scored_indices)} → {len(results)})")
     return results
+
+def _matches_filters(metadata: Dict, filters: Dict) -> bool:
+    """Check if metadata matches the provided filters"""
+    # Document types filter
+    if filters.get('documentTypes'):
+        doc_type = metadata.get('type', metadata.get('file_type', ''))
+        if doc_type not in filters['documentTypes']:
+            return False
+
+    # Sources filter
+    if filters.get('sources'):
+        source = metadata.get('source', '')
+        if source not in filters['sources']:
+            return False
+
+    # Tags filter
+    if filters.get('tags'):
+        doc_tags = metadata.get('tags', [])
+        if not any(tag in doc_tags for tag in filters['tags']):
+            return False
+
+    # Date range filter
+    if filters.get('dateRange'):
+        doc_date = metadata.get('created_at', metadata.get('date', ''))
+        if doc_date:
+            date_range = filters['dateRange']
+            if date_range.get('start') and doc_date < date_range['start']:
+                return False
+            if date_range.get('end') and doc_date > date_range['end']:
+                return False
+
+    # Authors filter
+    if filters.get('authors'):
+        author = metadata.get('author', '')
+        if author not in filters['authors']:
+            return False
+
+    return True
 
 def decompose_query_to_multi_queries(query: str, query_expander) -> List[str]:
     """
@@ -702,7 +758,8 @@ def search():
         "limit": 10,
         "expand_query": true,    // Enable query expansion (default: true)
         "use_graph": false,       // Enable knowledge graph (default: false)
-        "use_reranking": false    // Enable LLM re-ranking (default: false, adds 2000ms)
+        "use_reranking": false,   // Enable LLM re-ranking (default: false, adds 2000ms)
+        "metadata_filters": {...} // Optional metadata filters
     }
     """
     try:
@@ -712,9 +769,14 @@ def search():
         expand = data.get('expand_query', True)
         use_graph = data.get('use_graph', False)
         use_reranking = data.get('use_reranking', False)
+        metadata_filters = data.get('metadata_filters', None)
 
         if not query:
             return jsonify({'error': 'query required'}), 400
+
+        # Log filters if provided
+        if metadata_filters:
+            print(f"🔍 Applying metadata filters: {metadata_filters}")
 
         # Step 1: Query Expansion
         original_query = query
@@ -727,15 +789,15 @@ def search():
         # Use hybrid if BM25 available, otherwise vector
         if bm25_index:
             # Perform both searches
-            vector_results = vector_search_internal(query, limit * 2)
-            bm25_results = bm25_search_internal(query, limit * 2)
+            vector_results = vector_search_internal(query, limit * 2, metadata_filters)
+            bm25_results = bm25_search_internal(query, limit * 2, metadata_filters)
 
             # Fuse results
             fused = reciprocal_rank_fusion([vector_results, bm25_results])
             fused = fused[:limit * 2]  # Keep extra for graph/reranking
             method = 'hybrid'
         else:
-            fused = vector_search_internal(query, limit * 2)
+            fused = vector_search_internal(query, limit * 2, metadata_filters)
             method = 'vector_only'
 
         # Step 3: Knowledge Graph Enhancement (optional)

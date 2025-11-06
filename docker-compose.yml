@@ -693,6 +693,36 @@ services:
       timeout: 10s
       retries: 3
 
+  # Self-RAG - Retrieval with self-reflection and quality assessment
+  self-rag:
+    build:
+      context: ./services/self-rag
+      dockerfile: Dockerfile
+    container_name: rag-self-rag
+    networks:
+      - rag-network
+    ports:
+      - "8020:8020"
+    volumes:
+      - ./services/common:/workspace/services/common
+    env_file:
+      - config.env
+    environment:
+      - SERVICE_NAME=self-rag
+      - SERVICE_PORT=8020
+      - OLLAMA_URL=http://ollama:11434
+      - SEARCH_SERVICE_URL=http://search-service:8003
+      - PYTHONPATH=/workspace
+    depends_on:
+      - ollama
+      - search-service
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8020/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # ============================================================================
   # API & FRONTEND
   # ============================================================================

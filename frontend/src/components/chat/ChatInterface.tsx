@@ -7,6 +7,7 @@ import { useChatStore } from '../../stores/chatStore';
 import { ChatMessage } from '../../types/chat';
 import { MessageList } from './MessageList';
 import { InputBar } from './InputBar';
+import { FilterPanel } from '../filters/FilterPanel';
 import { generateId } from '../../utils/formatting';
 
 export function ChatInterface() {
@@ -14,6 +15,8 @@ export function ChatInterface() {
   const isLoading = useChatStore((state) => state.isLoading);
   const addMessage = useChatStore((state) => state.addMessage);
   const setLoading = useChatStore((state) => state.setLoading);
+  const metadataFilters = useChatStore((state) => state.metadataFilters);
+  const setMetadataFilters = useChatStore((state) => state.setMetadataFilters);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Cancel token for aborting requests
@@ -53,11 +56,11 @@ export function ChatInterface() {
   const webSearchDocs = useConfigStore((state) => state.webSearchDocs);
   const webSearchPages = useConfigStore((state) => state.webSearchPages);
   const rerankTopK = useConfigStore((state) => state.rerankTopK);
-  const metadataFilters = useConfigStore((state) => state.metadataFilters);
 
   // New intelligence features
   const usePromptEnhancement = useConfigStore((state) => state.usePromptEnhancement);
   const useAutoModelRouting = useConfigStore((state) => state.useAutoModelRouting);
+  const useQueryDecomposition = useConfigStore((state) => state.useQueryDecomposition);
   const useVectorDB = useConfigStore((state) => state.useVectorDB);
   const useResearchAgent = useConfigStore((state) => state.useResearchAgent);
 
@@ -78,11 +81,12 @@ export function ChatInterface() {
     webSearchDocs,
     webSearchPages,
     rerankTopK,
-    metadataFilters,
+    metadataFilters: metadataFilters, // Use filters from chatStore
     usePromptEnhancement,
     useAutoModelRouting,
     useVectorDB,
     useResearchAgent,
+    useQueryDecomposition,
   }), [
     model,
     temperature,
@@ -99,11 +103,12 @@ export function ChatInterface() {
     webSearchDocs,
     webSearchPages,
     rerankTopK,
-    metadataFilters,
+    metadataFilters, // Include chatStore filters in deps
     usePromptEnhancement,
     useAutoModelRouting,
     useVectorDB,
     useResearchAgent,
+    useQueryDecomposition,
   ]);
 
   const addMetric = useMetricsStore((state) => state.addQuery);
@@ -350,6 +355,14 @@ export function ChatInterface() {
             Clear Chat
           </button>
         </div>
+      </div>
+
+      {/* Filters */}
+      <div className="p-4 pb-0">
+        <FilterPanel
+          filters={metadataFilters}
+          onFiltersChange={setMetadataFilters}
+        />
       </div>
 
       {/* Messages */}

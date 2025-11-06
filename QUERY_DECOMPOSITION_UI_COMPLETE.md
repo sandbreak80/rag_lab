@@ -1,6 +1,6 @@
 # Query Decomposition UI - Complete ✅
-**Date:** November 6, 2025  
-**Feature:** Query Decomposition with UI Integration  
+**Date:** November 6, 2025
+**Feature:** Query Decomposition with UI Integration
 **Status:** ✅ IMPLEMENTED & TESTED
 
 ## 🎯 Summary
@@ -291,6 +291,6 @@ Potential improvements (not implemented):
 
 ---
 
-**Feature Complete:** November 6, 2025  
-**Status:** ✅ Ready for Use  
+**Feature Complete:** November 6, 2025
+**Status:** ✅ Ready for Use
 **Next:** Phase 2 - Metadata Filtering UI

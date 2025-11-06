@@ -21,6 +21,7 @@ export interface RAGConfig {
   usePromptEnhancement?: boolean;  // Enable intelligent prompt enhancement
   useAutoModelRouting?: boolean;   // Enable automatic model selection
   useQueryDecomposition?: boolean; // Break complex queries into sub-queries
+  useSelfRAG?: boolean;            // Self-reflective RAG with quality assessment
   showReasoningProcess?: boolean;  // Show/hide ReAct framework scaffolding
 
   // Data source toggles
@@ -36,13 +37,22 @@ export interface DataSourceFilters {
 }
 
 export interface MetadataFilters {
-  documentTypes?: string[];
+  documentTypes?: string[];  // ['pdf', 'markdown', 'txt', etc.]
   dateRange?: {
-    start?: string;
-    end?: string;
+    start?: string;          // ISO date string
+    end?: string;            // ISO date string
   };
-  tags?: string[];
-  authors?: string[];
+  tags?: string[];           // ['AI', 'RAG', 'LLM', etc.]
+  sources?: string[];        // ['research-agent', 'upload', 'web-search']
+  authors?: string[];        // Author names
+}
+
+// Available filter options
+export interface FilterOptions {
+  documentTypes: string[];
+  tags: string[];
+  sources: string[];
+  authors: string[];
 }
 
 export interface ConfigPreset {

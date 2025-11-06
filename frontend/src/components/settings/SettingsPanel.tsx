@@ -27,6 +27,7 @@ export function SettingsPanel() {
   const usePromptEnhancement = useConfigStore((state) => state.usePromptEnhancement);
   const useAutoModelRouting = useConfigStore((state) => state.useAutoModelRouting);
   const useQueryDecomposition = useConfigStore((state) => state.useQueryDecomposition);
+  const useSelfRAG = useConfigStore((state) => state.useSelfRAG);
   const showReasoningProcess = useConfigStore((state) => state.showReasoningProcess);
   const useVectorDB = useConfigStore((state) => state.useVectorDB);
   const useResearchAgent = useConfigStore((state) => state.useResearchAgent);
@@ -296,6 +297,39 @@ export function SettingsPanel() {
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform pointer-events-none ${
                   useQueryDecomposition
+                    ? 'translate-x-6'
+                    : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="self-rag" className="text-base font-medium">
+                🔍 Self-RAG
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Self-reflective retrieval with quality assessment and automatic refinement
+              </p>
+            </div>
+            <button
+              type="button"
+              id="self-rag"
+              onClick={(e) => {
+                e.preventDefault();
+                console.log('🔍 Self-RAG toggle clicked');
+                toggleFeature('useSelfRAG');
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                useSelfRAG
+                  ? 'bg-primary'
+                  : 'bg-muted'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform pointer-events-none ${
+                  useSelfRAG
                     ? 'translate-x-6'
                     : 'translate-x-1'
                 }`}

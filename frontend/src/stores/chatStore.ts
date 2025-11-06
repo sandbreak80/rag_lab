@@ -1,20 +1,24 @@
 import { create } from 'zustand';
 import { ChatMessage } from '../types/chat';
+import { MetadataFilters } from '../types/config';
 import { saveToLocalStorage, loadFromLocalStorage } from '../utils/localStorage';
 
 interface ChatStore {
   messages: ChatMessage[];
   isLoading: boolean;
+  metadataFilters: MetadataFilters;
 
   // Actions
   addMessage: (message: ChatMessage) => void;
   setLoading: (loading: boolean) => void;
   clearMessages: () => void;
+  setMetadataFilters: (filters: MetadataFilters) => void;
 }
 
 export const useChatStore = create<ChatStore>((set, get) => {
   // Load initial messages from localStorage
   const savedMessages = loadFromLocalStorage<ChatMessage[]>('chat_messages', []);
+  const savedFilters = loadFromLocalStorage<MetadataFilters>('metadata_filters', {});
 
   // FIX: Detect if last message was a user question without a response (orphaned by page refresh)
   let initialMessages = savedMessages;
@@ -42,6 +46,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
   return {
     messages: initialMessages,
     isLoading: false,  // Always start with isLoading=false on page load
+    metadataFilters: savedFilters,
 
     addMessage: (message) => {
       const messages = [...get().messages, message];
@@ -58,6 +63,11 @@ export const useChatStore = create<ChatStore>((set, get) => {
     clearMessages: () => {
       set({ messages: [] });
       saveToLocalStorage('chat_messages', []);
+    },
+
+    setMetadataFilters: (metadataFilters) => {
+      set({ metadataFilters });
+      saveToLocalStorage('metadata_filters', metadataFilters);
     },
   };
 });
