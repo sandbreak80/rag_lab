@@ -664,6 +664,35 @@ services:
       timeout: 10s
       retries: 3
 
+  # Query Decomposer - Breaks complex queries into simpler sub-queries
+  query-decomposer:
+    build:
+      context: ./services/query-decomposer
+      dockerfile: Dockerfile
+    container_name: rag-query-decomposer
+    networks:
+      - rag-network
+    ports:
+      - "8019:8019"
+    volumes:
+      - ./services/common:/workspace/services/common
+    env_file:
+      - config.env
+    environment:
+      - SERVICE_NAME=query-decomposer
+      - SERVICE_PORT=8019
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - DECOMPOSER_MODEL=llama3.2:3b
+      - PYTHONPATH=/workspace
+    depends_on:
+      - ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8019/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # ============================================================================
   # API & FRONTEND
   # ============================================================================

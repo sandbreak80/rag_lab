@@ -59,7 +59,7 @@ def _detect_hallucinated_citations(answer: str, sources: list) -> list:
     """
     import re
     warnings = []
-    
+
     # Extract all citations from the answer
     # Common citation patterns: [1], [Source 1], [Paper et al. 2023], etc.
     citation_patterns = [
@@ -69,15 +69,15 @@ def _detect_hallucinated_citations(answer: str, sources: list) -> list:
         r'arXiv:\d{4}\.\d{4,5}',  # arXiv IDs
         r'doi:\S+',  # DOI identifiers
     ]
-    
+
     found_citations = set()
     for pattern in citation_patterns:
         matches = re.findall(pattern, answer, re.IGNORECASE)
         found_citations.update(matches)
-    
+
     if not found_citations:
         return warnings
-    
+
     # Build index of valid source identifiers from retrieved documents
     valid_identifiers = set()
     for i, source in enumerate(sources, 1):
@@ -91,7 +91,7 @@ def _detect_hallucinated_citations(answer: str, sources: list) -> list:
                 valid_identifiers.add(f"arXiv:{metadata['arxiv_id']}")
             if 'title' in metadata:
                 valid_identifiers.add(metadata['title'])
-    
+
     # Check each citation against valid sources
     for citation in found_citations:
         # Simple numeric citations should match source numbers
@@ -114,14 +114,14 @@ def _detect_hallucinated_citations(answer: str, sources: list) -> list:
                     if citation.lower() in title.lower() or citation.lower() in str(authors).lower():
                         found_match = True
                         break
-            
+
             if not found_match:
                 warnings.append({
                     'type': 'unverified_academic',
                     'citation': f'[{citation}]',
                     'message': f'Academic citation "{citation}" could not be verified against retrieved sources. This may be generated rather than cited.'
                 })
-    
+
     return warnings
 
 def _enrich_source_metadata(sources: list) -> list:
@@ -130,7 +130,7 @@ def _enrich_source_metadata(sources: list) -> list:
     Returns enhanced sources with full metadata
     """
     enriched = []
-    
+
     for i, source in enumerate(sources, 1):
         if not isinstance(source, dict):
             # Convert simple sources to dict format
@@ -140,9 +140,9 @@ def _enrich_source_metadata(sources: list) -> list:
                 'metadata': {}
             })
             continue
-        
+
         metadata = source.get('metadata', {})
-        
+
         # Build enriched source with all available metadata
         enriched_source = {
             'id': i,
@@ -153,34 +153,34 @@ def _enrich_source_metadata(sources: list) -> list:
                 'score': source.get('score', 0.0),
             }
         }
-        
+
         # Add optional metadata if available
         if 'url' in metadata or 'pdf_url' in metadata:
             enriched_source['metadata']['url'] = metadata.get('url', metadata.get('pdf_url'))
-        
+
         if 'published_date' in metadata or 'updated_date' in metadata:
             enriched_source['metadata']['date'] = metadata.get('published_date', metadata.get('updated_date'))
-        
+
         if 'authors' in metadata or 'author_list' in metadata:
             authors = metadata.get('authors', metadata.get('author_list', ''))
             if isinstance(authors, list):
                 enriched_source['metadata']['authors'] = ', '.join(authors[:3])  # First 3 authors
             else:
                 enriched_source['metadata']['authors'] = str(authors)
-        
+
         if 'external_id' in metadata:
             enriched_source['metadata']['external_id'] = metadata['external_id']
-        
+
         if 'arxiv_id' in metadata:
             enriched_source['metadata']['arxiv_id'] = metadata['arxiv_id']
             enriched_source['metadata']['arxiv_url'] = f"https://arxiv.org/abs/{metadata['arxiv_id']}"
-        
+
         if 'doi' in metadata:
             enriched_source['metadata']['doi'] = metadata['doi']
             enriched_source['metadata']['doi_url'] = f"https://doi.org/{metadata['doi']}"
-        
+
         enriched.append(enriched_source)
-    
+
     return enriched
 
 def check_services():

@@ -912,12 +912,12 @@ def search_with_config():
         if use_hybrid and bm25_results:
             fusion_start = time.time()
             fused = reciprocal_rank_fusion([vector_results, bm25_results])
-            perf_metrics['fusion_ms'] = round((time.time() - fusion_start) * 1000, 2)
+            perf_metrics['hybrid_fusion_ms'] = round((time.time() - fusion_start) * 1000, 2)
             perf_metrics['method'] = 'hybrid'
-            print(f"✓ Hybrid Fusion: {perf_metrics['fusion_ms']}ms")
+            print(f"✓ Hybrid Fusion: {perf_metrics['hybrid_fusion_ms']}ms")
         else:
             fused = vector_results
-            perf_metrics['fusion_ms'] = 0
+            perf_metrics['hybrid_fusion_ms'] = 0
             perf_metrics['method'] = 'vector_only'
 
         fused = fused[:top_k * 2]  # Keep extra for graph/reranking
@@ -961,15 +961,15 @@ def search_with_config():
                                 fused.append(result)
                                 graph_added += 1
 
-                perf_metrics['graph_enhancement_ms'] = round((time.time() - graph_start) * 1000, 2)
+                perf_metrics['graph_expansion_ms'] = round((time.time() - graph_start) * 1000, 2)
                 perf_metrics['graph_docs_added'] = graph_added
-                print(f"✓ Knowledge Graph: {perf_metrics['graph_enhancement_ms']}ms ({perf_metrics['graph_docs_added']} docs added)")
+                print(f"✓ Knowledge Graph: {perf_metrics['graph_expansion_ms']}ms ({perf_metrics['graph_docs_added']} docs added)")
             except Exception as e:
-                perf_metrics['graph_enhancement_ms'] = 0
+                perf_metrics['graph_expansion_ms'] = 0
                 perf_metrics['graph_docs_added'] = 0
                 perf_metrics['graph_error'] = str(e)
         else:
-            perf_metrics['graph_enhancement_ms'] = 0
+            perf_metrics['graph_expansion_ms'] = 0
             perf_metrics['graph_docs_added'] = 0
             print(f"⊘ Knowledge Graph: SKIPPED")
 
@@ -1133,8 +1133,8 @@ def search_with_config():
                 'query_expansion': round((perf_metrics['query_expansion_ms'] / total) * 100, 1),
                 'vector_search': round((perf_metrics['vector_search_ms'] / total) * 100, 1),
                 'bm25_search': round((perf_metrics['bm25_search_ms'] / total) * 100, 1),
-                'fusion': round((perf_metrics['fusion_ms'] / total) * 100, 1),
-                'graph': round((perf_metrics['graph_enhancement_ms'] / total) * 100, 1),
+                'hybrid_fusion': round((perf_metrics['hybrid_fusion_ms'] / total) * 100, 1),
+                'graph_expansion': round((perf_metrics['graph_expansion_ms'] / total) * 100, 1),
                 'reranking': round((perf_metrics['reranking_ms'] / total) * 100, 1)
             }
 

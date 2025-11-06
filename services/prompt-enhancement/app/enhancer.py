@@ -272,14 +272,14 @@ IMPORTANT: Base your answer ONLY on the provided documents above. Cite sources u
         for i, doc in enumerate(documents[:5], 1):  # Max 5 documents
             content = doc.get('content', doc.get('text', ''))
             metadata = doc.get('metadata', {})
-            
+
             # Extract metadata fields
             title = metadata.get('title', metadata.get('source', doc.get('file_name', 'Unknown')))
             source_type = metadata.get('source_type', metadata.get('type', 'document'))
             url = metadata.get('url', metadata.get('pdf_url', ''))
             date = metadata.get('published_date', metadata.get('updated_date', ''))
             authors = metadata.get('authors', metadata.get('author_list', ''))
-            
+
             # Build document header with rich metadata
             header_parts = [f"[Source {i}: {title}]"]
             if source_type:
@@ -292,7 +292,7 @@ IMPORTANT: Base your answer ONLY on the provided documents above. Cite sources u
                 header_parts.append(f"Authors: {authors}")
             if url:
                 header_parts.append(f"URL: {url}")
-            
+
             header = '\n'.join(header_parts)
             formatted.append(f"{header}\n\nContent:\n{content}\n")
 

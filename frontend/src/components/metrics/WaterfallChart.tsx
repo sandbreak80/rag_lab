@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, ResponsiveContainer } from 'recharts';
 import { PerformanceMetrics } from '../../types/performance';
 
 interface WaterfallChartProps {
@@ -7,238 +7,219 @@ interface WaterfallChartProps {
   compact?: boolean;
 }
 
-// Color palette for each RAG component
-const COLORS = {
-  // Search Service Components
-  'Query Expansion': '#10b981', // green
-  'Vector Search': '#3b82f6', // blue
-  'BM25 Search': '#8b5cf6', // purple
-  'Hybrid Fusion': '#f59e0b', // amber
-  'Graph Enhancement': '#ec4899', // pink
-  'Re-ranking': '#ef4444', // red
-  'Web Search': '#06b6d4', // cyan
+interface ChartDataPoint {
+  name: string;
+  start: number;
+  duration: number;
+  percentage: string;
+  category: string;
+}
 
-  // LLM Components
-  'LLM: Prompt Eval': '#a855f7', // purple-500
-  'LLM: Token Generation': '#6366f1', // indigo
+const COLORS: Record<string, string> = {
+  'Security Validation': '#10b981',      // green-600
+  'Prompt Enhancement': '#16a34a',      // green-600  
+  'Model Routing': '#f97316',           // orange-500
+  'Query Expansion': '#eab308',         // yellow-500
+  'Vector Search': '#ef4444',           // red-500
+  'BM25 Search': '#ec4899',             // pink-500
+  'Hybrid Fusion': '#06b6d4',           // cyan-500
+  'Knowledge Graph': '#84cc16',         // lime-500
+  'Re-ranking': '#f59e0b',              // amber-500
+  'Web Search': '#dc2626',              // red-600
+  'LLM Generation': '#6366f1',           // indigo-500
+};
 
-  // Service Latencies
-  'Search Service': '#14b8a6', // teal
-  'Chat Service Overhead': '#94a3b8', // slate-400
-
-  // Security & Enhancement (NEW - for learning lab)
-  'Input Validation': '#dc2626', // red-600 (security)
-  'Prompt Enhancement': '#16a34a', // green-600 (enhancement)
-  'Model Routing': '#f97316', // orange-500 (routing)
-
-  // Infrastructure (NEW)
-  'Rate Limit Check': '#7c3aed', // violet-600
-  'API Gateway': '#475569', // slate-600
+const STAGE_CATEGORIES: Record<string, string> = {
+  'Security Validation': 'security',
+  'Prompt Enhancement': 'enhancement',
+  'Model Routing': 'routing',
+  'Query Expansion': 'search',
+  'Vector Search': 'search',
+  'BM25 Search': 'search',
+  'Hybrid Fusion': 'search',
+  'Knowledge Graph': 'search',
+  'Re-ranking': 'search',
+  'Web Search': 'search',
+  'LLM Generation': 'generation',
 };
 
 export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps) {
-  // Transform metrics into chart data
-  const data = [
-    // Security & Enhancement (happens FIRST)
-    {
-      name: 'Input Validation',
-      time: metrics.security_validation_ms || 0,
-      enabled: (metrics.security_validation_ms || 0) > 0,
-      category: 'security',
-    },
-    {
-      name: 'Prompt Enhancement',
-      time: metrics.prompt_enhancement_ms || 0,
-      enabled: (metrics.prompt_enhancement_ms || 0) > 0,
-      category: 'enhancement',
-    },
-    {
-      name: 'Model Routing',
-      time: metrics.model_routing_ms || 0,
-      enabled: (metrics.model_routing_ms || 0) > 0,
-      category: 'routing',
-    },
-    // Search Service Components (in order of execution)
-    {
-      name: 'Query Expansion',
-      time: metrics.query_expansion_ms || 0,
-      enabled: (metrics.query_expansion_ms || 0) > 0,
-      category: 'search',
-    },
-    {
-      name: 'Vector Search',
-      time: metrics.vector_search_ms || 0,
-      enabled: (metrics.vector_search_ms || 0) > 0,
-      category: 'search',
-    },
-    {
-      name: 'BM25 Search',
-      time: metrics.bm25_search_ms || 0,
-      enabled: (metrics.bm25_search_ms || 0) > 0,
-      category: 'search',
-    },
-    {
-      name: 'Hybrid Fusion',
-      time: metrics.hybrid_fusion_ms || 0,
-      enabled: (metrics.hybrid_fusion_ms || 0) > 0,
-      category: 'search',
-    },
-    {
-      name: 'Graph Enhancement',
-      time: metrics.graph_expansion_ms || 0,
-      enabled: (metrics.graph_expansion_ms || 0) > 0,
-      category: 'search',
-    },
-    {
-      name: 'Re-ranking',
-      time: metrics.reranking_ms || 0,
-      enabled: (metrics.reranking_ms || 0) > 0,
-      category: 'search',
-    },
-    {
-      name: 'Web Search',
-      time: metrics.web_search_ms || 0,
-      enabled: (metrics.web_search_ms || 0) > 0,
-      category: 'search',
-    },
-    // LLM Components (detailed breakdown from Ollama)
-    {
-      name: 'LLM: Prompt Eval',
-      time: metrics.llm_prompt_eval_duration_ms || 0,
-      enabled: (metrics.llm_prompt_eval_duration_ms || 0) > 0,
-      category: 'llm',
-      tokens: metrics.llm_tokens_prompt,
-    },
-    {
-      name: 'LLM: Token Generation',
-      time: metrics.llm_eval_duration_ms || 0,
-      enabled: (metrics.llm_eval_duration_ms || 0) > 0,
-      category: 'llm',
-      tokens: metrics.llm_tokens_generated,
-      tokensPerSec: metrics.llm_tokens_per_second,
-    },
-    // Service Overhead
-    {
-      name: 'Chat Service Overhead',
-      time: metrics.chat_service_overhead_ms || 0,
-      enabled: (metrics.chat_service_overhead_ms || 0) > 0,
-      category: 'overhead',
-    },
-    // Infrastructure Overhead (happens throughout)
-    {
-      name: 'Rate Limit Check',
-      time: metrics.rate_limit_check_ms || 0,
-      enabled: (metrics.rate_limit_check_ms || 0) > 0,
-      category: 'infrastructure',
-    },
-    {
-      name: 'API Gateway',
-      time: metrics.api_gateway_overhead_ms || 0,
-      enabled: (metrics.api_gateway_overhead_ms || 0) > 0,
-      category: 'infrastructure',
-    },
-  ].filter(item => item.enabled); // Only show enabled features
+  // Build data array with cumulative timing
+  const data: ChartDataPoint[] = [];
+  let cumulative = 0;
 
-  const totalTime = metrics.total_latency_ms || data.reduce((sum, item) => sum + item.time, 0);
+  const stages = [
+    { name: 'Security Validation', ms: metrics.security_validation_ms },
+    { name: 'Prompt Enhancement', ms: metrics.prompt_enhancement_ms },
+    { name: 'Model Routing', ms: metrics.model_routing_ms },
+    { name: 'Query Expansion', ms: metrics.query_expansion_ms },
+    { name: 'Vector Search', ms: metrics.vector_search_ms },
+    { name: 'BM25 Search', ms: metrics.bm25_search_ms },
+    { name: 'Hybrid Fusion', ms: metrics.hybrid_fusion_ms },
+    { name: 'Knowledge Graph', ms: metrics.graph_expansion_ms },
+    { name: 'Re-ranking', ms: metrics.reranking_ms },
+    { name: 'Web Search', ms: metrics.web_search_ms },
+    { name: 'LLM Generation', ms: metrics.llm_generation_ms },
+  ];
 
-  // Format time for display
-  const formatTime = (ms: number) => {
-    if (ms < 1000) return `${ms.toFixed(0)}ms`;
-    return `${(ms / 1000).toFixed(2)}s`;
-  };
-
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      const percentage = totalTime > 0 ? ((data.time / totalTime) * 100).toFixed(1) : '0.0';
-      return (
-        <div className="bg-card border rounded-lg shadow-lg p-3 min-w-[200px]">
-          <p className="font-semibold">{data.name}</p>
-          <p className="text-sm text-muted-foreground">
-            Time: <span className="text-foreground font-medium">{formatTime(data.time)}</span>
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Percentage: <span className="text-foreground font-medium">{percentage}%</span>
-          </p>
-          {data.tokens !== undefined && (
-            <p className="text-sm text-muted-foreground">
-              Tokens: <span className="text-foreground font-medium">{data.tokens}</span>
-            </p>
-          )}
-          {data.tokensPerSec !== undefined && (
-            <p className="text-sm text-muted-foreground">
-              Speed: <span className="text-foreground font-medium">{data.tokensPerSec} tok/s</span>
-            </p>
-          )}
-        </div>
-      );
+  stages.forEach(stage => {
+    if (stage.ms && stage.ms > 0) {
+      const percentage = ((stage.ms / metrics.total_latency_ms) * 100).toFixed(1);
+      data.push({
+        name: stage.name,
+        start: cumulative,
+        duration: stage.ms,
+        percentage: `${percentage}%`,
+        category: STAGE_CATEGORIES[stage.name] || 'other',
+      });
+      cumulative += stage.ms;
     }
-    return null;
-  };
+  });
 
   if (data.length === 0) {
     return (
-      <div className="text-center text-muted-foreground py-8">
-        No performance data available
+      <div className="p-4 text-center text-muted-foreground">
+        No timing data available
       </div>
     );
   }
 
-  return (
-    <div className="space-y-2">
-      {!compact && (
-        <div className="text-sm text-muted-foreground">
-          Total Response Time: <span className="text-foreground font-semibold">{formatTime(totalTime)}</span>
-        </div>
-      )}
+  const height = compact ? 300 : 400;
+  const showLegend = !compact;
 
-      <ResponsiveContainer width="100%" height={compact ? 200 : 300}>
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">⏱️ Performance Waterfall</h3>
+        <div className="text-sm text-muted-foreground">
+          Total: <span className="font-bold text-foreground font-mono">
+            {(metrics.total_latency_ms / 1000).toFixed(2)}s
+          </span>
+          {' '}({data.length} stages)
+        </div>
+      </div>
+
+      {/* Chart */}
+      <ResponsiveContainer width="100%" height={height}>
         <BarChart
           data={data}
-          layout="vertical"
-          margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
+          layout="horizontal"
+          margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
         >
-          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-          <XAxis
-            type="number"
-            tickFormatter={formatTime}
-            label={!compact ? { value: 'Time', position: 'insideBottom', offset: -5 } : undefined}
+          <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+          <XAxis 
+            type="number" 
+            label={{ value: 'Time (ms)', position: 'insideBottom', offset: -5 }}
+            stroke="#9ca3af"
           />
-          <YAxis type="category" dataKey="name" width={110} />
-          <Tooltip content={<CustomTooltip />} />
-          {!compact && <Legend />}
-          <Bar dataKey="time" name="Time (ms)" radius={[0, 4, 4, 0]}>
+          <YAxis 
+            type="category" 
+            dataKey="name" 
+            width={150}
+            stroke="#9ca3af"
+            style={{ fontSize: '12px' }}
+          />
+          <Tooltip
+            content={({ active, payload }) => {
+              if (active && payload && payload.length) {
+                const item = payload[0].payload as ChartDataPoint;
+                return (
+                  <div className="bg-card border border-border rounded-lg p-3 shadow-xl">
+                    <p className="font-semibold text-sm mb-1">{item.name}</p>
+                    <div className="space-y-1 text-xs">
+                      <p className="text-muted-foreground">
+                        Duration: <span className="font-mono text-foreground font-semibold">
+                          {item.duration.toFixed(0)}ms
+                        </span>
+                      </p>
+                      <p className="text-muted-foreground">
+                        Percentage: <span className="text-foreground font-semibold">
+                          {item.percentage}
+                        </span>
+                      </p>
+                      <p className="text-muted-foreground">
+                        Start: <span className="font-mono text-foreground">
+                          {item.start.toFixed(0)}ms
+                        </span>
+                      </p>
+                      <p className="text-muted-foreground">
+                        End: <span className="font-mono text-foreground">
+                          {(item.start + item.duration).toFixed(0)}ms
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            }}
+          />
+          <Bar dataKey="duration" radius={[0, 4, 4, 0]}>
             {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[entry.name as keyof typeof COLORS] || '#888'} />
+              <Cell key={`cell-${index}`} fill={COLORS[entry.name]} />
             ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
 
-      {!compact && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 mt-4 text-[11px]">
-          {data.map((item: any) => (
-            <div key={item.name} className="flex items-center gap-1.5 min-w-0">
-              <div
-                className="w-2.5 h-2.5 rounded flex-shrink-0"
-                style={{ backgroundColor: COLORS[item.name as keyof typeof COLORS] || '#888' }}
-              />
-              <span className="text-muted-foreground truncate">{item.name}:</span>
-              <span className="font-medium whitespace-nowrap">{formatTime(item.time)}</span>
-              <span className="text-muted-foreground whitespace-nowrap">
-                ({totalTime > 0 ? ((item.time / totalTime) * 100).toFixed(1) : '0'}%)
-              </span>
-              {item.tokensPerSec && (
-                <span className="text-muted-foreground whitespace-nowrap">
-                  @ {item.tokensPerSec} tok/s
+      {/* Stage Breakdown */}
+      {showLegend && (
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold text-muted-foreground">Stage Breakdown</h4>
+          <div className="grid grid-cols-2 gap-2">
+            {data.map((stage, idx) => (
+              <div key={idx} className="flex items-center gap-2 text-xs">
+                <div
+                  className="w-3 h-3 rounded-sm flex-shrink-0"
+                  style={{ backgroundColor: COLORS[stage.name] }}
+                />
+                <span className="text-muted-foreground truncate">{stage.name}:</span>
+                <span className="font-mono font-semibold ml-auto">
+                  {stage.duration.toFixed(0)}ms
                 </span>
-              )}
-            </div>
-          ))}
+                <span className="text-muted-foreground">({stage.percentage})</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Category Summaries */}
+      {showLegend && (
+        <div className="pt-2 border-t border-border">
+          <div className="grid grid-cols-4 gap-4 text-xs">
+            {['security', 'enhancement', 'search', 'generation'].map(category => {
+              const categoryStages = data.filter(s => s.category === category);
+              const categoryTotal = categoryStages.reduce((sum, s) => sum + s.duration, 0);
+              const categoryPct = ((categoryTotal / metrics.total_latency_ms) * 100).toFixed(1);
+              
+              if (categoryTotal === 0) return null;
+
+              const categoryLabels: Record<string, string> = {
+                security: '🔒 Security',
+                enhancement: '✨ Enhancement',
+                search: '🔍 Search',
+                generation: '🤖 Generation',
+              };
+
+              return (
+                <div key={category} className="space-y-1">
+                  <p className="font-semibold text-muted-foreground">
+                    {categoryLabels[category]}
+                  </p>
+                  <p className="font-mono font-bold">
+                    {categoryTotal.toFixed(0)}ms
+                  </p>
+                  <p className="text-muted-foreground">
+                    {categoryPct}% of total
+                  </p>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
   );
 }
-
