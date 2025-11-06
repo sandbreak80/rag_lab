@@ -8,11 +8,23 @@ interface InputBarProps {
   disabled?: boolean;
 }
 
-const SUGGESTED_QUERIES = [
-  "What are the key features of RAG?",
-  "How does hybrid search work?",
-  "Explain agentic chunking",
-  "What is the difference between vector and keyword search?",
+// Baseline prompts for performance testing: Low, Medium, High complexity
+const BASELINE_PROMPTS = [
+  {
+    label: "🟢 Low",
+    query: "What is a Large Language Model?",
+    description: "Simple concept, low detail"
+  },
+  {
+    label: "🟡 Medium", 
+    query: "How do transformers work in LLMs? Explain attention mechanisms, tokenization, and the training process.",
+    description: "Multi-part, medium detail"
+  },
+  {
+    label: "🔴 High",
+    query: "Compare and contrast different RAG architectures including naive RAG, advanced RAG with reranking, and agentic RAG systems. Analyze the trade-offs between retrieval precision, computational cost, and response quality. Include specific examples of when each architecture would be most appropriate.",
+    description: "Complex research, high detail"
+  }
 ];
 
 const DRAFT_KEY = 'chat_draft_message';
@@ -69,20 +81,27 @@ export function InputBar({ onSend, disabled }: InputBarProps) {
 
   return (
     <div className="space-y-3">
-      {/* Suggestions */}
+      {/* Baseline Prompt Suggestions */}
       {showSuggestions && input.length === 0 && (
-        <div className="flex flex-wrap gap-2">
-          {SUGGESTED_QUERIES.map((query, index) => (
-            <button
-              key={index}
-              onClick={() => handleSuggestionClick(query)}
-              className="px-3 py-1.5 text-sm bg-secondary/20 hover:bg-secondary/30 rounded-full transition-colors flex items-center gap-1"
-              disabled={disabled}
-            >
-              <Sparkles className="h-3 w-3" />
-              {query}
-            </button>
-          ))}
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">📊 Baseline Prompts for Performance Testing:</p>
+          <div className="flex flex-wrap gap-2">
+            {BASELINE_PROMPTS.map((prompt, index) => (
+              <button
+                key={index}
+                onClick={() => handleSuggestionClick(prompt.query)}
+                className="px-3 py-2 text-sm bg-secondary/20 hover:bg-secondary/30 rounded-lg transition-colors flex flex-col items-start gap-0.5 text-left"
+                disabled={disabled}
+                title={prompt.query}
+              >
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="h-3 w-3" />
+                  <span className="font-semibold">{prompt.label}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{prompt.description}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

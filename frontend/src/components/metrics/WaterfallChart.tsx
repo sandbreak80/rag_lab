@@ -163,8 +163,8 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
             }}
           />
           {/* Simple bars showing duration only */}
-          <Bar 
-            dataKey="duration" 
+          <Bar
+            dataKey="duration"
             radius={[0, 4, 4, 0]}
             minPointSize={2}
           >
