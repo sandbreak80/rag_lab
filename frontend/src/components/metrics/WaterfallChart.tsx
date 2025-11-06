@@ -93,15 +93,18 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
     );
   }
 
-  const height = compact ? 300 : 400;
+  // Calculate max value for chart scale
+  const maxValue = Math.max(...data.map(d => d.start + d.duration));
+  
+  const height = compact ? 180 : 250;
   const showLegend = !compact;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">⏱️ Performance Waterfall</h3>
-        <div className="text-sm text-muted-foreground">
+        <h3 className="text-sm font-semibold">⏱️ Performance Waterfall</h3>
+        <div className="text-xs text-muted-foreground">
           Total: <span className="font-bold text-foreground font-mono">
             {(metrics.total_latency_ms / 1000).toFixed(2)}s
           </span>
@@ -114,21 +117,32 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
         <BarChart
           data={data}
           layout="horizontal"
-          margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+          margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+          barCategoryGap="20%"
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
           <XAxis
             type="number"
-            label={{ value: 'Time (ms)', position: 'insideBottom', offset: -5 }}
+            domain={[0, maxValue]}
+            label={{ value: 'Time (ms)', position: 'insideBottom', offset: -3, style: { fontSize: '11px' } }}
             stroke="#9ca3af"
+            tick={{ fontSize: 10 }}
           />
           <YAxis
             type="category"
             dataKey="name"
-            width={150}
+            width={120}
             stroke="#9ca3af"
-            style={{ fontSize: '12px' }}
+            tick={{ fontSize: 10 }}
           />
+          {/* Invisible bars for offset */}
+          <Bar dataKey="start" stackId="a" fill="transparent" />
+          {/* Visible bars for duration */}
+          <Bar dataKey="duration" stackId="a" radius={[0, 4, 4, 0]}>
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[entry.name]} />
+            ))}
+          </Bar>
           <Tooltip
             content={({ active, payload }) => {
               if (active && payload && payload.length) {
@@ -166,68 +180,25 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
               return null;
             }}
           />
-          <Bar dataKey="duration" radius={[0, 4, 4, 0]}>
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[entry.name]} />
-            ))}
-          </Bar>
         </BarChart>
       </ResponsiveContainer>
 
-      {/* Stage Breakdown */}
+      {/* Compact Stage List */}
       {showLegend && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-semibold text-muted-foreground">Stage Breakdown</h4>
-          <div className="grid grid-cols-2 gap-2">
+        <div className="border-t border-border pt-2">
+          <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-xs">
             {data.map((stage, idx) => (
-              <div key={idx} className="flex items-center gap-2 text-xs">
+              <div key={idx} className="flex items-center gap-1.5">
                 <div
-                  className="w-3 h-3 rounded-sm flex-shrink-0"
+                  className="w-2 h-2 rounded-sm flex-shrink-0"
                   style={{ backgroundColor: COLORS[stage.name] }}
                 />
-                <span className="text-muted-foreground truncate">{stage.name}:</span>
-                <span className="font-mono font-semibold ml-auto">
+                <span className="text-muted-foreground truncate text-[10px]">{stage.name}</span>
+                <span className="font-mono font-semibold ml-auto text-[10px]">
                   {(stage.duration || 0).toFixed(0)}ms
                 </span>
-                <span className="text-muted-foreground">({stage.percentage || '0%'})</span>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* Category Summaries */}
-      {showLegend && (
-        <div className="pt-2 border-t border-border">
-          <div className="grid grid-cols-4 gap-4 text-xs">
-            {['security', 'enhancement', 'search', 'generation'].map(category => {
-              const categoryStages = data.filter(s => s.category === category);
-              const categoryTotal = categoryStages.reduce((sum, s) => sum + (s.duration || 0), 0);
-              const categoryPct = metrics.total_latency_ms ? ((categoryTotal / metrics.total_latency_ms) * 100).toFixed(1) : '0';
-
-              if (categoryTotal === 0) return null;
-
-              const categoryLabels: Record<string, string> = {
-                security: '🔒 Security',
-                enhancement: '✨ Enhancement',
-                search: '🔍 Search',
-                generation: '🤖 Generation',
-              };
-
-              return (
-                <div key={category} className="space-y-1">
-                  <p className="font-semibold text-muted-foreground">
-                    {categoryLabels[category]}
-                  </p>
-                  <p className="font-mono font-bold">
-                    {categoryTotal.toFixed(0)}ms
-                  </p>
-                  <p className="text-muted-foreground">
-                    {categoryPct}% of total
-                  </p>
-                </div>
-              );
-            })}
           </div>
         </div>
       )}
