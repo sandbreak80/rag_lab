@@ -153,6 +153,8 @@ export function ChatInterface() {
             // Service Latencies
             search_service_latency_ms: data.metrics.search_service_latency_ms,
             chat_service_overhead_ms: data.metrics.chat_service_overhead_ms,
+            // Intelligence Features
+            query_decomposition_ms: data.metrics.query_decomposition_ms,
             // Total
             total_latency_ms: data.metrics.total_latency_ms,
           } : undefined,
@@ -161,6 +163,8 @@ export function ChatInterface() {
             violations: data.security.violations,
             cleaned_query_used: data.security.cleaned_query_used,
           } : undefined,
+          // Query Decomposition
+          decomposition: data.decomposition,
         },
       };
 

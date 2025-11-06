@@ -26,6 +26,7 @@ export function SettingsPanel() {
   // New intelligence features
   const usePromptEnhancement = useConfigStore((state) => state.usePromptEnhancement);
   const useAutoModelRouting = useConfigStore((state) => state.useAutoModelRouting);
+  const useQueryDecomposition = useConfigStore((state) => state.useQueryDecomposition);
   const showReasoningProcess = useConfigStore((state) => state.showReasoningProcess);
   const useVectorDB = useConfigStore((state) => state.useVectorDB);
   const useResearchAgent = useConfigStore((state) => state.useResearchAgent);
@@ -37,6 +38,7 @@ export function SettingsPanel() {
   console.log('🔍 SettingsPanel render - Intelligence Features:', {
     usePromptEnhancement,
     useAutoModelRouting,
+    useQueryDecomposition,
     useVectorDB,
     useResearchAgent,
     useWebSearch,
@@ -261,6 +263,39 @@ export function SettingsPanel() {
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform pointer-events-none ${
                   useAutoModelRouting
+                    ? 'translate-x-6'
+                    : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="query-decomposition" className="text-base font-medium">
+                🧩 Query Decomposition
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Break complex questions into simpler sub-queries for better results
+              </p>
+            </div>
+            <button
+              type="button"
+              id="query-decomposition"
+              onClick={(e) => {
+                e.preventDefault();
+                console.log('🔍 Query Decomposition toggle clicked');
+                toggleFeature('useQueryDecomposition');
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                useQueryDecomposition
+                  ? 'bg-primary'
+                  : 'bg-muted'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform pointer-events-none ${
+                  useQueryDecomposition
                     ? 'translate-x-6'
                     : 'translate-x-1'
                 }`}

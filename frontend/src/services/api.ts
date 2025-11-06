@@ -26,6 +26,12 @@ class ApiClient {
       violations: any[];
       cleaned_query_used: boolean;
     };
+    decomposition?: {
+      needs_decomposition: boolean;
+      complexity: 'simple' | 'moderate' | 'complex';
+      sub_queries: string[];
+      original_query: string;
+    };
   }> {
     // Convert camelCase to snake_case for backend
     const backendConfig = {
@@ -49,6 +55,7 @@ class ApiClient {
       // Intelligence features
       use_enhancement: config.usePromptEnhancement,
       use_auto_routing: config.useAutoModelRouting,
+      use_query_decomposition: config.useQueryDecomposition,
       // Data source toggles
       use_vector_db: config.useVectorDB,
       use_research_agent: config.useResearchAgent,
@@ -60,6 +67,7 @@ class ApiClient {
       web_search_docs: backendConfig.web_search_docs,
       use_enhancement: backendConfig.use_enhancement,
       use_auto_routing: backendConfig.use_auto_routing,
+      use_query_decomposition: backendConfig.use_query_decomposition,
       use_vector_db: backendConfig.use_vector_db,
       use_research_agent: backendConfig.use_research_agent,
     });

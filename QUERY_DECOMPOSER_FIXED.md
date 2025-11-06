@@ -1,6 +1,6 @@
 # Query Decomposer Service - Fixed
-**Date:** November 6, 2025  
-**Issue:** Service was unhealthy  
+**Date:** November 6, 2025
+**Issue:** Service was unhealthy
 **Status:** ✅ RESOLVED
 
 ## Problem

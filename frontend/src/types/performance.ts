@@ -31,6 +31,7 @@ export interface PerformanceMetrics {
   security_validation_ms?: number;
   prompt_enhancement_ms?: number;
   model_routing_ms?: number;
+  query_decomposition_ms?: number;
 
   // Infrastructure (NEW - API Gateway overhead)
   rate_limit_check_ms?: number;

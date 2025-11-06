@@ -112,6 +112,34 @@ export function MessageItem({ message }: MessageItemProps) {
           </div>
         )}
 
+        {/* Query Decomposition */}
+        {!isUser && message.metadata?.decomposition?.needs_decomposition && (
+          <div className="mt-4 p-4 border border-border rounded-lg bg-background/30">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">🧩</span>
+              <h4 className="text-sm font-medium">
+                Query Decomposition
+                <span className="ml-2 text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-full">
+                  {message.metadata.decomposition.complexity}
+                </span>
+              </h4>
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">
+              Your complex question was broken into simpler sub-queries for better results:
+            </p>
+            <div className="space-y-2">
+              {message.metadata.decomposition.sub_queries.map((subQuery, idx) => (
+                <div key={idx} className="flex items-start gap-2 text-sm">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-medium">
+                    {idx + 1}
+                  </span>
+                  <span className="flex-1 py-0.5">{subQuery}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Performance Waterfall */}
         {hasPerformanceData && (
           <div className="mt-4 border border-border rounded-lg bg-background/50 overflow-hidden">

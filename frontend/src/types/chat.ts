@@ -34,6 +34,13 @@ export interface SecurityInfo {
   cleaned_query_used?: boolean;
 }
 
+export interface QueryDecomposition {
+  needs_decomposition: boolean;
+  complexity: 'simple' | 'moderate' | 'complex';
+  sub_queries: string[];
+  original_query: string;
+}
+
 export interface MessageMetadata {
   model?: string;
   temperature?: number;
@@ -43,6 +50,7 @@ export interface MessageMetadata {
   token_count?: number;
   performance?: PerformanceMetrics;
   security?: SecurityInfo;
+  decomposition?: QueryDecomposition;
 }
 
 export interface PerformanceMetrics {
@@ -69,6 +77,7 @@ export interface PerformanceMetrics {
   // Security & Enhancement (NEW - for learning lab visibility)
   security_validation_ms?: number;
   prompt_enhancement_ms?: number;
+  query_decomposition_ms?: number;
   // Infrastructure (NEW - API Gateway overhead)
   rate_limit_check_ms?: number;
   api_gateway_overhead_ms?: number;

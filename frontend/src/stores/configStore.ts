@@ -22,6 +22,7 @@ const DEFAULT_CONFIG: RAGConfig = {
   // New intelligence features (Nov 5, 2025) - All optional, off by default for now
   usePromptEnhancement: false,
   useAutoModelRouting: false,
+  useQueryDecomposition: false,
   showReasoningProcess: true,  // Show reasoning by default for transparency
 
   // Data source toggles - All enabled by default
@@ -51,7 +52,7 @@ interface ConfigStore extends RAGConfig {
 
 export const useConfigStore = create<ConfigStore>((set, get) => {
   // CONFIG VERSION CHECK - Force reset if localStorage is outdated
-  const CONFIG_VERSION = 2; // Increment this when adding new config properties
+  const CONFIG_VERSION = 3; // Increment this when adding new config properties (Added useQueryDecomposition)
   const savedVersion = localStorage.getItem('rag_config_version');
 
   if (savedVersion !== String(CONFIG_VERSION)) {
@@ -77,6 +78,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
     webSearchDocs: mergedConfig.webSearchDocs,
     usePromptEnhancement: mergedConfig.usePromptEnhancement,
     useAutoModelRouting: mergedConfig.useAutoModelRouting,
+    useQueryDecomposition: mergedConfig.useQueryDecomposition,
     currentPreset: mergedConfig.currentPreset,
     source: savedConfig === DEFAULT_CONFIG ? 'DEFAULT' : 'LOCALSTORAGE_MERGED'
   });
@@ -209,6 +211,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
         // New intelligence features
         usePromptEnhancement: state.usePromptEnhancement,
         useAutoModelRouting: state.useAutoModelRouting,
+        useQueryDecomposition: state.useQueryDecomposition,
         showReasoningProcess: state.showReasoningProcess,
 
         // Data source toggles (ensure all are included)

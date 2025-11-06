@@ -19,6 +19,7 @@ const COLORS: Record<string, string> = {
   'Security Validation': '#10b981',      // green-600
   'Prompt Enhancement': '#16a34a',      // green-600
   'Model Routing': '#f97316',           // orange-500
+  'Query Decomposition': '#a855f7',     // purple-500
   'Query Expansion': '#eab308',         // yellow-500
   'Vector Search': '#ef4444',           // red-500
   'BM25 Search': '#ec4899',             // pink-500
@@ -33,6 +34,7 @@ const STAGE_CATEGORIES: Record<string, string> = {
   'Security Validation': 'security',
   'Prompt Enhancement': 'enhancement',
   'Model Routing': 'routing',
+  'Query Decomposition': 'decomposition',
   'Query Expansion': 'search',
   'Vector Search': 'search',
   'BM25 Search': 'search',
@@ -61,6 +63,7 @@ export function WaterfallChart({ metrics, compact = false }: WaterfallChartProps
     { name: 'Security Validation', ms: metrics.security_validation_ms },
     { name: 'Prompt Enhancement', ms: metrics.prompt_enhancement_ms },
     { name: 'Model Routing', ms: metrics.model_routing_ms },
+    { name: 'Query Decomposition', ms: metrics.query_decomposition_ms },
     { name: 'Query Expansion', ms: metrics.query_expansion_ms },
     { name: 'Vector Search', ms: metrics.vector_search_ms },
     { name: 'BM25 Search', ms: metrics.bm25_search_ms },
