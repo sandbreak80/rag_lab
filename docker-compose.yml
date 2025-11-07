@@ -124,7 +124,7 @@ services:
       - CHROMA_DB_PATH=/chroma/chroma
       - PYTHONPATH=/workspace
       - PYTHONUNBUFFERED=1
-    command: bash -c "pip install -q chromadb flask flask-cors requests && python -u service.py"
+    command: bash -c "pip install -q chromadb flask flask-cors requests prometheus-client && python -u service.py"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
@@ -328,7 +328,7 @@ services:
       - VECTOR_DB_URL=http://vector-db:8005
       - KNOWLEDGE_GRAPH_PATH=/kg-data/knowledge_graph.pkl
       - PYTHONPATH=/workspace
-    command: bash -c "pip install -q flask flask-cors requests networkx chromadb scikit-learn numpy && python -u service.py"
+    command: bash -c "pip install -q flask flask-cors requests networkx chromadb scikit-learn numpy prometheus-client && python -u service.py"
     depends_on:
       - vector-db
     restart: unless-stopped
