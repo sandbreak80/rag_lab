@@ -39,6 +39,29 @@ The Educational RAG Lab is a **production-ready reference architecture** for LLM
 
 ---
 
+## ☁️ AWS EC2 Deployment (Recommended for Production)
+
+**Launch on GPU-enabled EC2 with automated setup:**
+
+```bash
+# One-time security setup (private GitHub repo)
+./setup-github-secret.sh
+
+# Launch instance with cloud-init
+./aws-launch-rag-lab.sh
+```
+
+**Features:**
+- ✅ Automated deployment (10-15 minutes)
+- ✅ NVIDIA T4 GPU support
+- ✅ Secure private repo access (AWS Secrets Manager)
+- ✅ No SSH needed (AWS Session Manager)
+- ✅ Cost: ~$18/day running, ~$0.50/day stopped
+
+📘 **[AWS Deployment Guide](docs/deployment/AWS_EC2_DEPLOYMENT.md)** | **[Security Best Practices](docs/deployment/AWS_SECURITY_BEST_PRACTICES.md)**
+
+---
+
 ## 🚀 Quick Start (One Command!)
 
 ### Fresh Deployment (Recommended)
