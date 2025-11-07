@@ -11,10 +11,10 @@ export function MonitoringPage() {
     ? 'http://localhost:9090'
     : `http://${window.location.hostname}:9090`;
 
-  const dashboardUrl = `${grafanaUrl}/d/rag-lab-overview/rag-lab-system-overview?orgId=1&refresh=10s&kiosk`;
+  const dashboardUrl = `${grafanaUrl}/d/rag-lab-overview/rag-lab-system-overview?orgId=1&refresh=10s&kiosk=tv`;
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="flex flex-col w-full">
       {/* Header */}
       <div className="bg-card border-b p-6 flex-shrink-0">
         <div className="flex items-center justify-between">
@@ -94,10 +94,11 @@ export function MonitoringPage() {
       </div>
 
       {/* Grafana Dashboard Embed */}
-      <div className="flex-1 overflow-hidden">
+      <div className="w-full" style={{ minHeight: '2000px' }}>
         <iframe
           src={dashboardUrl}
-          className="w-full h-full border-0"
+          className="w-full border-0"
+          style={{ height: '2000px' }}
           title="Grafana Dashboard"
           allow="fullscreen"
         />
