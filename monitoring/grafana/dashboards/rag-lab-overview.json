@@ -18,86 +18,73 @@
     {
       "id": 1,
       "gridPos": {
-        "h": 10,
+        "h": 12,
         "w": 24,
         "x": 0,
         "y": 0
       },
       "type": "table",
-      "title": "Docker Container Status",
-      "description": "Real-time status of all RAG Lab containers",
+      "title": "Docker Container Status - Running & Health Check",
+      "description": "Shows running status and health check status for all Docker containers",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
         {
-          "expr": "(time() - container_last_seen{name=~\"rag-.*\"}) < 60",
-          "legendFormat": "{{name}}",
-          "refId": "A",
-          "format": "table",
-          "instant": true
-        },
-        {
           "expr": "container_health_status{name=~\"rag-.*\"}",
-          "legendFormat": "{{name}}",
-          "refId": "B",
+          "refId": "A",
           "format": "table",
           "instant": true
         }
       ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "id": true,
+              "image": true,
+              "instance": true,
+              "job": true,
+              "service": true,
+              "type": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "name": "Container",
+              "Value": "Health Status"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Container",
+            "desc": false
+          }
+        ],
+        "footer": {
+          "show": false
+        }
+      },
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
           "custom": {
             "align": "left",
-            "displayMode": "auto"
+            "displayMode": "auto",
+            "width": null
           }
         },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
-              "options": "Running"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "value": "1",
-                    "text": "\u2705 UP"
-                  },
-                  {
-                    "type": "value",
-                    "value": "0",
-                    "text": "\u274c DOWN"
-                  }
-                ]
-              },
-              {
-                "id": "custom.displayMode",
-                "value": "color-background"
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "value": 0,
-                      "color": "red"
-                    },
-                    {
-                      "value": 1,
-                      "color": "green"
-                    }
-                  ]
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Health"
+              "options": "Health Status"
             },
             "properties": [
               {
@@ -106,7 +93,7 @@
                   {
                     "type": "value",
                     "value": "0",
-                    "text": "\u26aa None"
+                    "text": "\u26aa No Health Check"
                   },
                   {
                     "type": "value",
@@ -135,6 +122,10 @@
                   "mode": "absolute",
                   "steps": [
                     {
+                      "value": null,
+                      "color": "text"
+                    },
+                    {
                       "value": 0,
                       "color": "text"
                     },
@@ -152,46 +143,27 @@
                     }
                   ]
                 }
+              },
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Container"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 300
               }
             ]
           }
         ]
-      },
-      "options": {
-        "showHeader": true,
-        "footer": {
-          "show": false
-        }
-      },
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {}
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "__name__": true,
-              "id": true,
-              "image": true,
-              "instance": true,
-              "job": true
-            },
-            "indexByName": {
-              "name": 0,
-              "Value #A": 1,
-              "Value #B": 2
-            },
-            "renameByName": {
-              "name": "Container",
-              "Value #A": "Running",
-              "Value #B": "Health"
-            }
-          }
-        }
-      ]
+      }
     },
     {
       "id": 22,
