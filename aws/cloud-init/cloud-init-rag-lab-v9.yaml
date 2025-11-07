@@ -40,10 +40,10 @@ write_files:
         sudo -H -u ubuntu bash -c 'cd ~ && git clone https://github.com/sandbreak80/rag_lab.git && cd rag_lab && git checkout security' 2>&1 | tee -a "$LOG"
       fi
 
-      # Build & start
+      # Build & start (with GPU profile for GPU monitoring)
       cd /home/ubuntu/rag_lab
       sudo -H -u ubuntu docker compose build 2>&1 | tee -a "$LOG"
-      sudo -H -u ubuntu docker compose up -d 2>&1 | tee -a "$LOG"
+      sudo -H -u ubuntu docker compose --profile gpu up -d 2>&1 | tee -a "$LOG"
 
       # Wait for Ollama
       sleep 30

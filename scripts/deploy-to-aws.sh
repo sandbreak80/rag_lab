@@ -98,9 +98,9 @@ echo ""
 echo "🔨 Building and deploying..."
 
 if [ "SERVICE_PLACEHOLDER" = "all" ]; then
-    echo "Restarting all services..."
+    echo "Restarting all services (including GPU monitoring)..."
     docker compose build
-    docker compose up -d
+    docker compose --profile gpu up -d
 else
     echo "Restarting SERVICE_PLACEHOLDER..."
     docker compose build SERVICE_PLACEHOLDER
