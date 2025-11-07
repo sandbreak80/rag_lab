@@ -903,6 +903,25 @@ services:
     cap_add:
       - SYS_ADMIN
 
+  # Node Exporter - System Metrics (CPU, Memory, Disk, Network)
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: rag-node-exporter
+    networks:
+      - rag-network
+    ports:
+      - "9100:9100"
+    command:
+      - '--path.rootfs=/host'
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    restart: unless-stopped
+
   # ============================================================================
   # TESTING (Optional - for development)
   # ============================================================================

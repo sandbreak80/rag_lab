@@ -53,6 +53,18 @@ scrape_configs:
           type: 'gpu-metrics'
 
   # ============================================================================
+  # System Metrics - Node Exporter (Ubuntu/EC2 Host)
+  # ============================================================================
+  - job_name: 'node-exporter'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node-exporter'
+          type: 'system-metrics'
+          instance: 'ec2-host'
+
+  # ============================================================================
   # RAG Lab Services - Application Metrics
   # ============================================================================
 

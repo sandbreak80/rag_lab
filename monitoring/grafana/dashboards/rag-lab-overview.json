@@ -1,439 +1,593 @@
 {
-  "title": "RAG Lab - System Overview",
+  "title": "RAG Lab - Comprehensive System Overview",
   "uid": "rag-lab-overview",
   "timezone": "browser",
   "schemaVersion": 38,
   "refresh": "10s",
-  "tags": ["rag-lab", "monitoring"],
+  "tags": ["rag-lab", "monitoring", "system", "gpu"],
   "time": {
     "from": "now-15m",
     "to": "now"
   },
-    "panels": [
-      {
-        "id": 1,
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
-        "type": "graph",
-        "title": "Service Health Status",
-        "targets": [
-          {
-            "expr": "up{job=~\".*-service|api-gateway\"}",
-            "legendFormat": "{{job}}",
-            "refId": "A"
-          }
-        ],
-        "yaxes": [
-          {"format": "short", "label": "Status (1=up, 0=down)"},
-          {"format": "short"}
-        ]
-      },
-      {
-        "id": 2,
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
-        "type": "graph",
-        "title": "Container CPU Usage (%)",
-        "targets": [
-          {
-            "expr": "rate(container_cpu_usage_seconds_total{name=~\"rag-.*\"}[5m]) * 100",
-            "legendFormat": "{{name}}",
-            "refId": "A"
-          }
-        ],
-        "yaxes": [
-          {"format": "percent", "label": "CPU %"},
-          {"format": "short"}
-        ]
-      },
-      {
-        "id": 3,
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
-        "type": "graph",
-        "title": "Container Memory Usage (MB)",
-        "targets": [
-          {
-            "expr": "container_memory_usage_bytes{name=~\"rag-.*\"} / 1024 / 1024",
-            "legendFormat": "{{name}}",
-            "refId": "A"
-          }
-        ],
-        "yaxes": [
-          {"format": "mbytes", "label": "Memory"},
-          {"format": "short"}
-        ]
-      },
-      {
-        "id": 4,
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
-        "type": "graph",
-        "title": "Network I/O (bytes/sec)",
-        "targets": [
-          {
-            "expr": "rate(container_network_receive_bytes_total{name=~\"rag-.*\"}[5m])",
-            "legendFormat": "{{name}} RX",
-            "refId": "A"
-          },
-          {
-            "expr": "rate(container_network_transmit_bytes_total{name=~\"rag-.*\"}[5m])",
-            "legendFormat": "{{name}} TX",
-            "refId": "B"
-          }
-        ],
-        "yaxes": [
-          {"format": "Bps", "label": "Bytes/sec"},
-          {"format": "short"}
-        ]
-      },
-      {
-        "id": 5,
-        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 16},
-        "type": "gauge",
-        "title": "GPU Utilization %",
-        "targets": [
-          {
-            "expr": "DCGM_FI_DEV_GPU_UTIL",
-            "refId": "A"
-          }
-        ],
-        "options": {
-          "showThresholdLabels": false,
-          "showThresholdMarkers": true
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {"value": 0, "color": "green"},
-                {"value": 70, "color": "yellow"},
-                {"value": 90, "color": "red"}
-              ]
-            }
-          }
+  "panels": [
+    {
+      "id": 1,
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 0},
+      "type": "stat",
+      "title": "Docker Container Status - All Containers",
+      "description": "Shows up (1) or down (0) status for all Docker containers",
+      "targets": [
+        {
+          "expr": "max_over_time(container_last_seen{name=~\"rag-.*\"}[1m]) > bool (time() - 60)",
+          "legendFormat": "{{name}}",
+          "refId": "A",
+          "instant": true
         }
-      },
-      {
-        "id": 6,
-        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 16},
-        "type": "gauge",
-        "title": "GPU Memory Usage %",
-        "targets": [
-          {
-            "expr": "(DCGM_FI_DEV_FB_USED / (DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE)) * 100",
-            "refId": "A"
-          }
-        ],
-        "options": {
-          "showThresholdLabels": false,
-          "showThresholdMarkers": true
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "mappings": [
+            {"type": "value", "value": "1", "text": "UP"},
+            {"type": "value", "value": "0", "text": "DOWN"}
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "red"},
+              {"value": 1, "color": "green"}
+            ]
+          },
+          "noValue": "N/A"
         },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "percent",
-            "min": 0,
-            "max": 100,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {"value": 0, "color": "green"},
-                {"value": 70, "color": "yellow"},
-                {"value": 90, "color": "red"}
-              ]
-            }
-          }
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"]
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 2,
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 10},
+      "type": "graph",
+      "title": "EC2 Host CPU Usage %",
+      "targets": [
+        {
+          "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "CPU Usage",
+          "refId": "A"
         }
-      },
-      {
-        "id": 7,
-        "gridPos": {"h": 8, "w": 6, "x": 12, "y": 16},
-        "type": "gauge",
-        "title": "GPU Temperature (°C)",
-        "targets": [
-          {
-            "expr": "DCGM_FI_DEV_GPU_TEMP",
-            "refId": "A"
-          }
-        ],
-        "options": {
-          "showThresholdLabels": false,
-          "showThresholdMarkers": true
+      ],
+      "yaxes": [
+        {"format": "percent", "label": "CPU %", "min": 0, "max": 100},
+        {"format": "short"}
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 2,
+      "fillGradient": 5
+    },
+    {
+      "id": 3,
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 10},
+      "type": "graph",
+      "title": "EC2 Host Memory Usage",
+      "targets": [
+        {
+          "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / 1024 / 1024 / 1024",
+          "legendFormat": "Used",
+          "refId": "A"
         },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "celsius",
-            "min": 0,
-            "max": 100,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {"value": 0, "color": "green"},
-                {"value": 75, "color": "yellow"},
-                {"value": 85, "color": "red"}
-              ]
-            }
-          }
+        {
+          "expr": "node_memory_MemAvailable_bytes / 1024 / 1024 / 1024",
+          "legendFormat": "Available",
+          "refId": "B"
         }
-      },
-      {
-        "id": 8,
-        "gridPos": {"h": 8, "w": 6, "x": 18, "y": 16},
-        "type": "gauge",
-        "title": "GPU Power Usage (W)",
-        "targets": [
-          {
-            "expr": "DCGM_FI_DEV_POWER_USAGE / 1000",
-            "refId": "A"
-          }
-        ],
-        "options": {
-          "showThresholdLabels": false,
-          "showThresholdMarkers": true
-        },
-        "fieldConfig": {
-          "defaults": {
-            "unit": "watt",
-            "min": 0,
-            "max": 70,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {"value": 0, "color": "green"},
-                {"value": 50, "color": "yellow"},
-                {"value": 65, "color": "red"}
-              ]
-            }
-          }
+      ],
+      "yaxes": [
+        {"format": "gbytes", "label": "Memory (GB)"},
+        {"format": "short"}
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 1,
+      "stack": true
+    },
+    {
+      "id": 4,
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 10},
+      "type": "graph",
+      "title": "EC2 Host Disk Usage %",
+      "targets": [
+        {
+          "expr": "100 - ((node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"}) * 100)",
+          "legendFormat": "Root Disk",
+          "refId": "A"
         }
-      },
-      {
-        "id": 9,
-        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 24},
-        "type": "graph",
-        "title": "GPU Memory Bandwidth Utilization %",
-        "targets": [
-          {
-            "expr": "DCGM_FI_DEV_MEM_COPY_UTIL",
-            "legendFormat": "Memory Bandwidth",
-            "refId": "A"
-          }
-        ],
-        "yaxes": [
-          {"format": "percent", "label": "Bandwidth %", "min": 0, "max": 100},
-          {"format": "short"}
-        ],
-        "lines": true,
-        "linewidth": 2,
-        "fill": 1,
-        "fillGradient": 5
-      },
-      {
-        "id": 10,
-        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 24},
-        "type": "graph",
-        "title": "GPU Memory Usage (GB)",
-        "targets": [
-          {
-            "expr": "DCGM_FI_DEV_FB_USED / 1024",
-            "legendFormat": "Used",
-            "refId": "A"
-          },
-          {
-            "expr": "DCGM_FI_DEV_FB_FREE / 1024",
-            "legendFormat": "Free",
-            "refId": "B"
-          }
-        ],
-        "yaxes": [
-          {"format": "gbytes", "label": "Memory (GB)"},
-          {"format": "short"}
-        ],
-        "lines": true,
-        "linewidth": 2,
-        "fill": 1,
-        "stack": true
-      },
-      {
-        "id": 11,
-        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 24},
-        "type": "graph",
-        "title": "GPU Power Consumption (W)",
-        "targets": [
-          {
-            "expr": "DCGM_FI_DEV_POWER_USAGE / 1000",
-            "legendFormat": "Power",
-            "refId": "A"
-          }
-        ],
-        "yaxes": [
-          {"format": "watt", "label": "Power (W)", "min": 0},
-          {"format": "short"}
-        ],
-        "lines": true,
-        "linewidth": 2,
-        "fill": 2,
-        "fillGradient": 5
-      },
-      {
-        "id": 12,
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32},
-        "type": "graph",
-        "title": "GPU Clock Speeds (MHz)",
-        "targets": [
-          {
-            "expr": "DCGM_FI_DEV_SM_CLOCK",
-            "legendFormat": "SM Clock",
-            "refId": "A"
-          },
-          {
-            "expr": "DCGM_FI_DEV_MEM_CLOCK",
-            "legendFormat": "Memory Clock",
-            "refId": "B"
-          }
-        ],
-        "yaxes": [
-          {"format": "hertz", "label": "Clock Speed (MHz)"},
-          {"format": "short"}
-        ],
-        "lines": true,
-        "linewidth": 2,
-        "fill": 0
-      },
-      {
-        "id": 13,
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32},
-        "type": "graph",
-        "title": "GPU Encoder/Decoder Utilization %",
-        "targets": [
-          {
-            "expr": "DCGM_FI_DEV_ENC_UTIL",
-            "legendFormat": "Encoder",
-            "refId": "A"
-          },
-          {
-            "expr": "DCGM_FI_DEV_DEC_UTIL",
-            "legendFormat": "Decoder",
-            "refId": "B"
-          }
-        ],
-        "yaxes": [
-          {"format": "percent", "label": "Utilization %", "min": 0, "max": 100},
-          {"format": "short"}
-        ],
-        "lines": true,
-        "linewidth": 2,
-        "fill": 1,
-        "fillGradient": 3
-      },
-      {
-        "id": 14,
-        "gridPos": {"h": 6, "w": 8, "x": 0, "y": 40},
-        "type": "stat",
-        "title": "Total GPU Energy (kWh)",
-        "targets": [
-          {
-            "expr": "DCGM_FI_DEV_TOTAL_ENERGY_CONSUMPTION / 1000000",
-            "refId": "A"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "kwatth",
-            "decimals": 4,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {"value": 0, "color": "green"}
-              ]
-            }
-          }
+      ],
+      "yaxes": [
+        {"format": "percent", "label": "Disk %", "min": 0, "max": 100},
+        {"format": "short"}
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 2,
+      "fillGradient": 5
+    },
+    {
+      "id": 5,
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 18},
+      "type": "graph",
+      "title": "EC2 Host Network I/O (bytes/sec)",
+      "targets": [
+        {
+          "expr": "rate(node_network_receive_bytes_total{device!~\"lo|docker.*|veth.*\"}[5m])",
+          "legendFormat": "{{device}} RX",
+          "refId": "A"
         },
-        "options": {
-          "colorMode": "value",
-          "graphMode": "area",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "reduceOptions": {
-            "values": false,
-            "calcs": ["lastNotNull"]
-          },
-          "textMode": "auto"
+        {
+          "expr": "rate(node_network_transmit_bytes_total{device!~\"lo|docker.*|veth.*\"}[5m])",
+          "legendFormat": "{{device}} TX",
+          "refId": "B"
         }
-      },
-      {
-        "id": 15,
-        "gridPos": {"h": 6, "w": 8, "x": 8, "y": 40},
-        "type": "stat",
-        "title": "GPU VRAM Total",
-        "targets": [
-          {
-            "expr": "(DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE) / 1024",
-            "refId": "A"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "gbytes",
-            "decimals": 1,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {"value": 0, "color": "blue"}
-              ]
-            }
-          }
+      ],
+      "yaxes": [
+        {"format": "Bps", "label": "Bytes/sec"},
+        {"format": "short"}
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 1
+    },
+    {
+      "id": 6,
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 18},
+      "type": "graph",
+      "title": "EC2 Host Disk I/O (bytes/sec)",
+      "targets": [
+        {
+          "expr": "rate(node_disk_read_bytes_total[5m])",
+          "legendFormat": "{{device}} Read",
+          "refId": "A"
         },
-        "options": {
-          "colorMode": "value",
-          "graphMode": "none",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "reduceOptions": {
-            "values": false,
-            "calcs": ["lastNotNull"]
-          },
-          "textMode": "auto"
+        {
+          "expr": "rate(node_disk_written_bytes_total[5m])",
+          "legendFormat": "{{device}} Write",
+          "refId": "B"
         }
-      },
-      {
-        "id": 16,
-        "gridPos": {"h": 6, "w": 8, "x": 16, "y": 40},
-        "type": "stat",
-        "title": "GPU VRAM Used",
-        "targets": [
-          {
-            "expr": "DCGM_FI_DEV_FB_USED / 1024",
-            "refId": "A"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "unit": "gbytes",
-            "decimals": 2,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {"value": 0, "color": "green"},
-                {"value": 10, "color": "yellow"},
-                {"value": 13, "color": "red"}
-              ]
-            }
-          }
+      ],
+      "yaxes": [
+        {"format": "Bps", "label": "Bytes/sec"},
+        {"format": "short"}
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 1
+    },
+    {
+      "id": 7,
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 26},
+      "type": "graph",
+      "title": "Container CPU Usage (%)",
+      "targets": [
+        {
+          "expr": "rate(container_cpu_usage_seconds_total{name=~\"rag-.*\"}[5m]) * 100",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ],
+      "yaxes": [
+        {"format": "percent", "label": "CPU %"},
+        {"format": "short"}
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 1
+    },
+    {
+      "id": 8,
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26},
+      "type": "graph",
+      "title": "Container Memory Usage (MB)",
+      "targets": [
+        {
+          "expr": "container_memory_usage_bytes{name=~\"rag-.*\"} / 1024 / 1024",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ],
+      "yaxes": [
+        {"format": "mbytes", "label": "Memory"},
+        {"format": "short"}
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 1
+    },
+    {
+      "id": 9,
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 34},
+      "type": "graph",
+      "title": "Container Network I/O (bytes/sec) - Fixed",
+      "targets": [
+        {
+          "expr": "sum by (name) (rate(container_network_receive_bytes_total{name=~\"rag-.*\"}[5m]))",
+          "legendFormat": "{{name}} RX",
+          "refId": "A"
         },
-        "options": {
-          "colorMode": "value",
-          "graphMode": "area",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "reduceOptions": {
-            "values": false,
-            "calcs": ["lastNotNull"]
-          },
-          "textMode": "auto"
+        {
+          "expr": "sum by (name) (rate(container_network_transmit_bytes_total{name=~\"rag-.*\"}[5m]))",
+          "legendFormat": "{{name}} TX",
+          "refId": "B"
+        }
+      ],
+      "yaxes": [
+        {"format": "Bps", "label": "Bytes/sec"},
+        {"format": "short"}
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 1
+    },
+    {
+      "id": 10,
+      "gridPos": {"h": 8, "w": 6, "x": 0, "y": 42},
+      "type": "gauge",
+      "title": "GPU Utilization %",
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_GPU_UTIL",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "green"},
+              {"value": 70, "color": "yellow"},
+              {"value": 90, "color": "red"}
+            ]
+          }
         }
       }
-    ],
+    },
+    {
+      "id": 11,
+      "gridPos": {"h": 8, "w": 6, "x": 6, "y": 42},
+      "type": "gauge",
+      "title": "GPU Memory Usage %",
+      "targets": [
+        {
+          "expr": "(DCGM_FI_DEV_FB_USED / (DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE)) * 100",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "green"},
+              {"value": 70, "color": "yellow"},
+              {"value": 90, "color": "red"}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 12,
+      "gridPos": {"h": 8, "w": 6, "x": 12, "y": 42},
+      "type": "gauge",
+      "title": "GPU Temperature (°C)",
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_GPU_TEMP",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "green"},
+              {"value": 75, "color": "yellow"},
+              {"value": 85, "color": "red"}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 13,
+      "gridPos": {"h": 8, "w": 6, "x": 18, "y": 42},
+      "type": "gauge",
+      "title": "GPU Power Usage (W)",
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_POWER_USAGE / 1000",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "min": 0,
+          "max": 70,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "green"},
+              {"value": 50, "color": "yellow"},
+              {"value": 65, "color": "red"}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 14,
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 50},
+      "type": "graph",
+      "title": "GPU Memory Bandwidth Utilization %",
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_MEM_COPY_UTIL",
+          "legendFormat": "Memory Bandwidth",
+          "refId": "A"
+        }
+      ],
+      "yaxes": [
+        {"format": "percent", "label": "Bandwidth %", "min": 0, "max": 100},
+        {"format": "short"}
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 1,
+      "fillGradient": 5
+    },
+    {
+      "id": 15,
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 50},
+      "type": "graph",
+      "title": "GPU Memory Usage (GB)",
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_FB_USED / 1024",
+          "legendFormat": "Used",
+          "refId": "A"
+        },
+        {
+          "expr": "DCGM_FI_DEV_FB_FREE / 1024",
+          "legendFormat": "Free",
+          "refId": "B"
+        }
+      ],
+      "yaxes": [
+        {"format": "gbytes", "label": "Memory (GB)"},
+        {"format": "short"}
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 1,
+      "stack": true
+    },
+    {
+      "id": 16,
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 50},
+      "type": "graph",
+      "title": "GPU Power Consumption (W)",
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_POWER_USAGE / 1000",
+          "legendFormat": "Power",
+          "refId": "A"
+        }
+      ],
+      "yaxes": [
+        {"format": "watt", "label": "Power (W)", "min": 0},
+        {"format": "short"}
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 2,
+      "fillGradient": 5
+    },
+    {
+      "id": 17,
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 58},
+      "type": "graph",
+      "title": "GPU Clock Speeds (MHz)",
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_SM_CLOCK",
+          "legendFormat": "SM Clock",
+          "refId": "A"
+        },
+        {
+          "expr": "DCGM_FI_DEV_MEM_CLOCK",
+          "legendFormat": "Memory Clock",
+          "refId": "B"
+        }
+      ],
+      "yaxes": [
+        {"format": "hertz", "label": "Clock Speed (MHz)"},
+        {"format": "short"}
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 0
+    },
+    {
+      "id": 18,
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 58},
+      "type": "graph",
+      "title": "GPU Encoder/Decoder Utilization %",
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_ENC_UTIL",
+          "legendFormat": "Encoder",
+          "refId": "A"
+        },
+        {
+          "expr": "DCGM_FI_DEV_DEC_UTIL",
+          "legendFormat": "Decoder",
+          "refId": "B"
+        }
+      ],
+      "yaxes": [
+        {"format": "percent", "label": "Utilization %", "min": 0, "max": 100},
+        {"format": "short"}
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 1,
+      "fillGradient": 3
+    },
+    {
+      "id": 19,
+      "gridPos": {"h": 6, "w": 8, "x": 0, "y": 66},
+      "type": "stat",
+      "title": "Total GPU Energy (kWh)",
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_TOTAL_ENERGY_CONSUMPTION / 1000000",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kwatth",
+          "decimals": 4,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "green"}
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"]
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 20,
+      "gridPos": {"h": 6, "w": 8, "x": 8, "y": 66},
+      "type": "stat",
+      "title": "GPU VRAM Total",
+      "targets": [
+        {
+          "expr": "(DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE) / 1024",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "gbytes",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "blue"}
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"]
+        },
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 21,
+      "gridPos": {"h": 6, "w": 8, "x": 16, "y": 66},
+      "type": "stat",
+      "title": "GPU VRAM Used",
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_FB_USED / 1024",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "gbytes",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "green"},
+              {"value": 10, "color": "yellow"},
+              {"value": 13, "color": "red"}
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"]
+        },
+        "textMode": "auto"
+      }
+    }
+  ],
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
