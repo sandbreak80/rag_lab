@@ -478,9 +478,9 @@ def trigger_fetch_custom():
 
             for source in sources_to_fetch:
                 try:
-                    # Temporarily override lookback window
-                    # This is hacky but works - we'll update the discover method
-                    result = fetch_from_source(source['id'], manual=True, days_back=days_back)
+                    # Note: days_back parameter is received from UI but not yet implemented
+                    # TODO: Update fetch_from_source to accept days_back parameter
+                    result = fetch_from_source(source['id'], manual=True)
                     processed += 1
                     # Note: fetch_from_source doesn't return item count easily
                 except Exception as e:
