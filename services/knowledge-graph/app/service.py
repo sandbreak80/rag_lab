@@ -100,6 +100,14 @@ def get_stats():
             node_type = data.get('type', 'unknown')
             stats['node_types'][node_type] = stats['node_types'].get(node_type, 0) + 1
 
+        # Set Prometheus metrics
+        metrics.set_gauge('graph_nodes', stats['nodes'])
+        metrics.set_gauge('graph_edges', stats['edges'])
+        
+        # Set node type metrics
+        for node_type, count in stats['node_types'].items():
+            metrics.set_gauge(f'graph_nodes_{node_type}', count)
+
         return jsonify(stats)
     except Exception as e:
         return jsonify({'error': str(e)}), 500

@@ -1,10 +1,39 @@
 done - BUG - system does not show documents uploaded and processed
 done - Need a way to reset ingested documents (only use the system docs we previously specified) - we labs lads that require this (llm posioning / compintel injection)
+done - HIGH PRIORITY - oohhh, we need like a water fall or stack bar to show response time across features!!!!!!
 
-HIGH PRIORITY - oohhh, we need like a water fall or stack bar to show response time across features!!!!!!
+
+
+
 
 bug - need a highlight box to show preset selected
 bug - sent prompt - refresh page, ui no longer shows waiting for response and response never gets in UI
+bug - submit promot - navigating away page (checking metrics) breaks the response being received by the UI.
+bug - its possible that web search results are being classified as RAG instead of web - this is a NEW bug that was introduced.
+bug - document list does not use pagination. Document titles are so long that they overflow their display area.
+bug - performance breakdown is missing monponents or always has 0 time for components. I want to see time in knowledge graph.
+feature request - We want a way to visualize the knowledge graphs
+feature - MCP integration into lab - not sure how or what use case
+
+feature request - we want a way to see whats in the embedding models
+feature reques - add page scraping to the main UI. Add links in text window list and have scraping run
+MAJOR update - add to-do add vLLM to lab (run side by side ollama for now? toggle in UI? too complex?)
+
+
+LAB - Integrate SPLUNK
+https://lantern.splunk.com/Observability_Use_Cases/Monitor_Business/Monitoring_Gen_AI_apps_with_NVIDIA_GPUs
+https://help.splunk.com/en/appdynamics-on-premises/infrastructure-visibility/25.7.0/gpu-monitoring
+https://www.splunk.com/en_us/blog/artificial-intelligence/splunk-monitor-security-local-llms.html
+https://www.splunk.com/en_us/blog/artificial-intelligence/what-s-new-in-splunk-dsdl-5-2-llm-rag-functionalities-and-use-cases.html
+https://lantern.splunk.com/Observability_Use_Cases/Monitor_Business/Creating%2C_monitoring%2C_and_optimizing_LLM_retrieval_augmented_generation_patterns
+https://docs.splunk.com/Documentation/DSDL/5.2.2/User/AboutLLMRAG
+https://opentelemetry.io/blog/2024/llm-observability/
+https://github.com/openlit/openlit
+oten telemetry collector requires an operator - is k8 required!?!?
+https://www.splunk.com/en_us/blog/artificial-intelligence/how-we-built-end-to-end-llm-observability-with-splunk-and-rag.html
+https://lantern.splunk.com/Observability_Use_Cases/Monitor_Business/Instrumenting_LLM_applications_with_OpenLLMetry_and_Splunk
+https://opentelemetry.io/blog/2024/llm-observability/
+
 
 
 ollama metrics! We need them. seperate response from embeddings and main model call? ollama still work?
@@ -164,10 +193,8 @@ With the engine X change between the front and back end do we need to update all
 regarding adding vLLM - I suppose that we will need to refactor the calls. They're going to the LLM as I assume the VLLMAPI is different than the Ollama API. Can we put a switch in the web user interface to configure and switch between the two obviously one won't work and one will but it'd be nice to be able to run and swap out the back ends to compare performance census is a lab. Is this possible. Scope these changes and estimate how much work it is and how many lines of code need to be changed?
 
 **the aws build needs to download more models!
-**its possible that web search results are being classified as RAG instead of web - this is a NEW bug that was introduced.
 
-We want a way to visualize the knowledge graphs
-we want a way to see whats in the embedding models
+
 We want a way to see query :::
 🧠 Intelligence Features
 Enable AI-powered query processing and optimization
