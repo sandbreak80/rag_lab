@@ -141,9 +141,14 @@ def get_scraper(source):
 # FETCH LOGIC
 # ============================================================================
 
-def fetch_from_source(source_id: int, manual: bool = False):
+def fetch_from_source(source_id: int, manual: bool = False, days_back: int = 7):
     """
     Fetch new content from a specific source
+    
+    Args:
+        source_id: ID of the source to fetch from
+        manual: Whether this is a manual fetch (vs scheduled)
+        days_back: Number of days to look back (default: 7, max: 90)
     """
     start_time = time.time()
     source = db.get_source(source_id)
@@ -151,6 +156,9 @@ def fetch_from_source(source_id: int, manual: bool = False):
     if not source:
         logger.error(f"Source {source_id} not found")
         return
+
+    # Clamp days_back to reasonable range
+    days_back = max(1, min(days_back, 90))
 
     logger.info(f"{'[MANUAL]' if manual else '[SCHEDULED]'} Starting fetch for: {source['name']}")
 
@@ -163,17 +171,19 @@ def fetch_from_source(source_id: int, manual: bool = False):
         # Get scraper
         scraper = get_scraper(source)
 
-        # Determine "since" date
-        # For learning lab: always look back at least 7 days to ensure demo works
-        if source['last_fetched']:
+        # Determine "since" date using days_back parameter
+        if source['last_fetched'] and not manual:
+            # For scheduled fetches, use last_fetched but honor days_back minimum
             since = datetime.fromisoformat(source['last_fetched'])
-            # Ensure we look back at least 7 days for demo/testing
-            min_lookback = datetime.now() - timedelta(days=7)
+            min_lookback = datetime.now() - timedelta(days=days_back)
             if since > min_lookback:
                 since = min_lookback
-                logger.info(f"Expanded lookback window to 7 days for demo purposes")
+                logger.info(f"Expanded lookback window to {days_back} days")
         else:
-            since = datetime.now() - timedelta(days=7)  # First run: last week
+            # For manual fetches or first fetch, use days_back
+            since = datetime.now() - timedelta(days=days_back)
+            if manual:
+                logger.info(f"Manual fetch: looking back {days_back} days")
 
         # Discover items
         logger.info(f"Discovering items since {since.strftime('%Y-%m-%d %H:%M')}")
@@ -478,9 +488,8 @@ def trigger_fetch_custom():
 
             for source in sources_to_fetch:
                 try:
-                    # Note: days_back parameter is received from UI but not yet implemented
-                    # TODO: Update fetch_from_source to accept days_back parameter
-                    result = fetch_from_source(source['id'], manual=True)
+                    # Pass days_back parameter to fetch_from_source
+                    result = fetch_from_source(source['id'], manual=True, days_back=days_back)
                     processed += 1
                     # Note: fetch_from_source doesn't return item count easily
                 except Exception as e:
