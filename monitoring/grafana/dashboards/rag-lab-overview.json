@@ -16,154 +16,96 @@
   },
   "panels": [
     {
-      "id": 1,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "value": "0",
+              "text": "\u26aa None"
+            },
+            {
+              "type": "value",
+              "value": "1",
+              "text": "\ud83d\udfe1 Starting"
+            },
+            {
+              "type": "value",
+              "value": "2",
+              "text": "\ud83d\udfe2 Healthy"
+            },
+            {
+              "type": "value",
+              "value": "3",
+              "text": "\ud83d\udd34 Unhealthy"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "text"
+              },
+              {
+                "value": 0,
+                "color": "text"
+              },
+              {
+                "value": 1,
+                "color": "yellow"
+              },
+              {
+                "value": 2,
+                "color": "green"
+              },
+              {
+                "value": 3,
+                "color": "red"
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
       "gridPos": {
         "h": 12,
         "w": 24,
         "x": 0,
         "y": 0
       },
-      "type": "table",
-      "title": "Docker Container Status - Running & Health Check",
-      "description": "Shows running status and health check status for all Docker containers",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+      "id": 1,
+      "options": {
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "displayMode": "card"
       },
+      "pluginVersion": "12.2.1",
       "targets": [
         {
-          "expr": "container_health_status",
-          "refId": "A",
-          "format": "table",
-          "instant": true
-        }
-      ],
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "__name__": true,
-              "id": true,
-              "image": true,
-              "instance": true,
-              "job": true,
-              "service": true,
-              "type": true
-            },
-            "indexByName": {},
-            "renameByName": {
-              "name": "Container",
-              "Value": "Health Status"
-            }
-          }
-        }
-      ],
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "displayName": "Container",
-            "desc": false
-          }
-        ],
-        "footer": {
-          "show": false
-        }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "left",
-            "displayMode": "auto",
-            "width": null
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Health Status"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "value": "0",
-                    "text": "\u26aa No Health Check"
-                  },
-                  {
-                    "type": "value",
-                    "value": "1",
-                    "text": "\ud83d\udfe1 Starting"
-                  },
-                  {
-                    "type": "value",
-                    "value": "2",
-                    "text": "\ud83d\udfe2 Healthy"
-                  },
-                  {
-                    "type": "value",
-                    "value": "3",
-                    "text": "\ud83d\udd34 Unhealthy"
-                  }
-                ]
-              },
-              {
-                "id": "custom.displayMode",
-                "value": "color-background"
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "value": null,
-                      "color": "text"
-                    },
-                    {
-                      "value": 0,
-                      "color": "text"
-                    },
-                    {
-                      "value": 1,
-                      "color": "yellow"
-                    },
-                    {
-                      "value": 2,
-                      "color": "green"
-                    },
-                    {
-                      "value": 3,
-                      "color": "red"
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "custom.width",
-                "value": 200
-              }
-            ]
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
           },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Container"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 300
-              }
-            ]
-          }
-        ]
-      }
+          "expr": "container_health_status",
+          "instant": true,
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Docker Container Status - Health Check",
+      "type": "stat",
+      "description": "Health check status for all Docker containers. 0=None, 1=Starting, 2=Healthy, 3=Unhealthy"
     },
     {
       "id": 22,
