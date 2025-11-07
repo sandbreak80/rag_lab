@@ -85,7 +85,7 @@
       },
       {
         "id": 5,
-        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 16},
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 16},
         "type": "gauge",
         "title": "GPU Utilization %",
         "targets": [
@@ -116,12 +116,12 @@
       },
       {
         "id": 6,
-        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 16},
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 16},
         "type": "gauge",
         "title": "GPU Memory Usage %",
         "targets": [
           {
-            "expr": "(DCGM_FI_DEV_FB_USED / DCGM_FI_DEV_FB_TOTAL) * 100",
+            "expr": "(DCGM_FI_DEV_FB_USED / (DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE)) * 100",
             "refId": "A"
           }
         ],
@@ -147,7 +147,7 @@
       },
       {
         "id": 7,
-        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 16},
+        "gridPos": {"h": 8, "w": 6, "x": 12, "y": 16},
         "type": "gauge",
         "title": "GPU Temperature (°C)",
         "targets": [
@@ -175,6 +175,263 @@
             }
           }
         }
+      },
+      {
+        "id": 8,
+        "gridPos": {"h": 8, "w": 6, "x": 18, "y": 16},
+        "type": "gauge",
+        "title": "GPU Power Usage (W)",
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_POWER_USAGE / 1000",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "showThresholdLabels": false,
+          "showThresholdMarkers": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "watt",
+            "min": 0,
+            "max": 70,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 50, "color": "yellow"},
+                {"value": 65, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 9,
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 24},
+        "type": "graph",
+        "title": "GPU Memory Bandwidth Utilization %",
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_MEM_COPY_UTIL",
+            "legendFormat": "Memory Bandwidth",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "Bandwidth %", "min": 0, "max": 100},
+          {"format": "short"}
+        ],
+        "lines": true,
+        "linewidth": 2,
+        "fill": 1,
+        "fillGradient": 5
+      },
+      {
+        "id": 10,
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 24},
+        "type": "graph",
+        "title": "GPU Memory Usage (GB)",
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_FB_USED / 1024",
+            "legendFormat": "Used",
+            "refId": "A"
+          },
+          {
+            "expr": "DCGM_FI_DEV_FB_FREE / 1024",
+            "legendFormat": "Free",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "gbytes", "label": "Memory (GB)"},
+          {"format": "short"}
+        ],
+        "lines": true,
+        "linewidth": 2,
+        "fill": 1,
+        "stack": true
+      },
+      {
+        "id": 11,
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 24},
+        "type": "graph",
+        "title": "GPU Power Consumption (W)",
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_POWER_USAGE / 1000",
+            "legendFormat": "Power",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "watt", "label": "Power (W)", "min": 0},
+          {"format": "short"}
+        ],
+        "lines": true,
+        "linewidth": 2,
+        "fill": 2,
+        "fillGradient": 5
+      },
+      {
+        "id": 12,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32},
+        "type": "graph",
+        "title": "GPU Clock Speeds (MHz)",
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_SM_CLOCK",
+            "legendFormat": "SM Clock",
+            "refId": "A"
+          },
+          {
+            "expr": "DCGM_FI_DEV_MEM_CLOCK",
+            "legendFormat": "Memory Clock",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "hertz", "label": "Clock Speed (MHz)"},
+          {"format": "short"}
+        ],
+        "lines": true,
+        "linewidth": 2,
+        "fill": 0
+      },
+      {
+        "id": 13,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32},
+        "type": "graph",
+        "title": "GPU Encoder/Decoder Utilization %",
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_ENC_UTIL",
+            "legendFormat": "Encoder",
+            "refId": "A"
+          },
+          {
+            "expr": "DCGM_FI_DEV_DEC_UTIL",
+            "legendFormat": "Decoder",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "Utilization %", "min": 0, "max": 100},
+          {"format": "short"}
+        ],
+        "lines": true,
+        "linewidth": 2,
+        "fill": 1,
+        "fillGradient": 3
+      },
+      {
+        "id": 14,
+        "gridPos": {"h": 6, "w": 8, "x": 0, "y": 40},
+        "type": "stat",
+        "title": "Total GPU Energy (kWh)",
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_TOTAL_ENERGY_CONSUMPTION / 1000000",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "kwatth",
+            "decimals": 4,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 15,
+        "gridPos": {"h": 6, "w": 8, "x": 8, "y": 40},
+        "type": "stat",
+        "title": "GPU VRAM Total",
+        "targets": [
+          {
+            "expr": "(DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE) / 1024",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "gbytes",
+            "decimals": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "blue"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 16,
+        "gridPos": {"h": 6, "w": 8, "x": 16, "y": 40},
+        "type": "stat",
+        "title": "GPU VRAM Used",
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_FB_USED / 1024",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "gbytes",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 10, "color": "yellow"},
+                {"value": 13, "color": "red"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "textMode": "auto"
+        }
       }
     ],
   "editable": true,
@@ -189,4 +446,3 @@
   "timepicker": {},
   "weekStart": ""
 }
-
