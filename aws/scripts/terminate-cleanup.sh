@@ -44,26 +44,26 @@ INSTANCE_ID=$1
 
 if [ -z "$INSTANCE_ID" ]; then
     echo -e "${YELLOW}Looking for RAG Lab instances...${NC}"
-    
+
     # Find all RAG Lab instances (any state)
     INSTANCES=$(aws ec2 describe-instances \
         --region $REGION \
         --filters "Name=tag:Name,Values=*rag-lab*" \
         --query 'Reservations[*].Instances[*].[InstanceId,Tags[?Key==`Name`].Value|[0],State.Name,PublicIpAddress,InstanceType]' \
         --output text)
-    
+
     if [ -z "$INSTANCES" ]; then
         echo -e "${RED}No RAG Lab instances found${NC}"
         exit 1
     fi
-    
+
     echo "Found instances:"
     echo "$INSTANCES" | nl
     echo ""
     read -p "Enter instance number to terminate: " INSTANCE_NUM
-    
+
     INSTANCE_ID=$(echo "$INSTANCES" | sed -n "${INSTANCE_NUM}p" | awk '{print $1}')
-    
+
     if [ -z "$INSTANCE_ID" ]; then
         echo -e "${RED}Invalid instance number${NC}"
         exit 1
@@ -196,13 +196,13 @@ if [ "$INSTANCE_STATE" != "terminated" ]; then
         --region $REGION \
         --instance-ids $INSTANCE_ID \
         --output table
-    
+
     echo ""
     echo "Waiting for termination to complete (may take 2-3 minutes)..."
     aws ec2 wait instance-terminated \
         --region $REGION \
         --instance-ids $INSTANCE_ID || echo "Instance terminated"
-    
+
     echo -e "${GREEN}✓ Instance terminated${NC}"
 else
     echo -e "${YELLOW}Instance already terminated${NC}"
@@ -216,7 +216,7 @@ if [ "$HAS_ELASTIC_IP" = true ]; then
     echo -e "${YELLOW}=====================================${NC}"
     echo -e "${YELLOW}Step 2: Releasing Elastic IP${NC}"
     echo -e "${YELLOW}=====================================${NC}"
-    
+
     echo "Disassociating Elastic IP from instance..."
     aws ec2 disassociate-address \
         --region $REGION \
@@ -225,12 +225,12 @@ if [ "$HAS_ELASTIC_IP" = true ]; then
             --allocation-ids $ALLOCATION_ID \
             --query 'Addresses[0].AssociationId' \
             --output text) 2>/dev/null || echo "Already disassociated"
-    
+
     echo "Releasing Elastic IP $ELASTIC_IP..."
     aws ec2 release-address \
         --region $REGION \
         --allocation-id $ALLOCATION_ID
-    
+
     echo -e "${GREEN}✓ Elastic IP released (saves \$3.60/month if unattached)${NC}"
 fi
 
@@ -242,18 +242,18 @@ if [ "$HAS_SECURITY_GROUP" = true ]; then
     echo -e "${YELLOW}=====================================${NC}"
     echo -e "${YELLOW}Step 3: Deleting Security Group${NC}"
     echo -e "${YELLOW}=====================================${NC}"
-    
+
     # Wait a bit for instance termination to fully propagate
     echo "Waiting for network interfaces to be released..."
     sleep 30
-    
+
     # Check if any other instances use this security group
     INSTANCES_USING_SG=$(aws ec2 describe-instances \
         --region $REGION \
         --filters "Name=instance.group-id,Values=$SG_ID" "Name=instance-state-name,Values=pending,running,stopping,stopped" \
         --query 'Reservations[*].Instances[*].InstanceId' \
         --output text)
-    
+
     if [ ! -z "$INSTANCES_USING_SG" ]; then
         echo -e "${YELLOW}⚠ Other instances still use this security group:${NC}"
         echo "$INSTANCES_USING_SG"
@@ -264,13 +264,13 @@ if [ "$HAS_SECURITY_GROUP" = true ]; then
             HAS_SECURITY_GROUP=false
         fi
     fi
-    
+
     if [ "$HAS_SECURITY_GROUP" = true ]; then
         echo "Deleting security group $SG_ID..."
         aws ec2 delete-security-group \
             --region $REGION \
             --group-id $SG_ID || echo "Security group may still be in use, delete manually"
-        
+
         echo -e "${GREEN}✓ Security group deleted${NC}"
     fi
 fi
@@ -283,13 +283,13 @@ if [ "$HAS_SNAPSHOTS" = true ]; then
     echo -e "${YELLOW}=====================================${NC}"
     echo -e "${YELLOW}Step 4: Clean Up Snapshots${NC}"
     echo -e "${YELLOW}=====================================${NC}"
-    
+
     echo "Found $SNAPSHOT_COUNT snapshot(s):"
     echo "$SNAPSHOTS"
     echo ""
     read -p "Delete these snapshots? (y/n) " -n 1 -r
     echo
-    
+
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         while IFS= read -r line; do
             SNAP_ID=$(echo "$line" | awk '{print $1}')

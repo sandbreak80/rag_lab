@@ -45,26 +45,26 @@ INSTANCE_ID=$2
 # ==========================================
 if [ -z "$INSTANCE_ID" ]; then
     echo -e "${YELLOW}Looking for RAG Lab instances...${NC}"
-    
+
     # Find instances with "rag-lab" in name
     INSTANCES=$(aws ec2 describe-instances \
         --region $REGION \
         --filters "Name=tag:Name,Values=*rag-lab*" "Name=instance-state-name,Values=running,stopped" \
         --query 'Reservations[*].Instances[*].[InstanceId,Tags[?Key==`Name`].Value|[0],State.Name,PublicIpAddress]' \
         --output text)
-    
+
     if [ -z "$INSTANCES" ]; then
         echo -e "${RED}No RAG Lab instances found${NC}"
         exit 1
     fi
-    
+
     echo "Found instances:"
     echo "$INSTANCES" | nl
     echo ""
     read -p "Enter instance number: " INSTANCE_NUM
-    
+
     INSTANCE_ID=$(echo "$INSTANCES" | sed -n "${INSTANCE_NUM}p" | awk '{print $1}')
-    
+
     if [ -z "$INSTANCE_ID" ]; then
         echo -e "${RED}Invalid instance number${NC}"
         exit 1
@@ -104,7 +104,7 @@ check_elastic_ip() {
         --filters "Name=instance-id,Values=$INSTANCE_ID" \
         --query 'Addresses[0].PublicIp' \
         --output text 2>/dev/null || echo "None")
-    
+
     if [ "$ELASTIC_IP" != "None" ] && [ ! -z "$ELASTIC_IP" ]; then
         echo -e "${GREEN}✓ Elastic IP attached: $ELASTIC_IP${NC}"
         echo "  Your URL will remain: http://$ELASTIC_IP"
@@ -124,18 +124,18 @@ if [ "$COMMAND" = "stop" ]; then
     echo -e "${YELLOW}=====================================${NC}"
     echo -e "${YELLOW}Stopping Instance${NC}"
     echo -e "${YELLOW}=====================================${NC}"
-    
+
     if [ "$CURRENT_STATE" = "stopped" ]; then
         echo -e "${GREEN}Instance is already stopped${NC}"
         exit 0
     fi
-    
+
     if [ "$CURRENT_STATE" != "running" ]; then
         echo -e "${RED}Instance is in state: $CURRENT_STATE${NC}"
         echo "Can only stop running instances"
         exit 1
     fi
-    
+
     # Show cost savings
     echo ""
     echo -e "${BLUE}Cost Savings:${NC}"
@@ -154,10 +154,10 @@ if [ "$COMMAND" = "stop" ]; then
             echo "  Only pay for EBS storage when stopped"
             ;;
     esac
-    
+
     echo ""
     check_elastic_ip || true
-    
+
     echo ""
     read -p "Stop instance $INSTANCE_ID? (y/n) " -n 1 -r
     echo
@@ -165,13 +165,13 @@ if [ "$COMMAND" = "stop" ]; then
         echo "Cancelled"
         exit 0
     fi
-    
+
     echo -e "${YELLOW}Stopping instance...${NC}"
     aws ec2 stop-instances --region $REGION --instance-ids $INSTANCE_ID
-    
+
     echo "Waiting for instance to stop..."
     aws ec2 wait instance-stopped --region $REGION --instance-ids $INSTANCE_ID
-    
+
     echo ""
     echo -e "${GREEN}=====================================${NC}"
     echo -e "${GREEN}Instance Stopped Successfully!${NC}"
@@ -192,23 +192,23 @@ elif [ "$COMMAND" = "start" ]; then
     echo -e "${YELLOW}=====================================${NC}"
     echo -e "${YELLOW}Starting Instance${NC}"
     echo -e "${YELLOW}=====================================${NC}"
-    
+
     if [ "$CURRENT_STATE" = "running" ]; then
         echo -e "${GREEN}Instance is already running${NC}"
         echo "Access at: http://$PUBLIC_IP"
         exit 0
     fi
-    
+
     if [ "$CURRENT_STATE" != "stopped" ]; then
         echo -e "${RED}Instance is in state: $CURRENT_STATE${NC}"
         echo "Can only start stopped instances"
         exit 1
     fi
-    
+
     # Check for Elastic IP
     HAS_ELASTIC_IP=false
     check_elastic_ip && HAS_ELASTIC_IP=true
-    
+
     if [ "$HAS_ELASTIC_IP" = false ]; then
         echo ""
         echo -e "${YELLOW}WARNING: No Elastic IP!${NC}"
@@ -223,13 +223,13 @@ elif [ "$COMMAND" = "start" ]; then
                 --domain vpc \
                 --query 'AllocationId' \
                 --output text)
-            
+
             NEW_ELASTIC_IP=$(aws ec2 describe-addresses \
                 --region $REGION \
                 --allocation-ids $ALLOCATION_ID \
                 --query 'Addresses[0].PublicIp' \
                 --output text)
-            
+
             echo -e "${GREEN}✓ Allocated Elastic IP: $NEW_ELASTIC_IP${NC}"
             echo "  Allocation ID: $ALLOCATION_ID"
             echo ""
@@ -237,7 +237,7 @@ elif [ "$COMMAND" = "start" ]; then
             ASSOCIATE_EIP=true
         fi
     fi
-    
+
     echo ""
     read -p "Start instance $INSTANCE_ID? (y/n) " -n 1 -r
     echo
@@ -245,13 +245,13 @@ elif [ "$COMMAND" = "start" ]; then
         echo "Cancelled"
         exit 0
     fi
-    
+
     echo -e "${YELLOW}Starting instance...${NC}"
     aws ec2 start-instances --region $REGION --instance-ids $INSTANCE_ID
-    
+
     echo "Waiting for instance to start (may take 2-3 minutes)..."
     aws ec2 wait instance-running --region $REGION --instance-ids $INSTANCE_ID
-    
+
     # Associate Elastic IP if allocated
     if [ "$ASSOCIATE_EIP" = true ]; then
         echo ""
@@ -260,7 +260,7 @@ elif [ "$COMMAND" = "start" ]; then
             --region $REGION \
             --instance-id $INSTANCE_ID \
             --allocation-id $ALLOCATION_ID
-        
+
         FINAL_IP=$NEW_ELASTIC_IP
     else
         # Get new public IP
@@ -268,7 +268,7 @@ elif [ "$COMMAND" = "start" ]; then
         NEW_INFO=$(get_instance_info)
         FINAL_IP=$(echo "$NEW_INFO" | awk '{print $2}')
     fi
-    
+
     echo ""
     echo -e "${GREEN}=====================================${NC}"
     echo -e "${GREEN}Instance Started Successfully!${NC}"
@@ -282,14 +282,14 @@ elif [ "$COMMAND" = "start" ]; then
     echo ""
     echo "Services will be ready in ~2-3 minutes"
     echo ""
-    
+
     if [ "$ASSOCIATE_EIP" = true ]; then
         echo -e "${BLUE}✓ Elastic IP allocated and associated${NC}"
         echo "  Your URL will stay the same on future restarts!"
         echo "  Cost: \$0.00/month (free while attached)"
         echo ""
     fi
-    
+
     if [ "$HAS_ELASTIC_IP" = false ] && [ "$ASSOCIATE_EIP" != true ]; then
         echo -e "${YELLOW}⚠ Public IP changed from $PUBLIC_IP to $FINAL_IP${NC}"
         echo ""
@@ -298,7 +298,7 @@ elif [ "$COMMAND" = "start" ]; then
         echo "  aws ec2 associate-address --instance-id $INSTANCE_ID --allocation-id ALLOCATION_ID"
         echo ""
     fi
-    
+
     echo "To stop again (save 97% costs):"
     echo "  $0 stop $INSTANCE_ID"
     echo ""
@@ -318,9 +318,9 @@ elif [ "$COMMAND" = "status" ]; then
     echo "State: $CURRENT_STATE"
     echo "IP: $PUBLIC_IP"
     echo ""
-    
+
     check_elastic_ip || echo ""
-    
+
     if [ "$CURRENT_STATE" = "running" ]; then
         echo "Access at: http://$PUBLIC_IP"
         echo ""

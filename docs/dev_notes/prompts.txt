@@ -157,3 +157,8 @@ install zip and unzip
 
 docker compose -f docker-compose.microservices.yml up --build -data
 
+When deploying on AWS we need to set up some type of load balancer or way to expose the front end. I believe the UI front end runs on port 3000. What I'd like to do is set up HTTP on like port 80 normal HTP or if it's easy and I don't need to create SSL search if we can do generic HD PS that would also be good but if we get certain errors, I don't want to do it that way. Can you also add this to get set up when the deployment script is run? Is this possible? Is this a lot of work? How feasible is this?
+
+With the engine X change between the front and back end do we need to update all of the end points in our config file? What other changes do we need to make? Scope out this change. Estimate how many lines of code is and how complicated it is.
+
+regarding adding vLLM - I suppose that we will need to refactor the calls. They're going to the LLM as I assume the VLLMAPI is different than the Ollama API. Can we put a switch in the web user interface to configure and switch between the two obviously one won't work and one will but it'd be nice to be able to run and swap out the back ends to compare performance census is a lab. Is this possible. Scope these changes and estimate how much work it is and how many lines of code need to be changed?
