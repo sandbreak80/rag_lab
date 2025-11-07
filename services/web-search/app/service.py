@@ -100,20 +100,20 @@ Now generate {max_queries} queries (number them 1-{max_queries}):
 """
 
     try:
-        response = requests.post(
-            f"{OLLAMA_URL}/api/generate",
-            json={
-                'model': QUERY_GEN_MODEL,
-                'prompt': prompt,
-                'stream': False,
-                'options': {
-                    'temperature': 0.5,  # Some creativity, but focused
-                    'num_predict': 150,  # Short output
-                    'stop': ['\n\n', 'Question:']  # Stop at double newline or new question
-                }
-            },
-            timeout=30
-        )
+            response = requests.post(
+                f"{OLLAMA_URL}/api/generate",
+                json={
+                    'model': QUERY_GEN_MODEL,
+                    'prompt': prompt,
+                    'stream': False,
+                    'options': {
+                        'temperature': 0.5,  # Some creativity, but focused
+                        'num_predict': 400,  # Enough for intro + 4 queries
+                        'stop': ['Question:', 'User Question:', '\n\n\n']  # Stop at new question or triple newline
+                    }
+                },
+                timeout=30
+            )
 
         if response.status_code != 200:
             print(f"⚠️  LLM query generation failed: {response.status_code}")
