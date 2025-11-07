@@ -217,7 +217,7 @@ services:
       - SERVICE_PORT=8003
       - SEARCH_SERVICE_URL=http://search-service:8002
       - LLM_SERVICE_URL=http://ollama:11434
-      - CHAT_MODEL=llama3.2:3b
+      - CHAT_MODEL=llama3.1:8b
       - PYTHONPATH=/workspace
     command: bash -c "pip install -q flask flask-cors requests && python -u service.py"
     depends_on:
@@ -355,7 +355,7 @@ services:
       - SERVICE_NAME=reranker-service
       - SERVICE_PORT=8008
       - OLLAMA_BASE_URL=http://ollama:11434
-      - CHAT_MODEL=llama3.2:3b
+      - CHAT_MODEL=llama3.1:8b
       - PYTHONPATH=/workspace
     command: bash -c "pip install -q flask flask-cors requests && python -u service.py"
     depends_on:
@@ -682,7 +682,7 @@ services:
       - SERVICE_NAME=query-decomposer
       - SERVICE_PORT=8019
       - OLLAMA_BASE_URL=http://ollama:11434
-      - DECOMPOSER_MODEL=llama3.2:3b
+      - DECOMPOSER_MODEL=llama3.1:8b
       - PYTHONPATH=/workspace
     depends_on:
       - ollama
