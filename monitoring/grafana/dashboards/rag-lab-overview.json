@@ -23,61 +23,101 @@
         "x": 0,
         "y": 0
       },
-      "type": "stat",
-      "title": "Docker Container Status - All Containers",
-      "description": "Shows up (1) or down (0) status for all Docker containers",
+      "type": "table",
+      "title": "Docker Container Status",
+      "description": "Real-time status of all RAG Lab containers",
       "targets": [
         {
           "expr": "(time() - container_last_seen{name=~\"rag-.*\"}) < 60",
           "legendFormat": "{{name}}",
-          "refId": "A"
+          "refId": "A",
+          "format": "table",
+          "instant": true
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "mappings": [
-            {
-              "type": "value",
-              "value": "1",
-              "text": "UP"
+          "custom": {
+            "align": "left",
+            "displayMode": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
             },
-            {
-              "type": "value",
-              "value": "0",
-              "text": "DOWN"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+            "properties": [
               {
-                "value": 0,
-                "color": "red"
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "value": "1",
+                    "text": "\ud83d\udfe2 UP"
+                  },
+                  {
+                    "type": "value",
+                    "value": "0",
+                    "text": "\ud83d\udd34 DOWN"
+                  }
+                ]
               },
               {
-                "value": 1,
-                "color": "green"
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "value": 0,
+                      "color": "red"
+                    },
+                    {
+                      "value": 1,
+                      "color": "green"
+                    }
+                  ]
+                }
               }
             ]
-          },
-          "noValue": "N/A"
-        },
-        "overrides": []
+          }
+        ]
       },
       "options": {
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "orientation": "auto",
-        "textMode": "value_and_name",
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center"
-      }
+        "showHeader": true,
+        "footer": {
+          "show": false
+        }
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "id": true,
+              "image": true,
+              "instance": true,
+              "job": true
+            },
+            "indexByName": {
+              "name": 0,
+              "Value": 1
+            },
+            "renameByName": {
+              "name": "Container",
+              "Value": "Status"
+            }
+          }
+        }
+      ]
     },
     {
       "id": 22,
