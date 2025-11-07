@@ -94,11 +94,11 @@ export function MonitoringPage() {
       </div>
 
       {/* Grafana Dashboard Embed */}
-      <div className="w-full" style={{ minHeight: '2000px' }}>
+      <div className="w-full" style={{ minHeight: '3500px' }}>
         <iframe
           src={dashboardUrl}
           className="w-full border-0"
-          style={{ height: '2000px' }}
+          style={{ height: '3500px' }}
           title="Grafana Dashboard"
           allow="fullscreen"
         />
