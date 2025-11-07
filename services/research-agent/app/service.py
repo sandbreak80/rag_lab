@@ -481,21 +481,37 @@ def trigger_fetch_custom():
     def fetch_and_rebuild():
         """Background task to fetch and rebuild KG"""
         try:
-            # Fetch from selected sources
+            # Fetch from selected sources in batches to prevent overload
             processed = 0
             errors = []
             items_count = 0
-
-            for source in sources_to_fetch:
-                try:
-                    # Pass days_back parameter to fetch_from_source
-                    result = fetch_from_source(source['id'], manual=True, days_back=days_back)
-                    processed += 1
-                    # Note: fetch_from_source doesn't return item count easily
-                except Exception as e:
-                    error_msg = f"Error fetching {source['name']}: {e}"
-                    logger.error(error_msg)
-                    errors.append(error_msg)
+            batch_size = 5  # Process 5 sources at a time
+            
+            logger.info(f"Processing {len(sources_to_fetch)} sources in batches of {batch_size}")
+            
+            for i in range(0, len(sources_to_fetch), batch_size):
+                batch = sources_to_fetch[i:i + batch_size]
+                batch_num = (i // batch_size) + 1
+                total_batches = (len(sources_to_fetch) + batch_size - 1) // batch_size
+                
+                logger.info(f"Processing batch {batch_num}/{total_batches} ({len(batch)} sources)")
+                
+                for source in batch:
+                    try:
+                        # Pass days_back parameter to fetch_from_source
+                        result = fetch_from_source(source['id'], manual=True, days_back=days_back)
+                        processed += 1
+                        # Note: fetch_from_source doesn't return item count easily
+                    except Exception as e:
+                        error_msg = f"Error fetching {source['name']}: {e}"
+                        logger.error(error_msg)
+                        errors.append(error_msg)
+                
+                # Brief pause between batches to prevent overload
+                if i + batch_size < len(sources_to_fetch):
+                    logger.info(f"Batch {batch_num} complete, pausing 2 seconds before next batch...")
+                    import time
+                    time.sleep(2)
 
             logger.info(f"Fetch complete: {processed}/{len(sources_to_fetch)} sources")
 
