@@ -140,6 +140,7 @@ def parse_generated_queries(llm_output: str, max_count: int) -> List[str]:
     """
     Parse numbered queries from LLM output
     Handles formats: "1. query", "1) query", "- query"
+    More robust parser that handles various LLM output formats
     """
     lines = llm_output.strip().split('\n')
     queries = []
@@ -149,12 +150,33 @@ def parse_generated_queries(llm_output: str, max_count: int) -> List[str]:
         if not line:
             continue
 
-        # Remove common prefixes: "1. ", "1) ", "- ", "• "
-        cleaned = re.sub(r'^[\d]+[\.\)\:]?\s*', '', line)  # Remove "1. " or "1) "
-        cleaned = re.sub(r'^[-•\*]\s*', '', cleaned)       # Remove "- "
+        # Skip intro/filler lines
+        skip_patterns = [
+            r'^here\s+(are|is)',
+            r'^i\s+',
+            r'^the\s+',
+            r'^for\s+',
+            r'^question:',
+            r'^sub-questions:',
+            r'^queries:',
+        ]
+        if any(re.match(pattern, line, re.IGNORECASE) for pattern in skip_patterns):
+            continue
 
-        # Must be modified (had a prefix) and reasonable length
-        if cleaned != line and 10 < len(cleaned) < 100:
+        # Remove common prefixes: "1. ", "1) ", "- ", "• ", "Q1:", etc
+        cleaned = re.sub(r'^[\d]+[\.\)\:]?\s*', '', line)  # Remove "1. " or "1) " or "1: "
+        cleaned = re.sub(r'^[-•\*]\s*', '', cleaned)       # Remove "- " or "• " or "* "
+        cleaned = re.sub(r'^Q[\d]+[\:\.]?\s*', '', cleaned, flags=re.IGNORECASE)  # Remove "Q1: " or "Q1. "
+
+        # Accept if it was modified (had a prefix) OR looks like a query
+        had_prefix = (cleaned != line)
+        looks_like_query = (
+            10 < len(cleaned) < 150 and  # Reasonable length
+            not cleaned.endswith('?') and  # Not a question (we want search terms)
+            cleaned[0].islower() or cleaned[0].isupper()  # Starts with letter
+        )
+
+        if (had_prefix or looks_like_query) and 10 < len(cleaned) < 150:
             queries.append(cleaned)
 
         if len(queries) >= max_count:
