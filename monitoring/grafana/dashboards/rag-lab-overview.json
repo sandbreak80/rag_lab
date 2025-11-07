@@ -240,94 +240,88 @@
     {
       "id": 10,
       "gridPos": {"h": 8, "w": 6, "x": 0, "y": 42},
-      "type": "gauge",
+      "type": "graph",
       "title": "GPU Utilization %",
       "targets": [
         {
           "expr": "DCGM_FI_DEV_GPU_UTIL",
+          "legendFormat": "GPU Util",
           "refId": "A"
         }
       ],
-      "options": {
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {"value": 0, "color": "green"},
-              {"value": 70, "color": "yellow"},
-              {"value": 90, "color": "red"}
-            ]
-          }
-        }
+      "yaxes": [
+        {"format": "percent", "label": "Utilization %", "min": 0, "max": 100},
+        {"format": "short"}
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 2,
+      "fillGradient": 5,
+      "legend": {
+        "show": true,
+        "values": true,
+        "current": true,
+        "max": true,
+        "min": true,
+        "avg": true
       }
     },
     {
       "id": 11,
       "gridPos": {"h": 8, "w": 6, "x": 6, "y": 42},
-      "type": "gauge",
+      "type": "graph",
       "title": "GPU Memory Usage %",
       "targets": [
         {
           "expr": "(DCGM_FI_DEV_FB_USED / (DCGM_FI_DEV_FB_USED + DCGM_FI_DEV_FB_FREE)) * 100",
+          "legendFormat": "Memory Usage",
           "refId": "A"
         }
       ],
-      "options": {
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {"value": 0, "color": "green"},
-              {"value": 70, "color": "yellow"},
-              {"value": 90, "color": "red"}
-            ]
-          }
-        }
+      "yaxes": [
+        {"format": "percent", "label": "Memory %", "min": 0, "max": 100},
+        {"format": "short"}
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 2,
+      "fillGradient": 5,
+      "legend": {
+        "show": true,
+        "values": true,
+        "current": true,
+        "max": true,
+        "min": true,
+        "avg": true
       }
     },
     {
       "id": 12,
       "gridPos": {"h": 8, "w": 6, "x": 12, "y": 42},
-      "type": "gauge",
+      "type": "graph",
       "title": "GPU Temperature (°C)",
       "targets": [
         {
           "expr": "DCGM_FI_DEV_GPU_TEMP",
+          "legendFormat": "Temperature",
           "refId": "A"
         }
       ],
-      "options": {
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "celsius",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {"value": 0, "color": "green"},
-              {"value": 75, "color": "yellow"},
-              {"value": 85, "color": "red"}
-            ]
-          }
-        }
+      "yaxes": [
+        {"format": "celsius", "label": "Temperature (°C)", "min": 0, "max": 100},
+        {"format": "short"}
+      ],
+      "lines": true,
+      "linewidth": 2,
+      "fill": 2,
+      "fillGradient": 5,
+      "legend": {
+        "show": true,
+        "values": true,
+        "current": true,
+        "max": true,
+        "min": true,
+        "avg": true
       }
     },
     {
