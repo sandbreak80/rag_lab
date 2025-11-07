@@ -14,7 +14,7 @@ export function MonitoringPage() {
   const dashboardUrl = `${grafanaUrl}/d/rag-lab-overview/rag-lab-system-overview?orgId=1&refresh=10s&kiosk`;
 
   return (
-    <div className="h-full min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden">
       {/* Header */}
       <div className="bg-card border-b p-6 flex-shrink-0">
         <div className="flex items-center justify-between">
@@ -94,7 +94,7 @@ export function MonitoringPage() {
       </div>
 
       {/* Grafana Dashboard Embed */}
-      <div className="flex-1 min-h-[800px] overflow-hidden">
+      <div className="flex-1 overflow-hidden">
         <iframe
           src={dashboardUrl}
           className="w-full h-full border-0"
