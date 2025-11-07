@@ -62,7 +62,7 @@ if ! command -v aws &> /dev/null; then
 fi
 
 # Check cloud-init script
-CLOUD_INIT_SCRIPT="../cloud-init/cloud-init-vllm-g5.yaml"
+CLOUD_INIT_SCRIPT="$(dirname "$0")/../cloud-init/cloud-init-vllm-g5.yaml"
 if [ ! -f "$CLOUD_INIT_SCRIPT" ]; then
     echo -e "${RED}ERROR: $CLOUD_INIT_SCRIPT not found${NC}"
     exit 1
@@ -102,7 +102,7 @@ if [ "$SG_ID" = "None" ]; then
         --description "Security group for RAG Lab with GPU" \
         --query 'GroupId' \
         --output text)
-    
+
     # Add rules
     aws ec2 authorize-security-group-ingress --region $REGION --group-id $SG_ID \
         --ip-permissions \
@@ -111,7 +111,7 @@ if [ "$SG_ID" = "None" ]; then
         IpProtocol=tcp,FromPort=8000,ToPort=8000,IpRanges='[{CidrIp=0.0.0.0/0,Description="API Gateway"}]' \
         IpProtocol=tcp,FromPort=11434,ToPort=11434,IpRanges='[{CidrIp=0.0.0.0/0,Description="Ollama"}]' \
         IpProtocol=tcp,FromPort=8001,ToPort=8001,IpRanges='[{CidrIp=0.0.0.0/0,Description="vLLM API"}]'
-    
+
     echo -e "${GREEN}✓ Security group created: $SG_ID${NC}"
 else
     echo -e "${GREEN}✓ Using existing security group: $SG_ID${NC}"
@@ -209,10 +209,10 @@ Access URLs (available in 15-20 minutes):
 SSH/Session Manager:
   # Session Manager (recommended)
   aws ssm start-session --target $INSTANCE_ID
-  
+
   # Traditional SSH
   ssh -i $KEY_NAME.pem ubuntu@$PUBLIC_IP
-  
+
   # Port forwarding
   aws ssm start-session --target $INSTANCE_ID \\
       --document-name AWS-StartPortForwardingSession \\
@@ -227,23 +227,23 @@ Check Installation:
 vLLM Commands (after SSH):
   # Start vLLM server
   sudo systemctl start vllm
-  
+
   # Check vLLM status
   sudo systemctl status vllm
-  
+
   # Test vLLM API
   /home/ubuntu/test-vllm.sh
-  
+
   # Custom model
   /home/ubuntu/start-vllm.sh /home/ubuntu/models/MODEL_NAME 8001
 
 Cost Management:
   # Stop instance (save 98% - only EBS charges)
   aws ec2 stop-instances --region $REGION --instance-ids $INSTANCE_ID
-  
+
   # Start instance
   aws ec2 start-instances --region $REGION --instance-ids $INSTANCE_ID
-  
+
   # Terminate (delete everything)
   aws ec2 terminate-instances --region $REGION --instance-ids $INSTANCE_ID
 

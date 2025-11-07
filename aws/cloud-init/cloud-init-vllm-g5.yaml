@@ -70,13 +70,13 @@ runcmd:
       --region $REGION \
       --query SecretString \
       --output text 2>/dev/null || echo "")
-    
+
     if [ -z "$GITHUB_TOKEN" ]; then
       echo "ERROR: Could not retrieve GitHub token from Secrets Manager"
       echo "Please create secret 'rag-lab/github-token' with your GitHub PAT"
       exit 1
     fi
-    
+
     echo "$GITHUB_TOKEN" > /tmp/github_token
     chmod 600 /tmp/github_token
 
@@ -87,10 +87,10 @@ runcmd:
   - |
     cd /home/ubuntu
     GITHUB_TOKEN=$(cat /tmp/github_token)
-    
+
     su - ubuntu -c "git clone https://${GITHUB_TOKEN}@github.com/sandbreak80/rag_lab.git /home/ubuntu/rag_lab"
     su - ubuntu -c "cd /home/ubuntu/rag_lab && git remote set-url origin https://github.com/sandbreak80/rag_lab.git"
-    
+
     rm -f /tmp/github_token
     chown -R ubuntu:ubuntu /home/ubuntu/rag_lab
     echo "Repository cloned successfully"
@@ -164,7 +164,7 @@ runcmd:
     [Install]
     WantedBy=multi-user.target
     EOF
-    
+
     systemctl daemon-reload
     # systemctl enable vllm  # Uncomment to auto-start vLLM
     # systemctl start vllm   # Uncomment to start vLLM now
@@ -212,67 +212,67 @@ write_files:
       ====================================
       RAG Lab Deployment - g5.2xlarge
       ====================================
-      
+
       Instance Type: g5.2xlarge
       GPU: NVIDIA A10G Tensor Core (24GB VRAM)
       Architecture: Ampere (Supports vLLM)
       vCPUs: 8
       RAM: 32GB
       OS: Ubuntu 24.04 LTS
-      
+
       Services:
       - Frontend: http://PUBLIC_IP:3000
       - API Gateway: http://PUBLIC_IP:8000
       - Ollama: http://PUBLIC_IP:11434
       - vLLM: http://PUBLIC_IP:8001 (optional)
-      
+
       LLM Options:
       1. Ollama (Docker) - For smaller models (llama3.1:8b)
       2. vLLM (Native) - For larger models, faster inference
-      
+
       vLLM Commands:
       # Start vLLM server
       sudo systemctl start vllm
-      
+
       # Check vLLM status
       sudo systemctl status vllm
-      
+
       # Test vLLM API (OpenAI-compatible)
       curl http://localhost:8001/v1/models
-      
+
       # Use vLLM with RAG Lab
       # Update config.env to point to http://localhost:8001
-      
+
       Model Management:
       # List downloaded models
       ls -lh /home/ubuntu/models/
-      
+
       # Download more models for vLLM
       source /home/ubuntu/vllm-env/bin/activate
       huggingface-cli download MODEL_NAME --local-dir /home/ubuntu/models/MODEL_NAME
-      
+
       # Popular vLLM models:
       # - meta-llama/Llama-2-7b-chat-hf
       # - meta-llama/Llama-2-13b-chat-hf
       # - mistralai/Mistral-7B-Instruct-v0.2
       # - tiiuae/falcon-7b-instruct
-      
+
       GPU Monitoring:
       nvidia-smi -l 1          # Live GPU stats
       watch -n 1 nvidia-smi    # Continuous monitoring
-      
+
       Cost Information:
       - Running: ~$1.21/hour (~$29/day, ~$870/month)
       - Stopped: ~$0.65/day (EBS only)
       - Savings when stopped: 98%
-      
+
       Comparison to g4dn.2xlarge:
       - 60% more expensive
       - 50% more VRAM (24GB vs 16GB)
       - vLLM support (A10G Ampere vs T4 Turing)
       - Better ML performance
       - Faster inference
-      
+
       ====================================
 
   - path: /home/ubuntu/start-vllm.sh
@@ -281,36 +281,36 @@ write_files:
     content: |
       #!/bin/bash
       # Start vLLM server with custom model
-      
+
       MODEL=${1:-"/home/ubuntu/models/llama-2-7b-chat"}
       PORT=${2:-8001}
-      
+
       echo "Starting vLLM server..."
       echo "Model: $MODEL"
       echo "Port: $PORT"
-      
+
       source /home/ubuntu/vllm-env/bin/activate
-      
+
       python -m vllm.entrypoints.openai.api_server \
           --model $MODEL \
           --host 0.0.0.0 \
           --port $PORT \
           --tensor-parallel-size 1 \
           --gpu-memory-utilization 0.9
-      
+
   - path: /home/ubuntu/test-vllm.sh
     owner: ubuntu:ubuntu
     permissions: '0755'
     content: |
       #!/bin/bash
       # Test vLLM API
-      
+
       echo "Testing vLLM API..."
-      
+
       # Test 1: List models
       echo "1. Listing available models:"
       curl -s http://localhost:8001/v1/models | jq .
-      
+
       echo ""
       echo "2. Sending test completion request:"
       curl -s http://localhost:8001/v1/completions \
@@ -321,7 +321,7 @@ write_files:
               "max_tokens": 50,
               "temperature": 0.7
           }' | jq .
-      
+
       echo ""
       echo "3. Testing chat completion (OpenAI-compatible):"
       curl -s http://localhost:8001/v1/chat/completions \
@@ -340,31 +340,31 @@ write_files:
     content: |
       #!/bin/bash
       # Update RAG Lab to latest version
-      
+
       echo "Updating RAG Lab..."
       cd /home/ubuntu/rag_lab
-      
+
       docker compose down
-      
+
       REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
       GITHUB_TOKEN=$(aws secretsmanager get-secret-value \
         --secret-id rag-lab/github-token \
         --region $REGION \
         --query SecretString \
         --output text)
-      
+
       if [ -z "$GITHUB_TOKEN" ]; then
         echo "ERROR: Could not retrieve GitHub token"
         exit 1
       fi
-      
+
       git remote set-url origin https://${GITHUB_TOKEN}@github.com/sandbreak80/rag_lab.git
       git pull origin security
       git remote set-url origin https://github.com/sandbreak80/rag_lab.git
-      
+
       docker compose build
       docker compose up -d
-      
+
       echo "Update complete!"
       sleep 30
       docker compose ps
@@ -373,23 +373,23 @@ final_message: |
   ====================================
   RAG Lab with vLLM - g5.2xlarge
   ====================================
-  
+
   ✅ NVIDIA A10G GPU (Ampere architecture)
   ✅ vLLM installed and configured
   ✅ Ollama running (for smaller models)
   ✅ RAG Lab services starting
-  
+
   GPU Info:
   - 24GB VRAM
   - vLLM supported (Ampere)
   - ~2x faster than T4
-  
+
   Access:
   - Frontend: http://PUBLIC_IP:3000
   - API: http://PUBLIC_IP:8000
   - vLLM: http://PUBLIC_IP:8001
-  
+
   Cost: ~$29/day running, ~$0.65/day stopped
-  
+
   ====================================
 

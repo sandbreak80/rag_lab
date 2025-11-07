@@ -184,16 +184,16 @@ axios.create({
 location /api/ {
     proxy_pass http://api-gateway:8000;
     proxy_http_version 1.1;
-    
+
     # WebSocket support
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection 'upgrade';
-    
+
     # Standard proxy headers
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    
+
     # Long timeout for LLM requests
     proxy_read_timeout 300s;
 }
@@ -404,11 +404,11 @@ NGINX (Production, Port 443)
 server {
     listen 443 ssl http2;
     server_name yourdomain.com;
-    
+
     ssl_certificate /etc/nginx/ssl/cert.pem;
     ssl_certificate_key /etc/nginx/ssl/key.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
-    
+
     # ... rest of config
 }
 ```
@@ -561,7 +561,7 @@ Browser → API Gateway (8000)
   - Full CORS preflight requests
   - No caching
   - Multiple connections
-  
+
 Typical Response Time: 200-500ms
 ```
 
@@ -572,7 +572,7 @@ Browser → NGINX → API Gateway
   - No CORS preflight (same origin)
   - Static asset caching
   - Connection keepalive
-  
+
 Typical Response Time: 100-200ms (2x faster!)
 ```
 
@@ -589,7 +589,7 @@ The conversation you referenced is absolutely correct:
 1. **"Same Domain" = No CORS**
    - Frontend and backend appear to be on same domain
    - Browser doesn't enforce CORS for same-origin requests
-   
+
 2. **"Simplify SSL"**
    - Only NGINX needs SSL certificates
    - Backend services use plain HTTP
