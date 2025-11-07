@@ -9,7 +9,7 @@ import pickle
 import os
 import time
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from collections import defaultdict
 import re
 
