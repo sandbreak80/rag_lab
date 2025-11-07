@@ -59,37 +59,25 @@ if [ "$SG_ID" = "None" ]; then
     aws ec2 authorize-security-group-ingress \
         --region $REGION \
         --group-id $SG_ID \
-        --protocol tcp \
-        --port 22 \
-        --cidr 0.0.0.0/0 \
-        --group-rule-description "SSH access"
+        --ip-permissions IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges='[{CidrIp=0.0.0.0/0,Description="SSH access"}]'
 
     # Frontend (port 3000)
     aws ec2 authorize-security-group-ingress \
         --region $REGION \
         --group-id $SG_ID \
-        --protocol tcp \
-        --port 3000 \
-        --cidr 0.0.0.0/0 \
-        --group-rule-description "RAG Lab Frontend"
+        --ip-permissions IpProtocol=tcp,FromPort=3000,ToPort=3000,IpRanges='[{CidrIp=0.0.0.0/0,Description="RAG Lab Frontend"}]'
 
     # API Gateway (port 8000)
     aws ec2 authorize-security-group-ingress \
         --region $REGION \
         --group-id $SG_ID \
-        --protocol tcp \
-        --port 8000 \
-        --cidr 0.0.0.0/0 \
-        --group-rule-description "RAG Lab API Gateway"
+        --ip-permissions IpProtocol=tcp,FromPort=8000,ToPort=8000,IpRanges='[{CidrIp=0.0.0.0/0,Description="RAG Lab API Gateway"}]'
 
     # Ollama (port 11434) - optional, for external access
     aws ec2 authorize-security-group-ingress \
         --region $REGION \
         --group-id $SG_ID \
-        --protocol tcp \
-        --port 11434 \
-        --cidr 0.0.0.0/0 \
-        --group-rule-description "Ollama API"
+        --ip-permissions IpProtocol=tcp,FromPort=11434,ToPort=11434,IpRanges='[{CidrIp=0.0.0.0/0,Description="Ollama API"}]'
 
     echo -e "${GREEN}✓ Security group created and configured${NC}"
 else
@@ -101,11 +89,29 @@ fi
 # ==========================================
 echo -e "\n${YELLOW}Step 2: Validating cloud-init script${NC}"
 
-if [ ! -f "cloud-init-rag-lab.yaml" ]; then
-    echo -e "${RED}ERROR: cloud-init-rag-lab.yaml not found!${NC}"
-    echo "Please run this script from the rag_lab directory."
-    exit 1
+CLOUD_INIT_FILE="$(dirname "$0")/../cloud-init/cloud-init-rag-lab-v10.yaml"
+if [ ! -f "$CLOUD_INIT_FILE" ]; then
+    echo -e "${YELLOW}v10 not found, trying v9...${NC}"
+    CLOUD_INIT_FILE="$(dirname "$0")/../cloud-init/cloud-init-rag-lab-v9.yaml"
+    if [ ! -f "$CLOUD_INIT_FILE" ]; then
+        echo -e "${YELLOW}v9 not found, trying v3...${NC}"
+        CLOUD_INIT_FILE="$(dirname "$0")/../cloud-init/cloud-init-rag-lab-v3.yaml"
+    fi
 fi
+if [ ! -f "$CLOUD_INIT_FILE" ]; then
+    echo -e "${YELLOW}cloud-init-rag-lab-v3.yaml not found, trying v2...${NC}"
+    CLOUD_INIT_FILE="$(dirname "$0")/../cloud-init/cloud-init-rag-lab-v2.yaml"
+    if [ ! -f "$CLOUD_INIT_FILE" ]; then
+        echo -e "${YELLOW}v2 not found, trying v1...${NC}"
+        CLOUD_INIT_FILE="$(dirname "$0")/../cloud-init/cloud-init-rag-lab.yaml"
+        if [ ! -f "$CLOUD_INIT_FILE" ]; then
+            echo -e "${RED}ERROR: No cloud-init file found!${NC}"
+            exit 1
+        fi
+    fi
+fi
+
+echo "Using cloud-init: $(basename $CLOUD_INIT_FILE)"
 
 echo -e "${GREEN}✓ Cloud-init script found${NC}"
 
@@ -135,7 +141,7 @@ INSTANCE_ID=$(aws ec2 run-instances \
     --security-group-ids $SG_ID \
     --block-device-mappings "DeviceName=/dev/sda1,Ebs={VolumeSize=$VOLUME_SIZE,VolumeType=gp3,DeleteOnTermination=true}" \
     --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$INSTANCE_NAME}]" \
-    --user-data file://cloud-init-rag-lab.yaml \
+    --user-data file://$CLOUD_INIT_FILE \
     --metadata-options "HttpTokens=required,HttpPutResponseHopLimit=2" \
     --query 'Instances[0].InstanceId' \
     --output text)

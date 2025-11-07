@@ -1,0 +1,217 @@
+#cloud-config
+# RAG Lab - AWS EC2 Cloud-Init (v10 - ALL MODELS AUTO-PULL)
+# Pulls ALL Ollama models automatically during instance creation
+# Based on v9 with synchronous model pulling
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - ubuntu-drivers-common
+  - curl
+  - git
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+# Create Phase 2 script
+write_files:
+  - path: /usr/local/bin/rag-lab-deploy.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+      LOG=/var/log/rag-lab-setup.log
+
+      [ -f /var/lib/rag-lab-stage2-complete ] && exit 0
+
+      echo "===== RAG Lab Phase 2 =====" | tee -a "$LOG"
+      date | tee -a "$LOG"
+
+      # GPU check (optional)
+      nvidia-smi 2>&1 | tee -a "$LOG" || true
+
+      # Fix home ownership
+      chown ubuntu:ubuntu /home/ubuntu
+
+      # Clone repo
+      if [ ! -d /home/ubuntu/rag_lab ]; then
+        sudo -H -u ubuntu bash -c 'cd ~ && git clone https://github.com/sandbreak80/rag_lab.git && cd rag_lab && git checkout security' 2>&1 | tee -a "$LOG"
+      fi
+
+      # Build & start
+      cd /home/ubuntu/rag_lab
+      sudo -H -u ubuntu docker compose build 2>&1 | tee -a "$LOG"
+      sudo -H -u ubuntu docker compose up -d 2>&1 | tee -a "$LOG"
+
+      # Wait for Ollama to be ready
+      echo "Waiting for Ollama to be ready..." | tee -a "$LOG"
+      sleep 30
+      for i in {1..30}; do
+        docker exec rag-ollama ollama list >/dev/null 2>&1 && break
+        sleep 5
+      done
+
+      # Pull ALL models synchronously (not in background)
+      echo "===== Pulling ALL Ollama Models =====" | tee -a "$LOG"
+      echo "This will take 15-20 minutes depending on network speed" | tee -a "$LOG"
+
+      # Required models
+      CHAT_MODEL="llama3.1:8b"
+      EMBEDDING_MODEL="nomic-embed-text"
+
+      # All optional models (from scripts/pull-ollama-models.sh)
+      ALL_OPTIONAL_MODELS=(
+        "llama3.2:1b"      # 1.3GB - Ultra-fast
+        "llama3.2:3b"      # 2.0GB - Query generation
+        "gemma2:2b"        # 1.6GB - Efficient
+        "gemma2:9b"        # 5.4GB - High performance
+        "mistral:7b"       # 4.4GB - Fast production
+        "qwen2.5:14b"      # 9.0GB - Best quality
+        "mxbai-embed-large" # 669MB - Best retrieval
+        "all-minilm"       # 45MB - Tiny/fast
+      )
+
+      # Pull required models first
+      echo "" | tee -a "$LOG"
+      echo "📦 REQUIRED MODELS (2/10)" | tee -a "$LOG"
+      echo "================================" | tee -a "$LOG"
+
+      echo "[1/10] Pulling $CHAT_MODEL (4.9GB)..." | tee -a "$LOG"
+      docker exec rag-ollama ollama pull "$CHAT_MODEL" 2>&1 | tee -a "$LOG"
+
+      echo "[2/10] Pulling $EMBEDDING_MODEL (274MB)..." | tee -a "$LOG"
+      docker exec rag-ollama ollama pull "$EMBEDDING_MODEL" 2>&1 | tee -a "$LOG"
+
+      # Pull all optional models synchronously
+      echo "" | tee -a "$LOG"
+      echo "📦 OPTIONAL MODELS (8/10)" | tee -a "$LOG"
+      echo "================================" | tee -a "$LOG"
+
+      MODEL_NUM=3
+      for model in "${ALL_OPTIONAL_MODELS[@]}"; do
+        echo "[$MODEL_NUM/10] Pulling $model..." | tee -a "$LOG"
+        if docker exec rag-ollama ollama pull "$model" 2>&1 | tee -a "$LOG"; then
+          echo "✅ Successfully pulled $model" | tee -a "$LOG"
+        else
+          echo "⚠️  Warning: Failed to pull $model" | tee -a "$LOG"
+        fi
+        MODEL_NUM=$((MODEL_NUM + 1))
+      done
+
+      # Show all downloaded models
+      echo "" | tee -a "$LOG"
+      echo "📋 ALL DOWNLOADED MODELS:" | tee -a "$LOG"
+      echo "================================" | tee -a "$LOG"
+      docker exec rag-ollama ollama list 2>&1 | tee -a "$LOG"
+
+      # Create default admin user
+      echo "" | tee -a "$LOG"
+      echo "Creating default admin user..." | tee -a "$LOG"
+      docker exec rag-auth-service python -c "
+      from app.database import init_db
+      from app.models import User
+      from sqlalchemy.orm import Session
+      from app.database import SessionLocal
+      import bcrypt
+
+      init_db()
+      db = SessionLocal()
+
+      # Check if admin exists
+      admin = db.query(User).filter(User.username == 'admin').first()
+      if not admin:
+          hashed = bcrypt.hashpw('admin123'.encode(), bcrypt.gensalt()).decode()
+          admin = User(username='admin', email='admin@raglab.local', hashed_password=hashed, is_active=True, role='admin')
+          db.add(admin)
+          db.commit()
+          print('✅ Admin user created: admin/admin123')
+      else:
+          print('✅ Admin user already exists')
+      db.close()
+      " 2>&1 | tee -a "$LOG" || echo "Note: Auth service may not be ready yet" | tee -a "$LOG"
+
+      # Generate deployment info
+      echo "" | tee -a "$LOG"
+      echo "📊 DEPLOYMENT INFO:" | tee -a "$LOG"
+      echo "================================" | tee -a "$LOG"
+      PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 || echo "unknown")
+      echo "Public IP: $PUBLIC_IP" | tee -a "$LOG"
+      echo "Frontend: http://$PUBLIC_IP:3000" | tee -a "$LOG"
+      echo "API Gateway: http://$PUBLIC_IP:8000" | tee -a "$LOG"
+      echo "Prometheus: http://$PUBLIC_IP:9090" | tee -a "$LOG"
+      echo "Grafana: http://$PUBLIC_IP:3001 (admin/admin)" | tee -a "$LOG"
+      echo "Login: admin / admin123" | tee -a "$LOG"
+
+      # Final service status
+      echo "" | tee -a "$LOG"
+      echo "🏥 FINAL SERVICE STATUS:" | tee -a "$LOG"
+      echo "================================" | tee -a "$LOG"
+      sudo -H -u ubuntu docker compose ps 2>&1 | tee -a "$LOG"
+
+      touch /var/lib/rag-lab-stage2-complete
+      echo "" | tee -a "$LOG"
+      echo "===== ✅ RAG LAB DEPLOYMENT COMPLETE =====" | tee -a "$LOG"
+      echo "All 10 Ollama models are ready!" | tee -a "$LOG"
+      date | tee -a "$LOG"
+
+  - path: /etc/systemd/system/rag-lab-deploy.service
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=RAG Lab Deployment
+      After=network-online.target docker.service
+      Wants=network-online.target
+      ConditionPathExists=!/var/lib/rag-lab-stage2-complete
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/rag-lab-deploy.sh
+      StandardOutput=append:/var/log/rag-lab-setup.log
+      StandardError=append:/var/log/rag-lab-setup.log
+
+      [Install]
+      WantedBy=multi-user.target
+
+# Phase 1: First boot only
+runcmd:
+  - echo "===== RAG Lab Phase 1 =====" | tee /var/log/rag-lab-setup.log
+  - date | tee -a /var/log/rag-lab-setup.log
+
+  # Docker repo
+  - mkdir -p /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - usermod -aG docker ubuntu
+  - systemctl enable docker
+  - systemctl start docker
+
+  # NVIDIA
+  - ubuntu-drivers install --gpgpu 2>&1 | tee -a /var/log/rag-lab-setup.log
+  - curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+  - curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+  - apt-get update
+  - apt-get install -y nvidia-container-toolkit
+  - nvidia-ctk runtime configure --runtime=docker
+  - systemctl restart docker
+
+  # Enable Phase 2
+  - systemctl daemon-reload
+  - systemctl enable rag-lab-deploy.service
+
+  - touch /var/lib/rag-lab-stage1-complete
+  - echo "Phase 1 done, will reboot" | tee -a /var/log/rag-lab-setup.log
+  - date | tee -a /var/log/rag-lab-setup.log
+
+# Conditional reboot (CRITICAL: only once)
+power_state:
+  mode: reboot
+  message: "Activating NVIDIA drivers"
+  condition: test -f /var/lib/rag-lab-stage1-complete && test ! -f /var/lib/rag-lab-stage2-complete
+
+final_message: "RAG Lab v10: Phase 1 complete, rebooting. Phase 2 will pull ALL 10 models synchronously."
+

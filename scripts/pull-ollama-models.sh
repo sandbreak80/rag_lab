@@ -1,6 +1,14 @@
 #!/bin/bash
 # Pull Ollama Models for RAG Lab
 # This script pulls all required Ollama models for the project
+#
+# NOTE: When deploying to AWS, all models are automatically pulled
+# during instance creation (see aws/cloud-init/cloud-init-rag-lab-v10.yaml)
+#
+# This script is for:
+# - Local development
+# - Existing instances that need model updates
+# - Manual model management
 
 set -e
 
@@ -31,14 +39,14 @@ OPTIONAL_MODELS=(
     "llama3.2:1b"      # Smallest (1GB) - 128K context, 100+ tok/s
     "llama3.2:3b"      # Small (2GB) - 128K context, 60 tok/s
     "gemma2:2b"        # Google efficient (2GB) - High quality for size
-    
+
     # Medium models (production sweet spot)
     "gemma2:9b"        # Google high-performance (5.5GB) - Excellent quality
     "mistral:7b"       # Fast alternative (4GB) - 32K context
-    
+
     # Large models (best quality) - Lab: Quality vs Memory
     "qwen2.5:14b"      # Best for 16GB GPU (9GB) - Top quality
-    
+
     # Embedding alternatives (if mxbai fails)
     "mxbai-embed-large"  # Keep as option (335MB) - Best retrieval
     "all-minilm"       # Tiny, fast (23MB) - Good for demos
