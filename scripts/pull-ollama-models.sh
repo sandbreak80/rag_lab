@@ -73,21 +73,16 @@ echo "=================="
 pull_model "$CHAT_MODEL" "Chat/LLM model"
 pull_model "$EMBEDDING_MODEL" "Embedding model"
 
-# Ask if user wants optional models
+# Automatically pull all optional models
 echo ""
 echo "📦 OPTIONAL MODELS (for testing)"
 echo "================================="
-echo "These models are optional and can be used for testing different model sizes."
-echo "They will take additional disk space (~4-8GB each)."
-echo ""
-read -p "Do you want to pull optional models? (y/N): " -n 1 -r
+echo "Pulling all optional models for comprehensive testing..."
 echo ""
 
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    for model in "${OPTIONAL_MODELS[@]}"; do
-        pull_model "$model" "Optional test model"
-    done
-fi
+for model in "${OPTIONAL_MODELS[@]}"; do
+    pull_model "$model" "Optional test model"
+done
 
 # List all downloaded models
 echo ""
