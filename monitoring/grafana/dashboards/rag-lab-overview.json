@@ -32,7 +32,7 @@
       },
       "targets": [
         {
-          "expr": "container_health_status{name=~\"rag-.*\"}",
+          "expr": "container_health_status",
           "refId": "A",
           "format": "table",
           "instant": true
