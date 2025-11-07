@@ -75,12 +75,15 @@ def health_check():
 
 @app.route('/metrics', methods=['GET'])
 def get_metrics():
-    """Metrics endpoint"""
-    stats = metrics.get_stats()
+    """Prometheus metrics endpoint"""
+    # Update gauges before returning metrics
     if kg and hasattr(kg, 'graph'):
-        stats['graph_nodes'] = len(kg.graph.nodes())
-        stats['graph_edges'] = len(kg.graph.edges())
-    return jsonify(stats)
+        metrics.set_gauge('graph_nodes', len(kg.graph.nodes()))
+        metrics.set_gauge('graph_edges', len(kg.graph.edges()))
+    
+    metrics_bytes, content_type = metrics.get_prometheus_metrics()
+    from flask import Response
+    return Response(metrics_bytes, mimetype=content_type)
 
 @app.route('/stats', methods=['GET'])
 def get_stats():

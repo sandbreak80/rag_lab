@@ -14,6 +14,7 @@ bug - document list does not use pagination. Document titles are so long that th
 bug - performance breakdown is missing monponents or always has 0 time for components. I want to see time in knowledge graph.
 feature request - We want a way to visualize the knowledge graphs
 feature - MCP integration into lab - not sure how or what use case
+    **Access to real time information - look for news or some other COTS MCP we can leverage calls out to with the RAG pipeline
 
 feature request - we want a way to see whats in the embedding models
 feature reques - add page scraping to the main UI. Add links in text window list and have scraping run
@@ -33,6 +34,7 @@ oten telemetry collector requires an operator - is k8 required!?!?
 https://www.splunk.com/en_us/blog/artificial-intelligence/how-we-built-end-to-end-llm-observability-with-splunk-and-rag.html
 https://lantern.splunk.com/Observability_Use_Cases/Monitor_Business/Instrumenting_LLM_applications_with_OpenLLMetry_and_Splunk
 https://opentelemetry.io/blog/2024/llm-observability/
+https://www.meibel.ai/post/the-right-context-at-the-right-time-designing-with-rag-and-mcp
 
 
 
@@ -236,3 +238,20 @@ Include real-time web search results (SearXNG)
 
 🕸️ Knowledge Graph
 Include related entities from knowledge graph
+
+
+
+/////////
+LLM ->MCP
+Integrating the Model Context Protocol (MCP) into a Retrieval-Augmented Generation (RAG) pipeline involves leveraging MCP as a framework for building sophisticated AI agents with access to external tools, memory, and real-time data, effectively enhancing RAG's core knowledge retrieval function.
+Integration Use Cases
+Enhanced, Personalized Retrieval: MCP allows the AI agent to remember user preferences and prior interactions, enabling the RAG component to retrieve more relevant and personalized information.
+Example: A user who previously asked for "research-based information" will have subsequent climate change queries directed to scientific journals instead of general sources like Wikipedia.
+Access to Live/Structured Data: While RAG typically works with static, unstructured documents (e.g., a PDF collection in a vector database), MCP connects to external systems, APIs, and structured data sources (like SQL databases or Google Sheets), providing access to real-time information.
+Example: The RAG system can be augmented to query a live inventory database via an MCP tool before providing a stock update to a user.
+Multi-step Reasoning and Action: MCP enables the AI to perform complex, multi-step tasks by deciding when to use the RAG tool and when to use other action-oriented tools.
+Example: An agent might use RAG to read product documentation, then use an MCP-enabled tool to create a GitHub issue or an order in an e-commerce system based on the findings.
+Unified Agentic Framework: RAG becomes one tool within a broader MCP server architecture, where the AI agent uses the protocol to decide when knowledge retrieval is necessary and how to act on that information.
+Evaluation and Optimization: MCP can be used as a platform to evaluate different RAG setups and prompt templates side-by-side (A/B testing), finding which configuration performs best for specific needs. This creates a continuous feedback loop for improvement.
+Code-Related Tasks: MCP servers, particularly in development environments like VS Code, can expose retrieval and action tools for coding tasks, allowing an AI assistant to fetch documentation (RAG) and then execute code or check system status (MCP).
+In short, RAG provides the knowledge, and MCP provides the actions and context, allowing for a more powerful, dynamic, and integrated AI application.

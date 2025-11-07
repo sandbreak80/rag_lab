@@ -60,8 +60,10 @@ def health_check():
 
 @app.route('/metrics', methods=['GET'])
 def get_metrics():
-    """Metrics endpoint"""
-    return jsonify(metrics.get_stats())
+    """Prometheus metrics endpoint"""
+    metrics_bytes, content_type = metrics.get_prometheus_metrics()
+    from flask import Response
+    return Response(metrics_bytes, mimetype=content_type)
 
 @app.route('/stats', methods=['GET'])
 def get_stats():
