@@ -11,11 +11,13 @@ import {
   MessageCircle,
   FileText,
   Activity,
+  RefreshCw,
 } from 'lucide-react';
 
 const tabs = [
   { id: 'chat', label: 'Chat', icon: MessageSquare, path: '/' },
   { id: 'documents', label: 'Documents', icon: FolderOpen, path: '/documents' },
+  { id: 'research', label: 'Research Agent', icon: RefreshCw, path: '/research' },
   { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
   { id: 'metrics', label: 'Metrics', icon: BarChart3, path: '/metrics' },
   { id: 'monitoring', label: 'Monitoring', icon: Activity, path: '/monitoring' },

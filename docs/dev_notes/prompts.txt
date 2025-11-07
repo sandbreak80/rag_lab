@@ -162,3 +162,50 @@ When deploying on AWS we need to set up some type of load balancer or way to exp
 With the engine X change between the front and back end do we need to update all of the end points in our config file? What other changes do we need to make? Scope out this change. Estimate how many lines of code is and how complicated it is.
 
 regarding adding vLLM - I suppose that we will need to refactor the calls. They're going to the LLM as I assume the VLLMAPI is different than the Ollama API. Can we put a switch in the web user interface to configure and switch between the two obviously one won't work and one will but it'd be nice to be able to run and swap out the back ends to compare performance census is a lab. Is this possible. Scope these changes and estimate how much work it is and how many lines of code need to be changed?
+
+**the aws build needs to download more models!
+**its possible that web search results are being classified as RAG instead of web - this is a NEW bug that was introduced.
+
+We want a way to visualize the knowledge graphs
+we want a way to see whats in the embedding models
+We want a way to see query :::
+🧠 Intelligence Features
+Enable AI-powered query processing and optimization
+
+🔮 Prompt Enhancement
+Automatically enhance queries using CoT, ReAct, or Few-Shot frameworks
+
+
+🎯 Auto Model Routing
+Automatically select optimal LLM model based on query complexity
+
+
+🧩 Query Decomposition
+Break complex questions into simpler sub-queries for better results
+
+
+🔍 Self-RAG
+Self-reflective retrieval with quality assessment and automatic refinement
+
+
+🔬 Show Reasoning Process
+Display step-by-step thinking (CoT/ReAct scaffolding) in responses
+
+
+📚 Data Sources
+Control which data sources are used for retrieval
+
+📄 Vector Database
+Search uploaded documents and ingested content
+
+
+🔬 Research Agent
+Include auto-discovered research content (91 items, 6 sources)
+
+
+🌐 Web Search
+Include real-time web search results (SearXNG)
+
+
+🕸️ Knowledge Graph
+Include related entities from knowledge graph

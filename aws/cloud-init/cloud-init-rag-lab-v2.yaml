@@ -1,0 +1,288 @@
+#cloud-config
+# RAG Lab - AWS EC2 Cloud-Init Script v2
+# Instance Type: g4dn.2xlarge (GPU-enabled)
+# OS: Ubuntu 24.04 LTS
+# Purpose: Automated deployment with proper reboots after Docker and NVIDIA driver installation
+
+# System updates and package installation
+package_update: true
+package_upgrade: true
+
+packages:
+  - ubuntu-drivers-common
+  - curl
+  - git
+  - unzip
+  - build-essential
+  - ca-certificates
+  - gnupg
+  - lsb-release
+  - python3-pip
+
+# Write the continuation script that will run after reboots
+write_files:
+  - path: /usr/local/bin/rag-lab-setup-stage2.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # RAG Lab Setup - Stage 2 (After Docker + NVIDIA Reboot)
+      set -e
+      exec > /var/log/rag-lab-setup-stage2.log 2>&1
+
+      echo "===== RAG Lab Setup Stage 2 ====="
+      date
+
+      # Verify GPU is available
+      if ! nvidia-smi; then
+        echo "ERROR: NVIDIA driver not loaded after reboot"
+        exit 1
+      fi
+
+      # Verify Docker is working
+      if ! docker ps; then
+        echo "ERROR: Docker not working"
+        exit 1
+      fi
+
+      # Fix home directory permissions
+      chown -R ubuntu:ubuntu /home/ubuntu
+
+      # Clone RAG Lab (if not exists)
+      if [ ! -d "/home/ubuntu/rag_lab" ]; then
+        echo "===== Cloning RAG Lab Repository ====="
+        cd /home/ubuntu
+
+        # Create tarball path for upload
+        if [ -f "/tmp/rag_lab.tar.gz" ]; then
+          echo "Found local RAG Lab tarball, extracting..."
+          cd /home/ubuntu
+          tar -xzf /tmp/rag_lab.tar.gz
+        else
+          echo "No local tarball found, repository must be uploaded manually"
+          mkdir -p /home/ubuntu/rag_lab
+        fi
+
+        chown -R ubuntu:ubuntu /home/ubuntu/rag_lab
+      fi
+
+      # Start Ollama with GPU
+      echo "===== Starting Ollama with GPU ====="
+      if ! docker ps | grep -q ollama; then
+        docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama --restart unless-stopped ollama/ollama
+        sleep 15
+      fi
+
+      # Pull required Ollama models
+      echo "===== Pulling Required Ollama Models ====="
+      docker exec ollama ollama pull llama3.1:8b
+      docker exec ollama ollama pull nomic-embed-text
+
+      # Pull optional models (subset for lab testing)
+      echo "===== Pulling Optional Ollama Models (for labs) ====="
+      docker exec ollama ollama pull llama3.2:3b  || echo "Failed to pull llama3.2:3b"
+      docker exec ollama ollama pull gemma2:2b    || echo "Failed to pull gemma2:2b"
+      docker exec ollama ollama pull mistral:7b   || echo "Failed to pull mistral:7b"
+
+      # Build and start RAG Lab
+      if [ -f "/home/ubuntu/rag_lab/docker-compose.yml" ]; then
+        echo "===== Building and Starting RAG Lab ====="
+        cd /home/ubuntu/rag_lab
+        su - ubuntu -c "cd /home/ubuntu/rag_lab && docker compose build"
+        su - ubuntu -c "cd /home/ubuntu/rag_lab && docker compose up -d"
+
+        # Wait for services
+        echo "===== Waiting for services to start ====="
+        sleep 90
+        su - ubuntu -c "cd /home/ubuntu/rag_lab && docker compose ps"
+
+        # Try to create default user
+        echo "===== Creating default admin user ====="
+        sleep 30
+        curl -X POST http://localhost:8000/api/auth/register \
+          -H "Content-Type: application/json" \
+          -d '{"username":"admin","password":"ChangeMe123!","email":"admin@raglab.local"}' || echo "User creation pending - service still starting"
+      fi
+
+      # Display status
+      echo "===== Installation Complete ====="
+      date
+      nvidia-smi
+      docker ps
+
+      PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+      echo ""
+      echo "=========================================="
+      echo "RAG Lab is ready!"
+      echo "=========================================="
+      echo "Frontend: http://$PUBLIC_IP:3000"
+      echo "API: http://$PUBLIC_IP:8000"
+      echo "=========================================="
+
+      # Disable the systemd service now that setup is complete
+      systemctl disable rag-lab-setup-stage2.service || true
+
+      echo "Setup stage 2 complete!"
+
+  - path: /etc/systemd/system/rag-lab-setup-stage2.service
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=RAG Lab Setup Stage 2
+      After=network-online.target docker.service
+      Wants=network-online.target
+      ConditionPathExists=!/var/lib/rag-lab-setup-complete
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/rag-lab-setup-stage2.sh
+      ExecStartPost=/bin/touch /var/lib/rag-lab-setup-complete
+      RemainAfterExit=yes
+      StandardOutput=journal
+      StandardError=journal
+
+      [Install]
+      WantedBy=multi-user.target
+
+  - path: /home/ubuntu/deployment-info.txt
+    owner: ubuntu:ubuntu
+    permissions: '0644'
+    content: |
+      ====================================
+      RAG Lab Deployment Information
+      ====================================
+
+      Instance Type: g4dn.2xlarge
+      GPU: NVIDIA T4 (16GB)
+      OS: Ubuntu 24.04 LTS
+
+      Services:
+      - Frontend: http://PUBLIC_IP:3000
+      - API Gateway: http://PUBLIC_IP:8000
+      - Ollama: http://PUBLIC_IP:11434
+
+      Default Login (create your own):
+      Username: admin
+      Password: ChangeMe123!
+
+      Useful Commands:
+      cd /home/ubuntu/rag_lab
+      docker compose ps              # Check service status
+      docker compose logs -f         # View logs
+      docker compose restart         # Restart services
+      docker compose down            # Stop services
+      docker compose up -d           # Start services
+
+      GPU Check:
+      nvidia-smi                     # Check GPU status
+      docker exec ollama nvidia-smi  # Check GPU in Ollama
+
+      Pull Additional Models:
+      docker exec ollama ollama pull llama3.1:70b
+      docker exec ollama ollama pull qwen2.5:14b
+      docker exec ollama ollama pull gemma2:9b
+
+      Troubleshooting:
+      sudo systemctl status docker
+      docker logs <container_name>
+      cat /var/log/cloud-init-output.log
+      cat /var/log/rag-lab-setup-stage2.log
+
+      ====================================
+
+  - path: /home/ubuntu/update-rag-lab.sh
+    owner: ubuntu:ubuntu
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # Update RAG Lab to latest version
+
+      echo "Updating RAG Lab..."
+      cd /home/ubuntu/rag_lab
+
+      # Stop services
+      docker compose down
+
+      # Pull latest code (if git repo)
+      if [ -d ".git" ]; then
+        git pull origin security
+      else
+        echo "Not a git repository - manual update needed"
+        exit 1
+      fi
+
+      # Rebuild and restart
+      docker compose build
+      docker compose up -d
+
+      echo "Update complete! Waiting for services to be healthy..."
+      sleep 30
+      docker compose ps
+
+runcmd:
+  # ==========================================
+  # STAGE 1: Install Docker + NVIDIA Drivers
+  # ==========================================
+  - echo "===== RAG Lab Setup Stage 1 ====="
+  - date
+
+  # Install Docker
+  - echo "===== Installing Docker ====="
+  - mkdir -p /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+  # Configure Docker
+  - echo "===== Configuring Docker ====="
+  - usermod -aG docker ubuntu
+  - systemctl enable docker
+  - systemctl start docker
+
+  # Install NVIDIA drivers
+  - echo "===== Installing NVIDIA Drivers ====="
+  - apt-get install -y linux-modules-nvidia-580-aws nvidia-driver-580
+
+  # Install NVIDIA Container Toolkit
+  - echo "===== Installing NVIDIA Container Toolkit ====="
+  - curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+  - curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+  - apt-get update
+  - apt-get install -y nvidia-container-toolkit
+  - nvidia-ctk runtime configure --runtime=docker
+  - systemctl restart docker
+
+  # Enable stage 2 service
+  - systemctl enable rag-lab-setup-stage2.service
+
+  # Create marker for stage 1 complete
+  - touch /var/lib/rag-lab-stage1-complete
+
+  # Reboot to load NVIDIA drivers
+  - echo "===== Stage 1 complete, rebooting to load NVIDIA drivers ====="
+  - reboot
+
+# Final message (shows on first boot only)
+final_message: |
+  ====================================
+  RAG Lab Cloud-Init Stage 1 Complete
+  ====================================
+
+  The system is rebooting to load:
+  ✅ Docker
+  ✅ NVIDIA GPU drivers
+
+  Stage 2 will run automatically after reboot:
+  - Start Ollama
+  - Pull models
+  - Build and start RAG Lab
+
+  This will take 10-15 minutes total.
+
+  Monitor progress after reboot:
+  tail -f /var/log/rag-lab-setup-stage2.log
+
+  ====================================
+

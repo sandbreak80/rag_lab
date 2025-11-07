@@ -1,0 +1,236 @@
+#cloud-config
+# RAG Lab - AWS EC2 Cloud-Init Script v3
+# Instance Type: g4dn.2xlarge (GPU-enabled)
+# OS: Ubuntu 24.04 LTS
+# Uses cloud-init native reboot handling with bootcmd
+
+# System updates and package installation
+package_update: true
+package_upgrade: true
+
+packages:
+  - ubuntu-drivers-common
+  - curl
+  - git
+  - unzip
+  - build-essential
+  - ca-certificates
+  - gnupg
+  - lsb-release
+  - python3-pip
+
+# bootcmd runs on EVERY boot (perfect for multi-stage setup)
+bootcmd:
+  # Stage 2: Runs after reboot (when marker exists)
+  - |
+    if [ -f /var/lib/rag-lab-stage1-complete ] && [ ! -f /var/lib/rag-lab-stage2-complete ]; then
+      echo "===== RAG Lab Stage 2 (After Reboot) =====" >> /var/log/rag-lab-setup.log
+      date >> /var/log/rag-lab-setup.log
+
+      # Verify GPU
+      if nvidia-smi >> /var/log/rag-lab-setup.log 2>&1; then
+        echo "GPU verified!" >> /var/log/rag-lab-setup.log
+      else
+        echo "ERROR: GPU not available" >> /var/log/rag-lab-setup.log
+        exit 1
+      fi
+
+      # Fix permissions
+      chown -R ubuntu:ubuntu /home/ubuntu >> /var/log/rag-lab-setup.log 2>&1
+
+      # Start Ollama with GPU
+      echo "Starting Ollama..." >> /var/log/rag-lab-setup.log
+      docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama --restart unless-stopped ollama/ollama >> /var/log/rag-lab-setup.log 2>&1
+      sleep 15
+
+      # Pull required models
+      echo "Pulling required models..." >> /var/log/rag-lab-setup.log
+      docker exec ollama ollama pull llama3.1:8b >> /var/log/rag-lab-setup.log 2>&1
+      docker exec ollama ollama pull nomic-embed-text >> /var/log/rag-lab-setup.log 2>&1
+
+      # Pull optional models
+      echo "Pulling optional models..." >> /var/log/rag-lab-setup.log
+      docker exec ollama ollama pull llama3.2:3b >> /var/log/rag-lab-setup.log 2>&1 || true
+      docker exec ollama ollama pull gemma2:2b >> /var/log/rag-lab-setup.log 2>&1 || true
+      docker exec ollama ollama pull mistral:7b >> /var/log/rag-lab-setup.log 2>&1 || true
+
+      # Clone RAG Lab if not exists
+      if [ ! -d /home/ubuntu/rag_lab ]; then
+        echo "Cloning RAG Lab repository..." >> /var/log/rag-lab-setup.log
+        cd /home/ubuntu
+        git clone https://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@github.com/sandbreak80/rag_lab.git >> /var/log/rag-lab-setup.log 2>&1
+        cd rag_lab
+        git checkout security >> /var/log/rag-lab-setup.log 2>&1
+        chown -R ubuntu:ubuntu /home/ubuntu/rag_lab
+      fi
+
+      # Build and start RAG Lab (if directory exists)
+      if [ -d /home/ubuntu/rag_lab ] && [ -f /home/ubuntu/rag_lab/docker-compose.yml ]; then
+        echo "Building RAG Lab..." >> /var/log/rag-lab-setup.log
+        cd /home/ubuntu/rag_lab
+        su - ubuntu -c "cd /home/ubuntu/rag_lab && docker compose build" >> /var/log/rag-lab-setup.log 2>&1
+
+        echo "Starting RAG Lab..." >> /var/log/rag-lab-setup.log
+        su - ubuntu -c "cd /home/ubuntu/rag_lab && docker compose up -d" >> /var/log/rag-lab-setup.log 2>&1
+
+        sleep 60
+        su - ubuntu -c "cd /home/ubuntu/rag_lab && docker compose ps" >> /var/log/rag-lab-setup.log 2>&1
+
+        # Try to create default user
+        sleep 30
+        curl -s -X POST http://localhost:8000/api/auth/register \
+          -H "Content-Type: application/json" \
+          -d '{"username":"admin","password":"ChangeMe123!","email":"admin@raglab.local"}' >> /var/log/rag-lab-setup.log 2>&1 || true
+      fi
+
+      # Mark stage 2 complete
+      touch /var/lib/rag-lab-stage2-complete
+      echo "Stage 2 complete!" >> /var/log/rag-lab-setup.log
+      date >> /var/log/rag-lab-setup.log
+
+      # Display status
+      PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+      echo "========================================" >> /var/log/rag-lab-setup.log
+      echo "RAG Lab Ready!" >> /var/log/rag-lab-setup.log
+      echo "Frontend: http://$PUBLIC_IP:3000" >> /var/log/rag-lab-setup.log
+      echo "API: http://$PUBLIC_IP:8000" >> /var/log/rag-lab-setup.log
+      echo "========================================" >> /var/log/rag-lab-setup.log
+    fi
+
+# runcmd runs only on FIRST boot
+runcmd:
+  # ==========================================
+  # STAGE 1: Install Docker + NVIDIA Drivers
+  # ==========================================
+  - echo "===== RAG Lab Stage 1 (First Boot) =====" | tee -a /var/log/rag-lab-setup.log
+  - date | tee -a /var/log/rag-lab-setup.log
+
+  # Install Docker
+  - echo "Installing Docker..." | tee -a /var/log/rag-lab-setup.log
+  - mkdir -p /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+  # Configure Docker
+  - usermod -aG docker ubuntu
+  - systemctl enable docker
+  - systemctl start docker
+
+  # Install NVIDIA drivers
+  - echo "Installing NVIDIA drivers..." | tee -a /var/log/rag-lab-setup.log
+  - apt-get install -y linux-modules-nvidia-580-aws nvidia-driver-580
+
+  # Install NVIDIA Container Toolkit
+  - echo "Installing NVIDIA Container Toolkit..." | tee -a /var/log/rag-lab-setup.log
+  - curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+  - curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+  - apt-get update
+  - apt-get install -y nvidia-container-toolkit
+  - nvidia-ctk runtime configure --runtime=docker
+  - systemctl restart docker
+
+  # Mark stage 1 complete
+  - touch /var/lib/rag-lab-stage1-complete
+  - echo "Stage 1 complete, rebooting..." | tee -a /var/log/rag-lab-setup.log
+  - date | tee -a /var/log/rag-lab-setup.log
+
+# Write helper files
+write_files:
+  - path: /home/ubuntu/deployment-info.txt
+    owner: ubuntu:ubuntu
+    permissions: '0644'
+    content: |
+      ====================================
+      RAG Lab Deployment Information
+      ====================================
+
+      Instance Type: g4dn.2xlarge
+      GPU: NVIDIA T4 (16GB)
+      OS: Ubuntu 24.04 LTS
+
+      Services:
+      - Frontend: http://PUBLIC_IP:3000
+      - API Gateway: http://PUBLIC_IP:8000
+      - Ollama: http://PUBLIC_IP:11434
+
+      Default Login:
+      Username: admin
+      Password: ChangeMe123!
+
+      Useful Commands:
+      cd /home/ubuntu/rag_lab
+      docker compose ps              # Check service status
+      docker compose logs -f         # View logs
+      docker compose restart         # Restart services
+      docker compose down            # Stop services
+      docker compose up -d           # Start services
+
+      GPU Check:
+      nvidia-smi                     # Check GPU status
+      docker exec ollama nvidia-smi  # Check GPU in Ollama
+
+      Pull Additional Models:
+      docker exec ollama ollama pull llama3.1:70b
+      docker exec ollama ollama pull qwen2.5:14b
+      docker exec ollama ollama pull gemma2:9b
+
+      Troubleshooting:
+      tail -f /var/log/rag-lab-setup.log
+      docker logs <container_name>
+      cat /var/log/cloud-init-output.log
+
+      ====================================
+
+  - path: /home/ubuntu/update-rag-lab.sh
+    owner: ubuntu:ubuntu
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # Update RAG Lab to latest version
+
+      echo "Updating RAG Lab..."
+      cd /home/ubuntu/rag_lab
+
+      # Stop services
+      docker compose down
+
+      # Pull latest code (if git repo)
+      if [ -d ".git" ]; then
+        git pull origin security
+      else
+        echo "Not a git repository - manual update needed"
+        exit 1
+      fi
+
+      # Rebuild and restart
+      docker compose build
+      docker compose up -d
+
+      echo "Update complete! Waiting for services..."
+      sleep 30
+      docker compose ps
+
+# Reboot after stage 1 completes
+power_state:
+  mode: reboot
+  message: "Rebooting to load NVIDIA drivers"
+  condition: test -f /var/lib/rag-lab-stage1-complete && test ! -f /var/lib/rag-lab-stage2-complete
+
+# Final message
+final_message: |
+  ====================================
+  RAG Lab Cloud-Init v3
+  ====================================
+
+  Using native cloud-init reboot handling:
+  - Stage 1 (first boot): Install Docker + NVIDIA
+  - Automatic reboot
+  - Stage 2 (after reboot): Deploy RAG Lab
+
+  Monitor progress:
+  tail -f /var/log/rag-lab-setup.log
+
+  ====================================
+

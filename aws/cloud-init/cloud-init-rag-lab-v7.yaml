@@ -1,0 +1,255 @@
+#cloud-config
+# RAG Lab - AWS EC2 Cloud-Init Script (v7 - Correct Multi-Boot Pattern)
+# Instance Type: g4dn.2xlarge (GPU-enabled)
+# OS: Ubuntu 24.04 LTS
+# 
+# Two-Phase Build Pattern:
+# - Phase 1 (runcmd): Install Docker + NVIDIA drivers, enable systemd service, reboot
+# - Phase 2 (systemd): Deploy RAG Lab after reboot
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - ubuntu-drivers-common
+  - curl
+  - git
+  - unzip
+  - build-essential
+  - ca-certificates
+  - gnupg
+  - lsb-release
+  - python3-pip
+
+# Write Phase 2 script and systemd service
+write_files:
+  - path: /usr/local/bin/rag-lab-phase2.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+      
+      STATE=/var/lib/rag-lab/phase2.done
+      LOG=/var/log/rag-lab-setup.log
+      
+      mkdir -p /var/lib/rag-lab
+      [ -f "$STATE" ] && exit 0
+      
+      echo "===== RAG Lab Phase 2 (After Reboot) =====" | tee -a "$LOG"
+      date | tee -a "$LOG"
+      
+      # Wait for Docker to be fully ready
+      echo "Waiting for Docker daemon..." | tee -a "$LOG"
+      COUNTER=0
+      while [ $COUNTER -lt 60 ]; do
+        if systemctl is-active --quiet docker && docker info >/dev/null 2>&1; then
+          echo "Docker is ready!" | tee -a "$LOG"
+          break
+        fi
+        COUNTER=$((COUNTER + 1))
+        echo "Waiting for Docker... ($COUNTER/60)" | tee -a "$LOG"
+        sleep 5
+      done
+      
+      # Verify GPU
+      echo "===== Verifying GPU =====" | tee -a "$LOG"
+      /usr/bin/nvidia-smi 2>&1 | tee -a "$LOG" || echo "GPU check failed (may need reboot)" | tee -a "$LOG"
+      
+      # Clone RAG Lab repository
+      if [ ! -d /home/ubuntu/rag_lab ]; then
+        echo "===== Cloning RAG Lab Repository =====" | tee -a "$LOG"
+        cd /home/ubuntu
+        sudo -u ubuntu git clone https://github.com/sandbreak80/rag_lab.git 2>&1 | tee -a "$LOG"
+        cd /home/ubuntu/rag_lab
+        sudo -u ubuntu git checkout security 2>&1 | tee -a "$LOG"
+      fi
+      
+      # Build and start RAG Lab
+      echo "===== Building RAG Lab =====" | tee -a "$LOG"
+      cd /home/ubuntu/rag_lab
+      sudo -u ubuntu docker compose build 2>&1 | tee -a "$LOG"
+      
+      echo "===== Starting RAG Lab Services =====" | tee -a "$LOG"
+      sudo -u ubuntu docker compose up -d 2>&1 | tee -a "$LOG"
+      
+      # Wait for Ollama to be healthy
+      echo "===== Waiting for Ollama =====" | tee -a "$LOG"
+      COUNTER=0
+      while [ $COUNTER -lt 60 ]; do
+        if docker exec rag-ollama ollama list >/dev/null 2>&1; then
+          echo "Ollama is healthy!" | tee -a "$LOG"
+          break
+        fi
+        COUNTER=$((COUNTER + 1))
+        echo "Waiting for Ollama... ($COUNTER/60)" | tee -a "$LOG"
+        sleep 5
+      done
+      
+      # Pull required models
+      echo "===== Pulling Required Models =====" | tee -a "$LOG"
+      docker exec rag-ollama ollama pull llama3.1:8b 2>&1 | tee -a "$LOG"
+      docker exec rag-ollama ollama pull nomic-embed-text 2>&1 | tee -a "$LOG"
+      
+      # Pull optional models in background
+      echo "===== Pulling Optional Models (Background) =====" | tee -a "$LOG"
+      (
+        docker exec rag-ollama ollama pull llama3.2:1b 2>&1 | tee -a "$LOG"
+        docker exec rag-ollama ollama pull llama3.2:3b 2>&1 | tee -a "$LOG"
+        docker exec rag-ollama ollama pull gemma2:2b 2>&1 | tee -a "$LOG"
+        docker exec rag-ollama ollama pull gemma2:9b 2>&1 | tee -a "$LOG"
+        docker exec rag-ollama ollama pull mistral:7b 2>&1 | tee -a "$LOG"
+        docker exec rag-ollama ollama pull qwen2.5:14b 2>&1 | tee -a "$LOG"
+        docker exec rag-ollama ollama pull mxbai-embed-large 2>&1 | tee -a "$LOG"
+        docker exec rag-ollama ollama pull all-minilm 2>&1 | tee -a "$LOG"
+        echo "All optional models pulled!" | tee -a "$LOG"
+      ) &
+      
+      # Verify models
+      sleep 10
+      echo "===== Current Models =====" | tee -a "$LOG"
+      docker exec rag-ollama ollama list 2>&1 | tee -a "$LOG"
+      
+      # Wait for services
+      echo "===== Service Status =====" | tee -a "$LOG"
+      sleep 60
+      cd /home/ubuntu/rag_lab
+      sudo -u ubuntu docker compose ps 2>&1 | tee -a "$LOG"
+      
+      # Create admin user
+      echo "===== Creating Admin User =====" | tee -a "$LOG"
+      sleep 30
+      curl -s -X POST http://localhost:8000/api/auth/register \
+        -H "Content-Type: application/json" \
+        -d '{"username":"admin","password":"ChangeMe123!","email":"admin@raglab.local"}' >> "$LOG" 2>&1 || echo "User creation pending" | tee -a "$LOG"
+      
+      # Mark complete
+      touch "$STATE"
+      echo "===== Phase 2 Complete! =====" | tee -a "$LOG"
+      date | tee -a "$LOG"
+      
+      # Display info
+      PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+      cat <<EOF | tee -a "$LOG"
+      ========================================
+      RAG Lab Deployment Complete!
+      Frontend: http://$PUBLIC_IP:3000
+      API: http://$PUBLIC_IP:8000
+      Ollama: http://$PUBLIC_IP:11434
+      ========================================
+      NOTE: Optional models downloading in background
+      Services may take 5-10 min to be fully healthy
+      ========================================
+      EOF
+  
+  - path: /etc/systemd/system/rag-lab-phase2.service
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=RAG Lab Phase 2 Deployment (Post-Reboot)
+      After=network-online.target docker.service
+      Wants=network-online.target
+      ConditionPathExists=!/var/lib/rag-lab/phase2.done
+      
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/rag-lab-phase2.sh
+      StandardOutput=append:/var/log/rag-lab-setup.log
+      StandardError=append:/var/log/rag-lab-setup.log
+      
+      [Install]
+      WantedBy=multi-user.target
+
+  - path: /home/ubuntu/deployment-info.txt
+    owner: ubuntu:ubuntu
+    permissions: '0644'
+    content: |
+      ====================================
+      RAG Lab Deployment Information
+      ====================================
+      
+      Instance Type: g4dn.2xlarge
+      GPU: NVIDIA T4 (16GB)
+      OS: Ubuntu 24.04 LTS
+      
+      Services:
+      - Frontend: http://PUBLIC_IP:3000
+      - API Gateway: http://PUBLIC_IP:8000
+      - Ollama: http://PUBLIC_IP:11434
+      
+      Default Login:
+      Username: admin
+      Password: ChangeMe123!
+      
+      Models:
+      Required: llama3.1:8b, nomic-embed-text
+      Optional: llama3.2:1b/3b, gemma2:2b/9b, mistral:7b, qwen2.5:14b, mxbai-embed-large, all-minilm
+      
+      Commands:
+      cd /home/ubuntu/rag_lab
+      docker compose ps
+      docker compose logs -f
+      docker exec rag-ollama ollama list
+      nvidia-smi
+      tail -f /var/log/rag-lab-setup.log
+
+# Phase 1: Install Docker + NVIDIA (runs once on first boot)
+runcmd:
+  - echo "===== RAG Lab Phase 1 (First Boot) =====" | tee -a /var/log/rag-lab-setup.log
+  - date | tee -a /var/log/rag-lab-setup.log
+  
+  # Install Docker
+  - echo "Installing Docker..." | tee -a /var/log/rag-lab-setup.log
+  - mkdir -p /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - usermod -aG docker ubuntu
+  - systemctl enable docker
+  - systemctl start docker
+  
+  # Install NVIDIA drivers
+  - echo "Installing NVIDIA drivers..." | tee -a /var/log/rag-lab-setup.log
+  - ubuntu-drivers install --gpgpu 2>&1 | tee -a /var/log/rag-lab-setup.log
+  
+  # Install NVIDIA Container Toolkit
+  - echo "Installing NVIDIA Container Toolkit..." | tee -a /var/log/rag-lab-setup.log
+  - curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+  - curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+  - apt-get update
+  - apt-get install -y nvidia-container-toolkit
+  - nvidia-ctk runtime configure --runtime=docker
+  - systemctl restart docker
+  
+  # Enable Phase 2 systemd service
+  - systemctl daemon-reload
+  - systemctl enable rag-lab-phase2.service
+  
+  # Mark Phase 1 complete
+  - echo "Phase 1 complete, will reboot..." | tee -a /var/log/rag-lab-setup.log
+  - date | tee -a /var/log/rag-lab-setup.log
+
+# Reboot cleanly after Phase 1
+power_state:
+  mode: reboot
+  message: "Rebooting to activate NVIDIA drivers"
+  timeout: 30
+  condition: true
+
+final_message: |
+  ====================================
+  RAG Lab Cloud-Init Phase 1 Complete!
+  ====================================
+  
+  Rebooting to activate GPU drivers.
+  Phase 2 will run automatically after reboot via systemd.
+  
+  Monitor progress:
+  ssh ubuntu@PUBLIC_IP 'tail -f /var/log/rag-lab-setup.log'
+  
+  Check Phase 2 service:
+  systemctl status rag-lab-phase2.service
+  
+  Total deployment time: ~10-15 minutes
+  ====================================
+

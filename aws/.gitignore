@@ -1,0 +1,10 @@
+# AWS instance info (contains IPs and instance IDs)
+instance-info.txt
+
+# SSH keys
+*.pem
+
+# Temporary files
+*.tmp
+*.log
+

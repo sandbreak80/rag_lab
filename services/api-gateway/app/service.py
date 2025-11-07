@@ -42,6 +42,7 @@ enhancement_client = EnhancementClient(PROMPT_ENHANCEMENT_URL)
 
 # Service registry
 AUTH_SERVICE_URL = os.getenv('AUTH_SERVICE_URL', 'http://auth-service:8014')
+RESEARCH_AGENT_URL = os.getenv('RESEARCH_AGENT_URL', 'http://research-agent:8015')
 
 SERVICES = {
     'ingest': INGEST_SERVICE_URL,
@@ -53,6 +54,7 @@ SERVICES = {
     'security': SECURITY_GUARDRAILS_URL,
     'enhancement': PROMPT_ENHANCEMENT_URL,
     'auth': AUTH_SERVICE_URL,
+    'research_agent': RESEARCH_AGENT_URL,
 }
 
 def _detect_hallucinated_citations(answer: str, sources: list) -> list:
@@ -964,6 +966,45 @@ def proxy_auth(subpath):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ============================================================================
+# RESEARCH AGENT ENDPOINTS
+# ============================================================================
+
+@app.route('/api/research-agent/status', methods=['GET'])
+def research_agent_status():
+    """Get research agent status"""
+    try:
+        response = requests.get(f"{RESEARCH_AGENT_URL}/status", timeout=10)
+        return Response(response.content, status=response.status_code, content_type='application/json')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 503
+
+@app.route('/api/research-agent/trigger/custom', methods=['POST'])
+def research_agent_trigger_custom():
+    """Trigger custom fetch with parameters"""
+    try:
+        response = requests.post(
+            f"{RESEARCH_AGENT_URL}/trigger/custom",
+            json=request.get_json(),
+            timeout=10
+        )
+        return Response(response.content, status=response.status_code, content_type='application/json')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 503
+
+@app.route('/api/research-agent/sources', methods=['GET'])
+def research_agent_sources():
+    """Get all sources"""
+    try:
+        response = requests.get(f"{RESEARCH_AGENT_URL}/sources", timeout=10)
+        return Response(response.content, status=response.status_code, content_type='application/json')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 503
+
+# ============================================================================
+# ROOT
+# ============================================================================
+
 @app.route('/')
 def root():
     """API Gateway info"""
@@ -980,7 +1021,8 @@ def root():
             'search': '/api/search',
             'chat': '/api/chat',
             'ask': '/api/ask',
-            'auth': '/api/auth/*'
+            'auth': '/api/auth/*',
+            'research_agent': '/api/research-agent/*'
         }
     })
 

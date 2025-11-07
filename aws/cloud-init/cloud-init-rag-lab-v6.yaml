@@ -1,0 +1,360 @@
+#cloud-config
+# RAG Lab - AWS EC2 Cloud-Init Script (v6 - Production Ready with Proper Timing)
+# Instance Type: g4dn.2xlarge (GPU-enabled)
+# OS: Ubuntu 24.04 LTS
+# Purpose: Fully automated deployment with proper service orchestration
+#
+# Key Improvements in v6:
+# - Use runcmd with conditional checks instead of bootcmd
+# - Properly wait for systemd to fully start Docker
+# - Use ONLY Docker Compose (no standalone Ollama)
+# - Pull models into compose-managed Ollama container
+# - Proper service health monitoring
+# - All models (required + optional) pulled automatically
+
+# System updates and package installation
+package_update: true
+package_upgrade: true
+
+packages:
+  - ubuntu-drivers-common
+  - curl
+  - git
+  - unzip
+  - build-essential
+  - ca-certificates
+  - gnupg
+  - lsb-release
+  - python3-pip
+
+# runcmd runs only on FIRST boot (Stage 1)
+runcmd:
+  - echo "===== RAG Lab Stage 1 (First Boot) =====" | tee -a /var/log/rag-lab-setup.log
+  - date | tee -a /var/log/rag-lab-setup.log
+
+  # Install Docker
+  - echo "Installing Docker..." | tee -a /var/log/rag-lab-setup.log
+  - mkdir -p /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+  # Configure Docker
+  - usermod -aG docker ubuntu
+  - systemctl enable docker
+  - systemctl start docker
+
+  # Install NVIDIA drivers
+  - echo "Installing NVIDIA drivers..." | tee -a /var/log/rag-lab-setup.log
+  - ubuntu-drivers install --gpgpu 2>&1 | tee -a /var/log/rag-lab-setup.log
+
+  # Install NVIDIA Container Toolkit
+  - echo "Installing NVIDIA Container Toolkit..." | tee -a /var/log/rag-lab-setup.log
+  - curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+  - curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+  - apt-get update
+  - apt-get install -y nvidia-container-toolkit
+  - nvidia-ctk runtime configure --runtime=docker
+  - systemctl restart docker
+
+  # Enable Stage 2 systemd service
+  - systemctl daemon-reload
+  - systemctl enable rag-lab-stage2.service
+
+  # Mark stage 1 complete
+  - touch /var/lib/rag-lab-stage1-complete
+  - echo "Stage 1 complete, will reboot..." | tee -a /var/log/rag-lab-setup.log
+  - date | tee -a /var/log/rag-lab-setup.log
+
+# Cleanly reboot after Stage 1
+power_state:
+  delay: now
+  mode: reboot
+  message: "Rebooting to activate NVIDIA drivers"
+  timeout: 30
+  condition: "test -f /var/lib/rag-lab-stage1-complete && ! test -f /var/lib/rag-lab-stage2-complete"
+
+# Write Stage 2 systemd service and script
+write_files:
+  - path: /usr/local/bin/rag-lab-stage2.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+
+      # State file to ensure this only runs once
+      STATE_FILE=/var/lib/rag-lab-stage2-complete
+      [ -f "$STATE_FILE" ] && exit 0
+
+      exec &> >(tee -a /var/log/rag-lab-setup.log)
+
+      echo "===== RAG Lab Stage 2 (After Reboot) ====="
+      date
+
+      # Wait for system to stabilize
+      echo "Waiting for system to stabilize..."
+      sleep 30
+
+      # Wait for Docker to be fully ready
+      echo "Waiting for Docker daemon to be fully ready..."
+      DOCKER_READY=0
+      COUNTER=0
+      while [ $COUNTER -lt 60 ]; do
+        if systemctl is-active --quiet docker && docker info >/dev/null 2>&1 && docker ps >/dev/null 2>&1; then
+          DOCKER_READY=1
+          echo "Docker is ready!"
+          break
+        fi
+        COUNTER=$((COUNTER + 1))
+        echo "Waiting for Docker... ($COUNTER/60)"
+        sleep 5
+      done
+
+      if [ $DOCKER_READY -eq 0 ]; then
+        echo "ERROR: Docker failed to start!"
+        exit 1
+      fi
+
+      # Verify GPU
+      echo "===== Verifying GPU ====="
+      nvidia-smi
+      echo "GPU verified!"
+
+      # Clone RAG Lab repository
+      if [ ! -d /home/ubuntu/rag_lab ]; then
+        echo "===== Cloning RAG Lab Repository ====="
+        su - ubuntu -c "git clone https://github.com/sandbreak80/rag_lab.git /home/ubuntu/rag_lab"
+        chown -R ubuntu:ubuntu /home/ubuntu/rag_lab
+        su - ubuntu -c "cd /home/ubuntu/rag_lab && git checkout security"
+      fi
+
+      # Build and start RAG Lab services
+      echo "===== Building RAG Lab ====="
+      su - ubuntu -c "cd /home/ubuntu/rag_lab && docker compose build"
+
+      echo "===== Starting RAG Lab Services ====="
+      su - ubuntu -c "cd /home/ubuntu/rag_lab && docker compose up -d"
+
+      # Wait for Ollama to be healthy
+      echo "===== Waiting for Ollama to be healthy ====="
+      OLLAMA_READY=0
+      COUNTER=0
+      while [ $COUNTER -lt 60 ]; do
+        if docker exec rag-ollama ollama list >/dev/null 2>&1; then
+          OLLAMA_READY=1
+          echo "Ollama is healthy!"
+          break
+        fi
+        COUNTER=$((COUNTER + 1))
+        echo "Waiting for Ollama... ($COUNTER/60)"
+        sleep 5
+      done
+
+      if [ $OLLAMA_READY -eq 0 ]; then
+        echo "WARNING: Ollama failed to become healthy"
+      fi
+
+      # Pull required models
+      echo "===== Pulling Required Models ====="
+      docker exec rag-ollama ollama pull llama3.1:8b
+      docker exec rag-ollama ollama pull nomic-embed-text
+
+      # Pull optional models in background
+      echo "===== Pulling Optional Models (Background) ====="
+      (
+        docker exec rag-ollama ollama pull llama3.2:1b
+        docker exec rag-ollama ollama pull llama3.2:3b
+        docker exec rag-ollama ollama pull gemma2:2b
+        docker exec rag-ollama ollama pull gemma2:9b
+        docker exec rag-ollama ollama pull mistral:7b
+        docker exec rag-ollama ollama pull qwen2.5:14b
+        docker exec rag-ollama ollama pull mxbai-embed-large
+        docker exec rag-ollama ollama pull all-minilm
+        echo "All optional models pulled!"
+      ) >> /var/log/rag-lab-setup.log 2>&1 &
+
+      # Verify models
+      sleep 10
+      echo "===== Verifying Models ====="
+      docker exec rag-ollama ollama list
+
+      # Wait for services to initialize
+      echo "===== Waiting for services to initialize ====="
+      sleep 60
+      su - ubuntu -c "cd /home/ubuntu/rag_lab && docker compose ps"
+
+      # Create default admin user
+      echo "===== Creating admin user ====="
+      sleep 30
+      curl -s -X POST http://localhost:8000/api/auth/register \
+        -H "Content-Type: application/json" \
+        -d '{"username":"admin","password":"ChangeMe123!","email":"admin@raglab.local"}' || echo "User creation will be available after services fully start"
+
+      # Mark complete
+      touch "$STATE_FILE"
+      echo "===== Stage 2 Complete! ====="
+      date
+
+      # Display final status
+      PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+      echo "========================================"
+      echo "RAG Lab Deployment Complete!"
+      echo "Frontend: http://$PUBLIC_IP:3000"
+      echo "API: http://$PUBLIC_IP:8000"
+      echo "Ollama: http://$PUBLIC_IP:11434"
+      echo "========================================"
+      echo "NOTE: Optional models are still downloading in background"
+      echo "Services may take 5-10 minutes to become fully healthy"
+      echo "========================================"
+
+  - path: /etc/systemd/system/rag-lab-stage2.service
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=RAG Lab Stage 2 - Post-reboot deployment
+      After=network-online.target docker.service
+      Wants=network-online.target
+      ConditionPathExists=!/var/lib/rag-lab-stage2-complete
+      ConditionPathExists=/var/lib/rag-lab-stage1-complete
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/rag-lab-stage2.sh
+      RemainAfterExit=yes
+      StandardOutput=journal+console
+      StandardError=journal+console
+
+      [Install]
+      WantedBy=multi-user.target
+
+  - path: /home/ubuntu/deployment-info.txt
+    owner: ubuntu:ubuntu
+    permissions: '0644'
+    content: |
+      ====================================
+      RAG Lab Deployment Information
+      ====================================
+
+      Instance Type: g4dn.2xlarge
+      GPU: NVIDIA T4 (16GB)
+      OS: Ubuntu 24.04 LTS
+
+      Services:
+      - Frontend: http://PUBLIC_IP:3000
+      - API Gateway: http://PUBLIC_IP:8000
+      - Ollama: http://PUBLIC_IP:11434
+
+      Default Login:
+      Username: admin
+      Password: ChangeMe123!
+
+      Models Installed:
+      Required:
+        - llama3.1:8b (Chat/LLM - 4.9GB)
+        - nomic-embed-text (Embeddings - 274MB)
+
+      Optional (downloading in background):
+        - llama3.2:1b, llama3.2:3b (Fast, small models)
+        - gemma2:2b, gemma2:9b (Google models)
+        - mistral:7b (Fast alternative)
+        - qwen2.5:14b (Best quality for 16GB GPU)
+        - mxbai-embed-large, all-minilm (Embedding alternatives)
+
+      Useful Commands:
+      cd /home/ubuntu/rag_lab
+      docker compose ps              # Check service status
+      docker compose logs -f         # View logs
+      docker compose logs <service>  # View specific service
+      docker compose restart         # Restart all services
+      docker compose down            # Stop services
+      docker compose up -d           # Start services
+      docker exec rag-ollama ollama list # List models
+
+      GPU Check:
+      nvidia-smi                     # Check GPU status
+      docker exec rag-ollama nvidia-smi  # Check GPU in Ollama
+
+      Monitor Setup:
+      tail -f /var/log/rag-lab-setup.log  # Watch deployment log
+      watch docker compose ps             # Watch service status
+
+      Troubleshooting:
+      sudo systemctl status docker
+      docker logs <container_name>
+      docker compose logs -f --tail=100
+      cat /var/log/rag-lab-setup.log
+
+      ====================================
+
+  - path: /home/ubuntu/update-rag-lab.sh
+    owner: ubuntu:ubuntu
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # Update RAG Lab to latest version
+
+      echo "Updating RAG Lab..."
+      cd /home/ubuntu/rag_lab
+
+      # Stop services
+      docker compose down
+
+      # Pull latest code
+      git pull origin security
+
+      # Rebuild and restart
+      docker compose build
+      docker compose up -d
+
+      echo "Update complete! Waiting for services to be healthy..."
+      sleep 30
+      docker compose ps
+
+  - path: /home/ubuntu/pull-optional-models.sh
+    owner: ubuntu:ubuntu
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # Pull optional Ollama models
+
+      echo "Pulling optional models..."
+      docker exec rag-ollama ollama pull llama3.2:1b
+      docker exec rag-ollama ollama pull llama3.2:3b
+      docker exec rag-ollama ollama pull gemma2:2b
+      docker exec rag-ollama ollama pull gemma2:9b
+      docker exec rag-ollama ollama pull mistral:7b
+      docker exec rag-ollama ollama pull qwen2.5:14b
+      docker exec rag-ollama ollama pull mxbai-embed-large
+      docker exec rag-ollama ollama pull all-minilm
+
+      echo "All optional models pulled!"
+      docker exec rag-ollama ollama list
+
+# Final message
+final_message: |
+  ====================================
+  RAG Lab Cloud-Init Complete!
+  ====================================
+
+  The system has been configured with:
+  ✅ NVIDIA GPU drivers
+  ✅ Docker with GPU support
+  ✅ Ollama with required models
+  ✅ RAG Lab (all 23 containers)
+
+  IMPORTANT: Services may take 5-10 minutes to fully start.
+  Optional models are downloading in background (~30GB total).
+
+  Access the application:
+  Frontend: http://PUBLIC_IP:3000
+  API: http://PUBLIC_IP:8000
+
+  View deployment info:
+  cat /home/ubuntu/deployment-info.txt
+
+  Monitor progress:
+  tail -f /var/log/rag-lab-setup.log
+
+  ====================================
+

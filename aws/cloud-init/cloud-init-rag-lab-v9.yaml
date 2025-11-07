@@ -54,15 +54,15 @@ write_files:
 
       # Pull models using the project's model list
       echo "===== Pulling Ollama Models =====" | tee -a "$LOG"
-      
+
       # Required models (from scripts/pull-ollama-models.sh)
       CHAT_MODEL="llama3.1:8b"
       EMBEDDING_MODEL="nomic-embed-text"
-      
+
       echo "Pulling required models..." | tee -a "$LOG"
       docker exec rag-ollama ollama pull "$CHAT_MODEL" 2>&1 | tee -a "$LOG"
       docker exec rag-ollama ollama pull "$EMBEDDING_MODEL" 2>&1 | tee -a "$LOG"
-      
+
       # Optional models (from scripts/pull-ollama-models.sh) - in background
       echo "Pulling optional models in background..." | tee -a "$LOG"
       (

@@ -47,12 +47,12 @@ if [ "$LOCAL_COMMIT" = "$REMOTE_COMMIT" ]; then
 else
     BEHIND=$(git rev-list HEAD..origin/$BRANCH --count 2>/dev/null || echo "0")
     AHEAD=$(git rev-list origin/$BRANCH..HEAD --count 2>/dev/null || echo "0")
-    
+
     if [ "$BEHIND" -gt 0 ]; then
         echo -e "${YELLOW}⚠️  Local is $BEHIND commit(s) BEHIND GitHub${NC}"
         echo "   Action: git pull origin $BRANCH"
     fi
-    
+
     if [ "$AHEAD" -gt 0 ]; then
         echo -e "${YELLOW}⚠️  Local is $AHEAD commit(s) AHEAD of GitHub${NC}"
         echo "   Action: git push origin $BRANCH"
@@ -77,9 +77,9 @@ if [ "$AWS_COMMIT" = "unknown" ]; then
 else
     echo "AWS branch: $AWS_BRANCH"
     echo "AWS commit: $AWS_COMMIT"
-    
+
     LOCAL_COMMIT_SHORT=$(git rev-parse --short HEAD)
-    
+
     if [ "$AWS_COMMIT" = "$LOCAL_COMMIT_SHORT" ]; then
         echo -e "${GREEN}✅ AWS and Local are in sync${NC}"
     else

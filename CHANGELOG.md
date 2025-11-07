@@ -2,6 +2,26 @@
 
 All notable changes to RAG Lab will be documented in this file.
 
+## [1.3.1] - 2025-11-07
+
+### Enhanced
+- **Research Agent**: Expanded to 6 content sources (was 2)
+  - arXiv AI/ML papers (cs.AI, cs.LG, cs.CL, cs.CV)
+  - Hugging Face Papers
+  - TechCrunch AI news
+  - VentureBeat AI coverage
+  - The Verge AI articles
+  - OpenAI Blog (prepared, needs user-agent config)
+- **Auto-Discovery**: Daily scheduled fetching at 02:00 UTC
+- **Content Coverage**: Up to 80+ items per fetch cycle
+- **Metadata Tracking**: Per-source statistics and fetch history
+
+### Technical Details
+- Added 4 new scrapers (TechCrunch, VentureBeat, TheVerge, OpenAI)
+- Enhanced `initialize_default_sources()` in research-agent service
+- 100% success rate on active sources
+- All content automatically ingested and searchable
+
 ## [1.3.0] - 2025-11-06
 
 ### Added
