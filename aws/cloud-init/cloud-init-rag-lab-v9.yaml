@@ -52,20 +52,34 @@ write_files:
         sleep 5
       done
 
-      # Pull models
-      docker exec rag-ollama ollama pull llama3.1:8b 2>&1 | tee -a "$LOG"
-      docker exec rag-ollama ollama pull nomic-embed-text 2>&1 | tee -a "$LOG"
-
-      # Optional models in background
+      # Pull models using the project's model list
+      echo "===== Pulling Ollama Models =====" | tee -a "$LOG"
+      
+      # Required models (from scripts/pull-ollama-models.sh)
+      CHAT_MODEL="llama3.1:8b"
+      EMBEDDING_MODEL="nomic-embed-text"
+      
+      echo "Pulling required models..." | tee -a "$LOG"
+      docker exec rag-ollama ollama pull "$CHAT_MODEL" 2>&1 | tee -a "$LOG"
+      docker exec rag-ollama ollama pull "$EMBEDDING_MODEL" 2>&1 | tee -a "$LOG"
+      
+      # Optional models (from scripts/pull-ollama-models.sh) - in background
+      echo "Pulling optional models in background..." | tee -a "$LOG"
       (
-        docker exec rag-ollama ollama pull llama3.2:1b 2>&1 | tee -a "$LOG"
-        docker exec rag-ollama ollama pull llama3.2:3b 2>&1 | tee -a "$LOG"
-        docker exec rag-ollama ollama pull gemma2:2b 2>&1 | tee -a "$LOG"
-        docker exec rag-ollama ollama pull gemma2:9b 2>&1 | tee -a "$LOG"
-        docker exec rag-ollama ollama pull mistral:7b 2>&1 | tee -a "$LOG"
-        docker exec rag-ollama ollama pull qwen2.5:14b 2>&1 | tee -a "$LOG"
-        docker exec rag-ollama ollama pull mxbai-embed-large 2>&1 | tee -a "$LOG"
-        docker exec rag-ollama ollama pull all-minilm 2>&1 | tee -a "$LOG"
+        OPTIONAL_MODELS=(
+          "llama3.2:1b"
+          "llama3.2:3b"
+          "gemma2:2b"
+          "gemma2:9b"
+          "mistral:7b"
+          "qwen2.5:14b"
+          "mxbai-embed-large"
+          "all-minilm"
+        )
+        for model in "${OPTIONAL_MODELS[@]}"; do
+          echo "Pulling $model..." | tee -a "$LOG"
+          docker exec rag-ollama ollama pull "$model" 2>&1 | tee -a "$LOG" || echo "Warning: Failed to pull $model" | tee -a "$LOG"
+        done
         echo "All optional models pulled!" | tee -a "$LOG"
       ) &
 
