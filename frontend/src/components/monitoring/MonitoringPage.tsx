@@ -2,10 +2,14 @@ import React from 'react';
 import { ExternalLink, Activity, Database, Cpu, Gauge } from 'lucide-react';
 
 export function MonitoringPage() {
-  // Get the current host for Grafana URL
+  // Get the current host for Grafana and Prometheus URLs
   const grafanaUrl = window.location.hostname === 'localhost'
     ? 'http://localhost:3001'
     : `http://${window.location.hostname}:3001`;
+
+  const prometheusUrl = window.location.hostname === 'localhost'
+    ? 'http://localhost:9090'
+    : `http://${window.location.hostname}:9090`;
 
   const dashboardUrl = `${grafanaUrl}/d/rag-lab-overview/rag-lab-system-overview?orgId=1&refresh=10s&kiosk`;
 
@@ -34,7 +38,7 @@ export function MonitoringPage() {
               Open Grafana
             </a>
             <a
-              href="http://localhost:9090"
+              href={prometheusUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
