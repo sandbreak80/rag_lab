@@ -28,10 +28,9 @@
       "description": "Shows up (1) or down (0) status for all Docker containers",
       "targets": [
         {
-          "expr": "max_over_time(container_last_seen{name=~\"rag-.*\"}[1m]) > bool (time() - 60)",
+          "expr": "(time() - container_last_seen{name=~\"rag-.*\"}) < 60",
           "legendFormat": "{{name}}",
-          "refId": "A",
-          "instant": true
+          "refId": "A"
         }
       ],
       "fieldConfig": {

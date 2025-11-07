@@ -12,13 +12,16 @@ bug - submit promot - navigating away page (checking metrics) breaks the respons
 bug - its possible that web search results are being classified as RAG instead of web - this is a NEW bug that was introduced.
 bug - document list does not use pagination. Document titles are so long that they overflow their display area.
 bug - performance breakdown is missing monponents or always has 0 time for components. I want to see time in knowledge graph.
+If the knowledge praph is reset, the research agent control panel still shows the old number of itsms ingested http://54.190.74.93:3000/research
 feature request - We want a way to visualize the knowledge graphs
 feature - MCP integration into lab - not sure how or what use case
     **Access to real time information - look for news or some other COTS MCP we can leverage calls out to with the RAG pipeline
-
 feature request - we want a way to see whats in the embedding models
 feature reques - add page scraping to the main UI. Add links in text window list and have scraping run
 MAJOR update - add to-do add vLLM to lab (run side by side ollama for now? toggle in UI? too complex?)
+
+
+
 
 
 LAB - Integrate SPLUNK
@@ -30,12 +33,12 @@ https://lantern.splunk.com/Observability_Use_Cases/Monitor_Business/Creating%2C_
 https://docs.splunk.com/Documentation/DSDL/5.2.2/User/AboutLLMRAG
 https://opentelemetry.io/blog/2024/llm-observability/
 https://github.com/openlit/openlit
-oten telemetry collector requires an operator - is k8 required!?!?
+oten telemetry collector requires an operator - is k8 required!?!? - huge rework
 https://www.splunk.com/en_us/blog/artificial-intelligence/how-we-built-end-to-end-llm-observability-with-splunk-and-rag.html
 https://lantern.splunk.com/Observability_Use_Cases/Monitor_Business/Instrumenting_LLM_applications_with_OpenLLMetry_and_Splunk
 https://opentelemetry.io/blog/2024/llm-observability/
 https://www.meibel.ai/post/the-right-context-at-the-right-time-designing-with-rag-and-mcp
-
+https://help.splunk.com/en/splunk-observability-cloud/manage-data/available-data-sources/supported-integrations-in-splunk-observability-cloud/opentelemetry-other-ingestion-methods/monitor-applications-with-prometheus-metrics
 
 
 ollama metrics! We need them. seperate response from embeddings and main model call? ollama still work?
