@@ -79,6 +79,24 @@ if [ "$SG_ID" = "None" ]; then
         --group-id $SG_ID \
         --ip-permissions IpProtocol=tcp,FromPort=11434,ToPort=11434,IpRanges='[{CidrIp=0.0.0.0/0,Description="Ollama API"}]'
 
+    # Grafana (port 3001) - for monitoring dashboard
+    aws ec2 authorize-security-group-ingress \
+        --region $REGION \
+        --group-id $SG_ID \
+        --ip-permissions IpProtocol=tcp,FromPort=3001,ToPort=3001,IpRanges='[{CidrIp=0.0.0.0/0,Description="Grafana"}]'
+
+    # Prometheus (port 9090) - for metrics collection
+    aws ec2 authorize-security-group-ingress \
+        --region $REGION \
+        --group-id $SG_ID \
+        --ip-permissions IpProtocol=tcp,FromPort=9090,ToPort=9090,IpRanges='[{CidrIp=0.0.0.0/0,Description="Prometheus"}]'
+
+    # cAdvisor (port 9080) - for container metrics
+    aws ec2 authorize-security-group-ingress \
+        --region $REGION \
+        --group-id $SG_ID \
+        --ip-permissions IpProtocol=tcp,FromPort=9080,ToPort=9080,IpRanges='[{CidrIp=0.0.0.0/0,Description="cAdvisor"}]'
+
     echo -e "${GREEN}✓ Security group created and configured${NC}"
 else
     echo -e "${GREEN}✓ Using existing security group: $SG_ID${NC}"
