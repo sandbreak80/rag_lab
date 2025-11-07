@@ -879,7 +879,7 @@ services:
   # NVIDIA DCGM Exporter - GPU Metrics (Only for NVIDIA GPU systems)
   # To enable: docker compose --profile gpu up -d
   dcgm-exporter:
-    image: nvcr.io/nvidia/k8s/dcgm-exporter:3.1.3-3.1.4-ubuntu20.04
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:3.1.8-3.1.5-ubuntu20.04
     container_name: rag-dcgm-exporter
     profiles: ["gpu"]  # Optional: only start with --profile gpu
     networks:
