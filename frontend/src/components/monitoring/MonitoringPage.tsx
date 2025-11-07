@@ -14,9 +14,9 @@ export function MonitoringPage() {
   const dashboardUrl = `${grafanaUrl}/d/rag-lab-overview/rag-lab-system-overview?orgId=1&refresh=10s&kiosk`;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full min-h-screen flex flex-col">
       {/* Header */}
-      <div className="bg-card border-b p-6">
+      <div className="bg-card border-b p-6 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
@@ -94,7 +94,7 @@ export function MonitoringPage() {
       </div>
 
       {/* Grafana Dashboard Embed */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 min-h-[800px] overflow-hidden">
         <iframe
           src={dashboardUrl}
           className="w-full h-full border-0"
@@ -104,7 +104,7 @@ export function MonitoringPage() {
       </div>
 
       {/* Footer Help */}
-      <div className="bg-card border-t p-4">
+      <div className="bg-card border-t p-4 flex-shrink-0">
         <div className="text-sm text-muted-foreground flex items-center justify-between">
           <div>
             <strong>Tips:</strong> Click any panel to zoom • Use time range picker (top right) • Refresh: 10s
