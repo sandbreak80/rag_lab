@@ -93,22 +93,22 @@
       "description": "Real-time statistics from ChromaDB and Knowledge Graph",
       "targets": [
         {
-          "expr": "total_chunks",
+          "expr": "vector_db_total_chunks",
           "legendFormat": "Chunks",
           "refId": "A"
         },
         {
-          "expr": "unique_files",
+          "expr": "vector_db_unique_files",
           "legendFormat": "Documents",
           "refId": "B"
         },
         {
-          "expr": "graph_nodes",
+          "expr": "graph_service_graph_nodes",
           "legendFormat": "Graph Nodes",
           "refId": "C"
         },
         {
-          "expr": "graph_edges",
+          "expr": "graph_service_graph_edges",
           "legendFormat": "Graph Edges",
           "refId": "D"
         }
