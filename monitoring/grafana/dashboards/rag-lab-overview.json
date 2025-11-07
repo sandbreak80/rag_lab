@@ -1,14 +1,14 @@
 {
-  "dashboard": {
-    "title": "RAG Lab - System Overview",
-    "uid": "rag-lab-overview",
-    "timezone": "browser",
-    "schemaVersion": 38,
-    "refresh": "10s",
-    "time": {
-      "from": "now-15m",
-      "to": "now"
-    },
+  "title": "RAG Lab - System Overview",
+  "uid": "rag-lab-overview",
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "refresh": "10s",
+  "tags": ["rag-lab", "monitoring"],
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
     "panels": [
       {
         "id": 1,
@@ -176,8 +176,17 @@
           }
         }
       }
-    ]
+    ],
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
+  "style": "dark",
+  "templating": {
+    "list": []
   },
-  "overwrite": true
+  "timepicker": {},
+  "weekStart": ""
 }
 
