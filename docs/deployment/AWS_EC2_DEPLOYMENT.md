@@ -532,8 +532,8 @@ aws ec2 create-image \
 
 ---
 
-**Deployment Time:** 10-15 minutes automated  
-**Cost:** ~$18/day running, ~$0.50/day stopped  
+**Deployment Time:** 10-15 minutes automated
+**Cost:** ~$18/day running, ~$0.50/day stopped
 **Maintenance:** Auto-updates via cloud-init or update script
 
 ---

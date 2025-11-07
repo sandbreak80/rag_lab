@@ -76,7 +76,7 @@ OLD_RULES=$(aws ec2 describe-security-groups \
 echo "$OLD_RULES" | jq -c '.[]' | while read rule; do
     # Extract CidrIp if present
     CIDR=$(echo "$rule" | jq -r '.IpRanges[0].CidrIp // empty')
-    
+
     if [ ! -z "$CIDR" ]; then
         echo "  Removing rule for $CIDR"
         aws ec2 revoke-security-group-ingress \

@@ -69,13 +69,13 @@ runcmd:
       --region $REGION \
       --query SecretString \
       --output text 2>/dev/null || echo "")
-    
+
     if [ -z "$GITHUB_TOKEN" ]; then
       echo "ERROR: Could not retrieve GitHub token from Secrets Manager"
       echo "Please create secret 'rag-lab/github-token' with your GitHub PAT"
       exit 1
     fi
-    
+
     # Store for use by ubuntu user
     echo "$GITHUB_TOKEN" > /tmp/github_token
     chmod 600 /tmp/github_token
@@ -87,16 +87,16 @@ runcmd:
   - |
     cd /home/ubuntu
     GITHUB_TOKEN=$(cat /tmp/github_token)
-    
+
     # Clone using token authentication (works for private repos)
     su - ubuntu -c "git clone https://${GITHUB_TOKEN}@github.com/sandbreak80/rag_lab.git /home/ubuntu/rag_lab"
-    
+
     # Remove token from git config for security
     su - ubuntu -c "cd /home/ubuntu/rag_lab && git remote set-url origin https://github.com/sandbreak80/rag_lab.git"
-    
+
     # Clean up token
     rm -f /tmp/github_token
-    
+
     chown -R ubuntu:ubuntu /home/ubuntu/rag_lab
     echo "Repository cloned successfully"
 
@@ -147,33 +147,33 @@ write_files:
       ====================================
       RAG Lab Deployment Information
       ====================================
-      
+
       Instance Type: g4dn.2xlarge
       GPU: NVIDIA T4 (16GB)
       OS: Ubuntu 24.04 LTS
       GitHub: Private repository (token-authenticated)
-      
+
       Services:
       - Frontend: http://PUBLIC_IP:3000
       - API Gateway: http://PUBLIC_IP:8000
       - Ollama: http://PUBLIC_IP:11434
-      
+
       Access Methods:
       1. AWS Session Manager (Recommended - No SSH key needed):
          aws ssm start-session --target INSTANCE_ID
-      
+
       2. SSH (if security group allows):
          ssh -i your-key.pem ubuntu@PUBLIC_IP
-      
+
       Useful Commands:
       cd /home/ubuntu/rag_lab
       docker compose ps              # Check service status
       docker compose logs -f         # View logs
       docker compose restart         # Restart services
-      
+
       Update to Latest:
       /home/ubuntu/update-rag-lab.sh
-      
+
       ====================================
 
   - path: /home/ubuntu/update-rag-lab.sh
@@ -182,13 +182,13 @@ write_files:
     content: |
       #!/bin/bash
       # Update RAG Lab to latest version (Private Repo)
-      
+
       echo "Updating RAG Lab..."
       cd /home/ubuntu/rag_lab
-      
+
       # Stop services
       docker compose down
-      
+
       # Get GitHub token from Secrets Manager
       REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
       GITHUB_TOKEN=$(aws secretsmanager get-secret-value \
@@ -196,23 +196,23 @@ write_files:
         --region $REGION \
         --query SecretString \
         --output text)
-      
+
       if [ -z "$GITHUB_TOKEN" ]; then
         echo "ERROR: Could not retrieve GitHub token"
         exit 1
       fi
-      
+
       # Temporarily set token for pull
       git remote set-url origin https://${GITHUB_TOKEN}@github.com/sandbreak80/rag_lab.git
       git pull origin security
-      
+
       # Remove token from config
       git remote set-url origin https://github.com/sandbreak80/rag_lab.git
-      
+
       # Rebuild and restart
       docker compose build
       docker compose up -d
-      
+
       echo "Update complete!"
       sleep 30
       docker compose ps
@@ -221,12 +221,12 @@ final_message: |
   ====================================
   RAG Lab Cloud-Init Complete!
   ====================================
-  
+
   Private GitHub repository cloned securely.
   All services starting up (5-10 minutes).
-  
+
   Access via AWS Session Manager (no SSH needed):
   aws ssm start-session --target INSTANCE_ID
-  
+
   ====================================
 

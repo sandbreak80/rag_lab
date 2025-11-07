@@ -49,12 +49,12 @@ if [ "$SG_ID" = "None" ]; then
         --description "$SG_DESCRIPTION" \
         --query 'GroupId' \
         --output text)
-    
+
     echo "Security Group ID: $SG_ID"
-    
+
     # Add ingress rules
     echo "Adding ingress rules..."
-    
+
     # SSH (port 22)
     aws ec2 authorize-security-group-ingress \
         --region $REGION \
@@ -63,7 +63,7 @@ if [ "$SG_ID" = "None" ]; then
         --port 22 \
         --cidr 0.0.0.0/0 \
         --group-rule-description "SSH access"
-    
+
     # Frontend (port 3000)
     aws ec2 authorize-security-group-ingress \
         --region $REGION \
@@ -72,7 +72,7 @@ if [ "$SG_ID" = "None" ]; then
         --port 3000 \
         --cidr 0.0.0.0/0 \
         --group-rule-description "RAG Lab Frontend"
-    
+
     # API Gateway (port 8000)
     aws ec2 authorize-security-group-ingress \
         --region $REGION \
@@ -81,7 +81,7 @@ if [ "$SG_ID" = "None" ]; then
         --port 8000 \
         --cidr 0.0.0.0/0 \
         --group-rule-description "RAG Lab API Gateway"
-    
+
     # Ollama (port 11434) - optional, for external access
     aws ec2 authorize-security-group-ingress \
         --region $REGION \
@@ -90,7 +90,7 @@ if [ "$SG_ID" = "None" ]; then
         --port 11434 \
         --cidr 0.0.0.0/0 \
         --group-rule-description "Ollama API"
-    
+
     echo -e "${GREEN}✓ Security group created and configured${NC}"
 else
     echo -e "${GREEN}✓ Using existing security group: $SG_ID${NC}"
@@ -198,13 +198,13 @@ SSH Access:
 Useful Commands:
   # Check cloud-init progress
   ssh -i $KEY_NAME.pem ubuntu@$PUBLIC_IP "tail -f /var/log/cloud-init-output.log"
-  
+
   # Check deployment status
   ssh -i $KEY_NAME.pem ubuntu@$PUBLIC_IP "cat /home/ubuntu/deployment-info.txt"
-  
+
   # Check Docker services
   ssh -i $KEY_NAME.pem ubuntu@$PUBLIC_IP "cd rag_lab && docker compose ps"
-  
+
   # Check GPU
   ssh -i $KEY_NAME.pem ubuntu@$PUBLIC_IP "nvidia-smi"
 

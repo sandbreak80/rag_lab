@@ -43,22 +43,33 @@ The Educational RAG Lab is a **production-ready reference architecture** for LLM
 
 **Launch on GPU-enabled EC2 with automated setup:**
 
+### With vLLM Support (g5.2xlarge - NVIDIA A10G)
 ```bash
-# One-time security setup (private GitHub repo)
-./setup-github-secret.sh
-
-# Launch instance with cloud-init
-./aws-launch-rag-lab.sh
+cd aws/scripts
+./setup-github-secret.sh  # One-time security setup
+./launch-g5-vllm.sh        # Launch with vLLM + Ollama
 ```
+- ✅ **vLLM** - 2x faster inference (Ampere GPU)
+- ✅ 24GB VRAM - Larger models (13B+)
+- ✅ Cost: ~$29/day running, ~$0.65/day stopped
 
-**Features:**
-- ✅ Automated deployment (10-15 minutes)
-- ✅ NVIDIA T4 GPU support
-- ✅ Secure private repo access (AWS Secrets Manager)
-- ✅ No SSH needed (AWS Session Manager)
+### Ollama Only (g4dn.2xlarge - NVIDIA T4)
+```bash
+cd aws/scripts
+./setup-github-secret.sh   # One-time security setup
+./aws-launch-rag-lab.sh    # Launch with Ollama
+```
+- ✅ **Ollama** - Cost-effective development
+- ✅ 16GB VRAM - Small/medium models (7B)
 - ✅ Cost: ~$18/day running, ~$0.50/day stopped
 
-📘 **[AWS Deployment Guide](docs/deployment/AWS_EC2_DEPLOYMENT.md)** | **[Security Best Practices](docs/deployment/AWS_SECURITY_BEST_PRACTICES.md)**
+**Features:**
+- ✅ Automated deployment (10-20 minutes)
+- ✅ Secure private repo access (AWS Secrets Manager)
+- ✅ No SSH needed (AWS Session Manager)
+- ✅ Stop when not using (save 97-98%!)
+
+📘 **[AWS README](aws/README.md)** | **[GPU Compatibility Guide](aws/GPU_COMPATIBILITY_GUIDE.md)** | **[Security Best Practices](docs/deployment/AWS_SECURITY_BEST_PRACTICES.md)**
 
 ---
 

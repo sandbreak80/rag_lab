@@ -111,7 +111,7 @@ echo ""
 if aws secretsmanager describe-secret \
     --secret-id "$SECRET_NAME" \
     --region "$REGION" &>/dev/null; then
-    
+
     echo -e "${YELLOW}Secret already exists. Updating...${NC}"
     aws secretsmanager put-secret-value \
         --secret-id "$SECRET_NAME" \
@@ -243,12 +243,12 @@ else
     aws iam create-instance-profile \
         --instance-profile-name "$INSTANCE_PROFILE_NAME" \
         --output text > /dev/null
-    
+
     # Add role to instance profile
     aws iam add-role-to-instance-profile \
         --instance-profile-name "$INSTANCE_PROFILE_NAME" \
         --role-name "$ROLE_NAME"
-    
+
     echo -e "${GREEN}✓ Instance profile created${NC}"
 fi
 

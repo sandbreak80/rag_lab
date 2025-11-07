@@ -121,20 +121,20 @@ write_files:
       ====================================
       RAG Lab Deployment Information
       ====================================
-      
+
       Instance Type: g4dn.2xlarge
       GPU: NVIDIA T4 (16GB)
       OS: Ubuntu 24.04 LTS
-      
+
       Services:
       - Frontend: http://PUBLIC_IP:3000
       - API Gateway: http://PUBLIC_IP:8000
       - Ollama: http://PUBLIC_IP:11434
-      
+
       Default Login (create your own):
       Username: admin
       Password: ChangeMe123!
-      
+
       Useful Commands:
       cd /home/ubuntu/rag_lab
       docker compose ps              # Check service status
@@ -142,21 +142,21 @@ write_files:
       docker compose restart         # Restart services
       docker compose down            # Stop services
       docker compose up -d           # Start services
-      
+
       GPU Check:
       nvidia-smi                     # Check GPU status
       docker exec ollama nvidia-smi  # Check GPU in Ollama
-      
+
       Pull Additional Models:
       docker exec ollama ollama pull llama3.2:3b
       docker exec ollama ollama pull llama3.1:70b
       docker exec ollama ollama pull mistral:7b
-      
+
       Troubleshooting:
       sudo systemctl status docker
       docker logs <container_name>
       cat /var/log/cloud-init-output.log
-      
+
       ====================================
 
   - path: /home/ubuntu/update-rag-lab.sh
@@ -165,20 +165,20 @@ write_files:
     content: |
       #!/bin/bash
       # Update RAG Lab to latest version
-      
+
       echo "Updating RAG Lab..."
       cd /home/ubuntu/rag_lab
-      
+
       # Stop services
       docker compose down
-      
+
       # Pull latest code
       git pull origin security
-      
+
       # Rebuild and restart
       docker compose build
       docker compose up -d
-      
+
       echo "Update complete! Waiting for services to be healthy..."
       sleep 30
       docker compose ps
@@ -188,24 +188,24 @@ final_message: |
   ====================================
   RAG Lab Cloud-Init Complete!
   ====================================
-  
+
   The system has been configured with:
   ✅ NVIDIA GPU drivers
   ✅ Docker with GPU support
   ✅ Ollama with llama3.1:8b and nomic-embed-text
   ✅ RAG Lab (all 15 microservices)
-  
+
   IMPORTANT: Services may take 5-10 minutes to fully start.
-  
+
   Access the application:
   Frontend: http://PUBLIC_IP:3000
   API: http://PUBLIC_IP:8000
-  
+
   View deployment info:
   cat /home/ubuntu/deployment-info.txt
-  
+
   Check logs:
   tail -f /var/log/cloud-init-output.log
-  
+
   ====================================
 

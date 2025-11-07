@@ -47,7 +47,7 @@ chmod +x setup-github-secret.sh
    - Token name: "RAG Lab EC2 Deployment"
    - Expiration: 90 days (recommended)
    - Scopes: Check ONLY **`repo`** (read-only for private repos)
-   
+
 2. Validate your token
 3. Store token in AWS Secrets Manager (encrypted)
 4. Create IAM policy (`RAGLabSecretsAccess`)
@@ -106,11 +106,11 @@ Your laptop IP changes when you:
    ```bash
    # macOS
    brew install --cask session-manager-plugin
-   
+
    # Linux
    curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o "session-manager-plugin.deb"
    sudo dpkg -i session-manager-plugin.deb
-   
+
    # Windows
    # Download from: https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html
    ```
