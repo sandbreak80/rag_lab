@@ -108,17 +108,17 @@ Now generate {max_queries} queries (number them 1-{max_queries}):
                 'stream': False,
                 'options': {
                     'temperature': 0.5,  # Some creativity, but focused
-                    'num_predict': 400,  # Enough for intro + 4 queries
+                    'num_predict': 4000,  # Allow detailed query generation with explanations
                     'stop': ['Question:', 'User Question:', '\n\n\n']  # Stop at new question or triple newline
                 }
             },
-            timeout=30
+            timeout=60
         )
-        
+
         if response.status_code != 200:
             print(f"⚠️  LLM query generation failed: {response.status_code}")
             return [original_query]  # Fallback to original
-        
+
         llm_output = response.json()['response']
         print(f"🤖 LLM output: {llm_output}")
 
