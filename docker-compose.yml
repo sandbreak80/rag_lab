@@ -879,6 +879,29 @@ services:
       - '--docker_only=true'
       - '--disable_metrics=disk,network,tcp,udp,percpu,sched,process'
 
+  # Docker Health Check Exporter - Exposes container health status
+  health-exporter:
+    image: python:3.11-slim
+    container_name: rag-health-exporter
+    networks:
+      - rag-network
+    ports:
+      - "9099:9099"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./services/health-exporter/app:/app
+    working_dir: /app
+    environment:
+      - SERVICE_NAME=health-exporter
+      - SERVICE_PORT=9099
+    command: bash -c "pip install -q docker prometheus-client && python -u service.py"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9099/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # NVIDIA DCGM Exporter - GPU Metrics (Only for NVIDIA GPU systems)
   # To enable: docker compose --profile gpu up -d
   dcgm-exporter:

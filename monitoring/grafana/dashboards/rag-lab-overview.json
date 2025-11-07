@@ -33,6 +33,13 @@
           "refId": "A",
           "format": "table",
           "instant": true
+        },
+        {
+          "expr": "container_health_status{name=~\"rag-.*\"}",
+          "legendFormat": "{{name}}",
+          "refId": "B",
+          "format": "table",
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -47,7 +54,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Status"
+              "options": "Running"
             },
             "properties": [
               {
@@ -56,12 +63,12 @@
                   {
                     "type": "value",
                     "value": "1",
-                    "text": "\ud83d\udfe2 UP"
+                    "text": "\u2705 UP"
                   },
                   {
                     "type": "value",
                     "value": "0",
-                    "text": "\ud83d\udd34 DOWN"
+                    "text": "\u274c DOWN"
                   }
                 ]
               },
@@ -86,6 +93,67 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Health"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "value": "0",
+                    "text": "\u26aa None"
+                  },
+                  {
+                    "type": "value",
+                    "value": "1",
+                    "text": "\ud83d\udfe1 Starting"
+                  },
+                  {
+                    "type": "value",
+                    "value": "2",
+                    "text": "\ud83d\udfe2 Healthy"
+                  },
+                  {
+                    "type": "value",
+                    "value": "3",
+                    "text": "\ud83d\udd34 Unhealthy"
+                  }
+                ]
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "value": 0,
+                      "color": "text"
+                    },
+                    {
+                      "value": 1,
+                      "color": "yellow"
+                    },
+                    {
+                      "value": 2,
+                      "color": "green"
+                    },
+                    {
+                      "value": 3,
+                      "color": "red"
+                    }
+                  ]
+                }
+              }
+            ]
           }
         ]
       },
@@ -96,6 +164,10 @@
         }
       },
       "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
         {
           "id": "organize",
           "options": {
@@ -109,11 +181,13 @@
             },
             "indexByName": {
               "name": 0,
-              "Value": 1
+              "Value #A": 1,
+              "Value #B": 2
             },
             "renameByName": {
               "name": "Container",
-              "Value": "Status"
+              "Value #A": "Running",
+              "Value #B": "Health"
             }
           }
         }

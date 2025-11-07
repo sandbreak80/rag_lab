@@ -65,6 +65,17 @@ scrape_configs:
           instance: 'ec2-host'
 
   # ============================================================================
+  # Docker Health Check Exporter
+  # ============================================================================
+  - job_name: 'health-exporter'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['health-exporter:9099']
+        labels:
+          service: 'health-exporter'
+          type: 'health-metrics'
+
+  # ============================================================================
   # RAG Lab Services - Application Metrics
   # ============================================================================
 
