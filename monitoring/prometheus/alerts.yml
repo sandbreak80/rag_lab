@@ -1,0 +1,117 @@
+# Prometheus Alert Rules for RAG Lab
+# Define alerts for critical system conditions
+
+groups:
+  - name: rag_lab_alerts
+    interval: 30s
+    rules:
+      # ============================================================================
+      # Service Health Alerts
+      # ============================================================================
+
+      - alert: ServiceDown
+        expr: up{job=~".*-service|api-gateway"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} has been down for more than 2 minutes."
+
+      # ============================================================================
+      # Container Resource Alerts
+      # ============================================================================
+
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.name }}"
+          description: "Container {{ $labels.name }} CPU usage is above 80% for 5 minutes."
+
+      - alert: HighMemoryUsage
+        expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.name }}"
+          description: "Container {{ $labels.name }} memory usage is above 90%."
+
+      - alert: ContainerRestarted
+        expr: rate(container_last_seen[5m]) > 2
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} is restarting frequently"
+          description: "Container {{ $labels.name }} has restarted multiple times in the last 5 minutes."
+
+      # ============================================================================
+      # GPU Alerts
+      # ============================================================================
+
+      - alert: HighGPUTemperature
+        expr: DCGM_FI_DEV_GPU_TEMP > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High GPU temperature"
+          description: "GPU temperature is above 85°C for 5 minutes."
+
+      - alert: HighGPUMemoryUsage
+        expr: (DCGM_FI_DEV_FB_USED / DCGM_FI_DEV_FB_TOTAL) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High GPU memory usage"
+          description: "GPU memory usage is above 90% for 5 minutes."
+
+      - alert: GPUUtilizationLow
+        expr: DCGM_FI_DEV_GPU_UTIL < 10
+        for: 30m
+        labels:
+          severity: info
+        annotations:
+          summary: "Low GPU utilization"
+          description: "GPU utilization has been below 10% for 30 minutes. May indicate idle resources."
+
+      # ============================================================================
+      # Application Performance Alerts
+      # ============================================================================
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on {{ $labels.service }}"
+          description: "Error rate is above 5% for {{ $labels.service }}."
+
+      - alert: SlowResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow response time on {{ $labels.service }}"
+          description: "95th percentile response time is above 5 seconds for {{ $labels.service }}."
+
+      # ============================================================================
+      # Disk Space Alerts
+      # ============================================================================
+
+      - alert: PrometheusDiskSpaceRunningOut
+        expr: (prometheus_tsdb_storage_blocks_bytes / (1024^3)) > 25
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus disk space running out"
+          description: "Prometheus storage is above 25GB. Consider adjusting retention period."
+

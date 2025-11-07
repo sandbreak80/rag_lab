@@ -1,0 +1,208 @@
+# Prometheus Configuration for RAG Lab
+# Scrapes metrics from all services, containers, and GPU
+
+global:
+  scrape_interval: 15s      # How often to scrape targets
+  evaluation_interval: 15s  # How often to evaluate rules
+  external_labels:
+    cluster: 'rag-lab'
+    environment: 'production'
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# Load alert rules
+rule_files:
+  - "alerts.yml"
+
+# Scrape configurations
+scrape_configs:
+  # ============================================================================
+  # Prometheus self-monitoring
+  # ============================================================================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # ============================================================================
+  # Container Metrics - cAdvisor
+  # ============================================================================
+  - job_name: 'cadvisor'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: 'cadvisor'
+          type: 'container-metrics'
+
+  # ============================================================================
+  # GPU Metrics - NVIDIA DCGM Exporter
+  # ============================================================================
+  - job_name: 'dcgm-exporter'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['dcgm-exporter:9400']
+        labels:
+          service: 'dcgm-exporter'
+          type: 'gpu-metrics'
+
+  # ============================================================================
+  # RAG Lab Services - Application Metrics
+  # ============================================================================
+
+  # API Gateway
+  - job_name: 'api-gateway'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['api-gateway:8000']
+        labels:
+          service: 'api-gateway'
+          type: 'application'
+    metrics_path: '/metrics'
+
+  # Ingest Service
+  - job_name: 'ingest-service'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['ingest-service:8001']
+        labels:
+          service: 'ingest-service'
+          type: 'application'
+    metrics_path: '/metrics'
+
+  # Search Service
+  - job_name: 'search-service'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['search-service:8002']
+        labels:
+          service: 'search-service'
+          type: 'application'
+    metrics_path: '/metrics'
+
+  # Chat Service
+  - job_name: 'chat-service'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['chat-service:8003']
+        labels:
+          service: 'chat-service'
+          type: 'application'
+    metrics_path: '/metrics'
+
+  # Vector DB Service
+  - job_name: 'vector-db'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['vector-db:8005']
+        labels:
+          service: 'vector-db'
+          type: 'application'
+    metrics_path: '/metrics'
+
+  # Embedding Service
+  - job_name: 'embedding-service'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['embedding-service:8006']
+        labels:
+          service: 'embedding-service'
+          type: 'application'
+    metrics_path: '/metrics'
+
+  # Knowledge Graph
+  - job_name: 'knowledge-graph'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['knowledge-graph:8007']
+        labels:
+          service: 'knowledge-graph'
+          type: 'application'
+    metrics_path: '/metrics'
+
+  # Reranker Service
+  - job_name: 'reranker'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['reranker:8008']
+        labels:
+          service: 'reranker'
+          type: 'application'
+    metrics_path: '/metrics'
+
+  # Web Search Service
+  - job_name: 'web-search'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['web-search:8009']
+        labels:
+          service: 'web-search'
+          type: 'application'
+    metrics_path: '/metrics'
+
+  # Entity Extraction
+  - job_name: 'entity-extraction'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['entity-extraction:8010']
+        labels:
+          service: 'entity-extraction'
+          type: 'application'
+    metrics_path: '/metrics'
+
+  # Metrics Store
+  - job_name: 'metrics-store'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['metrics-store:8011']
+        labels:
+          service: 'metrics-store'
+          type: 'application'
+    metrics_path: '/metrics'
+
+  # Security Guardrails
+  - job_name: 'security-guardrails'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['security-guardrails:8013']
+        labels:
+          service: 'security-guardrails'
+          type: 'application'
+    metrics_path: '/metrics'
+
+  # Auth Service
+  - job_name: 'auth-service'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['auth-service:8014']
+        labels:
+          service: 'auth-service'
+          type: 'application'
+    metrics_path: '/metrics'
+
+  # Research Agent
+  - job_name: 'research-agent'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['research-agent:8015']
+        labels:
+          service: 'research-agent'
+          type: 'application'
+    metrics_path: '/metrics'
+
+  # Query Decomposer
+  - job_name: 'query-decomposer'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['query-decomposer:8019']
+        labels:
+          service: 'query-decomposer'
+          type: 'application'
+    metrics_path: '/metrics'
+

@@ -1035,64 +1035,62 @@ def search_with_config():
             perf_metrics['graph_docs_added'] = 0
             print(f"⊘ Knowledge Graph: SKIPPED")
 
-        # Step 3.5: Web Search (if enabled)
+        # Step 3.5: Web Search (if enabled) - Using Agentic Search
         if use_web_search:
             web_start = time.time()
             web_search_url = os.getenv('WEB_SEARCH_URL', 'http://web-search:8009')
             web_docs_limit = config.get('web_search_docs', 5)
             web_pages_per_doc = config.get('web_search_pages_per_doc', 1)
 
+            # Determine if we should use agentic search (default: yes for complex queries)
+            use_agentic = config.get('use_agentic_web_search', True)
+            word_count = len(original_query.split())
+
             try:
-                word_count = len(original_query.split())
+                if use_agentic and word_count > 10:
+                    # 🤖 AGENTIC MODE: LLM-powered query generation + parallel search
+                    print(f"🤖 AGENTIC WEB SEARCH: {word_count}-word query")
 
-                # 🚀 FRONTIER MODEL TECHNIQUE: Multi-Query Decomposition
-                # For complex queries (> 30 words), break into 3-5 sub-queries
-                # This is how GPT-4, Claude, and Perplexity handle complex prompts
-                if word_count > 30 and query_expander:
-                    print(f"🚀 MULTI-QUERY MODE: {word_count}-word query detected")
+                    # Determine number of queries based on complexity
+                    num_queries = 4 if word_count > 30 else 3
 
-                    # Step 1: Decompose into sub-queries
-                    sub_queries = decompose_query_to_multi_queries(original_query, query_expander)
-                    perf_metrics['web_search_queries_generated'] = len(sub_queries)
+                    response = requests.post(
+                        f"{web_search_url}/search_agentic",
+                        json={
+                            'query': original_query,
+                            'limit': web_docs_limit,
+                            'num_queries': num_queries
+                        },
+                        timeout=180
+                    )
 
-                    # Step 2: Run parallel searches (2 results per query)
-                    docs_per_query = max(2, web_docs_limit // len(sub_queries))
-                    web_results = multi_query_web_search(sub_queries, web_search_url, docs_per_query, timeout=180)
+                    if response.status_code == 200:
+                        web_data = response.json()
+                        web_results = web_data.get('results', [])
 
-                    # Step 3: Quality filtering
-                    web_results = filter_web_results_by_quality(web_results)
+                        # Track agentic search metadata
+                        perf_metrics['web_search_queries_generated'] = web_data.get('total_searches', num_queries)
+                        perf_metrics['web_search_dedup_rate'] = web_data.get('deduplication_rate', 0)
+                        perf_metrics['web_search_generated_queries'] = web_data.get('generated_queries', [])
 
-                    # Limit to requested number
-                    web_results = web_results[:web_docs_limit]
+                        # Quality filtering
+                        web_results = filter_web_results_by_quality(web_results)
+
+                        print(f"✅ Agentic search: {len(web_results)} results ({perf_metrics.get('web_search_dedup_rate', 0):.1%} dedup)")
+                    else:
+                        print(f"⚠️  Agentic Web Search: HTTP {response.status_code}")
+                        web_results = []
 
                 else:
-                    # 🔍 SINGLE-QUERY MODE: Simple queries or short prompts
-                    print(f"🔍 SINGLE-QUERY MODE: {word_count}-word query")
-
-                    # For long single queries (> 50 words), extract key terms
-                    web_query = original_query
-                    if word_count > 50 and query_expander:
-                        print(f"🔍 Extracting key search terms from long query...")
-                        try:
-                            extraction_prompt = f"""Extract 3-5 key search terms or topics from this query that would be good for web search. Return only the terms, comma-separated, no explanation:
-
-{original_query[:500]}"""
-                            web_query = query_expander.expand_with_context(extraction_prompt)
-                            web_query = web_query.strip().strip('"\'').split('\n')[0]
-                            print(f"🔍 Extracted: {web_query[:100]}")
-                        except Exception as e:
-                            print(f"⚠️ Extraction failed: {e}, using first sentence")
-                            sentences = original_query.split('.')
-                            web_query = sentences[0] if sentences else original_query[:200]
+                    # 🔍 SIMPLE MODE: Direct search (fallback for simple queries)
+                    print(f"🔍 SIMPLE WEB SEARCH: {word_count}-word query")
 
                     perf_metrics['web_search_queries_generated'] = 1
 
-                    # Single search
-                    print(f"🌐 Calling web search: {web_search_url}/search")
                     response = requests.post(
                         f"{web_search_url}/search",
                         json={
-                            'query': web_query,
+                            'query': original_query,
                             'limit': web_docs_limit,
                             'pages_per_result': web_pages_per_doc
                         },

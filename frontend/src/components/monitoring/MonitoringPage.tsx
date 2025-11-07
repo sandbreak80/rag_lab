@@ -1,0 +1,124 @@
+import React from 'react';
+import { ExternalLink, Activity, Database, Cpu, Gauge } from 'lucide-react';
+
+export function MonitoringPage() {
+  // Get the current host for Grafana URL
+  const grafanaUrl = window.location.hostname === 'localhost'
+    ? 'http://localhost:3001'
+    : `http://${window.location.hostname}:3001`;
+
+  const dashboardUrl = `${grafanaUrl}/d/rag-lab-overview/rag-lab-system-overview?orgId=1&refresh=10s&kiosk`;
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Header */}
+      <div className="bg-card border-b p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <Activity className="h-8 w-8 text-primary" />
+              System Monitoring
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Real-time system metrics powered by Prometheus + Grafana
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <a
+              href={grafanaUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Open Grafana
+            </a>
+            <a
+              href="http://localhost:9090"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
+            >
+              <Database className="h-4 w-4" />
+              Prometheus
+            </a>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-4 gap-4 mt-6">
+          <div className="bg-background border rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <Cpu className="h-8 w-8 text-blue-500" />
+              <div>
+                <div className="text-sm text-muted-foreground">Container Metrics</div>
+                <div className="text-lg font-semibold">CPU, Memory, Network</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-background border rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <Gauge className="h-8 w-8 text-green-500" />
+              <div>
+                <div className="text-sm text-muted-foreground">GPU Stats</div>
+                <div className="text-lg font-semibold">Utilization & Temp</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-background border rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <Activity className="h-8 w-8 text-purple-500" />
+              <div>
+                <div className="text-sm text-muted-foreground">Service Health</div>
+                <div className="text-lg font-semibold">All Services</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-background border rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <Database className="h-8 w-8 text-orange-500" />
+              <div>
+                <div className="text-sm text-muted-foreground">Data Retention</div>
+                <div className="text-lg font-semibold">30 Days</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Grafana Dashboard Embed */}
+      <div className="flex-1 overflow-hidden">
+        <iframe
+          src={dashboardUrl}
+          className="w-full h-full border-0"
+          title="Grafana Dashboard"
+          allow="fullscreen"
+        />
+      </div>
+
+      {/* Footer Help */}
+      <div className="bg-card border-t p-4">
+        <div className="text-sm text-muted-foreground flex items-center justify-between">
+          <div>
+            <strong>Tips:</strong> Click any panel to zoom • Use time range picker (top right) • Refresh: 10s
+          </div>
+          <div className="flex gap-4">
+            <a href="/docs/monitoring" className="text-primary hover:underline">
+              Documentation
+            </a>
+            <a href="https://grafana.com/docs/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              Grafana Docs
+            </a>
+            <a href="https://prometheus.io/docs/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              Prometheus Docs
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+

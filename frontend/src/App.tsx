@@ -6,6 +6,7 @@ import { ChatPage } from './components/chat/ChatPage';
 import { DocumentsPage } from './components/documents/DocumentsPage';
 import { SettingsPage } from './components/settings/SettingsPage';
 import { MetricsPage } from './components/metrics/MetricsPage';
+import { MonitoringPage } from './components/monitoring/MonitoringPage';
 import { LabGuidePage } from './components/lab/LabGuidePage';
 import { LearningHubPage } from './components/learning/LearningHubPage';
 import { FeedbackPage } from './components/feedback/FeedbackPage';
@@ -53,6 +54,7 @@ function App() {
                 <Route path="documents" element={<DocumentsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="metrics" element={<MetricsPage />} />
+                <Route path="monitoring" element={<MonitoringPage />} />
                 <Route path="logging" element={<PromptLoggingPage />} />
                 <Route path="lab" element={<LabGuidePage />} />
                 <Route path="learning" element={<LearningHubPage />} />

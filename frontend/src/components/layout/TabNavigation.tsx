@@ -10,6 +10,7 @@ import {
   HelpCircle,
   MessageCircle,
   FileText,
+  Activity,
 } from 'lucide-react';
 
 const tabs = [
@@ -17,6 +18,7 @@ const tabs = [
   { id: 'documents', label: 'Documents', icon: FolderOpen, path: '/documents' },
   { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
   { id: 'metrics', label: 'Metrics', icon: BarChart3, path: '/metrics' },
+  { id: 'monitoring', label: 'Monitoring', icon: Activity, path: '/monitoring' },
   { id: 'logging', label: 'Prompt Logs', icon: FileText, path: '/logging' },
   { id: 'lab', label: 'Lab Guide', icon: BookOpen, path: '/lab' },
   { id: 'learning', label: 'Learning Hub', icon: HelpCircle, path: '/learning' },
