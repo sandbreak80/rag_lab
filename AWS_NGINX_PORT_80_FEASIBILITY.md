@@ -175,7 +175,7 @@ Docker Container (Frontend on port 3000)
 ```yaml
 runcmd:
   # ... existing setup ...
-  
+
   # Add NGINX configuration
   - apt-get install -y nginx
   - |
@@ -228,8 +228,8 @@ IpProtocol=tcp,FromPort=80,ToPort=80
 IpProtocol=tcp,FromPort=443,ToPort=443  # Optional, for HTTPS
 ```
 
-**Time:** 2 minutes  
-**Lines:** 5  
+**Time:** 2 minutes
+**Lines:** 5
 **Risk:** Very low
 
 ---
@@ -280,7 +280,7 @@ sudo systemctl stop apache2
 sudo systemctl disable apache2
 ```
 
-**Probability:** Low (fresh Ubuntu instance)  
+**Probability:** Low (fresh Ubuntu instance)
 **Fix Time:** 2 minutes
 
 ### Issue 2: Security Group Not Updated
@@ -298,7 +298,7 @@ aws ec2 authorize-security-group-ingress \
     --protocol tcp --port 80 --cidr 0.0.0.0/0
 ```
 
-**Probability:** High (if manual setup)  
+**Probability:** High (if manual setup)
 **Fix Time:** 1 minute
 
 ### Issue 3: Docker Container Not Running
@@ -317,7 +317,7 @@ docker compose ps frontend
 docker compose restart frontend
 ```
 
-**Probability:** Low  
+**Probability:** Low
 **Fix Time:** 2 minutes
 
 ### Issue 4: Let's Encrypt Validation Fails
@@ -336,7 +336,7 @@ dig yourdomain.com
 curl http://yourdomain.com
 ```
 
-**Probability:** Medium (DNS issues common)  
+**Probability:** Medium (DNS issues common)
 **Fix Time:** 5-30 minutes (DNS propagation)
 
 ---
@@ -351,8 +351,8 @@ curl http://yourdomain.com
 3. ✅ Test deployment
 4. ✅ Document changes
 
-**Time:** 1 hour  
-**Complexity:** Low  
+**Time:** 1 hour
+**Complexity:** Low
 **Risk:** Very low
 
 ### Phase 2: HTTPS with Let's Encrypt (Do Later)
@@ -367,8 +367,8 @@ curl http://yourdomain.com
 3. ✅ Test HTTPS access
 4. ✅ Set up auto-renewal (automatic)
 
-**Time:** 30 minutes  
-**Complexity:** Low-Medium  
+**Time:** 30 minutes
+**Complexity:** Low-Medium
 **Risk:** Low (reversible)
 
 ---
@@ -584,6 +584,6 @@ cd rag_lab/aws/scripts
 
 ---
 
-*Analysis completed: November 6, 2025*  
+*Analysis completed: November 6, 2025*
 *Status: Ready to implement* ✅
 

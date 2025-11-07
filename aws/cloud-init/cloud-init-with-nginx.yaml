@@ -67,12 +67,12 @@ runcmd:
       --region $REGION \
       --query SecretString \
       --output text 2>/dev/null || echo "")
-    
+
     if [ -z "$GITHUB_TOKEN" ]; then
       echo "ERROR: Could not retrieve GitHub token"
       exit 1
     fi
-    
+
     echo "$GITHUB_TOKEN" > /tmp/github_token
     chmod 600 /tmp/github_token
 
@@ -136,18 +136,18 @@ runcmd:
         location / {
             proxy_pass http://localhost:3000;
             proxy_http_version 1.1;
-            
+
             # WebSocket support
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection 'upgrade';
-            
+
             # Headers
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
             proxy_cache_bypass $http_upgrade;
-            
+
             # Timeouts for long LLM requests
             proxy_read_timeout 300s;
             proxy_connect_timeout 75s;
@@ -165,7 +165,7 @@ runcmd:
     # Enable site
     rm -f /etc/nginx/sites-enabled/default
     ln -sf /etc/nginx/sites-available/rag-lab /etc/nginx/sites-enabled/
-    
+
     # Test and start NGINX
     nginx -t
     systemctl enable nginx
@@ -200,32 +200,32 @@ write_files:
       ====================================
       RAG Lab Deployment
       ====================================
-      
+
       Access: http://PUBLIC_IP
-      
+
       Port 80 (HTTP) → NGINX → Frontend (Docker port 3000)
-      
+
       Services:
       - Frontend: Internal port 3000 (proxied via NGINX)
       - API Gateway: http://localhost:8000
       - Ollama: http://localhost:11434
-      
+
       NGINX Configuration:
       - Config: /etc/nginx/sites-available/rag-lab
       - Logs: /var/log/nginx/rag-lab-*.log
       - Status: sudo systemctl status nginx
-      
+
       Setup HTTPS (optional):
       1. Point your domain to this server's IP
       2. Run: /home/ubuntu/rag_lab/aws/scripts/setup-letsencrypt.sh yourdomain.com
-      
+
       Useful Commands:
       cd /home/ubuntu/rag_lab
       docker compose ps
       docker compose logs -f
       sudo nginx -t
       sudo systemctl reload nginx
-      
+
       ====================================
 
   - path: /home/ubuntu/update-rag-lab.sh
@@ -254,14 +254,14 @@ final_message: |
   ====================================
   RAG Lab with NGINX Reverse Proxy
   ====================================
-  
+
   ✅ Frontend accessible on port 80 (HTTP)
   ✅ NGINX proxying to Docker containers
   ✅ All services starting up
-  
+
   Access: http://PUBLIC_IP
-  
+
   Wait 5-10 minutes for all services to be ready.
-  
+
   ====================================
 
