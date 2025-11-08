@@ -36,9 +36,9 @@ write_files:
       # Fix home ownership
       chown ubuntu:ubuntu /home/ubuntu
 
-      # Clone repo
+      # Clone repo with token
       if [ ! -d /home/ubuntu/rag_lab ]; then
-        sudo -H -u ubuntu bash -c 'cd ~ && git clone https://github.com/sandbreak80/rag_lab.git && cd rag_lab && git checkout otel' 2>&1 | tee -a "$LOG"
+        sudo -H -u ubuntu bash -c 'cd ~ && git clone https://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@github.com/sandbreak80/rag_lab.git && cd rag_lab && git checkout otel' 2>&1 | tee -a "$LOG"
       fi
 
       # Build & start (with GPU profile for GPU monitoring)
