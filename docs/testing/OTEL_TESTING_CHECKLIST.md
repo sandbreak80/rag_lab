@@ -429,7 +429,7 @@ for i in {1..10}; do
   curl -s -X POST http://localhost:8000/api/ask \
     -H "Content-Type: application/json" \
     -d "{\"query\":\"test query $i\",\"enable_web_search\":true}" | \
-    jq '.sources[] | select(.origin_tool == null or .origin_tool == "")' 
+    jq '.sources[] | select(.origin_tool == null or .origin_tool == "")'
 done
 
 # VERIFY: No output (all sources have origin_tool)

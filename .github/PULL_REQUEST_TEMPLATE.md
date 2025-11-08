@@ -26,7 +26,7 @@
 <!-- Detailed list of changes -->
 
 #### New Files:
-- 
+-
 
 #### Modified Files:
 -

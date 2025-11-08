@@ -61,7 +61,7 @@ curl -X POST http://localhost:8000/api/ask \
 **Deliverables:**
 - OTel Collector container
 - API Gateway instrumented
-- Search Service instrumented  
+- Search Service instrumented
 - Prometheus scrapes OTEL metrics
 
 **Acceptance:**
