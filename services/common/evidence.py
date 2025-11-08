@@ -89,7 +89,7 @@ class Evidence:
     def metadata(self) -> Dict[str, Any]:
         """
         Get immutable view of metadata.
-        
+
         Returns:
             MappingProxyType (read-only dict view) to prevent mutation
         """
@@ -128,6 +128,9 @@ class Evidence:
 
         Returns:
             Evidence object
+            
+        Raises:
+            ValueError: If origin_tool missing, invalid, or URL is unsafe
         """
         # Handle datetime strings
         published_at = None
@@ -161,12 +164,20 @@ class Evidence:
                     f"Invalid origin_tool value: '{origin_tool}'. "
                     f"Must be one of: {[e.value for e in OriginTool]}"
                 )
+        
+        # SECURITY FIX: Validate URL to prevent XSS
+        url = data.get('url')
+        if url and not validate_url(url):
+            raise ValueError(
+                f"Invalid or unsafe URL: '{url}'. "
+                f"URLs must start with http:// or https:// and cannot contain script tags or javascript: schemes."
+            )
 
         return cls(
             id=data['id'],
             content=data['content'],
             origin_tool=origin_tool,
-            url=data.get('url'),
+            url=url,
             domain=data.get('domain'),
             title=data.get('title'),
             published_at=published_at,
@@ -223,6 +234,69 @@ def extract_domain(url: str) -> Optional[str]:
         return domain if domain else None
     except Exception:
         return None
+
+
+def validate_url(url: str) -> bool:
+    """
+    Validate URL to prevent XSS and other injection attacks.
+    
+    Args:
+        url: URL to validate
+        
+    Returns:
+        True if URL is safe, False otherwise
+        
+    Security Checks:
+    - Must start with http:// or https://
+    - Blocks javascript:, data:, file:, vbscript: schemes
+    - Blocks common XSS patterns
+    
+    Examples:
+        >>> validate_url("https://example.com")
+        True
+        >>> validate_url("javascript:alert('XSS')")
+        False
+        >>> validate_url("data:text/html,<script>alert('XSS')</script>")
+        False
+    """
+    if not url or not isinstance(url, str):
+        return False
+    
+    url_lower = url.lower().strip()
+    
+    # Must be http or https
+    if not url_lower.startswith(('http://', 'https://')):
+        return False
+    
+    # Block dangerous schemes (even if embedded)
+    dangerous_schemes = [
+        'javascript:',
+        'data:',
+        'file:',
+        'vbscript:',
+        'about:',
+        'blob:',
+    ]
+    
+    for scheme in dangerous_schemes:
+        if scheme in url_lower:
+            return False
+    
+    # Block common XSS patterns
+    xss_patterns = [
+        '<script',
+        'onerror=',
+        'onload=',
+        'onclick=',
+        'javascript:',
+        'eval(',
+    ]
+    
+    for pattern in xss_patterns:
+        if pattern in url_lower:
+            return False
+    
+    return True
 
 
 def is_primary_source(url: str) -> bool:
