@@ -1,7 +1,7 @@
 /**
  * End-to-End Tests for RAG UI Integration
  * Tests the full flow: Frontend → Nginx → API → Response → UI Components
- * 
+ *
  * Run with:
  *   npx playwright test tests/e2e/test_rag_ui_integration.spec.ts
  *   OR via Docker:
@@ -14,7 +14,7 @@ const BASE_URL = process.env.BASE_URL || 'http://16.146.148.184:3000';
 const API_URL = `${BASE_URL}/api/v1/rag/query`;
 
 test.describe('RAG UI Integration - Same-Origin Routing', () => {
-  
+
   test.beforeEach(async ({ page }) => {
     // Navigate to the app
     await page.goto(BASE_URL);
@@ -44,14 +44,14 @@ test.describe('RAG UI Integration - Same-Origin Routing', () => {
     // Test /live endpoint (same-origin through Nginx)
     const liveResponse = await request.get(`${BASE_URL}/live`);
     expect(liveResponse.status()).toBe(200);
-    
+
     const liveData = await liveResponse.json();
     expect(liveData).toHaveProperty('status');
 
     // Test /ready endpoint
     const readyResponse = await request.get(`${BASE_URL}/ready`);
     expect(readyResponse.status()).toBe(200);
-    
+
     const readyData = await readyResponse.json();
     expect(readyData).toHaveProperty('status');
   });
@@ -93,10 +93,10 @@ test.describe('RAG UI Integration - Same-Origin Routing', () => {
     // Find input field (adjust selector based on your actual UI)
     const inputSelector = 'textarea[placeholder*="Ask"], input[placeholder*="question"], textarea[name="query"]';
     await page.waitForSelector(inputSelector, { timeout: 5000 });
-    
+
     // Type a question
     await page.fill(inputSelector, 'What is RAG?');
-    
+
     // Submit (adjust selector for your submit button)
     const submitSelector = 'button[type="submit"], button:has-text("Ask"), button:has-text("Send")';
     await page.click(submitSelector);
@@ -160,13 +160,13 @@ test.describe('RAG UI Integration - Same-Origin Routing', () => {
 
     // Look for JSON inspector toggle
     const jsonToggle = page.locator('button:has-text("Artifacts"), button:has-text("JSON"), button:has-text("Debug")');
-    
+
     if (await jsonToggle.count() > 0) {
       await jsonToggle.first().click();
-      
+
       // Verify JSON is displayed
       await page.waitForSelector('pre, code, [class*="json"]', { timeout: 5000 });
-      
+
       // Check for schema keys
       const jsonContent = await page.locator('pre, code').first().textContent();
       expect(jsonContent).toContain('planner');
@@ -176,7 +176,7 @@ test.describe('RAG UI Integration - Same-Origin Routing', () => {
 
   test('should not have CORS errors in network tab', async ({ page }) => {
     const failedRequests: string[] = [];
-    
+
     page.on('requestfailed', request => {
       failedRequests.push(`${request.method()} ${request.url()} - ${request.failure()?.errorText}`);
     });
@@ -184,15 +184,15 @@ test.describe('RAG UI Integration - Same-Origin Routing', () => {
     // Submit query
     await page.fill('textarea, input[type="text"]', 'Test CORS');
     await page.click('button[type="submit"]');
-    
+
     // Wait for response
     await page.waitForTimeout(3000);
 
     // Filter CORS-related failures
-    const corsErrors = failedRequests.filter(req => 
+    const corsErrors = failedRequests.filter(req =>
       req.includes('CORS') || req.includes('Access-Control')
     );
-    
+
     expect(corsErrors).toHaveLength(0);
   });
 
@@ -208,7 +208,7 @@ test.describe('RAG UI Integration - Same-Origin Routing', () => {
     // Submit query
     await page.fill('textarea, input[type="text"]', 'Test OTel headers');
     await page.click('button[type="submit"]');
-    
+
     await page.waitForTimeout(2000);
 
     // Check if traceparent header exists (may be set by frontend)
@@ -219,7 +219,7 @@ test.describe('RAG UI Integration - Same-Origin Routing', () => {
 });
 
 test.describe('RAG UI Integration - Error Handling', () => {
-  
+
   test('should handle API timeout gracefully', async ({ page }) => {
     await page.goto(BASE_URL);
 
@@ -249,14 +249,14 @@ test.describe('RAG UI Integration - Error Handling', () => {
     // Check for security status (ok, degraded, or blocked)
     const securityStatus = page.locator('[class*="security"], [class*="Security"]');
     const count = await securityStatus.count();
-    
+
     // Should have some security indicator
     expect(count).toBeGreaterThanOrEqual(0);
   });
 });
 
 test.describe('RAG UI Integration - Three Golden Queries', () => {
-  
+
   test('Navigational query: "Where is the Phase 2 quickstart?"', async ({ page }) => {
     await page.goto(BASE_URL);
 
@@ -301,20 +301,20 @@ test.describe('RAG UI Integration - Three Golden Queries', () => {
     // Check for recency indicator
     const recencyBadge = page.locator('text=/recent|48h|fresh/i');
     const count = await recencyBadge.count();
-    
+
     // Should have some recency indicator
     expect(count).toBeGreaterThanOrEqual(0);
   });
 });
 
 test.describe('RAG UI Integration - Performance', () => {
-  
+
   test('should load page in under 3 seconds', async ({ page }) => {
     const startTime = Date.now();
-    
+
     await page.goto(BASE_URL);
     await page.waitForLoadState('networkidle');
-    
+
     const loadTime = Date.now() - startTime;
     expect(loadTime).toBeLessThan(3000);
   });
@@ -323,11 +323,11 @@ test.describe('RAG UI Integration - Performance', () => {
     await page.goto(BASE_URL);
 
     const startTime = Date.now();
-    
+
     await page.fill('textarea, input[type="text"]', 'What is a vector database?');
     await page.click('button[type="submit"]');
     await page.waitForSelector('text=/vector|database|answer/i', { timeout: 10000 });
-    
+
     const responseTime = Date.now() - startTime;
     expect(responseTime).toBeLessThan(10000);
   });

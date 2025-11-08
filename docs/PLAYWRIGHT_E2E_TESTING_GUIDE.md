@@ -7,29 +7,29 @@
 ## 🎯 What's Tested
 
 ### **Core Integration Tests**
-✅ Homepage loads without errors  
-✅ Health endpoints (`/live`, `/ready`) accessible  
-✅ API routing through Nginx (same-origin `/api`)  
-✅ Query submission and response display  
-✅ Citations drawer with provenance badges  
-✅ Provenance badges (security status, recency)  
-✅ Metrics row (trace ID, tokens, cost, latency)  
-✅ JSON artifacts inspector  
-✅ No CORS errors  
-✅ OpenTelemetry headers forwarded  
+✅ Homepage loads without errors
+✅ Health endpoints (`/live`, `/ready`) accessible
+✅ API routing through Nginx (same-origin `/api`)
+✅ Query submission and response display
+✅ Citations drawer with provenance badges
+✅ Provenance badges (security status, recency)
+✅ Metrics row (trace ID, tokens, cost, latency)
+✅ JSON artifacts inspector
+✅ No CORS errors
+✅ OpenTelemetry headers forwarded
 
 ### **Error Handling Tests**
-✅ API timeout handling  
-✅ Security degraded status  
+✅ API timeout handling
+✅ Security degraded status
 
 ### **Golden Query Tests** (User Acceptance)
-✅ Navigational: "Where is the Phase 2 quickstart?"  
-✅ Policy: "How to run acceptance probes?"  
-✅ Temporal: "What changed in Phase B today?"  
+✅ Navigational: "Where is the Phase 2 quickstart?"
+✅ Policy: "How to run acceptance probes?"
+✅ Temporal: "What changed in Phase B today?"
 
 ### **Performance Tests**
-✅ Page load < 3 seconds  
-✅ Query response < 10 seconds (cold)  
+✅ Page load < 3 seconds
+✅ Query response < 10 seconds (cold)
 
 ---
 
@@ -285,14 +285,14 @@ test('Temporal: What changed in Phase B today?', async ({ page }) => {
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 90 * 1000,  // 90s per test
-  
+
   use: {
     baseURL: process.env.BASE_URL || 'http://16.146.148.184:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
-  
+
   projects: [
     { name: 'chromium', use: devices['Desktop Chrome'] },
     { name: 'firefox', use: devices['Desktop Firefox'] },
@@ -388,7 +388,7 @@ npx playwright test -g "should submit query"
 
 ### **Issue: Tests timing out**
 
-**Cause:** Frontend/API not running or slow  
+**Cause:** Frontend/API not running or slow
 **Fix:**
 ```bash
 # Ensure services are up
@@ -404,7 +404,7 @@ docker compose up -d --build frontend rag-api-v1
 
 ### **Issue: Element not found**
 
-**Cause:** UI structure changed or selector wrong  
+**Cause:** UI structure changed or selector wrong
 **Fix:**
 ```bash
 # Use codegen to get correct selectors
@@ -413,7 +413,7 @@ npx playwright codegen http://16.146.148.184:3000
 
 ### **Issue: CORS errors in tests**
 
-**Cause:** Nginx routing not working  
+**Cause:** Nginx routing not working
 **Fix:**
 1. Check `frontend/nginx.conf` has `/api/` proxy
 2. Redeploy frontend: `docker compose up -d --build frontend`
@@ -421,7 +421,7 @@ npx playwright codegen http://16.146.148.184:3000
 
 ### **Issue: API returns 502**
 
-**Cause:** `rag-api-v1` not running  
+**Cause:** `rag-api-v1` not running
 **Fix:**
 ```bash
 docker compose ps rag-api-v1
@@ -431,7 +431,7 @@ docker compose up -d rag-api-v1
 
 ### **Issue: Docker container fails to start**
 
-**Cause:** Node modules conflict  
+**Cause:** Node modules conflict
 **Fix:**
 ```bash
 # Clean and rebuild

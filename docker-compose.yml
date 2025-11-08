@@ -853,7 +853,7 @@ services:
   # ============================================================================
   # PLAYWRIGHT - E2E Testing
   # ============================================================================
-  
+
   playwright:
     image: mcr.microsoft.com/playwright:v1.40.0-jammy
     container_name: rag-playwright

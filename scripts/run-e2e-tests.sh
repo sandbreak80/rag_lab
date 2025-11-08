@@ -23,7 +23,7 @@ if [ "$RUN_MODE" = "docker" ]; then
     echo -e "${YELLOW}Running tests in Docker container...${NC}"
     echo -e "Target: ${TEST_TARGET}"
     echo ""
-    
+
     # Ensure frontend and API are running
     echo -e "${YELLOW}Checking if frontend and API are running...${NC}"
     docker compose ps frontend rag-api-v1 | grep -q "Up" || {
@@ -32,7 +32,7 @@ if [ "$RUN_MODE" = "docker" ]; then
         echo -e "${YELLOW}Waiting 20s for services to be ready...${NC}"
         sleep 20
     }
-    
+
     # Run Playwright tests
     echo -e "${GREEN}Running Playwright tests...${NC}"
     docker compose run --rm \
@@ -43,9 +43,9 @@ if [ "$RUN_MODE" = "docker" ]; then
             npx playwright install --with-deps &&
             npx playwright test --reporter=list
         "
-    
+
     TEST_EXIT_CODE=$?
-    
+
     if [ $TEST_EXIT_CODE -eq 0 ]; then
         echo ""
         echo -e "${GREEN}✅ All tests passed!${NC}"
@@ -59,31 +59,31 @@ if [ "$RUN_MODE" = "docker" ]; then
         echo -e "Check logs above and HTML report:"
         echo -e "  open tests/e2e/playwright-report/index.html"
     fi
-    
+
 elif [ "$RUN_MODE" = "local" ]; then
     echo -e "${YELLOW}Running tests locally...${NC}"
     echo -e "Target: ${TEST_TARGET}"
     echo ""
-    
+
     # Check if Playwright is installed
     if ! command -v npx &> /dev/null; then
         echo -e "${RED}Error: npx not found. Install Node.js first.${NC}"
         exit 1
     fi
-    
+
     # Install Playwright if needed
     if ! npx playwright --version &> /dev/null; then
         echo -e "${YELLOW}Installing Playwright...${NC}"
         npm install -D @playwright/test
         npx playwright install --with-deps
     fi
-    
+
     # Run tests
     echo -e "${GREEN}Running Playwright tests locally...${NC}"
     BASE_URL="$TEST_TARGET" npx playwright test --reporter=list
-    
+
     TEST_EXIT_CODE=$?
-    
+
     if [ $TEST_EXIT_CODE -eq 0 ]; then
         echo ""
         echo -e "${GREEN}✅ All tests passed!${NC}"
@@ -97,7 +97,7 @@ elif [ "$RUN_MODE" = "local" ]; then
         echo -e "Debug with UI mode:"
         echo -e "  BASE_URL=$TEST_TARGET npx playwright test --ui"
     fi
-    
+
 else
     echo -e "${RED}Invalid run mode: $RUN_MODE${NC}"
     echo -e "Usage: $0 [target_url] [docker|local]"
