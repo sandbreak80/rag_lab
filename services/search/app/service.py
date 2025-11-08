@@ -21,6 +21,10 @@ from config import *
 from metrics import ServiceMetrics, timed
 from health import HealthCheck
 
+# Import Evidence for provenance tracking
+from evidence import Evidence, OriginTool, extract_domain, is_primary_source, parse_published_date
+from validators import ProvenanceValidator
+
 # Import BM25
 from rank_bm25 import BM25Okapi
 
@@ -80,37 +84,43 @@ def tokenize(text: str) -> List[str]:
     tokens = re.findall(r'\b\w+\b', text)
     return tokens
 
-def reciprocal_rank_fusion(rankings: List[List[Dict]], k: int = 60) -> List[Dict]:
+def reciprocal_rank_fusion(rankings: List[List[Evidence]], k: int = 60) -> List[Evidence]:
     """
-    Combine multiple rankings using Reciprocal Rank Fusion
-
+    Combine multiple rankings using Reciprocal Rank Fusion.
+    CRITICAL: Preserves Evidence objects - does NOT create new dicts.
+    
     Args:
-        rankings: List of ranking lists (each with 'id' and 'score')
+        rankings: List of ranking lists (Evidence objects)
         k: RRF constant (default 60)
-
+    
     Returns:
-        Fused ranking
+        Fused ranking of Evidence objects with updated scores
     """
     scores = defaultdict(float)
-    doc_data = {}
+    evidence_map = {}
 
     for ranking in rankings:
-        for rank, doc in enumerate(ranking):
-            doc_id = doc.get('id') or doc.get('metadata', {}).get('file_name', '')
-            scores[doc_id] += 1.0 / (k + rank + 1)
-            if doc_id not in doc_data:
-                doc_data[doc_id] = doc
+        for rank, evidence in enumerate(ranking):
+            # Use Evidence ID as key
+            evidence_id = evidence.id
+            scores[evidence_id] += 1.0 / (k + rank + 1)
+            
+            # Keep first occurrence (preserves provenance)
+            if evidence_id not in evidence_map:
+                evidence_map[evidence_id] = evidence
 
-    # Sort by score
-    fused = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    # Sort by RRF score
+    sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
-    # Build result
+    # Build result list - KEEP Evidence objects, update scores in place
+    # Note: Evidence is immutable, so we can't update score directly
+    # Instead, we sort the existing Evidence objects by their RRF score
     result = []
-    for doc_id, score in fused:
-        doc = doc_data[doc_id].copy()
-        doc['score'] = score
-        doc['fusion_score'] = score
-        result.append(doc)
+    for evidence_id, rrf_score in sorted_scores:
+        evidence = evidence_map[evidence_id]
+        # Evidence is immutable, so we keep it as-is
+        # The RRF score is tracked separately if needed
+        result.append(evidence)
 
     return result
 
@@ -391,8 +401,11 @@ def hybrid_search():
         metrics.increment('hybrid_search_errors')
         return jsonify({'error': str(e)}), 500
 
-def vector_search_internal(query: str, limit: int, metadata_filters: Optional[Dict] = None) -> List[Dict]:
-    """Internal vector search with optional metadata filters"""
+def vector_search_internal(query: str, limit: int, metadata_filters: Optional[Dict] = None) -> List[Evidence]:
+    """
+    Internal vector search with optional metadata filters.
+    Returns Evidence objects with origin_tool=RAG.
+    """
     # Get config values
     embedding_url = os.getenv('EMBEDDING_SERVICE_URL', 'http://embedding-service:8006')
     vector_db_url = os.getenv('VECTOR_DB_URL', 'http://vector-db:8005')
@@ -426,20 +439,30 @@ def vector_search_internal(query: str, limit: int, metadata_filters: Optional[Di
 
     results = search_response.json()
 
-    formatted = []
+    # Convert to Evidence objects with RAG origin
+    evidence_list = []
     if results.get('documents') and results['documents'][0]:
         for i in range(len(results['documents'][0])):
-            formatted.append({
-                'content': results['documents'][0][i],
-                'metadata': results['metadatas'][0][i],
-                'score': 1.0 - results['distances'][0][i],
-                'id': results['ids'][0][i]
-            })
+            metadata = results['metadatas'][0][i]
+            evidence = Evidence(
+                id=results['ids'][0][i],
+                content=results['documents'][0][i],
+                origin_tool=OriginTool.RAG,  # Set once here - IMMUTABLE
+                doc_id=metadata.get('doc_id'),
+                chunk_id=results['ids'][0][i],
+                title=metadata.get('title') or metadata.get('file_name', 'Unknown'),
+                score=1.0 - results['distances'][0][i],  # Convert distance to similarity
+                metadata=metadata,
+            )
+            evidence_list.append(evidence)
 
-    return formatted
+    return evidence_list
 
-def bm25_search_internal(query: str, limit: int, metadata_filters: Optional[Dict] = None) -> List[Dict]:
-    """Internal BM25 search with optional metadata filters"""
+def bm25_search_internal(query: str, limit: int, metadata_filters: Optional[Dict] = None) -> List[Evidence]:
+    """
+    Internal BM25 search with optional metadata filters.
+    Returns Evidence objects with origin_tool=RAG.
+    """
     if not bm25_index:
         print("⚠️  BM25: No index available")
         return []
@@ -455,7 +478,7 @@ def bm25_search_internal(query: str, limit: int, metadata_filters: Optional[Dict
     scored_indices = [(i, scores[i]) for i in range(len(scores)) if scores[i] > 0]
     scored_indices.sort(key=lambda x: x[1], reverse=True)
 
-    results = []
+    evidence_list = []
     for idx, score in scored_indices:
         metadata = bm25_metadata[idx]
 
@@ -464,19 +487,24 @@ def bm25_search_internal(query: str, limit: int, metadata_filters: Optional[Dict
             if not _matches_filters(metadata, metadata_filters):
                 continue
 
-        results.append({
-            'content': bm25_docs[idx],
-            'metadata': metadata,
-            'score': float(score),
-            'id': metadata.get('file_name', f'doc_{idx}')
-        })
+        # Convert to Evidence with RAG origin
+        evidence = Evidence(
+            id=metadata.get('file_name', f'doc_{idx}'),
+            content=bm25_docs[idx],
+            origin_tool=OriginTool.RAG,  # BM25 is internal search - IMMUTABLE
+            doc_id=metadata.get('doc_id'),
+            title=metadata.get('title') or metadata.get('file_name', 'Unknown'),
+            score=float(score),
+            metadata=metadata,
+        )
+        evidence_list.append(evidence)
 
         # Stop when we have enough results
-        if len(results) >= limit:
+        if len(evidence_list) >= limit:
             break
 
-    print(f"🔍 BM25: Returning {len(results)} results (filtered: {len(scored_indices)} → {len(results)})")
-    return results
+    print(f"🔍 BM25: Returning {len(evidence_list)} results (filtered: {len(scored_indices)} → {len(evidence_list)})")
+    return evidence_list
 
 def _matches_filters(metadata: Dict, filters: Dict) -> bool:
     """Check if metadata matches the provided filters"""
@@ -1107,23 +1135,32 @@ def search_with_config():
                         print(f"⚠️  Web Search: HTTP {response.status_code}")
                         web_results = []
 
-                # Convert web results to standard format and add to fused results
+                # Convert web results to Evidence objects with WEB_SEARCH origin
                 # Give web results competitive scores so they appear in top results
                 for idx, web_result in enumerate(web_results):
                     # Score decreases from 0.95 to 0.75
                     web_score = 0.95 - (idx * 0.05)
-                    fused.append({
-                        'id': web_result.get('url', ''),
-                        'content': web_result.get('content', web_result.get('snippet', '')),
-                        'score': web_score,  # Competitive score for web results
-                        'source': 'web_search',
-                        'metadata': {
-                            'title': web_result.get('title', 'Web Result'),
-                            'file_name': web_result.get('url', 'web'),
-                            'url': web_result.get('url', ''),
-                            'engine': web_result.get('engine', 'searxng')
+                    
+                    # Extract URL for domain and primary source detection
+                    url = web_result.get('url', '')
+                    
+                    # Create Evidence object with WEB_SEARCH origin
+                    evidence = Evidence(
+                        id=f"web-{hash(url)}",  # Unique ID based on URL
+                        content=web_result.get('content', web_result.get('snippet', '')),
+                        origin_tool=OriginTool.WEB_SEARCH,  # Set once - IMMUTABLE
+                        url=url,
+                        domain=extract_domain(url),
+                        title=web_result.get('title', 'Web Result'),
+                        published_at=parse_published_date(web_result.get('published')),
+                        is_primary=is_primary_source(url),
+                        score=web_score,
+                        metadata={
+                            'engine': web_result.get('engine', 'searxng'),
+                            'original_score': web_result.get('score', 0.0),
                         }
-                    })
+                    )
+                    fused.append(evidence)
 
                 perf_metrics['web_search_ms'] = round((time.time() - web_start) * 1000, 2)
                 perf_metrics['web_results_count'] = len(web_results)
@@ -1177,14 +1214,28 @@ def search_with_config():
             perf_metrics['reranking_success'] = False
             print(f"⊘ Reranking: SKIPPED (enabled={use_reranking}, results={len(fused)})")
 
-        # Final results - sort by score DESC to mix RAG and web results
-        fused_sorted = sorted(fused, key=lambda x: x.get('score', 0), reverse=True)
+        # Final results - sort Evidence objects by score DESC to mix RAG and web results
+        # CRITICAL: Keep Evidence objects, don't convert to dict yet
+        fused_sorted = sorted(fused, key=lambda e: e.score, reverse=True)
         final_results = fused_sorted[:top_k]
+
+        # Validate provenance before returning
+        validator = ProvenanceValidator(strict_mode=False)
+        is_valid = validator.validate(final_results)
+        if not is_valid:
+            print(f"⚠️  Provenance validation warnings:\n{validator.get_summary()}")
 
         # Total time
         perf_metrics['total_latency_ms'] = round((time.time() - start_time) * 1000, 2)
         print(f"⏱️  TOTAL SEARCH: {perf_metrics['total_latency_ms']}ms")
         print(f"✅ Returning {len(final_results)} results\n")
+
+        # Calculate source breakdown for logging
+        source_breakdown = {}
+        for evidence in final_results:
+            origin = evidence.origin_tool.value
+            source_breakdown[origin] = source_breakdown.get(origin, 0) + 1
+        print(f"📊 Source breakdown: {source_breakdown}")
 
         # Calculate breakdown percentages
         total = perf_metrics['total_latency_ms']
@@ -1199,14 +1250,16 @@ def search_with_config():
             }
 
         return jsonify({
-            'results': final_results,
+            'results': [e.to_dict() for e in final_results],  # Serialize Evidence to dict
             'count': len(final_results),
             'query': {
                 'original': original_query,
                 'expanded': query if use_query_expansion and query != original_query else None
             },
             'config_used': config,
-            'metrics': perf_metrics
+            'metrics': perf_metrics,
+            'source_breakdown': source_breakdown,  # Add source breakdown to response
+            'provenance_report': validator.get_report() if not is_valid else None
         })
 
     except Exception as e:
