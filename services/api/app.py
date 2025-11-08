@@ -756,20 +756,20 @@ def query():
                 # Check query + answer for safety
                 content_to_check = f"Query: {rag_req.query}\n\nAnswer: {answer}"
                 guardrail_report = check_guardrails(content_to_check, orch_ctx)
-                
+
                 span.set_attribute("overall_safe", guardrail_report.overall_safe)
                 span.set_attribute("detections_count", len(guardrail_report.detections))
                 span.set_attribute("service_errors_count", len(guardrail_report.service_errors))
-                
+
                 if guardrail_report.service_errors:
                     span.set_attribute("degraded", True)
                     logger.warning(
                         f"Guardrails degraded: {len(guardrail_report.service_errors)} service errors"
                     )
-            
+
             # Determine security status for footer
             security_status = get_security_status(guardrail_report)
-            
+
             # Add chunking report (mock for now)
             chunking_report = ChunkingReport(
                 trace_id=trace_id,
@@ -877,11 +877,11 @@ def query():
                 sha256=hash_answer(answer),
                 refusal=refusal
             )
-            
+
             # Add security_status to response dict
             response_dict = response.to_dict()
             response_dict['security_status'] = security_status
-            
+
             return jsonify(response_dict), 200
 
         except Exception as e:

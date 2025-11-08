@@ -26,22 +26,22 @@ def check_guardrails(
 ) -> GuardrailReport:
     """
     Call security guardrails service with graceful fallback.
-    
+
     On success: Return GuardrailReport with detections
     On failure (4xx/5xx/timeout): Return GuardrailReport with service_errors
-    
+
     Args:
         content: Content to check (query + answer)
         ctx: Orchestration context (for trace_id/request_id)
         timeout: Request timeout in seconds
-    
+
     Returns:
         GuardrailReport (Schema F) with either detections or service_errors
     """
     detections = []
     service_errors = []
     overall_safe = True  # Optimistic default
-    
+
     try:
         # Call guardrails service
         response = requests.post(
@@ -54,11 +54,11 @@ def check_guardrails(
             timeout=timeout,
             headers={"X-Request-ID": ctx.request_id}
         )
-        
+
         if response.status_code == 200:
             # Success - parse detections
             data = response.json()
-            
+
             for finding in data.get('findings', []):
                 detections.append(GuardrailDetection(
                     type=finding.get('type', 'unknown'),
@@ -66,10 +66,10 @@ def check_guardrails(
                     details=finding.get('details', ''),
                     action_taken=finding.get('action', 'flagged')
                 ))
-            
+
             overall_safe = data.get('safe', True)
             logger.info(f"Guardrails check: safe={overall_safe}, detections={len(detections)}")
-        
+
         else:
             # 4xx/5xx error - log and continue
             service_errors.append({
@@ -82,7 +82,7 @@ def check_guardrails(
                 f"Guardrail service error: {response.status_code}, "
                 f"continuing with degraded security"
             )
-    
+
     except requests.exceptions.Timeout:
         # Timeout - log and continue
         service_errors.append({
@@ -92,7 +92,7 @@ def check_guardrails(
         })
         overall_safe = False
         logger.error(f"Guardrail service timeout ({timeout}s), continuing with degraded security")
-    
+
     except requests.exceptions.ConnectionError as e:
         # Connection error - log and continue
         service_errors.append({
@@ -102,7 +102,7 @@ def check_guardrails(
         })
         overall_safe = False
         logger.error(f"Guardrail service connection error: {e}, continuing with degraded security")
-    
+
     except Exception as e:
         # Unexpected error - log and continue
         service_errors.append({
@@ -112,7 +112,7 @@ def check_guardrails(
         })
         overall_safe = False
         logger.error(f"Guardrail service unexpected error: {e}, continuing with degraded security", exc_info=True)
-    
+
     # Build GuardrailReport (Schema F) with ID correlation
     return GuardrailReport(
         trace_id=ctx.trace_id,
@@ -126,10 +126,10 @@ def check_guardrails(
 def get_security_status(guardrail_report: GuardrailReport) -> str:
     """
     Determine security status for response footer.
-    
+
     Args:
         guardrail_report: GuardrailReport (Schema F)
-    
+
     Returns:
         "healthy" or "degraded"
     """
