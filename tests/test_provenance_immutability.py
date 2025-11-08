@@ -19,7 +19,7 @@ from services.common.domain_filter import DomainFilter, DomainFilterAction, crea
 
 class TestDeduplication:
     """Test deduplication with audit trail"""
-    
+
     def test_deduplicate_preserves_highest_score(self):
         """Dedup keeps highest-scored duplicate"""
         evidence = [
@@ -42,32 +42,32 @@ class TestDeduplication:
                 _metadata={'score': 0.8}
             )
         ]
-        
+
         deduplicated, audit = deduplicate_evidence(evidence)
-        
+
         # Should keep doc2 (higher score) and doc3 (unique)
         assert len(deduplicated) == 2
         assert deduplicated[0].id == "doc2"
         assert deduplicated[1].id == "doc3"
-        
+
         # Check audit trail
         assert len(audit) == 3
-        
+
         # doc1 should be dropped
         dropped = [a for a in audit if a.doc_id == "doc1" and a.action == DedupAction.DROPPED]
         assert len(dropped) == 1
         assert dropped[0].duplicate_of == "doc2"
         assert "duplicate_content_hash" in dropped[0].reason
-        
+
         # doc2 should be kept
         kept = [a for a in audit if a.doc_id == "doc2" and a.action == DedupAction.KEPT]
         assert len(kept) == 1
-        
+
         # doc3 should be kept
         kept = [a for a in audit if a.doc_id == "doc3" and a.action == DedupAction.KEPT]
         assert len(kept) == 1
         assert kept[0].reason == "unique_content"
-    
+
     def test_deduplicate_never_modifies_origin_tool(self):
         """CRITICAL: Dedup NEVER modifies origin_tool (immutability)"""
         evidence = [
@@ -84,20 +84,20 @@ class TestDeduplication:
                 _metadata={'score': 0.9}
             )
         ]
-        
+
         # Store original origin_tools
         original_origins = {e.id: e.origin_tool for e in evidence}
-        
+
         deduplicated, audit = deduplicate_evidence(evidence)
-        
+
         # Check that kept evidence has ORIGINAL origin_tool
         for ev in deduplicated:
             assert ev.origin_tool == original_origins[ev.id]
-        
+
         # Check that dropped evidence still has ORIGINAL origin_tool
         for ev in evidence:
             assert ev.origin_tool == original_origins[ev.id]
-    
+
     def test_deduplicate_with_no_duplicates(self):
         """Dedup with all unique content keeps everything"""
         evidence = [
@@ -105,12 +105,12 @@ class TestDeduplication:
             Evidence(id="doc2", content="Content B", origin_tool=OriginTool.WEB_SEARCH),
             Evidence(id="doc3", content="Content C", origin_tool=OriginTool.RESEARCH_AGENT)
         ]
-        
+
         deduplicated, audit = deduplicate_evidence(evidence)
-        
+
         assert len(deduplicated) == 3
         assert all(a.action == DedupAction.KEPT for a in audit)
-    
+
     def test_deduplicate_audit_trail_serializable(self):
         """Audit trail can be serialized to dict (for Schema B)"""
         evidence = [
@@ -121,12 +121,12 @@ class TestDeduplication:
                 _metadata={'score': 0.8}
             )
         ]
-        
+
         deduplicated, audit = deduplicate_evidence(evidence)
-        
+
         # Serialize to dict
         audit_dicts = [a.to_dict() for a in audit]
-        
+
         assert len(audit_dicts) == 1
         assert audit_dicts[0]['action'] == 'kept'
         assert audit_dicts[0]['doc_id'] == 'doc1'
@@ -135,11 +135,11 @@ class TestDeduplication:
 
 class TestDomainFiltering:
     """Test domain filtering with audit trail"""
-    
+
     def test_denylist_blocks_domains(self):
         """Denylist blocks specified domains"""
         filter = DomainFilter(denylist=["asana.com", "jira.com"])
-        
+
         evidence = [
             Evidence(
                 id="doc1",
@@ -163,28 +163,28 @@ class TestDomainFiltering:
                 _metadata={'domain': 'jira.com'}
             )
         ]
-        
+
         filtered, audit = filter.filter_evidence(evidence)
-        
+
         # Should only keep doc1
         assert len(filtered) == 1
         assert filtered[0].id == "doc1"
-        
+
         # Check audit trail
         allowed = [a for a in audit if a.action == DomainFilterAction.ALLOWED]
         dropped = [a for a in audit if a.action == DomainFilterAction.DROPPED]
-        
+
         assert len(allowed) == 1
         assert allowed[0].doc_id == "doc1"
-        
+
         assert len(dropped) == 2
         assert any("denylist: asana.com" in a.reason for a in dropped)
         assert any("denylist: jira.com" in a.reason for a in dropped)
-    
+
     def test_allowlist_only_allows_specified_domains(self):
         """Allowlist only allows specified domains (blocks all others)"""
         filter = DomainFilter(allowlist=["example.com", "trusted.com"])
-        
+
         evidence = [
             Evidence(
                 id="doc1",
@@ -201,20 +201,20 @@ class TestDomainFiltering:
                 _metadata={'domain': 'random.com'}
             )
         ]
-        
+
         filtered, audit = filter.filter_evidence(evidence)
-        
+
         assert len(filtered) == 1
         assert filtered[0].id == "doc1"
-        
+
         dropped = [a for a in audit if a.action == DomainFilterAction.DROPPED]
         assert len(dropped) == 1
         assert "not_on_allowlist" in dropped[0].reason
-    
+
     def test_wildcard_subdomain_matching(self):
         """Wildcard patterns match subdomains"""
         filter = DomainFilter(denylist=["*.asana.com"])
-        
+
         evidence = [
             Evidence(
                 id="doc1",
@@ -238,18 +238,18 @@ class TestDomainFiltering:
                 _metadata={'domain': 'asana.com'}
             )
         ]
-        
+
         filtered, audit = filter.filter_evidence(evidence)
-        
+
         # Wildcard should block app.asana.com and team.app.asana.com
         # but NOT asana.com itself
         assert len(filtered) == 1
         assert filtered[0].id == "doc3"
-    
+
     def test_domain_filter_never_modifies_origin_tool(self):
         """CRITICAL: Domain filter NEVER modifies origin_tool (immutability)"""
         filter = DomainFilter(denylist=["blocked.com"])
-        
+
         evidence = [
             Evidence(
                 id="doc1",
@@ -266,24 +266,24 @@ class TestDomainFiltering:
                 _metadata={'domain': 'blocked.com'}
             )
         ]
-        
+
         # Store original origin_tools
         original_origins = {e.id: e.origin_tool for e in evidence}
-        
+
         filtered, audit = filter.filter_evidence(evidence)
-        
+
         # Check that filtered evidence has ORIGINAL origin_tool
         for ev in filtered:
             assert ev.origin_tool == original_origins[ev.id]
-        
+
         # Check that dropped evidence still has ORIGINAL origin_tool
         for ev in evidence:
             assert ev.origin_tool == original_origins[ev.id]
-    
+
     def test_domain_filter_audit_trail_serializable(self):
         """Audit trail can be serialized to dict (for Schema B)"""
         filter = DomainFilter(denylist=["blocked.com"])
-        
+
         evidence = [
             Evidence(
                 id="doc1",
@@ -293,38 +293,38 @@ class TestDomainFiltering:
                 _metadata={'domain': 'blocked.com'}
             )
         ]
-        
+
         filtered, audit = filter.filter_evidence(evidence)
-        
+
         # Serialize to dict
         audit_dicts = [a.to_dict() for a in audit]
-        
+
         assert len(audit_dicts) == 1
         assert audit_dicts[0]['action'] == 'dropped'
         assert audit_dicts[0]['doc_id'] == 'doc1'
         assert audit_dicts[0]['domain'] == 'blocked.com'
         assert 'denylist' in audit_dicts[0]['reason']
-    
+
     def test_get_filtered_domains(self):
         """Extract unique list of filtered domains"""
         filter = DomainFilter(denylist=["asana.com", "jira.com"])
-        
+
         evidence = [
             Evidence(id="doc1", content="A", origin_tool=OriginTool.WEB_SEARCH, url="https://asana.com/1", _metadata={'domain': 'asana.com'}),
             Evidence(id="doc2", content="B", origin_tool=OriginTool.WEB_SEARCH, url="https://asana.com/2", _metadata={'domain': 'asana.com'}),
             Evidence(id="doc3", content="C", origin_tool=OriginTool.WEB_SEARCH, url="https://jira.com/3", _metadata={'domain': 'jira.com'}),
         ]
-        
+
         filtered, audit = filter.filter_evidence(evidence)
-        
+
         filtered_domains = filter.get_filtered_domains(audit)
-        
+
         assert set(filtered_domains) == {"asana.com", "jira.com"}
 
 
 class TestProvenanceImmutability:
     """Test that origin_tool is NEVER modified during pipeline operations"""
-    
+
     def test_origin_tool_immutable_through_dedup_and_filter(self):
         """CRITICAL: origin_tool survives dedup + filter unchanged"""
         # Create evidence with different origin_tools
@@ -351,23 +351,23 @@ class TestProvenanceImmutability:
                 _metadata={'score': 0.8, 'domain': 'blocked.com'}
             )
         ]
-        
+
         # Store original origin_tools
         original_origins = {e.id: e.origin_tool for e in evidence}
-        
+
         # Step 1: Dedup
         deduped, dedup_audit = deduplicate_evidence(evidence)
-        
+
         for ev in deduped:
             assert ev.origin_tool == original_origins[ev.id], f"Dedup changed origin_tool for {ev.id}"
-        
+
         # Step 2: Domain filter
         filter = DomainFilter(denylist=["blocked.com"])
         filtered, filter_audit = filter.filter_evidence(deduped)
-        
+
         for ev in filtered:
             assert ev.origin_tool == original_origins[ev.id], f"Filter changed origin_tool for {ev.id}"
-        
+
         # Final check: doc2 should be the only one kept
         assert len(filtered) == 1
         assert filtered[0].id == "doc2"

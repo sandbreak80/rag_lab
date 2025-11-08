@@ -32,6 +32,10 @@ from services.common.orchestrator import RAGOrchestrator, RetrievalPlan, Retriev
 from services.common.prompt_assembler import PromptAssembler, PromptTemplate
 from services.common.evidence import Evidence, OriginTool
 from services.common.artifact_base import ArtifactBase, OrchestrationContext, CONTRACT_VERSION
+from services.common.deduplicator import deduplicate_evidence, DedupAuditEntry
+from services.common.domain_filter import create_default_filter, DomainFilterAuditEntry
+from services.common.mock_retrievers import mock_vector_search, mock_web_search, mock_research_agent_retrieve
+from services.common.schema_b_builder import build_retrieval_log, add_detailed_audit_to_retrieval_log
 
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -624,30 +628,11 @@ def query():
             span.set_attribute("ab_setting", rag_req.ab_test.setting)
 
             # Get trace ID
-            ctx = span.get_span_context()
-            trace_id = format(ctx.trace_id, '032x')
-
-            # TODO: Implement full pipeline with all artifacts
-            # For now, return mock response with full contract
-
-            mock_sources = [
-                Source(
-                    index=1,
-                    id="doc_1",
-                    content="Mock content about RAG",
-                    url="https://example.com/rag",
-                    title="RAG Overview",
-                    score=0.95,
-                    origin_tool="rag",
-                    published_at=(datetime.now(timezone.utc) - timedelta(hours=12)).isoformat(),
-                    is_primary=True,
-                    domain="example.com",
-                    freshness_hours=12
-                )
-            ]
-
+            span_ctx = span.get_span_context()
+            trace_id = format(span_ctx.trace_id, '032x')
+            
             # Build orchestration context (ID correlation)
-            ctx = OrchestrationContext(
+            orch_ctx = OrchestrationContext(
                 trace_id=trace_id,
                 request_id=g.request_id,
                 tenant=rag_req.tenant,
@@ -660,32 +645,79 @@ def query():
                 ab_test=rag_req.ab_test,
                 start_time=g.start_time
             )
+            
+            # === RETRIEVAL PIPELINE WITH PROVENANCE ===
+            
+            timings = {}
+            
+            # Step 1: Vector search (sets origin_tool=RAG)
+            start = time.time()
+            internal_evidence = mock_vector_search(rag_req.query, k=10, ctx=orch_ctx)
+            timings['vector_search'] = (time.time() - start) * 1000
+            
+            # Step 2: Web search (sets origin_tool=WEB_SEARCH)
+            start = time.time()
+            web_evidence = mock_web_search(rag_req.query, k=5, ctx=orch_ctx)
+            timings['web_search'] = (time.time() - start) * 1000
+            
+            # Step 3: Merge
+            all_evidence = internal_evidence + web_evidence
+            
+            # Step 4: Deduplication (preserves origin_tool)
+            start = time.time()
+            deduped_evidence, dedup_audit = deduplicate_evidence(all_evidence)
+            timings['dedup'] = (time.time() - start) * 1000
+            
+            # Step 5: Domain filtering (preserves origin_tool)
+            domain_filter = create_default_filter()
+            start = time.time()
+            filtered_evidence, filter_audit = domain_filter.filter_evidence(deduped_evidence)
+            timings['domain_filter'] = (time.time() - start) * 1000
+            
+            # Step 6: Build Schema B (RetrievalLog)
+            retrieval_log = build_retrieval_log(
+                internal_results=[e for e in filtered_evidence if e.origin_tool == OriginTool.RAG],
+                web_results=[e for e in filtered_evidence if e.origin_tool == OriginTool.WEB_SEARCH],
+                dedup_audit=dedup_audit,
+                filter_audit=filter_audit,
+                timings=timings,
+                ctx=orch_ctx
+            )
+            
+            # Convert Evidence to Source for response
+            mock_sources = [
+                Source(
+                    index=i+1,
+                    id=ev.id,
+                    content=ev.content,
+                    url=ev.url,
+                    title=ev.title,
+                    score=ev.metadata.get('score', 0.0),
+                    origin_tool=ev.origin_tool.value,  # Preserved origin_tool
+                    published_at=ev.published_at.isoformat() if ev.published_at else None,
+                    is_primary=ev.is_primary,
+                    domain=ev.metadata.get('domain'),
+                    freshness_hours=None  # Will be computed in recency evaluation
+                )
+                for i, ev in enumerate(filtered_evidence[:10])
+            ]
 
             # Evaluate recency
-            recency = evaluate_recency(mock_sources, rag_req.policy, rag_req.query, ctx)
+            recency = evaluate_recency(mock_sources, rag_req.policy, rag_req.query, orch_ctx)
 
             # Build artifacts with ID correlation
             planner = PlannerArtifact(
                 trace_id=trace_id,
                 request_id=g.request_id,
-                subtasks=["retrieve", "synthesize"],
+                subtasks=["retrieve_internal", "retrieve_web", "dedup", "filter", "synthesize"],
                 requires_recency=[False],
                 queries_planned=[rag_req.query],
                 budgets_applied=rag_req.budgets,
-                route_decision="rag",
-                route_reason="Query is factual, internal docs sufficient"
+                route_decision="blended",
+                route_reason=f"Blended RAG + Web search. Retrieved {len(internal_evidence)} internal + {len(web_evidence)} web, deduped {len(all_evidence) - len(deduped_evidence)}, filtered {len(deduped_evidence) - len(filtered_evidence)}"
             )
-
-            retrieval_log = RetrievalLog(
-                trace_id=trace_id,
-                request_id=g.request_id,
-                internal_queries=[],
-                web_queries=[],
-                total_retrieved=1,
-                total_deduped=0,
-                domains_filtered=[],
-                timing_breakdown_ms={"vector_search": 120.0, "bm25": 80.0}
-            )
+            
+            # retrieval_log already built above with full audit trail
 
             evidence_map = EvidenceMap(
                 trace_id=trace_id,
