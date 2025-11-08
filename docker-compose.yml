@@ -1072,3 +1072,26 @@ services:
       - api-gateway
     profiles:
       - testing
+
+  # Playwright E2E Tests (TypeScript) - Phase B/C Validation
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.48.0-jammy
+    container_name: rag-e2e-tests
+    networks:
+      - rag-network
+    working_dir: /workspace/tests/e2e
+    entrypoint: ["/bin/bash", "-lc"]
+    command:
+      - >
+        npx playwright install --with-deps &&
+        npx playwright test
+    environment:
+      BASE_URL: http://frontend:3000
+      CI: "true"
+    volumes:
+      - ./:/workspace
+    depends_on:
+      - frontend
+      - rag-api-v1
+    profiles:
+      - testing

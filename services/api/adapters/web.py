@@ -60,7 +60,7 @@ async def search_web_real(
 ) -> list[WebSearchResult]:
     """
     Real web search via web-search service (SearXNG wrapper).
-    
+
     Flow:
     1. Call web-search service
     2. Parse results from SearXNG
@@ -80,7 +80,7 @@ async def search_web_real(
             # Extract URL as unique ID
             url = hit.get("url", "")
             doc_id = f"web_{hash(url) % 100000}"  # Stable hash-based ID
-            
+
             results.append(WebSearchResult(
                 doc_id=doc_id,
                 chunk_id=f"{doc_id}_chunk",
