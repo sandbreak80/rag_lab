@@ -15,14 +15,9 @@ from prometheus_client import REGISTRY
 import logging
 import time
 import os
-import sys
 
-# Add common to path
-sys.path.insert(0, '/workspace/services/common')
-sys.path.insert(0, '/workspace/services/api')
-
-from config import CONTRACT_VERSION, ENABLE_OBS, OTEL_COLLECTOR_URL
-from routes.rag import router as rag_router
+from .config import CONTRACT_VERSION, ENABLE_OBS, OTEL_COLLECTOR_URL
+from .routes.rag import router as rag_router
 
 # Configure logging
 logging.basicConfig(
@@ -37,12 +32,12 @@ logger = logging.getLogger(__name__)
 if ENABLE_OBS:
     resource = Resource.create({"service.name": "rag-api", "service.version": CONTRACT_VERSION})
     tracer_provider = TracerProvider(resource=resource)
-    
+
     # OTLP exporter to collector
     otlp_exporter = OTLPSpanExporter(endpoint=OTEL_COLLECTOR_URL, insecure=True)
     span_processor = BatchSpanProcessor(otlp_exporter)
     tracer_provider.add_span_processor(span_processor)
-    
+
     trace.set_tracer_provider(tracer_provider)
     logger.info(f"✅ OpenTelemetry configured: exporter={OTEL_COLLECTOR_URL}")
 else:
@@ -115,29 +110,29 @@ app.include_router(rag_router)
 async def log_requests(request: Request, call_next):
     """Log requests and emit metrics (NO PAYLOAD LOGGING)"""
     start_time = time.time()
-    
+
     try:
         response = await call_next(request)
         latency = time.time() - start_time
-        
+
         # Emit Prometheus metrics
         REQUEST_COUNT.labels(
             endpoint=request.url.path,
             status=response.status_code
         ).inc()
-        
+
         REQUEST_LATENCY.labels(
             endpoint=request.url.path
         ).observe(latency)
-        
+
         # Log (no payloads)
         logger.info(
             f"{request.method} {request.url.path} - "
             f"status={response.status_code} latency={latency:.3f}s"
         )
-        
+
         return response
-        
+
     except Exception as e:
         latency = time.time() - start_time
         REQUEST_COUNT.labels(endpoint=request.url.path, status=500).inc()
@@ -163,7 +158,7 @@ async def readiness():
     Returns 200 only if service is ready to accept traffic.
     """
     import aiohttp
-    
+
     # Check OTel collector (if observability enabled)
     otel_ready = True
     if ENABLE_OBS:
@@ -173,7 +168,7 @@ async def readiness():
                     otel_ready = resp.status == 200
         except:
             otel_ready = False
-    
+
     # Check vector DB (if not using mocks)
     from config import USE_MOCK_VECTOR, VECTOR_DB_URL
     vector_ready = True
@@ -184,9 +179,9 @@ async def readiness():
                     vector_ready = resp.status == 200
         except:
             vector_ready = False
-    
+
     all_ready = otel_ready and vector_ready
-    
+
     if not all_ready:
         return JSONResponse(
             status_code=503,
@@ -198,7 +193,7 @@ async def readiness():
                 }
             }
         )
-    
+
     return {
         "status": "ready",
         "service": "rag-api",
@@ -214,13 +209,13 @@ async def health():
     For backwards compatibility.
     """
     liveness_result = await liveness()
-    
+
     try:
         readiness_result = await readiness()
         is_ready = readiness_result.get("status") == "ready" if isinstance(readiness_result, dict) else False
     except:
         is_ready = False
-    
+
     return {
         "status": "healthy" if is_ready else "degraded",
         "live": True,

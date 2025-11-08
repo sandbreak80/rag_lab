@@ -10,20 +10,16 @@ from uuid import uuid4
 from datetime import datetime, timezone
 
 # Local imports
-import sys
-sys.path.insert(0, '/workspace/services/common')
-sys.path.insert(0, '/workspace/services/api')
-
-from models import RagQuery, RagResponse
-from config import (
+from ..models import RagQuery, RagResponse
+from ..config import (
     CONTRACT_VERSION, ENABLE_OBS, USE_MOCK_LLM, USE_MOCK_VECTOR, USE_MOCK_WEB,
     FRESHNESS_HOURS, TOPN, AB_TEST_ENABLED
 )
-from authz.abac import build_acl_predicate
-from adapters import vector, web, llm
-from recency_gate import evaluate_recency_gate
-from ab_grader import ABGrader
-from guardrail_client import check_guardrails, get_security_status
+from ..authz.abac import build_acl_predicate
+from ..adapters import vector, web, llm
+from ..pipeline.recency_gate import evaluate_recency_gate
+from ..pipeline.ab_grader import ABGrader
+from ..pipeline.guardrail_client import check_guardrails, get_security_status
 
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)

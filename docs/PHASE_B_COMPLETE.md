@@ -1,7 +1,7 @@
 # 🚀 Phase B Implementation - Complete
 
-**Status**: ✅ **READY FOR TESTING**  
-**Date**: November 8, 2025  
+**Status**: ✅ **READY FOR TESTING**
+**Date**: November 8, 2025
 **Branch**: `otel`
 
 ---
@@ -252,42 +252,42 @@ docker logs rag-otel-collector --tail 100 | grep -i "span\|trace"
 
 ### Required Response Fields
 
-✅ `answer` - Generated text  
-✅ `citations` - List with (doc_id, version, chunk_id, char_range, source_uri, origin_tool)  
-✅ `artifacts.planner` - Schema A (route, budgets)  
-✅ `artifacts.retrieval_log` - Schema B (ACL filtering audit)  
-✅ `artifacts.evidence_map` - Schema C (citations map)  
-✅ `artifacts.recency` - Freshness check results  
-✅ `artifacts.guardrail_report` - Schema F (when applicable)  
-✅ `artifacts.ab_eval` - Schema G (when `ab_bucket` set)  
-✅ `metrics` - Pipeline performance  
-✅ `security_status` - ok/degraded/blocked  
-✅ `request_id` - Correlation ID  
-✅ `trace_id` - Distributed trace  
-✅ `contract_version` - API version  
+✅ `answer` - Generated text
+✅ `citations` - List with (doc_id, version, chunk_id, char_range, source_uri, origin_tool)
+✅ `artifacts.planner` - Schema A (route, budgets)
+✅ `artifacts.retrieval_log` - Schema B (ACL filtering audit)
+✅ `artifacts.evidence_map` - Schema C (citations map)
+✅ `artifacts.recency` - Freshness check results
+✅ `artifacts.guardrail_report` - Schema F (when applicable)
+✅ `artifacts.ab_eval` - Schema G (when `ab_bucket` set)
+✅ `metrics` - Pipeline performance
+✅ `security_status` - ok/degraded/blocked
+✅ `request_id` - Correlation ID
+✅ `trace_id` - Distributed trace
+✅ `contract_version` - API version
 
 ### Required Span Attributes (20)
 
-✅ `rag.request.contract_version`  
-✅ `rag.request.freshness_hours`  
-✅ `rag.request.intent`  
-✅ `rag.auth.perms_tag`  
-✅ `rag.retrieve.candidate_count`  
-✅ `rag.retrieve.acl_filtered_count`  
-✅ `rag.provenance.origin_tool_immutable`  
-✅ `llm.model.name`  
-✅ `llm.model.provider`  
-✅ `llm.temperature`  
-✅ `llm.tokens.input`  
-✅ `llm.tokens.output`  
-✅ `llm.tokens.total`  
-✅ `llm.cost.usd`  
-✅ `rag.guardrail.status`  
-✅ `rag.citations.count`  
-✅ `rag.citations.unique_documents`  
-✅ `rag.abtest.bucket` (when enabled)  
-✅ `rag.rerank.model`  
-✅ `rag.synth.model`  
+✅ `rag.request.contract_version`
+✅ `rag.request.freshness_hours`
+✅ `rag.request.intent`
+✅ `rag.auth.perms_tag`
+✅ `rag.retrieve.candidate_count`
+✅ `rag.retrieve.acl_filtered_count`
+✅ `rag.provenance.origin_tool_immutable`
+✅ `llm.model.name`
+✅ `llm.model.provider`
+✅ `llm.temperature`
+✅ `llm.tokens.input`
+✅ `llm.tokens.output`
+✅ `llm.tokens.total`
+✅ `llm.cost.usd`
+✅ `rag.guardrail.status`
+✅ `rag.citations.count`
+✅ `rag.citations.unique_documents`
+✅ `rag.abtest.bucket` (when enabled)
+✅ `rag.rerank.model`
+✅ `rag.synth.model`
 
 ---
 
@@ -326,11 +326,11 @@ docker logs rag-otel-collector --tail 100 | grep -i "span\|trace"
 
 ## 🎉 **Summary**
 
-**Built**: Complete `/v1/rag/query` API with full observability contract  
-**Lines of Code**: ~2,000 (production-quality)  
-**Features**: 9-stage pipeline, 7 schemas, 20 OTel attributes, 3 health endpoints, 5 Prometheus metrics  
-**Default Mode**: Safe (all mocks ON, observability OFF)  
-**Breaking Changes**: None (new endpoint, old `/api/ask` unchanged)  
+**Built**: Complete `/v1/rag/query` API with full observability contract
+**Lines of Code**: ~2,000 (production-quality)
+**Features**: 9-stage pipeline, 7 schemas, 20 OTel attributes, 3 health endpoints, 5 Prometheus metrics
+**Default Mode**: Safe (all mocks ON, observability OFF)
+**Breaking Changes**: None (new endpoint, old `/api/ask` unchanged)
 
 **Status**: ✅ **READY FOR INTEGRATION TESTING**
 
