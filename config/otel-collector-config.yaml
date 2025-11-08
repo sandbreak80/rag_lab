@@ -37,7 +37,7 @@ exporters:
       environment: development
 
   # Console logging for debugging
-  logging:
+  debug:
     verbosity: detailed
 
   # OTLP exporter for Grafana/Jaeger (if needed)
@@ -58,12 +58,12 @@ service:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, batch, resource]
-      exporters: [logging, otlp]
+      exporters: [debug, otlp]
 
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, batch, resource]
-      exporters: [prometheus, logging]
+      exporters: [prometheus, debug]
 
   telemetry:
     logs:
