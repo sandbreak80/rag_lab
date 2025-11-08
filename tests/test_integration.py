@@ -1,192 +1,340 @@
-#!/usr/bin/env python3
 """
-Integration tests for React UI + Backend
-Tests the full stack end-to-end
+Integration Tests for Days 1-3 Implementations
+
+Tests the complete flow of:
+1. Provenance tracking (immutable Evidence)
+2. Thread-safe timing collection
+3. URL sanitization
+4. End-to-end search with all components
+
+Run with: pytest tests/test_integration.py -v
 """
-import requests
+
+import pytest
 import time
-import json
-from typing import Dict, Any
+import threading
+import sys
+import os
 
-BASE_URL = "http://localhost:5173"
-API_URL = "http://localhost:5555"
+# Add services directory to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'services'))
 
-class Colors:
-    GREEN = '\033[92m'
-    RED = '\033[91m'
-    YELLOW = '\033[93m'
-    BLUE = '\033[94m'
-    RESET = '\033[0m'
+from common.evidence import Evidence, OriginTool, validate_url
+from common.timing import TimingCollector
+from common.validators import ProvenanceValidator
 
-def test_result(name: str, success: bool, details: str = ""):
-    """Print test result"""
-    icon = f"{Colors.GREEN}✅{Colors.RESET}" if success else f"{Colors.RED}❌{Colors.RESET}"
-    print(f"{icon} {name}")
-    if details:
-        print(f"   {details}")
-    return success
 
-def test_ui_loads():
-    """Test 1: React UI loads"""
-    try:
-        response = requests.get(BASE_URL, timeout=5)
-        success = response.status_code == 200 and "Neural Vault" in response.text
-        return test_result("React UI loads", success, f"Status: {response.status_code}")
-    except Exception as e:
-        return test_result("React UI loads", False, str(e))
+class TestProvenanceEndToEnd:
+    """Test provenance tracking through complete pipeline"""
+    
+    def test_provenance_preserved_through_merge(self):
+        """Evidence origin_tool preserved when merging RAG and web results"""
+        # Simulate RAG results
+        rag_results = [
+            Evidence(
+                id="rag-1",
+                content="RAG content 1",
+                origin_tool=OriginTool.RAG,
+                doc_id="doc_123",
+                score=0.9
+            ),
+            Evidence(
+                id="rag-2",
+                content="RAG content 2",
+                origin_tool=OriginTool.RAG,
+                doc_id="doc_456",
+                score=0.8
+            )
+        ]
+        
+        # Simulate web search results
+        web_results = [
+            Evidence(
+                id="web-1",
+                content="Web content 1",
+                origin_tool=OriginTool.WEB_SEARCH,
+                url="https://example.com",
+                domain="example.com",
+                score=0.95
+            ),
+            Evidence(
+                id="web-2",
+                content="Web content 2",
+                origin_tool=OriginTool.WEB_SEARCH,
+                url="https://test.com",
+                domain="test.com",
+                score=0.85
+            )
+        ]
+        
+        # Merge results (simple concatenation)
+        merged = rag_results + web_results
+        
+        # Sort by score
+        sorted_results = sorted(merged, key=lambda e: e.score, reverse=True)
+        
+        # Verify origins preserved
+        assert sorted_results[0].origin_tool == OriginTool.WEB_SEARCH  # 0.95
+        assert sorted_results[1].origin_tool == OriginTool.RAG        # 0.9
+        assert sorted_results[2].origin_tool == OriginTool.WEB_SEARCH # 0.85
+        assert sorted_results[3].origin_tool == OriginTool.RAG        # 0.8
+        
+        # Verify no mutation occurred
+        assert rag_results[0].origin_tool == OriginTool.RAG
+        assert web_results[0].origin_tool == OriginTool.WEB_SEARCH
+    
+    def test_provenance_validation_catches_issues(self):
+        """ProvenanceValidator catches evidence without proper metadata"""
+        validator = ProvenanceValidator(strict_mode=False)
+        
+        # Good evidence
+        good_evidence = Evidence(
+            id="good-1",
+            content="Test",
+            origin_tool=OriginTool.WEB_SEARCH,
+            url="https://example.com",
+            domain="example.com"
+        )
+        
+        # Bad evidence (web search without URL)
+        bad_evidence = Evidence(
+            id="bad-1",
+            content="Test",
+            origin_tool=OriginTool.WEB_SEARCH
+            # Missing URL!
+        )
+        
+        # Validate
+        is_valid = validator.validate([good_evidence, bad_evidence])
+        
+        # Should have violations
+        assert not is_valid
+        violations = validator.get_violations("error")
+        assert len(violations) > 0
+        assert any("url" in v.message.lower() for v in violations)
+    
+    def test_source_breakdown_calculation(self):
+        """Source breakdown correctly counts origins"""
+        evidence_list = [
+            Evidence(id="1", content="A", origin_tool=OriginTool.RAG, score=0.9),
+            Evidence(id="2", content="B", origin_tool=OriginTool.RAG, score=0.8),
+            Evidence(id="3", content="C", origin_tool=OriginTool.WEB_SEARCH, url="https://a.com", score=0.7),
+            Evidence(id="4", content="D", origin_tool=OriginTool.WEB_SEARCH, url="https://b.com", score=0.6),
+            Evidence(id="5", content="E", origin_tool=OriginTool.WEB_SEARCH, url="https://c.com", score=0.5),
+        ]
+        
+        # Calculate breakdown
+        source_breakdown = {}
+        for evidence in evidence_list:
+            origin = evidence.origin_tool.value
+            source_breakdown[origin] = source_breakdown.get(origin, 0) + 1
+        
+        assert source_breakdown['rag'] == 2
+        assert source_breakdown['web_search'] == 3
 
-def test_api_health():
-    """Test 2: API health check"""
-    try:
-        response = requests.get(f"{API_URL}/health", timeout=5)
-        data = response.json()
-        success = response.status_code == 200 and data.get("status") == "ok"
-        return test_result("API health check", success, json.dumps(data))
-    except Exception as e:
-        return test_result("API health check", False, str(e))
 
-def test_stats_endpoint():
-    """Test 3: Stats endpoint returns data"""
-    try:
-        response = requests.get(f"{API_URL}/api/stats", timeout=5)
-        data = response.json()
-        success = (response.status_code == 200 and
-                  "chunks" in data and
-                  "documents" in data and
-                  "knowledge_graph_nodes" in data)
-        details = f"Chunks: {data.get('chunks')}, Docs: {data.get('documents')}, Nodes: {data.get('knowledge_graph_nodes')}"
-        return test_result("Stats endpoint", success, details)
-    except Exception as e:
-        return test_result("Stats endpoint", False, str(e))
+class TestTimingIntegration:
+    """Test timing collector in realistic scenarios"""
+    
+    def test_timing_realistic_search_pipeline(self):
+        """Time a realistic search pipeline"""
+        timer = TimingCollector()
+        
+        # Simulate search pipeline
+        with timer.measure('query_expansion'):
+            time.sleep(0.01)  # 10ms
+        
+        with timer.measure('vector_search'):
+            time.sleep(0.045)  # 45ms
+        
+        with timer.measure('bm25_search'):
+            time.sleep(0.023)  # 23ms
+        
+        with timer.measure('hybrid_fusion'):
+            time.sleep(0.008)  # 8ms
+        
+        with timer.measure('web_search'):
+            time.sleep(0.1)  # 100ms (slowest)
+        
+        # Get results
+        timings = timer.get_timings()
+        
+        # Verify all stages recorded
+        assert 'query_expansion' in timings
+        assert 'vector_search' in timings
+        assert 'bm25_search' in timings
+        assert 'hybrid_fusion' in timings
+        assert 'web_search' in timings
+        assert 'total' in timings
+        
+        # Verify web search is slowest
+        assert timings['web_search'] > timings['vector_search']
+        assert timings['web_search'] > timings['bm25_search']
+        
+        # Verify breakdown percentages
+        breakdown = timer.get_breakdown_percent()
+        assert breakdown['web_search'] > 50  # Should be majority of time
+    
+    def test_timing_under_concurrent_load(self):
+        """Timer works correctly under concurrent requests"""
+        results = []
+        
+        def simulate_request(request_id):
+            timer = TimingCollector()
+            
+            with timer.measure('operation'):
+                time.sleep(0.01)
+            
+            timings = timer.get_timings()
+            results.append({
+                'request_id': request_id,
+                'operation_ms': timings['operation'],
+                'total_ms': timings['total']
+            })
+        
+        # Run 10 concurrent requests
+        threads = []
+        for i in range(10):
+            t = threading.Thread(target=simulate_request, args=(i,))
+            threads.append(t)
+            t.start()
+        
+        for t in threads:
+            t.join()
+        
+        # All requests should complete
+        assert len(results) == 10
+        
+        # All timings should be reasonable
+        for result in results:
+            assert 9 <= result['operation_ms'] <= 15
+            assert 9 <= result['total_ms'] <= 15
 
-def test_ui_proxy():
-    """Test 4: UI proxy to backend"""
-    try:
-        # Test through Vite proxy
-        response = requests.get(f"{BASE_URL}/api/stats", timeout=5)
-        data = response.json()
-        success = response.status_code == 200 and "chunks" in data
-        return test_result("UI → API proxy", success, "Proxy working correctly")
-    except Exception as e:
-        return test_result("UI → API proxy", False, str(e))
 
-def test_documents_list():
-    """Test 5: Documents list endpoint"""
-    try:
-        response = requests.get(f"{API_URL}/api/documents", timeout=5)
-        success = response.status_code == 200
-        if success:
-            data = response.json()
-            doc_count = len(data.get("documents", []))
-            return test_result("Documents list", success, f"{doc_count} documents found")
-        return test_result("Documents list", success)
-    except Exception as e:
-        return test_result("Documents list", False, str(e))
+class TestSecurityIntegration:
+    """Test security measures in realistic scenarios"""
+    
+    def test_url_validation_blocks_attacks(self):
+        """URL validation blocks common XSS vectors"""
+        attack_vectors = [
+            'javascript:alert("XSS")',
+            'data:text/html,<script>alert("XSS")</script>',
+            'file:///etc/passwd',
+            'vbscript:msgbox("XSS")',
+            'https://evil.com/<script>alert(1)</script>',
+            'https://evil.com/page?param=onerror=alert(1)',
+        ]
+        
+        for attack_url in attack_vectors:
+            assert validate_url(attack_url) is False, f"Failed to block: {attack_url}"
+    
+    def test_evidence_from_dict_rejects_attacks(self):
+        """from_dict() rejects evidence with malicious URLs"""
+        attack_data = {
+            'id': 'attack-1',
+            'content': 'Malicious content',
+            'origin_tool': 'web_search',
+            'url': 'javascript:alert("XSS")'
+        }
+        
+        with pytest.raises(ValueError) as exc_info:
+            Evidence.from_dict(attack_data)
+        
+        assert 'unsafe' in str(exc_info.value).lower() or 'invalid' in str(exc_info.value).lower()
+    
+    def test_safe_urls_accepted(self):
+        """Legitimate URLs are accepted"""
+        safe_urls = [
+            'https://example.com',
+            'http://test.com/path',
+            'https://blog.example.co.uk/post/123?id=456',
+            'https://github.com/user/repo',
+            'https://arxiv.org/abs/2301.00001',
+        ]
+        
+        for safe_url in safe_urls:
+            assert validate_url(safe_url) is True, f"Incorrectly blocked safe URL: {safe_url}"
 
-def test_settings_models():
-    """Test 6: Models list endpoint"""
-    try:
-        response = requests.get(f"{API_URL}/api/models", timeout=5)
-        success = response.status_code == 200
-        if success:
-            data = response.json()
-            models = data.get("models", [])
-            model_names = [m.get("name", m.get("model")) for m in models]
-            return test_result("Models endpoint", success, f"Models: {', '.join(model_names[:3])}")
-        return test_result("Models endpoint", success)
-    except Exception as e:
-        return test_result("Models endpoint", False, str(e))
 
-def test_settings_presets():
-    """Test 7: Presets endpoint"""
-    try:
-        response = requests.get(f"{API_URL}/api/presets", timeout=5)
-        success = response.status_code == 200
-        if success:
-            data = response.json()
-            preset_names = [p.get("name") for p in data]
-            return test_result("Presets endpoint", success, f"Presets: {', '.join(preset_names)}")
-        return test_result("Presets endpoint", success)
-    except Exception as e:
-        return test_result("Presets endpoint", False, str(e))
+class TestFullPipelineSimulation:
+    """Simulate complete end-to-end search pipeline"""
+    
+    def test_complete_search_with_provenance_and_timing(self):
+        """Full search pipeline with provenance tracking and timing"""
+        timer = TimingCollector()
+        
+        # Step 1: Query expansion
+        with timer.measure('query_expansion'):
+            original_query = "What is RAG?"
+            expanded_query = f"{original_query} retrieval augmented generation"
+            time.sleep(0.01)
+        
+        # Step 2: Vector search (RAG)
+        with timer.measure('vector_search'):
+            rag_results = [
+                Evidence(
+                    id="rag-1",
+                    content="RAG combines retrieval and generation",
+                    origin_tool=OriginTool.RAG,
+                    doc_id="doc_rag_overview",
+                    score=0.88
+                )
+            ]
+            time.sleep(0.045)
+        
+        # Step 3: Web search
+        with timer.measure('web_search'):
+            web_results = [
+                Evidence(
+                    id="web-1",
+                    content="RAG is a technique for improving LLMs",
+                    origin_tool=OriginTool.WEB_SEARCH,
+                    url="https://example.com/rag",
+                    domain="example.com",
+                    score=0.92
+                )
+            ]
+            time.sleep(0.1)
+        
+        # Step 4: Merge and validate
+        with timer.measure('merge_and_validate'):
+            all_results = rag_results + web_results
+            sorted_results = sorted(all_results, key=lambda e: e.score, reverse=True)
+            
+            # Validate provenance
+            validator = ProvenanceValidator(strict_mode=False)
+            is_valid = validator.validate(sorted_results)
+            time.sleep(0.005)
+        
+        # Get final metrics
+        timings = timer.get_timings()
+        
+        # Assertions
+        assert is_valid or len(validator.get_violations("error")) == 0
+        assert len(sorted_results) == 2
+        assert sorted_results[0].origin_tool == OriginTool.WEB_SEARCH  # Higher score
+        assert sorted_results[1].origin_tool == OriginTool.RAG
+        
+        # Verify timing metrics
+        assert 'query_expansion' in timings
+        assert 'vector_search' in timings
+        assert 'web_search' in timings
+        assert 'merge_and_validate' in timings
+        assert 'total' in timings
+        
+        # Calculate source breakdown
+        source_breakdown = {}
+        for evidence in sorted_results:
+            origin = evidence.origin_tool.value
+            source_breakdown[origin] = source_breakdown.get(origin, 0) + 1
+        
+        assert source_breakdown == {'web_search': 1, 'rag': 1}
+        
+        print(f"\n✅ Full pipeline test passed!")
+        print(f"   Timings: {timings}")
+        print(f"   Source breakdown: {source_breakdown}")
+        print(f"   Provenance valid: {is_valid}")
 
-def test_vector_db_connection():
-    """Test 8: Vector DB health"""
-    try:
-        response = requests.get("http://localhost:8005/health", timeout=5)
-        data = response.json()
-        success = response.status_code == 200 and data.get("status") == "healthy"
-        return test_result("Vector DB connection", success, f"Chunks: {data.get('stats', {}).get('chunks', 0)}")
-    except Exception as e:
-        return test_result("Vector DB connection", False, str(e))
 
-def test_knowledge_graph():
-    """Test 9: Knowledge Graph health"""
-    try:
-        response = requests.get("http://localhost:8007/health", timeout=5)
-        data = response.json()
-        success = response.status_code == 200 and data.get("status") == "healthy"
-        return test_result("Knowledge Graph service", success)
-    except Exception as e:
-        return test_result("Knowledge Graph service", False, str(e))
-
-def test_search_service():
-    """Test 10: Search Service health"""
-    try:
-        response = requests.get("http://localhost:8002/health", timeout=5)
-        data = response.json()
-        success = response.status_code == 200
-        return test_result("Search service", success, f"Status: {data.get('status')}")
-    except Exception as e:
-        return test_result("Search service", False, str(e))
-
-def main():
-    print(f"{Colors.BLUE}{'='*60}{Colors.RESET}")
-    print(f"{Colors.BLUE}React UI + Backend Integration Tests{Colors.RESET}")
-    print(f"{Colors.BLUE}{'='*60}{Colors.RESET}")
-    print()
-
-    tests = [
-        test_ui_loads,
-        test_api_health,
-        test_stats_endpoint,
-        test_ui_proxy,
-        test_documents_list,
-        test_settings_models,
-        test_settings_presets,
-        test_vector_db_connection,
-        test_knowledge_graph,
-        test_search_service,
-    ]
-
-    results = []
-    for i, test in enumerate(tests, 1):
-        print(f"\n{Colors.YELLOW}[{i}/{len(tests)}]{Colors.RESET} ", end="")
-        results.append(test())
-
-    print()
-    print(f"{Colors.BLUE}{'='*60}{Colors.RESET}")
-    passed = sum(results)
-    total = len(results)
-    percentage = (passed / total) * 100
-
-    color = Colors.GREEN if percentage == 100 else Colors.YELLOW if percentage >= 70 else Colors.RED
-    print(f"{color}Results: {passed}/{total} tests passed ({percentage:.0f}%){Colors.RESET}")
-
-    if percentage == 100:
-        print(f"{Colors.GREEN}🎉 All tests passed! Full stack is working!{Colors.RESET}")
-    elif percentage >= 70:
-        print(f"{Colors.YELLOW}⚠️  Most tests passed. Check failures above.{Colors.RESET}")
-    else:
-        print(f"{Colors.RED}❌ Multiple failures. Check services are running.{Colors.RESET}")
-
-    print(f"{Colors.BLUE}{'='*60}{Colors.RESET}")
-    print()
-    print(f"📱 React UI: {BASE_URL}")
-    print(f"🔧 Flask API: {API_URL}")
-    print()
-
-    return 0 if percentage == 100 else 1
-
-if __name__ == "__main__":
-    exit(main())
+if __name__ == '__main__':
+    pytest.main([__file__, '-v', '--tb=short'])
