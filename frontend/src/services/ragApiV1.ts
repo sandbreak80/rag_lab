@@ -1,8 +1,9 @@
 /**
  * RAG API v1 Client - New observability contract
+ * Routes through Nginx as same-origin /api (no CORS issues)
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_RAG_API || 'http://localhost:8000';
+const API_BASE = process.env.NEXT_PUBLIC_RAG_API || '/api';
 
 export interface RagRequest {
   query: string;

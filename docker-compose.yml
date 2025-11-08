@@ -786,8 +786,8 @@ services:
     container_name: rag-api-v1
     networks:
       - rag-network
-    ports:
-      - "8000:8080"  # Using port 8000 (security group allows it)
+    expose:
+      - "8080"  # Internal only - accessed via Nginx
     environment:
       # Feature flags
       RAG_ENABLE_OBS: "0"           # Turn ON after acceptance passes
@@ -840,7 +840,7 @@ services:
     ports:
       - "3000:80"
     environment:
-      - NEXT_PUBLIC_RAG_API=http://16.146.148.184:8000
+      - NEXT_PUBLIC_RAG_API=/api
     depends_on:
       - rag-api-v1
     restart: unless-stopped
