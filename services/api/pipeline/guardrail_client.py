@@ -11,22 +11,22 @@ logger = logging.getLogger(__name__)
 def check_guardrails(content: str, context: Any) -> dict[str, Any]:
     """
     Mock guardrail check.
-    
+
     In production, this would call a real security service.
     For now, returns a minimal report.
     """
     # Mock: check for obviously unsafe content
     detections = []
-    
+
     if "confidential" in content.lower():
         detections.append({
             "severity": "medium",
             "details": "Potential confidential information detected",
             "action_taken": "flagged"
         })
-    
+
     overall_safe = len(detections) == 0
-    
+
     return {
         "detections": detections,
         "service_errors": [],

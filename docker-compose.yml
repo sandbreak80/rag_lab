@@ -798,7 +798,7 @@ services:
       RAG_FRESHNESS_HOURS: "48"
       RAG_TOPN: "8"
       RAG_AB_TEST: "0"
-      
+
       # OTel wiring (works even when RAG_ENABLE_OBS=0)
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"
       OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
@@ -806,15 +806,15 @@ services:
       OTEL_TRACES_EXPORTER: "otlp"
       OTEL_METRICS_EXPORTER: "none"
       OTEL_LOGS_EXPORTER: "none"
-      
+
       # Service URLs (for real adapters when mocks disabled)
       VECTOR_DB_URL: "http://vector-db:8005"
       SEARCH_SERVICE_URL: "http://search-service:8002"
       OLLAMA_URL: "http://ollama:11434"
-      
+
       # Prometheus
       METRICS_PORT: "9309"
-      
+
       # AuthZ
       RAG_PERMS_TTL_SECONDS: "60"
     healthcheck:

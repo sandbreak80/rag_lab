@@ -20,7 +20,7 @@ class GradeResult:
 class ABGrader:
     """
     7-dimension A/B grader for RAG answers.
-    
+
     Dimensions:
     1. Coverage - How well the answer addresses the query
     2. Grounding - Citations and evidence support
@@ -30,7 +30,7 @@ class ABGrader:
     6. Structure - Answer organization
     7. Conciseness - Appropriate length
     """
-    
+
     def __init__(self):
         self.dimensions = {
             "coverage": {"weight": 0.15, "threshold": 0.7},
@@ -41,7 +41,7 @@ class ABGrader:
             "structure": {"weight": 0.1, "threshold": 0.8},
             "conciseness": {"weight": 0.1, "threshold": 0.7}
         }
-    
+
     def grade(
         self,
         query: str,
@@ -57,11 +57,11 @@ class ABGrader:
         budgets_applied: dict
     ) -> GradeResult:
         """Grade a RAG answer across all dimensions"""
-        
+
         passed_dims = []
         failed_dims = []
         dim_scores = {}
-        
+
         # 1. Coverage (mock - check if answer contains keywords from query)
         coverage_score = 0.8 if any(word.lower() in answer.lower() for word in query.split()) else 0.5
         dim_scores["coverage"] = coverage_score
@@ -69,7 +69,7 @@ class ABGrader:
             passed_dims.append("coverage")
         else:
             failed_dims.append("coverage")
-        
+
         # 2. Grounding (mock - check for citation markers)
         import re
         citations = len(re.findall(r'\[\d+\]', answer))
@@ -79,7 +79,7 @@ class ABGrader:
             passed_dims.append("grounding")
         else:
             failed_dims.append("grounding")
-        
+
         # 3. Recency
         recency_score = 1.0 if recency_passed else 0.0
         dim_scores["recency"] = recency_score
@@ -87,7 +87,7 @@ class ABGrader:
             passed_dims.append("recency")
         else:
             failed_dims.append("recency")
-        
+
         # 4. Retrieval Quality
         retrieval_score = 0.9  # Mock
         dim_scores["retrieval_quality"] = retrieval_score
@@ -95,7 +95,7 @@ class ABGrader:
             passed_dims.append("retrieval_quality")
         else:
             failed_dims.append("retrieval_quality")
-        
+
         # 5. Decision Adherence
         adherence_score = 1.0  # Mock - assume budgets followed
         dim_scores["decision_adherence"] = adherence_score
@@ -103,7 +103,7 @@ class ABGrader:
             passed_dims.append("decision_adherence")
         else:
             failed_dims.append("decision_adherence")
-        
+
         # 6. Structure
         structure_score = 0.85  # Mock
         dim_scores["structure"] = structure_score
@@ -111,7 +111,7 @@ class ABGrader:
             passed_dims.append("structure")
         else:
             failed_dims.append("structure")
-        
+
         # 7. Conciseness
         word_count = len(answer.split())
         conciseness_score = 1.0 if 50 < word_count < 300 else 0.7
@@ -120,13 +120,13 @@ class ABGrader:
             passed_dims.append("conciseness")
         else:
             failed_dims.append("conciseness")
-        
+
         # Calculate overall weighted score
         overall = sum(
             dim_scores[dim] * self.dimensions[dim]["weight"]
             for dim in dim_scores
         )
-        
+
         return GradeResult(
             dimensions=dim_scores,
             overall_score=round(overall, 3),

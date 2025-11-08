@@ -82,7 +82,7 @@ class TestFullContractAcceptance:
         # Check recency artifact in artifacts
         assert "artifacts" in data
         assert "recency" in data["artifacts"]
-        
+
         recency = data["artifacts"]["recency"]
         assert "passed" in recency
         assert "freshness_histogram" in recency
@@ -142,13 +142,13 @@ class TestFullContractAcceptance:
             assert "overall_score" in ab_eval
             assert "passed_dimensions" in ab_eval
             assert "failed_dimensions" in ab_eval
-            
+
             # Check 7 dimensions
             expected_dims = ["coverage", "grounding", "recency", "retrieval_quality",
                            "decision_adherence", "structure", "conciseness"]
             for dim in expected_dims:
                 assert dim in ab_eval["dimensions"]
-            
+
             print(f"✅ Probe 6/8: A/B - overall={ab_eval['overall_score']:.3f}, passed={len(ab_eval['passed_dimensions'])}/7")
         else:
             print(f"⚠️  Probe 6/8: A/B - Skipped (RAG_AB_TEST=0)")
@@ -181,12 +181,12 @@ class TestFullContractAcceptance:
         """Prometheus metrics endpoint"""
         response = requests.get(f"{API_BASE_URL}/metrics")
         assert response.status_code == 200
-        
+
         # Check for our key metrics
         metrics_text = response.text
         assert "rag_requests_total" in metrics_text
         assert "rag_request_duration_seconds" in metrics_text
-        
+
         print(f"✅ Probe 8/8: Metrics - endpoint active, {len(metrics_text.splitlines())} lines")
 
 

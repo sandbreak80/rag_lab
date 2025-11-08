@@ -33,7 +33,7 @@ def compute_freshness_hours(published_at: datetime | None) -> float | None:
 def build_freshness_histogram(results: list) -> dict[str, int]:
     """Build histogram of source freshness"""
     histogram = {"<24h": 0, "24-48h": 0, "48h-1w": 0, "1w-1m": 0, ">1m": 0, "unknown": 0}
-    
+
     for result in results:
         freshness = compute_freshness_hours(result.published_at)
         if freshness is None:
@@ -48,7 +48,7 @@ def build_freshness_histogram(results: list) -> dict[str, int]:
             histogram["1w-1m"] += 1
         else:
             histogram[">1m"] += 1
-    
+
     return histogram
 
 
@@ -72,7 +72,7 @@ def evaluate_recency_gate(
 ) -> dict[str, Any]:
     """
     Evaluate recency gate for a query.
-    
+
     Returns dict with:
       - passed: bool
       - notes: str
@@ -83,10 +83,10 @@ def evaluate_recency_gate(
     query_is_temporal = is_temporal_query(query)
     freshness_histogram = build_freshness_histogram(evidence_list)
     primary_within_window = count_primary_sources_within_window(evidence_list, window_hours)
-    
+
     passed = True
     notes = "Recency requirements met"
-    
+
     if policy_requires_recency or query_is_temporal:
         if primary_within_window < policy_min_primary_sources:
             passed = False
@@ -95,7 +95,7 @@ def evaluate_recency_gate(
                 f"≤{window_hours}h, found {primary_within_window}. "
                 f"Query appears temporal (requires fresh sources)."
             )
-    
+
     return {
         "window_hours": window_hours,
         "passed": passed,
