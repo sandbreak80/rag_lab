@@ -72,8 +72,28 @@ class ApiClient {
       use_research_agent: backendConfig.use_research_agent,
     });
 
-    const response = await this.client.post('/ask', backendConfig, { signal });
-    return response.data;
+    // Use NEW RAG API v1 (with observability) instead of OLD broken pipeline
+    const response = await this.client.post('/v1/rag/query', {
+      query,
+      user_id: 'demo', // TODO: Get from auth
+      groups: [], // TODO: Get from auth
+    }, { signal });
+
+    // Transform new API response to match old format
+    return {
+      answer: response.data.answer,
+      sources: response.data.citations.map((c: any) => ({
+        content: c.content || '',
+        document_id: c.doc_id || c.document_id,
+        score: 1.0,
+        metadata: {
+          version: c.version,
+          chunk_id: c.chunk_id,
+          source_uri: c.source_uri,
+        },
+      })),
+      metrics: response.data.metrics,
+    };
   }
 
   async cancelRequest(): Promise<{ success: boolean; message: string }> {
