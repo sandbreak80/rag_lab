@@ -1083,6 +1083,7 @@ services:
     entrypoint: ["/bin/bash", "-lc"]
     command:
       - >
+        npm install &&
         npx playwright install --with-deps &&
         npx playwright test
     environment:
