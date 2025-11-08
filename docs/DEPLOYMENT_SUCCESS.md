@@ -1,7 +1,7 @@
 # ✅ Phase B Deployment - SUCCESS
 
-**Date**: November 8, 2025  
-**Status**: **8/8 ACCEPTANCE TESTS PASSED**  
+**Date**: November 8, 2025
+**Status**: **8/8 ACCEPTANCE TESTS PASSED**
 **API Endpoint**: `http://16.146.148.184:8081`
 
 ---
@@ -246,7 +246,7 @@ docker run --rm \
 
 ---
 
-**Deployed**: November 8, 2025  
-**API URL**: http://16.146.148.184:8081  
+**Deployed**: November 8, 2025
+**API URL**: http://16.146.148.184:8081
 **Next**: Wire frontend → Enable observability → Flip to real backends
 
