@@ -20,20 +20,20 @@ DEFAULT_SCHEMA_VERSION = "1.0.0"  # Bump on breaking changes to artifact structu
 class ArtifactBase:
     """
     Base class for all observability artifacts (Schemas A-G).
-    
+
     Ensures ID correlation and versioning across the pipeline.
     """
     # ID Correlation
     trace_id: str
     request_id: str
-    
+
     # Versioning
     contract_version: str = CONTRACT_VERSION
     schema_version: str = DEFAULT_SCHEMA_VERSION
-    
+
     # Audit
     timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    
+
     def to_dict(self):
         """Override in subclasses to add artifact-specific fields"""
         return {
@@ -49,39 +49,39 @@ class ArtifactBase:
 class OrchestrationContext:
     """
     Context object passed through the entire pipeline.
-    
+
     Carries IDs, tenant info, budgets, policy, and timing state.
     """
     # IDs (immutable after creation)
     trace_id: str
     request_id: str
-    
+
     # Request metadata
     tenant: str
     user_id: str
     query: str
-    
+
     # Strategy
     plan_id: str
-    
+
     # Settings snapshot (for reproducibility)
     settings_snapshot: dict
-    
+
     # Budgets (resource limits)
     budgets: 'Budgets'
-    
+
     # Policy (behavioral constraints)
     policy: 'Policy'
-    
+
     # A/B test
     ab_test: 'ABTest'
-    
+
     # Timing
     start_time: float
-    
+
     # Budget consumption tracking (mutable)
     budget_use: dict = field(default_factory=lambda: {"web_queries": 0, "internal_queries": 0, "kg_queries": 0})
-    
+
     def to_dict(self):
         return {
             'trace_id': self.trace_id,

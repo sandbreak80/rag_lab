@@ -162,7 +162,7 @@ class PlannerArtifact(ArtifactBase):
     budgets_applied: Optional[Budgets] = None
     route_decision: Literal["rag", "web", "blended"] = "rag"
     route_reason: str = ""
-    
+
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
         base.update({
@@ -197,7 +197,7 @@ class RetrievalLog(ArtifactBase):
     total_deduped: int = 0
     domains_filtered: List[str] = field(default_factory=list)
     timing_breakdown_ms: Dict[str, float] = field(default_factory=dict)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
         base.update({
@@ -217,7 +217,7 @@ class EvidenceMap(ArtifactBase):
     claims: List[Dict[str, Any]] = field(default_factory=list)  # {claim_text, citation_indices, confidence}
     ungrounded_claims: List[str] = field(default_factory=list)
     grounding_rate: float = 0.0  # % of claims grounded
-    
+
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
         base.update({
@@ -235,7 +235,7 @@ class KGLog(ArtifactBase):
     edges_used: List[Dict[str, Any]] = field(default_factory=list)  # {source, relation, target, hops}
     evidence_urls: List[str] = field(default_factory=list)
     timing_ms: float = 0.0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
         base.update({
@@ -263,7 +263,7 @@ class ChunkingReport(ArtifactBase):
     samples: List[ChunkingSample] = field(default_factory=list)  # 3 representative chunks
     timing_ms: float = 0.0
     total_chunks: int = 0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
         base.update({
@@ -290,7 +290,7 @@ class GuardrailReport(ArtifactBase):
     detections: List[GuardrailDetection] = field(default_factory=list)
     service_errors: List[Dict[str, str]] = field(default_factory=list)  # {service, error, timestamp}
     overall_safe: bool = True
-    
+
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
         base.update({
@@ -308,7 +308,7 @@ class ABEvaluation(ArtifactBase):
     dimensions: Dict[str, float] = field(default_factory=dict)  # coverage, grounding, recency, retrieval_quality, etc.
     overall_score: float = 0.0
     comparison: Optional[Dict[str, Any]] = None  # Δ vs other setting
-    
+
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
         base.update({
@@ -332,7 +332,7 @@ class RecencyEvaluation(ArtifactBase):
     notes: str = ""
     freshness_histogram: Dict[str, int] = field(default_factory=dict)  # {<24h: 3, 24-48h: 2, >48h: 5}
     primary_sources_within_window: int = 0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         base = super().to_dict()
         base.update({
@@ -547,34 +547,34 @@ llm_generate: Optional[callable] = None
 def before_request():
     """
     ID CORRELATION & PROPAGATION
-    
+
     Extract or generate trace_id and request_id.
     These IDs will be propagated to ALL artifacts and services.
     """
     # Extract trace_id from OTel context or header
     span = trace.get_current_span()
     span_context = span.get_span_context()
-    
+
     if span_context.is_valid:
         g.trace_id = format(span_context.trace_id, '032x')
     else:
         # Fallback: extract from header or generate
         g.trace_id = request.headers.get('X-Trace-ID', str(uuid.uuid4()).replace('-', ''))
-    
+
     # Extract or generate request_id
     g.request_id = request.headers.get('X-Request-ID', str(uuid.uuid4()))
-    
+
     # Timing
     g.start_time = time.time()
-    
+
     # Tenant (for multi-tenancy)
     g.tenant = request.json.get('tenant', 'unknown') if request.json else 'unknown'
-    
+
     # Set OTel span attributes for correlation
     span.set_attribute("request_id", g.request_id)
     span.set_attribute("trace_id", g.trace_id)
     span.set_attribute("tenant", g.tenant)
-    
+
     logger.info(f"Request started: trace_id={g.trace_id}, request_id={g.request_id}, tenant={g.tenant}")
 
 
@@ -590,10 +590,10 @@ def after_request(response):
     if hasattr(g, 'start_time'):
         duration_ms = (time.time() - g.start_time) * 1000
         response.headers['X-Response-Time'] = f"{duration_ms:.2f}ms"
-    
+
     # Contract version for client compatibility checks
     response.headers['X-Contract-Version'] = CONTRACT_VERSION
-    
+
     return response
 
 
@@ -660,10 +660,10 @@ def query():
                 ab_test=rag_req.ab_test,
                 start_time=g.start_time
             )
-            
+
             # Evaluate recency
             recency = evaluate_recency(mock_sources, rag_req.policy, rag_req.query, ctx)
-            
+
             # Build artifacts with ID correlation
             planner = PlannerArtifact(
                 trace_id=trace_id,
@@ -675,7 +675,7 @@ def query():
                 route_decision="rag",
                 route_reason="Query is factual, internal docs sufficient"
             )
-            
+
             retrieval_log = RetrievalLog(
                 trace_id=trace_id,
                 request_id=g.request_id,
@@ -686,7 +686,7 @@ def query():
                 domains_filtered=[],
                 timing_breakdown_ms={"vector_search": 120.0, "bm25": 80.0}
             )
-            
+
             evidence_map = EvidenceMap(
                 trace_id=trace_id,
                 request_id=g.request_id,
@@ -694,7 +694,7 @@ def query():
                 ungrounded_claims=[],
                 grounding_rate=1.0
             )
-            
+
             chunking_report = ChunkingReport(
                 trace_id=trace_id,
                 request_id=g.request_id,
@@ -703,7 +703,7 @@ def query():
                 timing_ms=10.0,
                 total_chunks=0
             )
-            
+
             guardrail_report = GuardrailReport(
                 trace_id=trace_id,
                 request_id=g.request_id,
@@ -711,7 +711,7 @@ def query():
                 service_errors=[],
                 overall_safe=True
             )
-            
+
             ab_eval = ABEvaluation(
                 trace_id=trace_id,
                 request_id=g.request_id,
@@ -719,7 +719,7 @@ def query():
                 dimensions={"coverage": 0.8, "grounding": 0.9, "recency": 0.7, "retrieval_quality": 0.85},
                 overall_score=0.81
             )
-            
+
             # Build response
             response = RagResponse(
                 answer="Mock answer - wire real LLM",

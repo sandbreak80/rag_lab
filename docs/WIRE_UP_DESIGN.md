@@ -1,7 +1,7 @@
 # Full Observability Contract - Wire-Up Design
 
-**Status:** In Progress  
-**Target:** Single sprint (9 tasks)  
+**Status:** In Progress
+**Target:** Single sprint (9 tasks)
 **Constraint:** Single node, ≤14B models via Ollama, no duplicate metrics systems
 
 ---
@@ -34,7 +34,7 @@ def before_request():
     g.request_id = request.headers.get('X-Request-ID', str(uuid.uuid4()))
     g.tenant = request.json.get('tenant', 'unknown') if request.json else 'unknown'
     g.start_time = time.time()
-    
+
     # Propagate to OTel context
     span = trace.get_current_span()
     span.set_attribute("request_id", g.request_id)
@@ -102,7 +102,7 @@ def vector_search(query: str, k: int, ctx: OrchestrationContext) -> List[Evidenc
                 }
             )
             evidence_list.append(evidence)
-        
+
         span.set_attribute("docs_retrieved", len(evidence_list))
         return evidence_list
 ```
@@ -127,7 +127,7 @@ def web_search(query: str, k: int, ctx: OrchestrationContext) -> List[Evidence]:
                 }
             )
             evidence_list.append(evidence)
-        
+
         span.set_attribute("docs_retrieved", len(evidence_list))
         return evidence_list
 ```
@@ -152,7 +152,7 @@ def research_agent_retrieve(query: str, ctx: OrchestrationContext) -> List[Evide
                 }
             )
             evidence_list.append(evidence)
-        
+
         span.set_attribute("docs_retrieved", len(evidence_list))
         return evidence_list
 ```
@@ -174,10 +174,10 @@ def deduplicate(evidence_list: List[Evidence], ctx: OrchestrationContext) -> Tup
     seen = {}
     kept = []
     actions = []
-    
+
     for ev in evidence_list:
         content_hash = hashlib.sha256(ev.content.encode()).hexdigest()[:16]
-        
+
         if content_hash in seen:
             original = seen[content_hash]
             actions.append(DedupAction(
@@ -194,7 +194,7 @@ def deduplicate(evidence_list: List[Evidence], ctx: OrchestrationContext) -> Tup
                 doc_id=ev.id,
                 reason="unique_content"
             ))
-    
+
     return kept, actions
 ```
 
@@ -216,10 +216,10 @@ def filter_domains(evidence_list: List[Evidence], ctx: OrchestrationContext) -> 
     """
     kept = []
     actions = []
-    
+
     for ev in evidence_list:
         domain = ev.metadata.get('domain', 'unknown')
-        
+
         if domain in DENYLIST:
             actions.append(DomainFilterAction(
                 action="dropped",
@@ -235,7 +235,7 @@ def filter_domains(evidence_list: List[Evidence], ctx: OrchestrationContext) -> 
                 domain=domain,
                 reason="not_on_denylist"
             ))
-    
+
     return kept, actions
 ```
 
@@ -249,7 +249,7 @@ def build_retrieval_log(
     timings: Dict[str, float],
     ctx: OrchestrationContext
 ) -> RetrievalLog:
-    
+
     internal_entries = [
         RetrievalLogEntry(
             source_type="internal",
@@ -264,7 +264,7 @@ def build_retrieval_log(
             ]
         )
     ]
-    
+
     web_entries = [
         RetrievalLogEntry(
             source_type="web",
@@ -279,7 +279,7 @@ def build_retrieval_log(
             ]
         )
     ]
-    
+
     return RetrievalLog(
         contract_version="2.0.0",
         schema_version="1.0.0",
@@ -324,8 +324,8 @@ def is_temporal_query(query: str) -> bool:
 #### Recency Evaluation (Enhanced)
 ```python
 def evaluate_recency(
-    sources: List[Evidence], 
-    policy: Policy, 
+    sources: List[Evidence],
+    policy: Policy,
     query: str,
     ctx: OrchestrationContext
 ) -> RecencyEvaluation:
@@ -335,22 +335,22 @@ def evaluate_recency(
     now = datetime.now(timezone.utc)
     histogram = {"<24h": 0, "24-48h": 0, "48h-1w": 0, ">1w": 0, "unknown": 0}
     primary_within_48h = 0
-    
+
     for source in sources:
         published_at_str = source.metadata.get('published_at')
-        
+
         if not published_at_str:
             histogram["unknown"] += 1
             continue
-        
+
         try:
             # Parse ISO8601 UTC
             pub_date = datetime.fromisoformat(published_at_str.replace('Z', '+00:00'))
             hours_old = (now - pub_date).total_seconds() / 3600
-            
+
             # SERVER-SIDE: Update source metadata with freshness_hours
             source._metadata['freshness_hours'] = int(hours_old)
-            
+
             # Update histogram
             if hours_old < 24:
                 histogram["<24h"] += 1
@@ -360,32 +360,32 @@ def evaluate_recency(
                 histogram["48h-1w"] += 1
             else:
                 histogram[">1w"] += 1
-            
+
             # Count primary sources within 48h
             is_primary = source.metadata.get('is_primary', False)
             if is_primary and hours_old <= 48:
                 primary_within_48h += 1
-        
+
         except (ValueError, TypeError) as e:
             logger.warning(f"Invalid published_at format: {published_at_str} - {e}")
             histogram["unknown"] += 1
-    
+
     # Evaluate pass/fail
     passed = True
     notes = ""
-    
+
     # Check if query requires recency
     requires_recency = policy.requires_recency or is_temporal_query(query)
-    
+
     if requires_recency:
         min_required = policy.min_primary_sources
         if primary_within_48h < min_required:
             passed = False
             notes = f"RECENCY_FAIL: Required {min_required} primary sources ≤48h, found {primary_within_48h}. Query appears temporal but sources are stale."
-    
+
     if not notes:
         notes = f"Recency requirements met: {primary_within_48h} primary sources ≤48h"
-    
+
     return RecencyEvaluation(
         contract_version="2.0.0",
         schema_version="1.0.0",
@@ -422,15 +422,15 @@ def synthesize_answer(
             span.set_attribute("recency_failed", True)
             span.set_attribute("refusal_reason", "recency_gate")
             return "", "VERY_LOW", refusal
-        
+
         # ... normal synthesis ...
         prompt = build_prompt(query, evidence)
         answer = llm_generate(prompt)
         confidence = calculate_confidence(answer, evidence)
-        
+
         span.set_attribute("answer_length", len(answer))
         span.set_attribute("confidence", confidence)
-        
+
         return answer, confidence, None
 ```
 
@@ -474,47 +474,47 @@ def grade_answer(
     """
     dimensions_scores = {}
     dimension_details = []
-    
+
     # 1. Coverage: Does answer address all query aspects?
     coverage_score, coverage_rationale = grade_coverage(query, answer)
     dimensions_scores['coverage'] = coverage_score
     dimension_details.append(DimensionScore("coverage", coverage_score, coverage_score >= 0.7, coverage_rationale))
-    
+
     # 2. Grounding: Are claims backed by evidence?
     grounding_score = evidence_map.grounding_rate
     grounding_rationale = f"{len(evidence_map.ungrounded_claims)} ungrounded claims" if evidence_map.ungrounded_claims else "All claims grounded"
     dimensions_scores['grounding'] = grounding_score
     dimension_details.append(DimensionScore("grounding", grounding_score, grounding_score >= 0.9, grounding_rationale))
-    
+
     # 3. Recency: Are temporal claims supported by fresh sources?
     recency_score = 1.0 if recency_eval.passed else 0.0
     dimensions_scores['recency'] = recency_score
     dimension_details.append(DimensionScore("recency", recency_score, recency_eval.passed, recency_eval.notes))
-    
+
     # 4. Retrieval Quality: Are top-k relevant?
     retrieval_score = calculate_retrieval_quality(retrieval_log)
     retrieval_rationale = f"MRR: {retrieval_score:.2f}, {retrieval_log.total_deduped} deduped"
     dimensions_scores['retrieval_quality'] = retrieval_score
     dimension_details.append(DimensionScore("retrieval_quality", retrieval_score, retrieval_score >= 0.8, retrieval_rationale))
-    
+
     # 5. Decision Adherence: Did we follow policy/budgets?
     adherence_score, adherence_rationale = grade_decision_adherence(ctx)
     dimensions_scores['decision_adherence'] = adherence_score
     dimension_details.append(DimensionScore("decision_adherence", adherence_score, adherence_score >= 0.95, adherence_rationale))
-    
+
     # 6. Structure: Is answer well-formatted?
     structure_score, structure_rationale = grade_structure(answer)
     dimensions_scores['structure'] = structure_score
     dimension_details.append(DimensionScore("structure", structure_score, structure_score >= 0.8, structure_rationale))
-    
+
     # 7. Conciseness: Is answer appropriately concise?
     conciseness_score, conciseness_rationale = grade_conciseness(answer, query)
     dimensions_scores['conciseness'] = conciseness_score
     dimension_details.append(DimensionScore("conciseness", conciseness_score, conciseness_score >= 0.7, conciseness_rationale))
-    
+
     # Overall score (weighted average)
     overall_score = sum(dimensions_scores.values()) / len(dimensions_scores)
-    
+
     return ABEvaluation(
         contract_version="2.0.0",
         schema_version="1.0.0",
@@ -538,13 +538,13 @@ def compare_ab_runs(eval_a: ABEvaluation, eval_b: ABEvaluation) -> Dict[str, Any
     for dim in eval_a.dimensions:
         delta = eval_b.dimensions[dim] - eval_a.dimensions[dim]
         deltas[dim] = delta
-    
+
     overall_delta = eval_b.overall_score - eval_a.overall_score
-    
+
     # Bootstrap CI (simplified - use numpy/scipy in production)
     ci_lower = overall_delta - 0.05  # Mock
     ci_upper = overall_delta + 0.05  # Mock
-    
+
     return {
         "delta_dimensions": deltas,
         "delta_overall": overall_delta,
@@ -586,20 +586,20 @@ def setup_otel(service_name: str):
         "service.version": "2.0.0",
         "deployment.environment": os.getenv("ENV", "development")
     })
-    
+
     provider = TracerProvider(resource=resource)
-    
+
     # OTLP exporter (to collector)
     otlp_exporter = OTLPSpanExporter(
         endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317"),
         insecure=True  # Use TLS in production
     )
-    
+
     span_processor = BatchSpanProcessor(otlp_exporter)
     provider.add_span_processor(span_processor)
-    
+
     trace.set_tracer_provider(provider)
-    
+
     logger.info(f"OpenTelemetry configured for {service_name} → {otlp_exporter.endpoint}")
 ```
 
@@ -628,27 +628,27 @@ def synthesize_answer_with_otel(
     with tracer.start_as_current_span("synthesis_v1") as span:
         span.set_attribute("query_length", len(query))
         span.set_attribute("evidence_count", len(evidence))
-        
+
         # Build prompt
         prompt = build_prompt(query, evidence)
         span.set_attribute(LLMSpanAttributes.MODEL_NAME, "llama2:13b")
         span.set_attribute(LLMSpanAttributes.MODEL_PROVIDER, "ollama")
         span.set_attribute(LLMSpanAttributes.TOKENS_INPUT, count_tokens(prompt))
-        
+
         # Call LLM
         start = time.time()
         answer = llm_generate(prompt)
         latency_ms = (time.time() - start) * 1000
-        
+
         # Record LLM metrics (OpenLLMetry)
         span.set_attribute(LLMSpanAttributes.LATENCY_MS, latency_ms)
         span.set_attribute(LLMSpanAttributes.TOKENS_OUTPUT, count_tokens(answer))
         span.set_attribute(LLMSpanAttributes.TOKENS_TOTAL, count_tokens(prompt) + count_tokens(answer))
-        
+
         # NO PAYLOADS (per spec)
         # span.set_attribute("prompt", prompt)  # DON'T DO THIS
         # span.set_attribute("answer", answer)  # DON'T DO THIS
-        
+
         return answer
 ```
 
@@ -723,14 +723,14 @@ def check_guardrails(content: str, ctx: OrchestrationContext) -> GuardrailReport
         detections = []
         service_errors = []
         overall_safe = True
-        
+
         try:
             response = requests.post(
                 "http://security-guardrails:5000/check",
                 json={"content": content, "tenant": ctx.tenant},
                 timeout=2.0
             )
-            
+
             if response.status_code == 200:
                 data = response.json()
                 for finding in data.get('findings', []):
@@ -740,10 +740,10 @@ def check_guardrails(content: str, ctx: OrchestrationContext) -> GuardrailReport
                         details=finding['details'],
                         action_taken=finding['action']
                     ))
-                
+
                 overall_safe = data.get('safe', True)
                 span.set_attribute("guardrails.safe", overall_safe)
-            
+
             else:
                 # Service returned error - log but continue
                 service_errors.append({
@@ -754,7 +754,7 @@ def check_guardrails(content: str, ctx: OrchestrationContext) -> GuardrailReport
                 overall_safe = False  # Assume unsafe in degraded mode
                 span.set_attribute("guardrails.degraded", True)
                 logger.warning(f"Guardrail service error: {response.status_code}")
-        
+
         except requests.exceptions.Timeout:
             service_errors.append({
                 "service": "security-guardrails",
@@ -764,7 +764,7 @@ def check_guardrails(content: str, ctx: OrchestrationContext) -> GuardrailReport
             overall_safe = False
             span.set_attribute("guardrails.timeout", True)
             logger.error("Guardrail service timeout")
-        
+
         except Exception as e:
             service_errors.append({
                 "service": "security-guardrails",
@@ -774,7 +774,7 @@ def check_guardrails(content: str, ctx: OrchestrationContext) -> GuardrailReport
             overall_safe = False
             span.record_exception(e)
             logger.error(f"Guardrail service exception: {e}")
-        
+
         return GuardrailReport(
             contract_version="2.0.0",
             schema_version="1.0.0",
@@ -790,7 +790,7 @@ def check_guardrails(content: str, ctx: OrchestrationContext) -> GuardrailReport
 ```python
 def build_footer(guardrail_report: GuardrailReport, ...) -> Dict[str, Any]:
     security_status = "healthy" if guardrail_report.overall_safe and not guardrail_report.service_errors else "degraded"
-    
+
     return {
         "source_mix": calculate_source_mix(sources),
         "budget_use": ctx.budget_use,
@@ -831,22 +831,22 @@ class SLAWatchdog:
         self.sla_ms = sla_ms
         self.start_time = time.time()
         self.actions: List[WatchdogAction] = []
-    
+
     def get_eta_ms(self) -> float:
         """Current elapsed time in ms"""
         return (time.time() - self.start_time) * 1000
-    
+
     def get_remaining_ms(self) -> float:
         """Remaining budget"""
         return self.sla_ms - self.get_eta_ms()
-    
+
     def should_skip_stage(self, stage: str, estimated_duration_ms: float) -> bool:
         """
         Check if stage should be skipped to meet SLA.
         """
         eta = self.get_eta_ms()
         remaining = self.get_remaining_ms()
-        
+
         if estimated_duration_ms > remaining:
             self.actions.append(WatchdogAction(
                 stage=stage,
@@ -855,7 +855,7 @@ class SLAWatchdog:
                 eta_ms=eta
             ))
             return True
-        
+
         self.actions.append(WatchdogAction(
             stage=stage,
             action="allowed",
@@ -869,16 +869,16 @@ class SLAWatchdog:
 ```python
 def orchestrate_with_sla(query: str, ctx: OrchestrationContext) -> RagResponse:
     watchdog = SLAWatchdog(sla_ms=ctx.budgets.sla_ms)
-    
+
     # ... retrieve, rerank ...
-    
+
     # Synthesis V1 (always run)
     answer_v1 = synthesize_answer(query, evidence, ctx)
-    
+
     # Self-critique (optional)
     if not watchdog.should_skip_stage("self_critique", estimated_duration_ms=500):
         critique = critique_answer(answer_v1, evidence, ctx)
-        
+
         # Synthesis V2 (optional)
         if critique.needs_refinement and not watchdog.should_skip_stage("synthesis_v2", estimated_duration_ms=800):
             answer_v2 = synthesize_answer(query, evidence, ctx)
@@ -887,15 +887,15 @@ def orchestrate_with_sla(query: str, ctx: OrchestrationContext) -> RagResponse:
             final_answer = answer_v1
     else:
         final_answer = answer_v1
-    
+
     # Add watchdog actions to PlannerArtifact
     planner_artifact.watchdog_actions = watchdog.actions
-    
+
     # Ensure wall_time ≤ SLA
     wall_time_ms = watchdog.get_eta_ms()
     if wall_time_ms > ctx.budgets.sla_ms:
         logger.warning(f"SLA BREACH: {wall_time_ms:.0f}ms > {ctx.budgets.sla_ms}ms")
-    
+
     return response
 ```
 
@@ -984,15 +984,15 @@ def test_temporal_probe():
         "user_id": "probe",
         "policy": {"requires_recency": True, "min_primary_sources": 2}
     })
-    
+
     assert response.status_code == 200
     data = response.json()
-    
+
     # Check recency
     assert data['recency']['passed'] or data['refusal'] is not None
     assert data['recency']['primary_sources_within_window'] >= 0
     assert '<24h' in data['recency']['freshness_histogram']
-    
+
     # Check sources have origin_tool
     for source in data['sources']:
         assert source['origin_tool'] in ['rag', 'web_search', 'research_agent']
@@ -1007,16 +1007,16 @@ def test_provenance_probe():
         "user_id": "probe",
         "plan_id": "blended_v1"
     })
-    
+
     assert response.status_code == 200
     data = response.json()
-    
+
     # Check source_mix
     source_mix = data['source_mix']
     assert 'rag' in source_mix
     assert 'web_search' in source_mix
     assert sum(source_mix.values()) == len(data['sources'])
-    
+
     # Check origin_tool consistency
     for source in data['sources']:
         assert source['origin_tool'] in ['rag', 'web_search', 'research_agent']
@@ -1029,14 +1029,14 @@ def test_routing_transparency_probe():
         "tenant": "test",
         "user_id": "probe"
     })
-    
+
     assert response.status_code == 200
     data = response.json()
-    
+
     # Check route
     assert data['route'] in ['rag', 'web', 'blended']
     assert len(data['route_reason']) > 10
-    
+
     # Check planner artifact
     assert data['planner']['route_decision'] == data['route']
     assert len(data['planner']['route_reason']) > 10
@@ -1050,10 +1050,10 @@ def test_ab_probe():
         "user_id": "probe",
         "ab_test": {"setting": "A"}
     })
-    
+
     assert response.status_code == 200
     data = response.json()
-    
+
     # Check ab_eval
     ab_eval = data['ab_eval']
     assert ab_eval['setting'] == 'A'
@@ -1067,20 +1067,20 @@ def test_guardrail_probe():
     """Forced guardrail error"""
     # Mock guardrail service to return 500
     # (requires test harness to intercept)
-    
+
     response = requests.post(API_URL, json={
         "query": "Normal query",
         "tenant": "test",
         "user_id": "probe"
     })
-    
+
     assert response.status_code == 200
     data = response.json()
-    
+
     # Check guardrail_report exists even on error
     assert 'guardrail_report' in data
     guardrail = data['guardrail_report']
-    
+
     # If service error, check footer
     if guardrail['service_errors']:
         assert 'security_status' in data
@@ -1095,10 +1095,10 @@ def test_sla_probe():
         "user_id": "probe",
         "budgets": {"sla_ms": 3000}
     })
-    
+
     assert response.status_code == 200
     data = response.json()
-    
+
     # Check watchdog_actions in planner
     planner = data['planner']
     if 'watchdog_actions' in planner:
@@ -1106,7 +1106,7 @@ def test_sla_probe():
         skipped = [a for a in planner['watchdog_actions'] if a['action'] == 'skipped']
         if skipped:
             assert any('ETA' in a['reason'] for a in skipped)
-    
+
     # Check wall_time
     assert data['wall_time_ms'] <= 90000  # Hard limit
 ```
@@ -1129,13 +1129,13 @@ def test_sla_probe():
 
 1. **Performance:** Artifact population adds ~50-100ms overhead
    - **Mitigation:** Parallelize where possible; cache expensive computations
-   
+
 2. **Breaking changes:** New contract incompatible with old frontend
    - **Mitigation:** Version artifacts; support v1 and v2 responses
-   
+
 3. **OTel overhead:** Span creation/export adds latency
    - **Mitigation:** Use BatchSpanProcessor; sample at 10% for high-volume tenants
-   
+
 4. **Recency gate false positives:** Block valid queries with stale sources
    - **Mitigation:** Make recency policy optional; default to `requires_recency: false`
 
@@ -1143,14 +1143,14 @@ def test_sla_probe():
 
 ## Definition of Done
 
-✅ All acceptance tests pass  
-✅ Artifacts carry matching `trace_id` and `request_id`  
-✅ EvidenceMap shows ≤48h primaries for temporal claims  
-✅ Footer has `source_mix`, `budget_use`, `wall_time_ms`, `sha256`  
-✅ OTel spans visible in Grafana Tempo  
-✅ Prometheus metrics still work (no duplication)  
-✅ Guardrail errors handled gracefully  
-✅ SLA watchdog enforces <90s wall time  
+✅ All acceptance tests pass
+✅ Artifacts carry matching `trace_id` and `request_id`
+✅ EvidenceMap shows ≤48h primaries for temporal claims
+✅ Footer has `source_mix`, `budget_use`, `wall_time_ms`, `sha256`
+✅ OTel spans visible in Grafana Tempo
+✅ Prometheus metrics still work (no duplication)
+✅ Guardrail errors handled gracefully
+✅ SLA watchdog enforces <90s wall time
 ✅ UI shows artifacts in inspector
 
 ---
