@@ -797,8 +797,29 @@ services:
       retries: 3
 
   # ============================================================================
-  # MONITORING & OBSERVABILITY - Prometheus + Grafana Stack
+  # MONITORING & OBSERVABILITY - Prometheus + Grafana + OpenTelemetry Stack
   # ============================================================================
+
+  # OpenTelemetry Collector - Traces & Metrics Collection
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: rag-otel-collector
+    networks:
+      - rag-network
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8889:8889"   # Prometheus metrics exporter
+    volumes:
+      - ./config/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:13133/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   # Prometheus - Time Series Database & Metrics Collector
   prometheus:

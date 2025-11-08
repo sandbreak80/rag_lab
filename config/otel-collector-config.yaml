@@ -1,0 +1,71 @@
+# OpenTelemetry Collector Configuration
+# Receives traces/metrics from services, exports to Prometheus and optionally Splunk
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+  
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+  
+  # Add resource attributes
+  resource:
+    attributes:
+      - key: service.namespace
+        value: rag-lab
+        action: upsert
+      - key: deployment.environment
+        value: development
+        action: upsert
+
+exporters:
+  # Prometheus metrics endpoint
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    namespace: otel
+    const_labels:
+      environment: development
+  
+  # Console logging for debugging
+  logging:
+    verbosity: detailed
+  
+  # OTLP exporter for Grafana/Jaeger (if needed)
+  otlp:
+    endpoint: localhost:4317
+    tls:
+      insecure: true
+  
+  # Splunk HEC exporter (optional - configure when ready)
+  # splunk_hec:
+  #   token: "${SPLUNK_HEC_TOKEN}"
+  #   endpoint: "${SPLUNK_HEC_URL}"
+  #   source: "otel"
+  #   sourcetype: "otel"
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [logging, otlp]
+    
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [prometheus, logging]
+  
+  telemetry:
+    logs:
+      level: info
+
