@@ -1,7 +1,7 @@
 # Phase C Complete: Observability Foundation Ready
 
-**Date**: November 8, 2025  
-**Branch**: `otel`  
+**Date**: November 8, 2025
+**Branch**: `otel`
 **Status**: ✅ **PRODUCTION-READY ARCHITECTURE** (Mocks ON for safety)
 
 ---
@@ -210,23 +210,23 @@ llm_cost_usd_total                # Need real LLM
 ## 💡 **Key Decisions Made**
 
 ### 1. Safe Defaults
-**Decision**: Keep mocks ON by default  
-**Rationale**: Proven architecture without risking incorrect answers  
+**Decision**: Keep mocks ON by default
+**Rationale**: Proven architecture without risking incorrect answers
 **Impact**: Can merge current state as "observability foundation"
 
 ### 2. Graceful Fallback
-**Decision**: Real adapters fall back to mocks on error  
-**Rationale**: System stays operational even if services fail  
+**Decision**: Real adapters fall back to mocks on error
+**Rationale**: System stays operational even if services fail
 **Impact**: Higher reliability, easier debugging
 
 ### 3. Same-Origin Routing
-**Decision**: Route everything through Nginx on port 3000  
-**Rationale**: Avoids CORS complexity, cleaner architecture  
+**Decision**: Route everything through Nginx on port 3000
+**Rationale**: Avoids CORS complexity, cleaner architecture
 **Impact**: No browser CORS issues, simpler security
 
 ### 4. Incremental Enablement
-**Decision**: Flip one flag at a time (vector → web → llm)  
-**Rationale**: Easier to identify issues, safer rollout  
+**Decision**: Flip one flag at a time (vector → web → llm)
+**Rationale**: Easier to identify issues, safer rollout
 **Impact**: Longer deployment but more controlled
 
 ---
