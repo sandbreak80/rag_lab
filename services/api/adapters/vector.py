@@ -30,16 +30,16 @@ async def search_vector_mock(
 ) -> tuple[list[SearchResult], dict[str, Any]]:
     """
     Mock vector search with ACL pre-filtering.
-    
+
     Returns:
         (results, stats) where stats includes candidate counts
     """
     logger.info(f"Mock vector search: query_len={len(query)}, top_k={top_k}, acl_tag={acl_predicate.tag}")
-    
+
     # Simulate ACL filtering
     candidates_before_acl = min(top_k * 5, 100)  # Mock: retrieve 5x, then filter
     candidates_after_acl = top_k  # Mock: ACL filters some out
-    
+
     results = []
     for i in range(top_k):
         results.append(SearchResult(
@@ -56,13 +56,13 @@ async def search_vector_mock(
             published_at=datetime.now(timezone.utc),
             is_primary=i < 3  # First 3 are primary
         ))
-    
+
     stats = {
         "candidates_before_acl": candidates_before_acl,
         "candidates_after_acl": candidates_after_acl,
         "acl_filtered_count": candidates_before_acl - candidates_after_acl
     }
-    
+
     return results, stats
 
 
@@ -74,7 +74,7 @@ async def search_vector_real(
 ) -> tuple[list[SearchResult], dict[str, Any]]:
     """
     Real vector search with ACL pre-filtering at index level.
-    
+
     CRITICAL: ACL filter is applied BEFORE retrieval (not post-filter).
     """
     try:
@@ -84,7 +84,7 @@ async def search_vector_real(
             "top_k": top_k * 2,  # Over-fetch to account for ACL filtering
             "filter": acl_predicate.to_filter()
         }
-        
+
         response = requests.post(
             f"{vector_db_url}/search",
             json=payload,
@@ -92,7 +92,7 @@ async def search_vector_real(
         )
         response.raise_for_status()
         data = response.json()
-        
+
         results = []
         for hit in data.get("results", [])[:top_k]:
             results.append(SearchResult(
@@ -105,15 +105,15 @@ async def search_vector_real(
                 published_at=datetime.fromisoformat(hit["published_at"]) if hit.get("published_at") else None,
                 is_primary=hit.get("is_primary", False)
             ))
-        
+
         stats = {
             "candidates_before_acl": data.get("total_candidates", len(results) * 2),
             "candidates_after_acl": len(results),
             "acl_filtered_count": data.get("acl_filtered_count", 0)
         }
-        
+
         return results, stats
-        
+
     except Exception as e:
         logger.error(f"Vector search failed: {e}")
         # Fallback to empty results

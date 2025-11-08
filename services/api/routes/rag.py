@@ -33,7 +33,7 @@ router = APIRouter(prefix="/v1/rag", tags=["rag-v1"])
 def infer_query_intent(query: str) -> str:
     """Classify query intent for observability"""
     query_lower = query.lower()
-    
+
     if any(word in query_lower for word in ["what is", "define", "meaning of", "explain"]):
         return "definition"
     elif any(word in query_lower for word in ["how to", "how do i", "steps to", "procedure"]):
@@ -49,9 +49,9 @@ def build_prompt_messages(query: str, results: list) -> list[dict]:
     context_parts = []
     for i, result in enumerate(results):
         context_parts.append(f"[{i+1}] {result.content}")
-    
+
     context = "\n\n".join(context_parts)
-    
+
     return [
         {
             "role": "system",
@@ -67,12 +67,12 @@ def build_prompt_messages(query: str, results: list) -> list[dict]:
 def extract_citations(answer: str, results: list) -> list[dict]:
     """Extract sentence-level citations from answer"""
     import re
-    
+
     citations = []
     # Find all citation markers like [1], [2], etc.
     citation_pattern = r'\[(\d+)\]'
     matches = re.findall(citation_pattern, answer)
-    
+
     for match in set(matches):  # Remove duplicates
         idx = int(match) - 1  # Convert to 0-based
         if 0 <= idx < len(results):
@@ -85,7 +85,7 @@ def extract_citations(answer: str, results: list) -> list[dict]:
                 "source_uri": result.metadata.get("source_uri", ""),
                 "origin_tool": result.origin_tool
             })
-    
+
     return citations
 
 
@@ -93,7 +93,7 @@ def extract_citations(answer: str, results: list) -> list[dict]:
 async def rag_query(req: RagQuery):
     """
     RAG query handler with complete observability contract.
-    
+
     Implements 9-stage pipeline:
     1. IDs & Context
     2. AuthZ & ACL
@@ -108,26 +108,26 @@ async def rag_query(req: RagQuery):
     with tracer.start_as_current_span("rag.query") as span:
         try:
             t0 = time.perf_counter()
-            
+
             # ===================================================================
             # STAGE 0: IDs & Context
             # ===================================================================
             request_id = req.request_id or uuid4().hex
             trace_id = span.get_span_context().trace_id if span else uuid4().hex
             query_intent = infer_query_intent(req.query)
-            
+
             span.set_attribute("rag.request.contract_version", CONTRACT_VERSION)
             span.set_attribute("rag.request.freshness_hours", FRESHNESS_HOURS)
             span.set_attribute("rag.request.intent", query_intent)
-            
+
             logger.info(f"RAG query started: request_id={request_id}, query_len={len(req.query)}")
-            
+
             # ===================================================================
             # STAGE 1: AuthZ & ACL Claims
             # ===================================================================
             acl_pred = build_acl_predicate(req.user_id, req.groups, req.dept)
             span.set_attribute("rag.auth.perms_tag", acl_pred.tag)
-            
+
             # ===================================================================
             # STAGE 2: Retrieval (Hybrid with ACL pre-filter)
             # ===================================================================
@@ -140,7 +140,7 @@ async def rag_query(req: RagQuery):
                 )
                 retrieve_span.set_attribute("docs_retrieved", len(vector_results))
                 retrieve_span.set_attribute("acl_filtered", vector_stats.get("acl_filtered_count", 0))
-            
+
             with tracer.start_as_current_span("retrieve_web.searxng") as web_span:
                 web_results = await web.search(
                     query=req.query,
@@ -148,13 +148,13 @@ async def rag_query(req: RagQuery):
                     use_mock=USE_MOCK_WEB
                 )
                 web_span.set_attribute("docs_retrieved", len(web_results))
-            
+
             # Combine results
             all_results = vector_results + web_results
-            
+
             span.set_attribute("rag.retrieve.candidate_count", len(all_results))
             span.set_attribute("rag.retrieve.acl_filtered_count", vector_stats.get("acl_filtered_count", 0))
-            
+
             # Build RetrievalLog (Schema B)
             retrieval_log = {
                 "trace_id": str(trace_id),
@@ -175,7 +175,7 @@ async def rag_query(req: RagQuery):
                 }],
                 "total_retrieved": len(all_results)
             }
-            
+
             # ===================================================================
             # STAGE 3: Recency Gate
             # ===================================================================
@@ -186,7 +186,7 @@ async def rag_query(req: RagQuery):
                 policy_min_primary_sources=2,
                 window_hours=FRESHNESS_HOURS
             )
-            
+
             if not recency_result["passed"]:
                 # Recency gate failure - emit Schema F and degrade
                 guardrail_report = {
@@ -201,7 +201,7 @@ async def rag_query(req: RagQuery):
                     "service_errors": [],
                     "overall_safe": False
                 }
-                
+
                 return RagResponse(
                     answer="I apologize, but I don't have sufficiently recent information to answer this query with confidence.",
                     citations=[],
@@ -216,20 +216,20 @@ async def rag_query(req: RagQuery):
                     trace_id=str(trace_id),
                     contract_version=CONTRACT_VERSION
                 )
-            
+
             # ===================================================================
             # STAGE 4: Rerank (simple score sort for now)
             # ===================================================================
             sorted_results = sorted(all_results, key=lambda x: x.score, reverse=True)
             top_results = sorted_results[:TOPN]
-            
+
             span.set_attribute("rag.rerank.model", "score_sort")
-            
+
             # ===================================================================
             # STAGE 5: Synthesis (LLM)
             # ===================================================================
             messages = build_prompt_messages(req.query, top_results)
-            
+
             with tracer.start_as_current_span("synthesis_v1") as synth_span:
                 llm_response = await llm.generate(
                     messages=messages,
@@ -238,7 +238,7 @@ async def rag_query(req: RagQuery):
                     max_tokens=512,
                     use_mock=USE_MOCK_LLM
                 )
-                
+
                 # OpenLLMetry semantic attributes
                 synth_span.set_attribute("llm.model.name", llm_response.model)
                 synth_span.set_attribute("llm.model.provider", llm_response.provider)
@@ -247,15 +247,15 @@ async def rag_query(req: RagQuery):
                 synth_span.set_attribute("llm.tokens.output", llm_response.tokens_out)
                 synth_span.set_attribute("llm.tokens.total", llm_response.tokens_total)
                 synth_span.set_attribute("llm.cost.usd", llm_response.cost_usd)
-            
+
             span.set_attribute("rag.synth.model", llm_response.model)
-            
+
             # Extract citations
             citations = extract_citations(llm_response.text, top_results)
-            
+
             span.set_attribute("rag.citations.count", len(citations))
             span.set_attribute("rag.citations.unique_documents", len(set(c["doc_id"] for c in citations)))
-            
+
             # Build EvidenceMap (Schema C)
             evidence_map = {
                 "trace_id": str(trace_id),
@@ -265,13 +265,13 @@ async def rag_query(req: RagQuery):
                 "provenance_immutable": True,  # origin_tool never modified
                 "unique_docs": len(set(c["doc_id"] for c in citations))
             }
-            
+
             # ===================================================================
             # STAGE 6: Guardrails
             # ===================================================================
             guardrail_report = None
             security_status = "ok"
-            
+
             if len(citations) == 0:
                 # No citations - degraded response
                 guardrail_report = {
@@ -287,9 +287,9 @@ async def rag_query(req: RagQuery):
                     "overall_safe": True  # Not unsafe, just low quality
                 }
                 security_status = "degraded"
-            
+
             span.set_attribute("rag.guardrail.status", security_status)
-            
+
             # ===================================================================
             # STAGE 7: A/B Evaluation (optional)
             # ===================================================================
@@ -309,7 +309,7 @@ async def rag_query(req: RagQuery):
                     budget_use={},
                     budgets_applied={}
                 )
-                
+
                 ab_eval = {
                     "trace_id": str(trace_id),
                     "request_id": request_id,
@@ -320,9 +320,9 @@ async def rag_query(req: RagQuery):
                     "passed_dimensions": grade_result.passed_dimensions,
                     "failed_dimensions": grade_result.failed_dimensions
                 }
-                
+
                 span.set_attribute("rag.abtest.bucket", req.ab_bucket)
-            
+
             # ===================================================================
             # STAGE 8: Provenance Verification
             # ===================================================================
@@ -332,7 +332,7 @@ async def rag_query(req: RagQuery):
                 for r in all_results
             )
             span.set_attribute("rag.provenance.origin_tool_immutable", provenance_intact)
-            
+
             # ===================================================================
             # STAGE 9: Artifacts & Response
             # ===================================================================
@@ -347,19 +347,19 @@ async def rag_query(req: RagQuery):
                     "max_internal_queries": req.top_k * 2
                 }
             }
-            
+
             artifacts = {
                 "planner": planner_artifact,
                 "retrieval_log": retrieval_log,
                 "evidence_map": evidence_map,
                 "recency": recency_result
             }
-            
+
             if guardrail_report:
                 artifacts["guardrail_report"] = guardrail_report
             if ab_eval:
                 artifacts["ab_eval"] = ab_eval
-            
+
             # Metrics
             latency_ms = (time.perf_counter() - t0) * 1000
             metrics = {
@@ -369,9 +369,9 @@ async def rag_query(req: RagQuery):
                 "model": llm_response.model,
                 "cost_usd": llm_response.cost_usd
             }
-            
+
             logger.info(f"RAG query completed: request_id={request_id}, latency_ms={latency_ms:.0f}, citations={len(citations)}")
-            
+
             return RagResponse(
                 answer=llm_response.text,
                 citations=citations,
@@ -382,12 +382,12 @@ async def rag_query(req: RagQuery):
                 trace_id=str(trace_id),
                 contract_version=CONTRACT_VERSION
             )
-            
+
         except Exception as e:
             logger.error(f"RAG query error: {e}", exc_info=True)
             span.set_status(Status(StatusCode.ERROR, str(e)))
             span.record_exception(e)
-            
+
             raise HTTPException(
                 status_code=500,
                 detail={

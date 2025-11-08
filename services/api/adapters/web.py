@@ -29,11 +29,11 @@ async def search_web_mock(
 ) -> list[WebSearchResult]:
     """
     Mock web search.
-    
+
     Note: No ACL filtering for public web sources.
     """
     logger.info(f"Mock web search: query_len={len(query)}, top_k={top_k}")
-    
+
     results = []
     for i in range(top_k):
         results.append(WebSearchResult(
@@ -49,7 +49,7 @@ async def search_web_mock(
             published_at=datetime.now(timezone.utc) - timedelta(hours=i * 6),  # Spread over last 24h
             is_primary=i < 2  # First 2 are primary
         ))
-    
+
     return results
 
 
@@ -69,7 +69,7 @@ async def search_web_real(
         )
         response.raise_for_status()
         data = response.json()
-        
+
         results = []
         for hit in data.get("results", []):
             results.append(WebSearchResult(
@@ -85,9 +85,9 @@ async def search_web_real(
                 published_at=datetime.fromisoformat(hit["published_at"]) if hit.get("published_at") else None,
                 is_primary=False  # External sources are secondary by default
             ))
-        
+
         return results
-        
+
     except Exception as e:
         logger.error(f"Web search failed: {e}")
         return []

@@ -1,25 +1,20 @@
-FROM python:3.11-slim
+FROM python:3.10-slim
 
-WORKDIR /app
+WORKDIR /workspace
 
-# Copy requirements
-COPY services/api/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies
+COPY services/api/requirements.txt /workspace/services/api/
+RUN pip install --no-cache-dir -r /workspace/services/api/requirements.txt
 
 # Copy application code
-COPY services/common/ ./services/common/
-COPY services/api/ ./services/api/
+COPY services/api/ /workspace/services/api/
+COPY services/common/ /workspace/services/common/
 
 # Set Python path
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/workspace:/workspace/services/api:/workspace/services/common
 
-# Expose port
+# Expose API port
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD python -c "import requests; requests.get('http://localhost:8080/health')"
-
-# Run application
-CMD ["python", "-m", "services.api.app"]
-
+# Start application
+CMD ["python", "-m", "uvicorn", "services.api.app:app", "--host", "0.0.0.0", "--port", "8080"]
