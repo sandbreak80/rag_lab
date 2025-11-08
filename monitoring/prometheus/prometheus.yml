@@ -229,3 +229,14 @@ scrape_configs:
           type: 'application'
     metrics_path: '/metrics'
 
+  # RAG API v1 (NEW observability pipeline)
+  - job_name: 'rag-api-v1'
+    scrape_interval: 10s  # More frequent for real-time observability
+    static_configs:
+      - targets: ['rag-api-v1:8080']
+        labels:
+          service: 'rag-api-v1'
+          type: 'application'
+          pipeline: 'observability'
+    metrics_path: '/metrics'
+
