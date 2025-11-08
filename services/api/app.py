@@ -38,6 +38,7 @@ from services.common.mock_retrievers import mock_vector_search, mock_web_search,
 from services.common.schema_b_builder import build_retrieval_log, add_detailed_audit_to_retrieval_log
 from services.common.recency_gate import evaluate_recency_gate
 from services.common.ab_grader import ABGrader, compare_ab
+from services.common.guardrail_client import check_guardrails, get_security_status
 
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -604,9 +605,9 @@ def query():
             )
 
             # === RETRIEVAL PIPELINE WITH PROVENANCE & OTEL SPANS ===
-            
+
             timings = {}
-            
+
             # Step 1: Vector search (sets origin_tool=RAG)
             with tracer.start_as_current_span("retrieve_internal.vector") as span:
                 span.set_attribute("query_length", len(rag_req.query))
@@ -616,7 +617,7 @@ def query():
                 timings['vector_search'] = (time.time() - start) * 1000
                 span.set_attribute("docs_retrieved", len(internal_evidence))
                 span.set_attribute("latency_ms", timings['vector_search'])
-            
+
             # Step 2: Web search (sets origin_tool=WEB_SEARCH)
             with tracer.start_as_current_span("retrieve_web.searxng") as span:
                 span.set_attribute("query_length", len(rag_req.query))
@@ -626,10 +627,10 @@ def query():
                 timings['web_search'] = (time.time() - start) * 1000
                 span.set_attribute("docs_retrieved", len(web_evidence))
                 span.set_attribute("latency_ms", timings['web_search'])
-            
+
             # Step 3: Merge
             all_evidence = internal_evidence + web_evidence
-            
+
             # Step 4: Deduplication (preserves origin_tool)
             with tracer.start_as_current_span("dedup") as span:
                 start = time.time()
@@ -639,7 +640,7 @@ def query():
                 span.set_attribute("docs_output", len(deduped_evidence))
                 span.set_attribute("docs_dropped", len(all_evidence) - len(deduped_evidence))
                 span.set_attribute("latency_ms", timings['dedup'])
-            
+
             # Step 5: Domain filtering (preserves origin_tool)
             with tracer.start_as_current_span("domain_filter") as span:
                 domain_filter = create_default_filter()
@@ -717,28 +718,28 @@ def query():
                 span.set_attribute("llm.model.provider", "ollama")
                 span.set_attribute("llm.temperature", 0.7)
                 span.set_attribute("llm.max_tokens", 512)
-                
+
                 # Mock token counts (real implementation would use tokenizer)
                 prompt_tokens = len(rag_req.query.split()) * 1.3  # Rough estimate
                 completion_tokens = len(answer.split()) * 1.3 if answer else 0
-                
+
                 span.set_attribute("llm.tokens.input", int(prompt_tokens))
                 span.set_attribute("llm.tokens.output", int(completion_tokens))
                 span.set_attribute("llm.tokens.total", int(prompt_tokens + completion_tokens))
-                
+
                 # Mock cost (real implementation would calculate from pricing)
                 cost_per_1k = 0.0002  # Example: $0.20 per 1M tokens
                 total_cost = (prompt_tokens + completion_tokens) / 1000 * cost_per_1k
                 span.set_attribute("llm.cost.usd", round(total_cost, 6))
-                
+
                 timings['synthesis'] = 200.0  # Mock
                 span.set_attribute("latency_ms", timings['synthesis'])
-            
+
             # Determine answer/refusal based on recency gate
             refusal = None
             answer = "Mock answer - wire real LLM"
             confidence = "MEDIUM"
-            
+
             if not recency_result['passed'] and recency_result['query_is_temporal']:
             if not recency_result['passed'] and recency_result['query_is_temporal']:
                 refusal = (
@@ -750,8 +751,34 @@ def query():
                 confidence = "VERY_LOW"
                 logger.warning(f"Recency gate failed: {recency_result['notes']}")
 
-            # Build artifacts with ID correlation
-            planner = PlannerArtifact(
+            # Step 9: Guardrails check (graceful fallback on errors)
+            with tracer.start_as_current_span("guardrails") as span:
+                # Check query + answer for safety
+                content_to_check = f"Query: {rag_req.query}\n\nAnswer: {answer}"
+                guardrail_report = check_guardrails(content_to_check, orch_ctx)
+                
+                span.set_attribute("overall_safe", guardrail_report.overall_safe)
+                span.set_attribute("detections_count", len(guardrail_report.detections))
+                span.set_attribute("service_errors_count", len(guardrail_report.service_errors))
+                
+                if guardrail_report.service_errors:
+                    span.set_attribute("degraded", True)
+                    logger.warning(
+                        f"Guardrails degraded: {len(guardrail_report.service_errors)} service errors"
+                    )
+            
+            # Determine security status for footer
+            security_status = get_security_status(guardrail_report)
+            
+            # Add chunking report (mock for now)
+            chunking_report = ChunkingReport(
+                trace_id=trace_id,
+                request_id=g.request_id,
+                params={"target_size": 500, "min": 300, "max": 800, "overlap": 100},
+                samples=[],
+                timing_ms=10.0,
+                total_chunks=0
+            )
                 trace_id=trace_id,
                 request_id=g.request_id,
                 subtasks=["retrieve_internal", "retrieve_web", "dedup", "filter", "synthesize"],
@@ -762,7 +789,8 @@ def query():
                 route_reason=f"Blended RAG + Web search. Retrieved {len(internal_evidence)} internal + {len(web_evidence)} web, deduped {len(all_evidence) - len(deduped_evidence)}, filtered {len(deduped_evidence) - len(filtered_evidence)}"
             )
 
-            # retrieval_log already built above with full audit trail
+            # Build Planner artifact
+            planner = PlannerArtifact(
 
             # Build EvidenceMap and A/B Evaluation
             # For now, mock ungrounded claims - real implementation would analyze answer
@@ -849,8 +877,12 @@ def query():
                 sha256=hash_answer(answer),
                 refusal=refusal
             )
-
-            return jsonify(response.to_dict()), 200
+            
+            # Add security_status to response dict
+            response_dict = response.to_dict()
+            response_dict['security_status'] = security_status
+            
+            return jsonify(response_dict), 200
 
         except Exception as e:
             span.record_exception(e)
