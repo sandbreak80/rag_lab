@@ -6,10 +6,10 @@
 
 ## 🎯 What's Ready
 
-✅ **Backend**: API deployed at `rag-api-v1:8080` (8/8 acceptance tests passed)  
-✅ **Routing**: Nginx same-origin `/api/*` → `rag-api-v1` (no CORS)  
-✅ **Client**: `frontend/src/services/ragApiV1.ts` (askRagV1 function)  
-✅ **Components**: Citations, Provenance, Metrics, JSON Inspector  
+✅ **Backend**: API deployed at `rag-api-v1:8080` (8/8 acceptance tests passed)
+✅ **Routing**: Nginx same-origin `/api/*` → `rag-api-v1` (no CORS)
+✅ **Client**: `frontend/src/services/ragApiV1.ts` (askRagV1 function)
+✅ **Components**: Citations, Provenance, Metrics, JSON Inspector
 
 ---
 
@@ -78,14 +78,14 @@ const handleSubmit = async (query: string) => {
       groups: [],       // TODO: Replace with SSO groups
       top_k: 8
     });
-    
+
     setRagResponse(response);
-    
+
     // Display answer
     console.log('Answer:', response.answer);
     console.log('Citations:', response.citations.length);
     console.log('Trace ID:', response.trace_id);
-    
+
   } catch (error) {
     console.error('RAG API error:', error);
   } finally {
@@ -161,7 +161,7 @@ The components use Tailwind. Adjust as needed:
 
 **CitationsDrawer**: Collapsible list of sources
 ```tsx
-<CitationsDrawer 
+<CitationsDrawer
   citations={ragResponse.citations}
   className="mt-4"  // Add spacing
 />
@@ -191,7 +191,7 @@ The components use Tailwind. Adjust as needed:
 
 **JSONInspector**: Toggle to view/download artifacts
 ```tsx
-<JSONInspector 
+<JSONInspector
   artifacts={ragResponse.artifacts}
   collapsed={true}  // Start collapsed
 />
@@ -253,7 +253,7 @@ Response should be **JSON** (not HTML). If you get HTML, Nginx routing is broken
 
 ### Issue: CORS errors in browser console
 
-**Cause**: Nginx routing not working  
+**Cause**: Nginx routing not working
 **Fix**: Ensure frontend nginx proxies `/api/` → `rag-api-v1:8080`
 
 ```nginx
@@ -268,7 +268,7 @@ Redeploy: `docker compose up -d --build frontend`
 
 ### Issue: 502 Bad Gateway
 
-**Cause**: `rag-api-v1` not running or unhealthy  
+**Cause**: `rag-api-v1` not running or unhealthy
 **Fix**: Check container status
 
 ```bash
@@ -280,7 +280,7 @@ Restart: `docker compose up -d rag-api-v1`
 
 ### Issue: Empty artifacts in response
 
-**Cause**: Feature flags disabled or mocks too simplistic  
+**Cause**: Feature flags disabled or mocks too simplistic
 **Fix**: Enable observability
 
 ```bash
@@ -292,7 +292,7 @@ Restart: `docker compose up -d rag-api-v1`
 
 ### Issue: No citations
 
-**Cause**: Mock LLM not generating citations  
+**Cause**: Mock LLM not generating citations
 **Fix**: This is expected with mocks. Citations will populate when real LLM is enabled.
 
 ---

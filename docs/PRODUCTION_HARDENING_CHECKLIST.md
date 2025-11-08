@@ -134,7 +134,7 @@ healthcheck:
   retries: 12
 ```
 
-**Liveness** (`/live`): Always 200 if process up  
+**Liveness** (`/live`): Always 200 if process up
 **Readiness** (`/ready`): Only 200 if deps connected
 
 ### [ ] 11. Resource Limits
@@ -297,7 +297,7 @@ from locust import HttpUser, task, between
 
 class RagUser(HttpUser):
     wait_time = between(1, 3)
-    
+
     @task
     def ask_rag(self):
         self.client.post("/api/v1/rag/query", json={

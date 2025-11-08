@@ -851,6 +851,34 @@ services:
       retries: 3
 
   # ============================================================================
+  # PLAYWRIGHT - E2E Testing
+  # ============================================================================
+  
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.40.0-jammy
+    container_name: rag-playwright
+    networks:
+      - rag-network
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules  # Prevent overwriting
+    environment:
+      - BASE_URL=http://rag-frontend:80
+      - CI=true
+    command: >
+      sh -c "
+        npm install --legacy-peer-deps &&
+        npx playwright install --with-deps &&
+        npx playwright test
+      "
+    depends_on:
+      - frontend
+      - rag-api-v1
+    profiles:
+      - testing  # Only run with: docker compose --profile testing up
+
+  # ============================================================================
   # MONITORING & OBSERVABILITY - Prometheus + Grafana + OpenTelemetry Stack
   # ============================================================================
 
