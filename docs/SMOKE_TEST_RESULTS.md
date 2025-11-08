@@ -1,8 +1,8 @@
 # 🧪 Smoke Test Results - otel Branch
 
-**Date**: November 8, 2025  
-**Instance**: i-0607a7dd199717fc9 (16.146.148.184)  
-**Branch**: `otel`  
+**Date**: November 8, 2025
+**Instance**: i-0607a7dd199717fc9 (16.146.148.184)
+**Branch**: `otel`
 **Deployment**: AWS EC2 g4dn.xlarge (Tesla T4 GPU)
 
 ---
@@ -52,7 +52,7 @@ architecture-3bff0f08,What is 🌟 What is This??,beginner,architecture,definiti
 
 **Breakdown**:
 - Architecture questions: ~8,000
-- Service implementation: ~7,000  
+- Service implementation: ~7,000
 - Deployment/DevOps: ~5,000
 - API/Integration: ~4,000
 - Configuration: ~3,000
@@ -64,8 +64,8 @@ $ nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
 Tesla T4, 15360 MiB, 580.95.05
 ```
 
-**CUDA Version**: 13.0  
-**Driver**: 580.95.05  
+**CUDA Version**: 13.0
+**Driver**: 580.95.05
 **Status**: Operational
 
 ### 4. Ollama GPU Acceleration ✅
@@ -99,7 +99,7 @@ $ curl -s http://localhost:3000 | head -5
     <title>Neural Vault - Educational RAG Lab</title>
 ```
 
-**Health**: ✅ Healthy  
+**Health**: ✅ Healthy
 **Access**: http://16.146.148.184:3000
 
 ### 6. OTel Collector ⚠️  PARTIAL
@@ -117,7 +117,7 @@ $ docker logs rag-otel-collector | tail -5
 - OTLP HTTP: :4318 ✅
 - Prometheus: :8889 ✅
 
-**Issue**: Healthcheck endpoint at :13133 not responding  
+**Issue**: Healthcheck endpoint at :13133 not responding
 **Impact**: Minimal - collector is functional, just docker healthcheck fails
 
 ### 7. API Gateway ⚠️  PARTIAL
@@ -133,13 +133,13 @@ $ docker logs rag-api-gateway | tail -5
 - `/health` - Responding ✅
 - `/services` - Responding ✅
 
-**Issue**: Dependent services (chat, search, embedding) still warming up  
+**Issue**: Dependent services (chat, search, embedding) still warming up
 **Impact**: Gateway marks itself unhealthy if dependencies aren't ready
 
 ### 8. Acceptance Tests ❌ BLOCKED
 **Reason**: pytest not installed on AWS instance
 
-**Test File**: `tests/test_acceptance_full_contract.py` exists ✅  
+**Test File**: `tests/test_acceptance_full_contract.py` exists ✅
 **Probes**: 8 total
 1. Temporal probe (recency pass)
 2. Temporal probe (recency fail)
@@ -247,7 +247,7 @@ The `otel` branch is **functionally operational** with:
 
 ---
 
-**Test Execution Time**: 5 minutes  
-**Manual Intervention Required**: pytest installation  
+**Test Execution Time**: 5 minutes
+**Manual Intervention Required**: pytest installation
 **Risk Level**: Low (feature-flagged, no breaking changes)
 

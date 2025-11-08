@@ -1,8 +1,8 @@
 # 🎉 **OTEL Branch - AWS Deployment COMPLETE**
 
-**Date:** 2025-11-08  
-**Instance:** i-0607a7dd199717fc9 (16.146.148.184)  
-**Branch:** `otel` @ `90522cf`  
+**Date:** 2025-11-08
+**Instance:** i-0607a7dd199717fc9 (16.146.148.184)
+**Branch:** `otel` @ `90522cf`
 **Status:** 🟢 **OPERATIONAL - READY FOR TESTING**
 
 ---
@@ -33,13 +33,13 @@
 ## 🔧 **Fixes Applied**
 
 ### Issue 1: GitHub Token Authentication
-**Problem:** Cloud-init couldn't clone private repo  
-**Fix:** Updated cloud-init to use GitHub token (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)  
+**Problem:** Cloud-init couldn't clone private repo
+**Fix:** Updated cloud-init to use GitHub token (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)
 **Status:** ✅ Resolved
 
 ### Issue 2: OTel Collector Crashing
-**Problem:** Deprecated `logging` exporter causing restart loop  
-**Fix:** Replaced with `debug` exporter in config/otel-collector-config.yaml  
+**Problem:** Deprecated `logging` exporter causing restart loop
+**Fix:** Replaced with `debug` exporter in config/otel-collector-config.yaml
 **Commits:**
 - `90522cf` - fix: Replace deprecated logging exporter with debug exporter
 **Status:** ✅ Resolved
@@ -273,8 +273,8 @@ aws ec2 terminate-instances --region us-west-2 --instance-ids i-0607a7dd199717fc
 
 ---
 
-**Generated:** 2025-11-08 16:35 UTC  
-**Branch:** `otel` @ `90522cf`  
-**Instance:** i-0607a7dd199717fc9  
+**Generated:** 2025-11-08 16:35 UTC
+**Branch:** `otel` @ `90522cf`
+**Instance:** i-0607a7dd199717fc9
 **Status:** 🟢 **OPERATIONAL**
 
