@@ -21,15 +21,15 @@ update_env() {
     local service=$1
     local flag=$2
     local value=$3
-    
+
     echo -e "${YELLOW}Setting ${flag}=${value} for ${service}...${NC}"
-    
+
     # Update docker-compose.yml
     sed -i.bak "s/${flag}:.*/${flag}: \"${value}\"/" docker-compose.yml
-    
+
     # Restart service
     docker compose up -d ${service}
-    
+
     echo "Waiting 10s for service to stabilize..."
     sleep 10
 }
@@ -37,28 +37,28 @@ update_env() {
 # Function to run tests
 run_tests() {
     local phase=$1
-    
+
     echo ""
     echo -e "${YELLOW}Running tests for ${phase}...${NC}"
-    
+
     # Frontend integration tests
     echo "1. Frontend integration tests..."
     export FRONTEND=$FRONTEND_URL
     python3 tests/frontend_integration/test_frontdoor.py
-    
+
     if [ $? -ne 0 ]; then
         echo -e "${RED}❌ Tests failed for ${phase}!${NC}"
         echo "Rollback by reverting the flag and restarting the service"
         return 1
     fi
-    
+
     # Acceptance tests (if available)
     if [ -f "tests/test_acceptance_full_contract.py" ]; then
         echo "2. Acceptance tests..."
         export RAG_API="${FRONTEND_URL}/api"
         python3 -m pytest tests/test_acceptance_full_contract.py -q || true
     fi
-    
+
     echo -e "${GREEN}✅ Tests passed for ${phase}!${NC}"
     return 0
 }
@@ -72,7 +72,7 @@ echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     update_env "rag-api-v1" "RAG_ENABLE_OBS" "1"
     run_tests "Observability Enabled"
-    
+
     if [ $? -ne 0 ]; then
         echo -e "${RED}❌ Stopping at Observability flip${NC}"
         exit 1
@@ -89,7 +89,7 @@ echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     update_env "rag-api-v1" "RAG_USE_MOCK_VECTOR" "0"
     run_tests "Real Vector Search"
-    
+
     if [ $? -ne 0 ]; then
         echo -e "${RED}❌ Stopping at Vector flip${NC}"
         exit 1
@@ -106,7 +106,7 @@ echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     update_env "rag-api-v1" "RAG_USE_MOCK_WEB" "0"
     run_tests "Real Web Search"
-    
+
     if [ $? -ne 0 ]; then
         echo -e "${RED}❌ Stopping at Web flip${NC}"
         exit 1
@@ -124,7 +124,7 @@ echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     update_env "rag-api-v1" "RAG_USE_MOCK_LLM" "0"
     run_tests "Real LLM"
-    
+
     if [ $? -ne 0 ]; then
         echo -e "${RED}❌ Stopping at LLM flip${NC}"
         exit 1

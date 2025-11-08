@@ -3,7 +3,7 @@
  * Routes through Nginx as same-origin /api (no CORS issues)
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_RAG_API || '/api';
+const API_BASE = import.meta.env.VITE_RAG_API || '/api';
 
 export interface RagRequest {
   query: string;

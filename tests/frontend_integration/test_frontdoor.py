@@ -59,12 +59,12 @@ print("-"*60)
 for endpoint in ['/live', '/ready', '/health']:
     try:
         resp = requests.get(f"{FRONTEND_URL}{endpoint}", timeout=5)
-        
+
         # CRITICAL: Must return JSON, not HTML
         content_type = resp.headers.get('content-type', '')
         is_json = 'json' in content_type.lower()
         has_html = '<html' in resp.text.lower() or '<!doctype' in resp.text.lower()
-        
+
         if resp.status_code == 200 and is_json and not has_html:
             try:
                 data = resp.json()
@@ -89,14 +89,14 @@ try:
         "groups": [],
         "top_k": 8
     }
-    
+
     resp = requests.post(
         f"{FRONTEND_URL}/api/v1/rag/query",
         json=payload,
         headers={'Content-Type': 'application/json'},
         timeout=20
     )
-    
+
     if resp.status_code == 502:
         test_result("API via /api", False, "502 Bad Gateway - nginx can't reach rag-api-v1")
     elif resp.status_code != 200:
@@ -107,7 +107,7 @@ try:
             has_answer = 'answer' in data
             has_citations = 'citations' in data
             has_trace = 'trace_id' in data
-            
+
             if has_answer and has_citations and has_trace:
                 test_result("API via /api", True, "Valid RAG response")
                 test_result("API - Answer", len(data.get('answer', '')) > 0, f"Length: {len(data.get('answer', ''))} chars")
@@ -129,11 +129,11 @@ try:
         f"{FRONTEND_URL}/api/v1/rag/query",
         headers={'Origin': FRONTEND_URL}
     )
-    
+
     # With same-origin, CORS shouldn't be needed
     # But if present, it should allow the origin
     cors_header = resp.headers.get('Access-Control-Allow-Origin', '')
-    
+
     if cors_header:
         test_result("CORS configured", True, f"CORS header: {cors_header}")
     else:
@@ -155,12 +155,12 @@ try:
         },
         timeout=20
     )
-    
+
     if resp.status_code == 200:
         data = resp.json()
         answer = data.get('answer', '')
         citations = len(data.get('citations', []))
-        
+
         if answer and citations > 0:
             test_result("Golden Query", True, f"Answer: {len(answer)} chars, Citations: {citations}")
         else:
@@ -182,7 +182,7 @@ try:
         timeout=20
     )
     elapsed = time.time() - start
-    
+
     if resp.status_code == 200:
         if elapsed < 10:
             test_result("E2E Latency", True, f"{elapsed:.2f}s < 10s")

@@ -86,7 +86,7 @@ curl -sSf http://16.146.148.184:3000/ready | jq
 curl -sSf -X POST http://16.146.148.184:3000/api/v1/rag/query \
   -H 'Content-Type: application/json' \
   -d '{"query":"What is RAG?","user_id":"demo","groups":[]}' | jq
-  
+
 # Should see: { "answer": "...", "citations": [...], ... }
 # NOT: 502 Bad Gateway
 ```
