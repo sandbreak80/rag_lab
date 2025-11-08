@@ -36,6 +36,7 @@ from services.common.deduplicator import deduplicate_evidence, DedupAuditEntry
 from services.common.domain_filter import create_default_filter, DomainFilterAuditEntry
 from services.common.mock_retrievers import mock_vector_search, mock_web_search, mock_research_agent_retrieve
 from services.common.schema_b_builder import build_retrieval_log, add_detailed_audit_to_retrieval_log
+from services.common.recency_gate import evaluate_recency_gate
 
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -476,52 +477,7 @@ class RagResponse:
 # HELPER FUNCTIONS
 # ============================================================================
 
-def evaluate_recency(sources: List[Source], policy: Policy, query: str, ctx: OrchestrationContext) -> RecencyEvaluation:
-    """Evaluate recency gate"""
-    now = datetime.now(timezone.utc)
-    histogram = {"<24h": 0, "24-48h": 0, "48h-1w": 0, ">1w": 0, "unknown": 0}
-    primary_within_48h = 0
-
-    for source in sources:
-        if not source.published_at:
-            histogram["unknown"] += 1
-            continue
-
-        pub_date = datetime.fromisoformat(source.published_at.replace('Z', '+00:00'))
-        hours_old = (now - pub_date).total_seconds() / 3600
-
-        # Update histogram
-        if hours_old < 24:
-            histogram["<24h"] += 1
-        elif hours_old < 48:
-            histogram["24-48h"] += 1
-        elif hours_old < 168:  # 1 week
-            histogram["48h-1w"] += 1
-        else:
-            histogram[">1w"] += 1
-
-        # Count primary sources within 48h
-        if source.is_primary and hours_old <= 48:
-            primary_within_48h += 1
-
-    # Evaluate pass/fail
-    passed = True
-    notes = ""
-
-    if policy.requires_recency:
-        if primary_within_48h < policy.min_primary_sources:
-            passed = False
-            notes = f"Required {policy.min_primary_sources} primary sources ≤48h, found {primary_within_48h}"
-
-    return RecencyEvaluation(
-        trace_id=ctx.trace_id,
-        request_id=ctx.request_id,
-        window_hours=48,
-        passed=passed,
-        notes=notes if not passed else "Recency requirements met",
-        freshness_histogram=histogram,
-        primary_sources_within_window=primary_within_48h
-    )
+# Old evaluate_recency function removed - now using recency_gate module
 
 
 def calculate_source_mix(sources: List[Source]) -> Dict[str, int]:
@@ -630,7 +586,7 @@ def query():
             # Get trace ID
             span_ctx = span.get_span_context()
             trace_id = format(span_ctx.trace_id, '032x')
-            
+
             # Build orchestration context (ID correlation)
             orch_ctx = OrchestrationContext(
                 trace_id=trace_id,
@@ -645,35 +601,35 @@ def query():
                 ab_test=rag_req.ab_test,
                 start_time=g.start_time
             )
-            
+
             # === RETRIEVAL PIPELINE WITH PROVENANCE ===
-            
+
             timings = {}
-            
+
             # Step 1: Vector search (sets origin_tool=RAG)
             start = time.time()
             internal_evidence = mock_vector_search(rag_req.query, k=10, ctx=orch_ctx)
             timings['vector_search'] = (time.time() - start) * 1000
-            
+
             # Step 2: Web search (sets origin_tool=WEB_SEARCH)
             start = time.time()
             web_evidence = mock_web_search(rag_req.query, k=5, ctx=orch_ctx)
             timings['web_search'] = (time.time() - start) * 1000
-            
+
             # Step 3: Merge
             all_evidence = internal_evidence + web_evidence
-            
+
             # Step 4: Deduplication (preserves origin_tool)
             start = time.time()
             deduped_evidence, dedup_audit = deduplicate_evidence(all_evidence)
             timings['dedup'] = (time.time() - start) * 1000
-            
+
             # Step 5: Domain filtering (preserves origin_tool)
             domain_filter = create_default_filter()
             start = time.time()
             filtered_evidence, filter_audit = domain_filter.filter_evidence(deduped_evidence)
             timings['domain_filter'] = (time.time() - start) * 1000
-            
+
             # Step 6: Build Schema B (RetrievalLog)
             retrieval_log = build_retrieval_log(
                 internal_results=[e for e in filtered_evidence if e.origin_tool == OriginTool.RAG],
@@ -683,8 +639,9 @@ def query():
                 timings=timings,
                 ctx=orch_ctx
             )
-            
+
             # Convert Evidence to Source for response
+            # Note: freshness_hours will be computed in recency evaluation
             mock_sources = [
                 Source(
                     index=i+1,
@@ -697,13 +654,50 @@ def query():
                     published_at=ev.published_at.isoformat() if ev.published_at else None,
                     is_primary=ev.is_primary,
                     domain=ev.metadata.get('domain'),
-                    freshness_hours=None  # Will be computed in recency evaluation
+                    freshness_hours=ev.metadata.get('freshness_hours')  # Will be set by recency gate
                 )
                 for i, ev in enumerate(filtered_evidence[:10])
             ]
 
-            # Evaluate recency
-            recency = evaluate_recency(mock_sources, rag_req.policy, rag_req.query, orch_ctx)
+            # Step 7: Evaluate recency gate (SERVER-SIDE freshness calculation)
+            recency_result = evaluate_recency_gate(
+                evidence_list=filtered_evidence[:10],
+                query=rag_req.query,
+                policy_requires_recency=rag_req.policy.requires_recency,
+                policy_min_primary_sources=rag_req.policy.min_primary_sources,
+                window_hours=48
+            )
+            
+            # Update sources with freshness_hours (now computed server-side)
+            for i, ev in enumerate(filtered_evidence[:10]):
+                if i < len(mock_sources):
+                    mock_sources[i].freshness_hours = ev.metadata.get('freshness_hours')
+            
+            # Build RecencyEvaluation artifact
+            recency = RecencyEvaluation(
+                trace_id=trace_id,
+                request_id=g.request_id,
+                window_hours=recency_result['window_hours'],
+                passed=recency_result['passed'],
+                notes=recency_result['notes'],
+                freshness_histogram=recency_result['freshness_histogram'],
+                primary_sources_within_window=recency_result['primary_sources_within_window']
+            )
+            
+            # If recency gate fails and query is temporal, return refusal
+            refusal = None
+            answer = "Mock answer - wire real LLM"
+            confidence = "MEDIUM"
+            
+            if not recency_result['passed'] and recency_result['query_is_temporal']:
+                refusal = (
+                    f"Unable to provide a confident answer for this temporal query. "
+                    f"{recency_result['notes']} "
+                    f"Please try rephrasing your query or check back when more recent sources are available."
+                )
+                answer = ""
+                confidence = "VERY_LOW"
+                logger.warning(f"Recency gate failed: {recency_result['notes']}")
 
             # Build artifacts with ID correlation
             planner = PlannerArtifact(
@@ -716,7 +710,7 @@ def query():
                 route_decision="blended",
                 route_reason=f"Blended RAG + Web search. Retrieved {len(internal_evidence)} internal + {len(web_evidence)} web, deduped {len(all_evidence) - len(deduped_evidence)}, filtered {len(deduped_evidence) - len(filtered_evidence)}"
             )
-            
+
             # retrieval_log already built above with full audit trail
 
             evidence_map = EvidenceMap(
@@ -754,15 +748,16 @@ def query():
 
             # Build response
             response = RagResponse(
-                answer="Mock answer - wire real LLM",
-                confidence="MEDIUM",
+                answer=answer,
+                confidence=confidence,
                 sources=mock_sources,
                 trace_id=trace_id,
-                route="rag",
-                route_reason="Internal confidence above threshold",
+                route="blended",
+                route_reason=planner.route_reason,
                 model_routing=[
-                    ModelRoutingEntry("embedding", "text-embedding-ada-002", 50.0),
-                    ModelRoutingEntry("generation", "gpt-4", 200.0)
+                    ModelRoutingEntry("embedding", "text-embedding-ada-002", timings.get('vector_search', 0)),
+                    ModelRoutingEntry("web_search", "searxng", timings.get('web_search', 0)),
+                    ModelRoutingEntry("generation", "llama2:13b", 200.0)
                 ],
                 recency=recency,
                 planner=planner,
@@ -774,16 +769,17 @@ def query():
                 ab_eval=ab_eval,
                 metrics=Metrics(
                     total_ms=(time.time() - g.start_time) * 1000,
-                    retrieve_ms=120.0,
-                    rerank_ms=50.0,
+                    retrieve_ms=timings.get('vector_search', 0) + timings.get('web_search', 0),
+                    rerank_ms=0.0,
                     generate_ms=200.0,
-                    docs_retrieved=1,
-                    docs_reranked=1,
-                    budget_use={"web_queries": 0, "internal_queries": 1}
+                    docs_retrieved=len(internal_evidence) + len(web_evidence),
+                    docs_reranked=len(filtered_evidence),
+                    budget_use=orch_ctx.budget_use
                 ),
                 source_mix=calculate_source_mix(mock_sources),
                 wall_time_ms=(time.time() - g.start_time) * 1000,
-                sha256=hash_answer("Mock answer - wire real LLM")
+                sha256=hash_answer(answer),
+                refusal=refusal
             )
 
             return jsonify(response.to_dict()), 200

@@ -28,25 +28,25 @@ def mock_vector_search(
 ) -> List[Evidence]:
     """
     Mock vector search retriever.
-    
+
     DEMONSTRATES: How to set origin_tool at Evidence creation.
-    
+
     Real implementation would:
     1. Query ChromaDB/Qdrant with embedding
     2. Retrieve top-k results
     3. Create Evidence with origin_tool=OriginTool.RAG
     4. Add metadata (score, published_at, is_primary, domain)
-    
+
     Args:
         query: Search query
         k: Number of results
         ctx: Orchestration context
-    
+
     Returns:
         List of Evidence with origin_tool=RAG
     """
     logger.info(f"Mock vector search: query='{query}', k={k}")
-    
+
     # Mock results
     mock_results = [
         {
@@ -61,7 +61,7 @@ def mock_vector_search(
         }
         for i in range(min(k, 5))  # Return up to 5 mock results
     ]
-    
+
     # Create Evidence with origin_tool=RAG
     evidence_list = []
     for result in mock_results:
@@ -80,12 +80,12 @@ def mock_vector_search(
             }
         )
         evidence_list.append(evidence)
-    
+
     logger.info(f"Vector search returned {len(evidence_list)} results")
-    
+
     # Update budget tracking
     ctx.budget_use['internal_queries'] = ctx.budget_use.get('internal_queries', 0) + 1
-    
+
     return evidence_list
 
 
@@ -96,25 +96,25 @@ def mock_web_search(
 ) -> List[Evidence]:
     """
     Mock web search retriever.
-    
+
     DEMONSTRATES: How to set origin_tool at Evidence creation.
-    
+
     Real implementation would:
     1. Query SearXNG with search terms
     2. Parse results
     3. Create Evidence with origin_tool=OriginTool.WEB_SEARCH
     4. Add metadata (score, published_at, is_primary, domain)
-    
+
     Args:
         query: Search query
         k: Number of results
         ctx: Orchestration context
-    
+
     Returns:
         List of Evidence with origin_tool=WEB_SEARCH
     """
     logger.info(f"Mock web search: query='{query}', k={k}")
-    
+
     # Mock results from different domains
     mock_domains = [
         'example.com',
@@ -123,7 +123,7 @@ def mock_web_search(
         'stackoverflow.com',
         'medium.com'
     ]
-    
+
     mock_results = [
         {
             'id': f'web_{uuid.uuid4()}',
@@ -137,7 +137,7 @@ def mock_web_search(
         }
         for i in range(min(k, 5))
     ]
-    
+
     # Create Evidence with origin_tool=WEB_SEARCH
     evidence_list = []
     for result in mock_results:
@@ -156,12 +156,12 @@ def mock_web_search(
             }
         )
         evidence_list.append(evidence)
-    
+
     logger.info(f"Web search returned {len(evidence_list)} results")
-    
+
     # Update budget tracking
     ctx.budget_use['web_queries'] = ctx.budget_use.get('web_queries', 0) + 1
-    
+
     return evidence_list
 
 
@@ -171,24 +171,24 @@ def mock_research_agent_retrieve(
 ) -> List[Evidence]:
     """
     Mock research agent retriever.
-    
+
     DEMONSTRATES: How to set origin_tool at Evidence creation.
-    
+
     Real implementation would:
     1. Decompose query into sub-questions
     2. Autonomously search and synthesize
     3. Create Evidence with origin_tool=OriginTool.RESEARCH_AGENT
     4. Add metadata (confidence, published_at, is_primary)
-    
+
     Args:
         query: Research query
         ctx: Orchestration context
-    
+
     Returns:
         List of Evidence with origin_tool=RESEARCH_AGENT
     """
     logger.info(f"Mock research agent: query='{query}'")
-    
+
     # Research agent returns fewer but higher-quality results
     mock_results = [
         {
@@ -202,7 +202,7 @@ def mock_research_agent_retrieve(
             'domain': 'research.internal.example.com'
         }
     ]
-    
+
     # Create Evidence with origin_tool=RESEARCH_AGENT
     evidence_list = []
     for result in mock_results:
@@ -222,8 +222,8 @@ def mock_research_agent_retrieve(
             }
         )
         evidence_list.append(evidence)
-    
+
     logger.info(f"Research agent returned {len(evidence_list)} results")
-    
+
     return evidence_list
 
