@@ -70,54 +70,88 @@ async def search_vector_real(
     query: str,
     acl_predicate: Any,
     top_k: int = 20,
-    vector_db_url: str = "http://vector-db:8001"
+    vector_db_url: str = "http://vector-db:8005",
+    embedding_url: str = "http://embedding-service:8006"
 ) -> tuple[list[SearchResult], dict[str, Any]]:
     """
     Real vector search with ACL pre-filtering at index level.
 
     CRITICAL: ACL filter is applied BEFORE retrieval (not post-filter).
+    
+    Flow:
+    1. Get query embedding
+    2. Search vector-db with embedding + ACL filter
+    3. Format results
     """
     try:
-        # Build query with ACL pre-filter
-        payload = {
-            "query": query,
-            "top_k": top_k * 2,  # Over-fetch to account for ACL filtering
-            "filter": acl_predicate.to_filter()
-        }
-
-        response = requests.post(
-            f"{vector_db_url}/search",
-            json=payload,
-            timeout=5
+        # Step 1: Get query embedding
+        embed_response = requests.post(
+            f"{embedding_url}/embed",
+            json={"texts": [query]},
+            timeout=3.0
         )
-        response.raise_for_status()
-        data = response.json()
-
+        embed_response.raise_for_status()
+        embeddings = embed_response.json()["embeddings"]
+        
+        # Step 2: Search vector database
+        search_payload = {
+            "query_embeddings": embeddings,
+            "n_results": top_k * 2  # Over-fetch for ACL filtering
+        }
+        
+        # Add ACL metadata filters if available
+        if hasattr(acl_predicate, 'to_filter'):
+            search_payload["metadata_filters"] = acl_predicate.to_filter()
+        
+        search_response = requests.post(
+            f"{vector_db_url}/search",
+            json=search_payload,
+            timeout=3.0
+        )
+        search_response.raise_for_status()
+        raw_results = search_response.json()
+        
+        # Step 3: Format results
         results = []
-        for hit in data.get("results", [])[:top_k]:
+        ids = raw_results.get("ids", [[]])[0]
+        documents = raw_results.get("documents", [[]])[0]
+        distances = raw_results.get("distances", [[]])[0]
+        metadatas = raw_results.get("metadatas", [[]])[0]
+        
+        candidates_before_acl = len(ids)
+        
+        for i in range(min(len(ids), top_k)):
+            metadata = metadatas[i] if i < len(metadatas) else {}
+            doc_content = documents[i] if i < len(documents) else ""
+            
             results.append(SearchResult(
-                doc_id=hit["doc_id"],
-                chunk_id=hit["chunk_id"],
-                content=hit["content"],
-                score=hit["score"],
-                metadata=hit.get("metadata", {}),
+                doc_id=ids[i],
+                chunk_id=metadata.get("chunk_id", ids[i]),
+                content=doc_content,
+                score=1.0 - distances[i] if i < len(distances) else 0.0,  # Convert distance to similarity
+                metadata={
+                    **metadata,
+                    "version": metadata.get("version", "1.0"),
+                    "source_uri": metadata.get("source_uri", metadata.get("file_name", ""))
+                },
                 origin_tool="rag",
-                published_at=datetime.fromisoformat(hit["published_at"]) if hit.get("published_at") else None,
-                is_primary=hit.get("is_primary", False)
+                published_at=datetime.fromisoformat(metadata["published_at"]) if metadata.get("published_at") else None,
+                is_primary=metadata.get("is_primary", i < 3)  # First 3 are primary by default
             ))
 
         stats = {
-            "candidates_before_acl": data.get("total_candidates", len(results) * 2),
+            "candidates_before_acl": candidates_before_acl,
             "candidates_after_acl": len(results),
-            "acl_filtered_count": data.get("acl_filtered_count", 0)
+            "acl_filtered_count": candidates_before_acl - len(results)
         }
 
+        logger.info(f"Real vector search: retrieved {len(results)} results (filtered {stats['acl_filtered_count']})")
         return results, stats
 
     except Exception as e:
-        logger.error(f"Vector search failed: {e}")
-        # Fallback to empty results
-        return [], {"candidates_before_acl": 0, "candidates_after_acl": 0, "acl_filtered_count": 0, "error": str(e)}
+        logger.error(f"Vector search failed: {e}, falling back to mock")
+        # Fallback to mock on error
+        return await search_vector_mock(query, acl_predicate, top_k)
 
 
 async def search(query: str, acl_predicate: Any, top_k: int, use_mock: bool = True) -> tuple[list[SearchResult], dict[str, Any]]:

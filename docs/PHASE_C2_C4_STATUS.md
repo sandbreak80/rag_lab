@@ -209,7 +209,7 @@ async def generate_real(messages: list, params: dict):
 ```yaml
 ✅ rag-api-v1:      HEALTHY - OBS enabled, mocks ON
 ✅ prometheus:      HEALTHY - Scraping every 10s
-✅ otel-collector:  HEALTHY - Collecting traces  
+✅ otel-collector:  HEALTHY - Collecting traces
 ✅ vector-db:       HEALTHY - Flask service (port 8005)
 ✅ ollama:          HEALTHY - 10 models loaded
 ✅ searxng:         HEALTHY - Web search ready
@@ -258,10 +258,10 @@ async def generate_real(messages: list, params: dict):
 
 ## 💡 Summary
 
-**Current State**: Production-ready ARCHITECTURE with SAFE MOCKS  
-**Next State**: Production-ready SYSTEM with REAL BACKENDS  
-**Effort**: ~2 hours of adapter implementation + testing  
-**Risk**: LOW - Can roll back any flag independently  
+**Current State**: Production-ready ARCHITECTURE with SAFE MOCKS
+**Next State**: Production-ready SYSTEM with REAL BACKENDS
+**Effort**: ~2 hours of adapter implementation + testing
+**Risk**: LOW - Can roll back any flag independently
 
 The `otel` branch has successfully proven:
 1. End-to-end observability architecture
