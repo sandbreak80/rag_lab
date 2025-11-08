@@ -40,7 +40,7 @@ def test_health_endpoints():
     print("\n" + "="*50)
     print("TEST 1: Health Endpoints")
     print("="*50)
-    
+
     # Test /live
     try:
         resp = requests.get(f"{API_BASE}/live", timeout=5)
@@ -50,7 +50,7 @@ def test_health_endpoints():
             test_result("Health /live", False, f"HTTP {resp.status_code}")
     except Exception as e:
         test_result("Health /live", False, str(e))
-    
+
     # Test /ready
     try:
         resp = requests.get(f"{API_BASE}/ready", timeout=5)
@@ -60,7 +60,7 @@ def test_health_endpoints():
             test_result("Health /ready", False, f"HTTP {resp.status_code}")
     except Exception as e:
         test_result("Health /ready", False, str(e))
-    
+
     # Test /health
     try:
         resp = requests.get(f"{API_BASE}/health", timeout=5)
@@ -76,14 +76,14 @@ def test_api_query():
     print("\n" + "="*50)
     print("TEST 2: RAG Query API")
     print("="*50)
-    
+
     payload = {
         "query": "What is RAG?",
         "user_id": "automated_test",
         "groups": [],
         "top_k": 8
     }
-    
+
     try:
         resp = requests.post(
             f"{API_BASE}/v1/rag/query",
@@ -91,45 +91,45 @@ def test_api_query():
             headers={'Content-Type': 'application/json'},
             timeout=15
         )
-        
+
         if resp.status_code != 200:
             test_result("API Query", False, f"HTTP {resp.status_code}")
             return
-        
+
         data = resp.json()
-        
+
         # Check response structure
         required_fields = ['answer', 'citations', 'artifacts', 'trace_id', 'request_id', 'security_status', 'contract_version']
         missing = [f for f in required_fields if f not in data]
-        
+
         if missing:
             test_result("API Query", False, f"Missing fields: {missing}")
             return
-        
+
         test_result("API Query", True, f"Response contains all required fields")
-        
+
         # Check answer
         if data.get('answer'):
             test_result("API Query - Answer", True, f"Length: {len(data['answer'])} chars")
         else:
             test_result("API Query - Answer", False, "Empty answer")
-        
+
         # Check citations
         citations = data.get('citations', [])
         test_result("API Query - Citations", len(citations) > 0, f"Count: {len(citations)}")
-        
+
         # Check trace_id
         trace_id = data.get('trace_id')
         test_result("API Query - Trace ID", bool(trace_id), f"Trace: {trace_id}")
-        
+
         # Check security_status
         security = data.get('security_status')
         test_result("API Query - Security", security in ['ok', 'degraded', 'blocked'], f"Status: {security}")
-        
+
         # Check contract_version
         version = data.get('contract_version')
         test_result("API Query - Contract", bool(version), f"Version: {version}")
-        
+
     except Exception as e:
         test_result("API Query", False, str(e))
 
@@ -138,13 +138,13 @@ def test_golden_queries():
     print("\n" + "="*50)
     print("TEST 3: Golden Queries")
     print("="*50)
-    
+
     queries = [
         ("Navigational", "Where is the Phase 2 quickstart?"),
         ("Policy", "How to run acceptance probes?"),
         ("Temporal", "What changed in Phase B today?")
     ]
-    
+
     for name, query in queries:
         try:
             resp = requests.post(
@@ -152,12 +152,12 @@ def test_golden_queries():
                 json={"query": query, "user_id": "test", "groups": []},
                 timeout=15
             )
-            
+
             if resp.status_code == 200:
                 data = resp.json()
                 answer = data.get('answer', '')
                 citations = len(data.get('citations', []))
-                
+
                 if answer and citations > 0:
                     test_result(f"Golden Query - {name}", True, f"Answer: {len(answer)} chars, Citations: {citations}")
                 else:
@@ -172,7 +172,7 @@ def test_metrics():
     print("\n" + "="*50)
     print("TEST 4: Prometheus Metrics")
     print("="*50)
-    
+
     try:
         resp = requests.get(f"{API_BASE}/metrics", timeout=5)
         if resp.status_code == 200:
@@ -189,7 +189,7 @@ def test_performance():
     print("\n" + "="*50)
     print("TEST 5: Performance")
     print("="*50)
-    
+
     # Test API response time
     try:
         start = time.time()
@@ -199,7 +199,7 @@ def test_performance():
             timeout=15
         )
         elapsed = time.time() - start
-        
+
         if resp.status_code == 200:
             if elapsed < 10:
                 test_result("API Response Time", True, f"{elapsed:.2f}s < 10s")
@@ -215,7 +215,7 @@ def test_opentelemetry():
     print("\n" + "="*50)
     print("TEST 6: OpenTelemetry")
     print("="*50)
-    
+
     try:
         resp = requests.post(
             f"{API_BASE}/v1/rag/query",
@@ -226,7 +226,7 @@ def test_opentelemetry():
             },
             timeout=15
         )
-        
+
         if resp.status_code == 200:
             data = resp.json()
             trace_id = data.get('trace_id')
@@ -244,15 +244,15 @@ def print_summary():
     print("\n" + "="*50)
     print("TEST SUMMARY")
     print("="*50)
-    
+
     total = RESULTS['passed'] + RESULTS['failed']
     passed_pct = (RESULTS['passed'] / total * 100) if total > 0 else 0
-    
+
     print(f"\nTotal Tests: {total}")
     print(f"✅ Passed: {RESULTS['passed']} ({passed_pct:.1f}%)")
     print(f"❌ Failed: {RESULTS['failed']}")
     print("")
-    
+
     if RESULTS['failed'] == 0:
         print("🎉 ALL TESTS PASSED!")
         return 0
@@ -270,7 +270,7 @@ def main():
     print("RAG Lab - Automated Backend Tests")
     print(f"Target: {API_BASE}")
     print("="*50)
-    
+
     # Run tests
     test_health_endpoints()
     test_api_query()
@@ -278,7 +278,7 @@ def main():
     test_metrics()
     test_performance()
     test_opentelemetry()
-    
+
     # Print summary and exit
     exit_code = print_summary()
     sys.exit(exit_code)

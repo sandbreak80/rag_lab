@@ -67,21 +67,21 @@ if curl -sf -X POST "$BASE_URL/api/v1/rag/query" \
   -H 'Content-Type: application/json' \
   -d '{"query":"What is RAG?","user_id":"e2e_test","groups":[]}' \
   -o /tmp/api_response.json; then
-    
+
     if jq empty /tmp/api_response.json 2>/dev/null; then
         echo -e "${GREEN}✅ API routing: PASS (valid JSON)${NC}"
-        
+
         # Check structure
         HAS_ANSWER=$(jq 'has("answer")' /tmp/api_response.json)
         HAS_CITATIONS=$(jq 'has("citations")' /tmp/api_response.json)
         HAS_ARTIFACTS=$(jq 'has("artifacts")' /tmp/api_response.json)
         HAS_TRACE=$(jq 'has("trace_id")' /tmp/api_response.json)
-        
+
         echo "  answer: $HAS_ANSWER"
         echo "  citations: $HAS_CITATIONS"
         echo "  artifacts: $HAS_ARTIFACTS"
         echo "  trace_id: $HAS_TRACE"
-        
+
         if [ "$HAS_ANSWER" = "true" ] && [ "$HAS_CITATIONS" = "true" ]; then
             echo -e "${GREEN}✅ Response structure: VALID${NC}"
             PASSED=$((PASSED + 1))
@@ -109,7 +109,7 @@ if curl -sf -X POST "$BASE_URL/api/v1/rag/query" \
   -H 'Content-Type: application/json' \
   -d '{"query":"Where is the Phase 2 quickstart?","user_id":"e2e_test","groups":[]}' \
   -o /tmp/q1_response.json; then
-    
+
     if jq -e '.answer' /tmp/q1_response.json > /dev/null 2>&1; then
         ANSWER=$(jq -r '.answer' /tmp/q1_response.json | head -c 80)
         CITATIONS=$(jq '.citations | length' /tmp/q1_response.json)
@@ -132,7 +132,7 @@ if curl -sf -X POST "$BASE_URL/api/v1/rag/query" \
   -H 'Content-Type: application/json' \
   -d '{"query":"How to run acceptance probes?","user_id":"e2e_test","groups":[]}' \
   -o /tmp/q2_response.json; then
-    
+
     if jq -e '.answer' /tmp/q2_response.json > /dev/null 2>&1; then
         ANSWER=$(jq -r '.answer' /tmp/q2_response.json | head -c 80)
         CITATIONS=$(jq '.citations | length' /tmp/q2_response.json)
@@ -155,7 +155,7 @@ if curl -sf -X POST "$BASE_URL/api/v1/rag/query" \
   -H 'Content-Type: application/json' \
   -d '{"query":"What changed in Phase B today?","user_id":"e2e_test","groups":[]}' \
   -o /tmp/q3_response.json; then
-    
+
     if jq -e '.answer' /tmp/q3_response.json > /dev/null 2>&1; then
         ANSWER=$(jq -r '.answer' /tmp/q3_response.json | head -c 80)
         CITATIONS=$(jq '.citations | length' /tmp/q3_response.json)
@@ -233,7 +233,7 @@ if curl -sf -X POST "$BASE_URL/api/v1/rag/query" \
   -H 'traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01' \
   -d '{"query":"Test","user_id":"trace","groups":[]}' \
   -o /tmp/trace_response.json; then
-    
+
     if jq -e '.trace_id' /tmp/trace_response.json > /dev/null 2>&1; then
         TRACE_ID=$(jq -r '.trace_id' /tmp/trace_response.json)
         echo -e "${GREEN}✅ OpenTelemetry: PASS${NC}"

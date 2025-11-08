@@ -1,5 +1,5 @@
 # RAG Lab Automated Test Report
-**Generated:** $(date)  
+**Generated:** $(date)
 **Target:** http://16.146.148.184:3000
 
 ---

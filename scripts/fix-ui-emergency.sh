@@ -86,7 +86,7 @@ echo "=== Step 8: Test API endpoint ==="
 API_RESPONSE=$(curl -s -X POST http://localhost:3000/api/v1/rag/query \
   -H 'Content-Type: application/json' \
   -d '{"query":"test","user_id":"smoke","groups":[]}' | head -c 100)
-  
+
 echo "API Response preview: $API_RESPONSE"
 
 echo ""
