@@ -1,18 +1,18 @@
 # 🚀 Phase B Deployment Guide
 
-**Status**: ✅ **READY TO DEPLOY**  
-**Date**: November 8, 2025  
+**Status**: ✅ **READY TO DEPLOY**
+**Date**: November 8, 2025
 **Branch**: `otel`
 
 ---
 
 ## 📋 **Pre-Deployment Checklist**
 
-✅ All imports bulletproofed (relative imports, PYTHONPATH set)  
-✅ Pipeline modules moved to `services/api/pipeline/`  
-✅ Docker Compose service added (`rag-api-v1`)  
-✅ 8 acceptance tests updated to match API contract  
-✅ Feature flags default to safe (mocks ON, observability OFF)  
+✅ All imports bulletproofed (relative imports, PYTHONPATH set)
+✅ Pipeline modules moved to `services/api/pipeline/`
+✅ Docker Compose service added (`rag-api-v1`)
+✅ 8 acceptance tests updated to match API contract
+✅ Feature flags default to safe (mocks ON, observability OFF)
 ✅ Deploy script created (`scripts/deploy_and_test_api_v1.sh`)
 
 ---
@@ -202,7 +202,7 @@ docker logs rag-api-v1 --tail 50
 # Common issues:
 # 1. Port 8080 already in use
 #    Solution: docker compose down && docker compose up -d rag-api-v1
-# 
+#
 # 2. Import errors
 #    Solution: Check PYTHONPATH in Dockerfile
 #
@@ -298,14 +298,14 @@ curl http://localhost:8080/metrics | grep rag_requests_total
 
 ## 🎉 **Success Criteria**
 
-✅ `docker compose ps rag-api-v1` shows `Up (healthy)`  
-✅ `/live` returns 200  
-✅ `/ready` returns 200 (or 503 with valid reasons)  
-✅ `/v1/rag/query` returns 200 with all required fields  
-✅ `/metrics` returns Prometheus metrics  
-✅ 8/8 acceptance tests pass  
-✅ No import errors in logs  
-✅ Citations include `origin_tool`  
+✅ `docker compose ps rag-api-v1` shows `Up (healthy)`
+✅ `/live` returns 200
+✅ `/ready` returns 200 (or 503 with valid reasons)
+✅ `/v1/rag/query` returns 200 with all required fields
+✅ `/metrics` returns Prometheus metrics
+✅ 8/8 acceptance tests pass
+✅ No import errors in logs
+✅ Citations include `origin_tool`
 ✅ Artifacts include all schemas (A-G where applicable)
 
 ---
