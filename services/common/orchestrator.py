@@ -61,7 +61,7 @@ class ConfidenceLevel(str, Enum):
 class RetrievalPlan:
     """
     Configurable retrieval plan with all parameters.
-    
+
     This is the "recipe" for how to retrieve documents. It can be:
     - Saved/loaded for reproducibility
     - Versioned for A/B testing
@@ -72,29 +72,29 @@ class RetrievalPlan:
     top_k: int = 10
     rerank_strategy: RerankStrategy = RerankStrategy.RRF
     rerank_top_k: int = 5
-    
+
     # Hybrid search weights
     vector_weight: float = 0.6
     bm25_weight: float = 0.4
-    
+
     # Quality thresholds
     min_relevance_score: float = 0.3
     min_confidence_threshold: float = 0.5
-    
+
     # Feature flags
     enable_kg_expansion: bool = True
     enable_web_search: bool = False
     enable_query_expansion: bool = True
     enable_hallucination_check: bool = True
-    
+
     # Context management
     max_context_tokens: int = 4096
     max_chunks_per_doc: int = 3
-    
+
     # Caching
     enable_cache: bool = True
     cache_ttl_seconds: int = 3600
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize for storage/versioning"""
         return {
@@ -115,7 +115,7 @@ class RetrievalPlan:
             'enable_cache': self.enable_cache,
             'cache_ttl_seconds': self.cache_ttl_seconds,
         }
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'RetrievalPlan':
         """Deserialize from storage"""
@@ -137,7 +137,7 @@ class RetrievalPlan:
             enable_cache=data.get('enable_cache', True),
             cache_ttl_seconds=data.get('cache_ttl_seconds', 3600),
         )
-    
+
     def get_cache_key(self, query: str) -> str:
         """Generate cache key for this query + plan"""
         plan_json = json.dumps(self.to_dict(), sort_keys=True)
@@ -152,20 +152,20 @@ class RetrievalResult:
     """
     # Retrieved documents
     evidence: List[Evidence]
-    
+
     # Quality metrics
     confidence: ConfidenceLevel
     confidence_score: float  # 0.0 - 1.0
     retrieval_quality_score: float  # 0.0 - 1.0
-    
+
     # Source breakdown
     source_counts: Dict[str, int]  # {rag: 5, web_search: 3, ...}
-    
+
     # Pipeline metadata
     plan: RetrievalPlan
     timings: Dict[str, float]
     stage_results: Dict[str, Any]  # Intermediate results for debugging
-    
+
     # Warnings/issues
     warnings: List[str] = field(default_factory=list)
     should_refuse: bool = False
@@ -175,14 +175,14 @@ class RetrievalResult:
 class RAGOrchestrator:
     """
     Core RAG Intelligence Layer
-    
+
     Orchestrates the entire RAG pipeline with:
     - Configurable retrieval strategies
     - Quality controls and confidence scoring
     - Hallucination prevention
     - Full observability
     - Caching for performance
-    
+
     Usage:
         orchestrator = RAGOrchestrator(
             vector_search_fn=vector_search,
@@ -192,18 +192,18 @@ class RAGOrchestrator:
             rerank_fn=rerank,
             cache=redis_client
         )
-        
+
         result = orchestrator.retrieve(
             query="What is RAG?",
             plan=RetrievalPlan(strategy=RetrievalStrategy.HYBRID_WITH_KG)
         )
-        
+
         if result.should_refuse:
             return {"error": result.refusal_reason}
-        
+
         # Use result.evidence for LLM prompt
     """
-    
+
     def __init__(
         self,
         vector_search_fn,
@@ -215,7 +215,7 @@ class RAGOrchestrator:
     ):
         """
         Initialize orchestrator with search functions.
-        
+
         Args:
             vector_search_fn: fn(query, k) -> List[Evidence]
             bm25_search_fn: fn(query, k) -> List[Evidence]
@@ -230,9 +230,9 @@ class RAGOrchestrator:
         self.kg_expand = kg_expand_fn
         self.rerank = rerank_fn
         self.cache = cache
-        
+
         self.validator = ProvenanceValidator(strict_mode=False)
-    
+
     def retrieve(
         self,
         query: str,
@@ -241,22 +241,22 @@ class RAGOrchestrator:
     ) -> RetrievalResult:
         """
         Execute full retrieval pipeline.
-        
+
         Args:
             query: User query
             plan: Retrieval plan (uses default if None)
             user_context: User-specific context for personalization
-        
+
         Returns:
             RetrievalResult with evidence and metadata
         """
         if plan is None:
             plan = RetrievalPlan()
-        
+
         timer = TimingCollector()
         stage_results = {}
         warnings = []
-        
+
         # Check cache
         if plan.enable_cache and self.cache:
             cache_key = plan.get_cache_key(query)
@@ -265,7 +265,7 @@ class RAGOrchestrator:
                 logger.info(f"Cache hit for query: {query[:50]}")
                 cached['timings']['cache_lookup'] = 0.1
                 return RetrievalResult(**cached)
-        
+
         # Stage 1: PREPROCESS
         with timer.measure('preprocess'):
             processed_query, expanded_queries = self._preprocess(query, plan)
@@ -274,7 +274,7 @@ class RAGOrchestrator:
                 'processed': processed_query,
                 'expanded': expanded_queries
             }
-        
+
         # Stage 2: RETRIEVE
         with timer.measure('retrieve'):
             all_evidence = self._retrieve_all(
@@ -287,7 +287,7 @@ class RAGOrchestrator:
                 'count': len(all_evidence),
                 'sources': self._count_sources(all_evidence)
             }
-        
+
         # Stage 3: RERANK
         with timer.measure('rerank'):
             reranked_evidence = self._rerank(
@@ -299,7 +299,7 @@ class RAGOrchestrator:
                 'count': len(reranked_evidence),
                 'top_scores': [e.score for e in reranked_evidence[:5]]
             }
-        
+
         # Stage 4: VALIDATE & FILTER
         with timer.measure('validate'):
             filtered_evidence, validation_warnings = self._validate_and_filter(
@@ -311,7 +311,7 @@ class RAGOrchestrator:
                 'count': len(filtered_evidence),
                 'warnings': len(validation_warnings)
             }
-        
+
         # Stage 5: CALCULATE CONFIDENCE
         with timer.measure('confidence'):
             confidence_score, confidence_level = self._calculate_confidence(
@@ -322,14 +322,14 @@ class RAGOrchestrator:
                 'score': confidence_score,
                 'level': confidence_level.value
             }
-        
+
         # Stage 6: DECIDE REFUSAL
         should_refuse, refusal_reason = self._should_refuse(
             confidence_score,
             filtered_evidence,
             plan
         )
-        
+
         # Build result
         result = RetrievalResult(
             evidence=filtered_evidence[:plan.rerank_top_k],
@@ -344,14 +344,14 @@ class RAGOrchestrator:
             should_refuse=should_refuse,
             refusal_reason=refusal_reason
         )
-        
+
         # Cache result
         if plan.enable_cache and self.cache and not should_refuse:
             cache_key = plan.get_cache_key(query)
             self._save_to_cache(cache_key, result, plan.cache_ttl_seconds)
-        
+
         return result
-    
+
     def _preprocess(
         self,
         query: str,
@@ -359,14 +359,14 @@ class RAGOrchestrator:
     ) -> tuple[str, List[str]]:
         """
         Stage 1: Preprocess query.
-        
+
         - Clean and normalize
         - Optionally expand with synonyms/related terms
         - Intent classification (future)
         """
         processed = query.strip()
         expanded = [processed]
-        
+
         if plan.enable_query_expansion:
             # Simple expansion (can be replaced with LLM-based expansion)
             # For now, just add a few variations
@@ -374,9 +374,9 @@ class RAGOrchestrator:
                 # For short queries, add context
                 expanded.append(f"{processed} explanation")
                 expanded.append(f"{processed} definition")
-        
+
         return processed, expanded
-    
+
     def _retrieve_all(
         self,
         query: str,
@@ -388,7 +388,7 @@ class RAGOrchestrator:
         Stage 2: Retrieve from all sources based on strategy.
         """
         all_evidence = []
-        
+
         # Vector search
         if plan.strategy in [
             RetrievalStrategy.VECTOR_ONLY,
@@ -400,7 +400,7 @@ class RAGOrchestrator:
             with timer.measure('vector_search'):
                 vector_results = self.vector_search(query, plan.top_k)
                 all_evidence.extend(vector_results)
-        
+
         # BM25 search
         if self.bm25_search and plan.strategy in [
             RetrievalStrategy.BM25_ONLY,
@@ -412,7 +412,7 @@ class RAGOrchestrator:
             with timer.measure('bm25_search'):
                 bm25_results = self.bm25_search(query, plan.top_k)
                 all_evidence.extend(bm25_results)
-        
+
         # Knowledge Graph expansion
         if self.kg_expand and plan.enable_kg_expansion and plan.strategy in [
             RetrievalStrategy.HYBRID_WITH_KG,
@@ -422,7 +422,7 @@ class RAGOrchestrator:
                 if all_evidence:
                     kg_results = self.kg_expand(all_evidence[:5])
                     all_evidence.extend(kg_results)
-        
+
         # Web search
         if self.web_search and plan.enable_web_search and plan.strategy in [
             RetrievalStrategy.HYBRID_WITH_WEB,
@@ -431,9 +431,9 @@ class RAGOrchestrator:
             with timer.measure('web_search'):
                 web_results = self.web_search(query, plan.top_k // 2)
                 all_evidence.extend(web_results)
-        
+
         return all_evidence
-    
+
     def _rerank(
         self,
         query: str,
@@ -445,13 +445,13 @@ class RAGOrchestrator:
         """
         if plan.rerank_strategy == RerankStrategy.NONE:
             return sorted(evidence, key=lambda e: e.score, reverse=True)
-        
+
         if self.rerank:
             return self.rerank(query, evidence, plan.rerank_strategy)
-        
+
         # Fallback: simple score-based sorting
         return sorted(evidence, key=lambda e: e.score, reverse=True)
-    
+
     def _validate_and_filter(
         self,
         evidence: List[Evidence],
@@ -461,26 +461,26 @@ class RAGOrchestrator:
         Stage 4: Validate provenance and filter by quality.
         """
         warnings = []
-        
+
         # Provenance validation
         if not self.validator.validate(evidence):
             violations = self.validator.get_violations("warning")
             for v in violations:
                 warnings.append(f"Provenance warning: {v.message}")
-        
+
         # Score filtering
         filtered = [
             e for e in evidence
             if e.score >= plan.min_relevance_score
         ]
-        
+
         if len(filtered) < len(evidence):
             warnings.append(
                 f"Filtered {len(evidence) - len(filtered)} low-score results"
             )
-        
+
         return filtered, warnings
-    
+
     def _calculate_confidence(
         self,
         evidence: List[Evidence],
@@ -488,7 +488,7 @@ class RAGOrchestrator:
     ) -> tuple[float, ConfidenceLevel]:
         """
         Stage 5: Calculate confidence in retrieval quality.
-        
+
         Confidence based on:
         - Top result score
         - Number of high-quality results
@@ -497,23 +497,23 @@ class RAGOrchestrator:
         """
         if not evidence:
             return 0.0, ConfidenceLevel.VERY_LOW
-        
+
         # Factor 1: Top score
         top_score = evidence[0].score
-        
+
         # Factor 2: Number of high-quality results (score > 0.7)
         high_quality_count = sum(1 for e in evidence if e.score > 0.7)
         high_quality_ratio = high_quality_count / len(evidence)
-        
+
         # Factor 3: Source diversity
         sources = set(e.origin_tool for e in evidence)
         source_diversity = len(sources) / 3.0  # Normalize by 3 source types
-        
+
         # Factor 4: Score spread (prefer consistent high scores)
         scores = [e.score for e in evidence[:5]]
         score_std = (max(scores) - min(scores)) if len(scores) > 1 else 0
         score_consistency = 1.0 - min(score_std, 1.0)
-        
+
         # Weighted confidence
         confidence_score = (
             top_score * 0.4 +
@@ -521,7 +521,7 @@ class RAGOrchestrator:
             source_diversity * 0.2 +
             score_consistency * 0.1
         )
-        
+
         # Map to confidence level
         if confidence_score > 0.8:
             level = ConfidenceLevel.HIGH
@@ -531,9 +531,9 @@ class RAGOrchestrator:
             level = ConfidenceLevel.LOW
         else:
             level = ConfidenceLevel.VERY_LOW
-        
+
         return confidence_score, level
-    
+
     def _should_refuse(
         self,
         confidence_score: float,
@@ -542,7 +542,7 @@ class RAGOrchestrator:
     ) -> tuple[bool, Optional[str]]:
         """
         Stage 6: Decide whether to refuse answering.
-        
+
         Refuse if:
         - Confidence below threshold
         - No high-quality results
@@ -554,29 +554,29 @@ class RAGOrchestrator:
                 f"Confidence too low ({confidence_score:.2f} < {plan.min_confidence_threshold}). "
                 "Please rephrase your question or provide more context."
             )
-        
+
         # Check minimum result count
         if len(evidence) == 0:
             return True, "No relevant information found. Please try a different query."
-        
+
         # Check for at least one high-quality result
         if not any(e.score > 0.5 for e in evidence):
             return True, (
                 "No high-confidence results found. "
                 "The information may be outside my knowledge base."
             )
-        
+
         return False, None
-    
+
     def _calculate_quality_score(self, evidence: List[Evidence]) -> float:
         """Calculate overall retrieval quality score"""
         if not evidence:
             return 0.0
-        
+
         # Average of top 5 scores
         top_scores = [e.score for e in evidence[:5]]
         return sum(top_scores) / len(top_scores)
-    
+
     def _count_sources(self, evidence: List[Evidence]) -> Dict[str, int]:
         """Count evidence by source"""
         counts = {}
@@ -584,12 +584,12 @@ class RAGOrchestrator:
             origin = e.origin_tool.value
             counts[origin] = counts.get(origin, 0) + 1
         return counts
-    
+
     def _get_from_cache(self, key: str) -> Optional[Dict[str, Any]]:
         """Get cached result"""
         # TODO: Implement Redis cache
         return None
-    
+
     def _save_to_cache(self, key: str, result: RetrievalResult, ttl: int):
         """Save result to cache"""
         # TODO: Implement Redis cache

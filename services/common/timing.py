@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 class TimingCollector:
     """
     Thread-safe timing collector for operations.
-    
+
     THREAD SAFETY: Uses RLock to prevent race conditions in multi-threaded
     contexts (e.g., Flask with threading). Safe for concurrent access.
 
@@ -59,7 +59,7 @@ class TimingCollector:
                 results = search_vectors(query)
         """
         start = time.time()
-        
+
         # Store start time (thread-safe)
         with self._lock:
             self._start_times[operation] = start
@@ -116,7 +116,7 @@ class TimingCollector:
     def merge(self, other_timings: Dict[str, float]):
         """
         Merge timings from another source (thread-safe).
-        
+
         NOTE: If operation exists in both, this REPLACES the value.
         For parallel operations that should be added, use merge_add().
 
@@ -127,11 +127,11 @@ class TimingCollector:
             for operation, duration in other_timings.items():
                 # Replace mode (default): downstream service timing is authoritative
                 self.timings[operation] = duration
-    
+
     def merge_add(self, other_timings: Dict[str, float]):
         """
         Merge timings by ADDING durations for duplicate keys (thread-safe).
-        
+
         Use this for parallel operations where total time is sum of parts.
 
         Args:

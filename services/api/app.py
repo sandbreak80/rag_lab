@@ -25,11 +25,13 @@ import json
 
 from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode
+from opentelemetry.propagate import extract
 
 # Import RAG components
 from services.common.orchestrator import RAGOrchestrator, RetrievalPlan, RetrievalStrategy
 from services.common.prompt_assembler import PromptAssembler, PromptTemplate
 from services.common.evidence import Evidence, OriginTool
+from services.common.artifact_base import ArtifactBase, OrchestrationContext, CONTRACT_VERSION
 
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -72,25 +74,25 @@ class RagRequest:
     query: str
     tenant: str
     user_id: str
-    
+
     # Strategy
     plan_id: str = "hybrid_v1"
-    
+
     # Settings snapshot
     settings_snapshot: Dict[str, Any] = field(default_factory=dict)
-    
+
     # Budgets
     budgets: Budgets = field(default_factory=Budgets)
-    
+
     # Policy
     policy: Policy = field(default_factory=Policy)
-    
+
     # A/B testing
     ab_test: ABTest = field(default_factory=ABTest)
-    
+
     # Debug
     debug: bool = False
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'RagRequest':
         return cls(
@@ -119,18 +121,18 @@ class Source:
     url: Optional[str]
     title: Optional[str]
     score: float
-    
+
     # IMMUTABLE PROVENANCE
     origin_tool: Literal["rag", "web_search", "research_agent"]  # Immutable
-    
+
     # RECENCY METADATA
     published_at: Optional[str]  # ISO8601
     is_primary: bool  # Primary vs. secondary source
-    
+
     # Additional metadata
     domain: Optional[str] = None
     freshness_hours: Optional[int] = None  # Hours since published
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             'index': self.index,
@@ -152,24 +154,26 @@ class Source:
 # ============================================================================
 
 @dataclass
-class PlannerArtifact:
+class PlannerArtifact(ArtifactBase):
     """Schema A: Planner decisions"""
-    subtasks: List[str]
-    requires_recency: List[bool]
-    queries_planned: List[str]
-    budgets_applied: Budgets
-    route_decision: Literal["rag", "web", "blended"]
-    route_reason: str
+    subtasks: List[str] = field(default_factory=list)
+    requires_recency: List[bool] = field(default_factory=list)
+    queries_planned: List[str] = field(default_factory=list)
+    budgets_applied: Optional[Budgets] = None
+    route_decision: Literal["rag", "web", "blended"] = "rag"
+    route_reason: str = ""
     
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        base = super().to_dict()
+        base.update({
             'subtasks': self.subtasks,
             'requires_recency': self.requires_recency,
             'queries_planned': self.queries_planned,
-            'budgets_applied': asdict(self.budgets_applied),
+            'budgets_applied': asdict(self.budgets_applied) if self.budgets_applied else {},
             'route_decision': self.route_decision,
             'route_reason': self.route_reason
-        }
+        })
+        return base
 
 
 @dataclass
@@ -185,56 +189,62 @@ class RetrievalLogEntry:
 
 
 @dataclass
-class RetrievalLog:
+class RetrievalLog(ArtifactBase):
     """Schema B: Retrieval log"""
-    internal_queries: List[RetrievalLogEntry]
-    web_queries: List[RetrievalLogEntry]
-    total_retrieved: int
-    total_deduped: int
-    domains_filtered: List[str]
-    timing_breakdown_ms: Dict[str, float]
+    internal_queries: List[RetrievalLogEntry] = field(default_factory=list)
+    web_queries: List[RetrievalLogEntry] = field(default_factory=list)
+    total_retrieved: int = 0
+    total_deduped: int = 0
+    domains_filtered: List[str] = field(default_factory=list)
+    timing_breakdown_ms: Dict[str, float] = field(default_factory=dict)
     
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        base = super().to_dict()
+        base.update({
             'internal_queries': [asdict(e) for e in self.internal_queries],
             'web_queries': [asdict(e) for e in self.web_queries],
             'total_retrieved': self.total_retrieved,
             'total_deduped': self.total_deduped,
             'domains_filtered': self.domains_filtered,
             'timing_breakdown_ms': self.timing_breakdown_ms
-        }
+        })
+        return base
 
 
 @dataclass
-class EvidenceMap:
+class EvidenceMap(ArtifactBase):
     """Schema C: Claim → Citation binding"""
-    claims: List[Dict[str, Any]]  # {claim_text, citation_indices, confidence}
-    ungrounded_claims: List[str]
-    grounding_rate: float  # % of claims grounded
+    claims: List[Dict[str, Any]] = field(default_factory=list)  # {claim_text, citation_indices, confidence}
+    ungrounded_claims: List[str] = field(default_factory=list)
+    grounding_rate: float = 0.0  # % of claims grounded
     
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        base = super().to_dict()
+        base.update({
             'claims': self.claims,
             'ungrounded_claims': self.ungrounded_claims,
             'grounding_rate': round(self.grounding_rate, 3)
-        }
+        })
+        return base
 
 
 @dataclass
-class KGLog:
+class KGLog(ArtifactBase):
     """Schema D: Knowledge Graph expansion"""
-    resolved_entities: List[Dict[str, str]]  # {entity, type, confidence}
-    edges_used: List[Dict[str, Any]]  # {source, relation, target, hops}
-    evidence_urls: List[str]
-    timing_ms: float
+    resolved_entities: List[Dict[str, str]] = field(default_factory=list)  # {entity, type, confidence}
+    edges_used: List[Dict[str, Any]] = field(default_factory=list)  # {source, relation, target, hops}
+    evidence_urls: List[str] = field(default_factory=list)
+    timing_ms: float = 0.0
     
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        base = super().to_dict()
+        base.update({
             'resolved_entities': self.resolved_entities,
             'edges_used': self.edges_used,
             'evidence_urls': self.evidence_urls,
             'timing_ms': round(self.timing_ms, 2)
-        }
+        })
+        return base
 
 
 @dataclass
@@ -247,20 +257,22 @@ class ChunkingSample:
 
 
 @dataclass
-class ChunkingReport:
+class ChunkingReport(ArtifactBase):
     """Schema E: Chunking strategy visibility"""
-    params: Dict[str, Any]  # target_size, min/max, overlap, biases
-    samples: List[ChunkingSample]  # 3 representative chunks
-    timing_ms: float
-    total_chunks: int
+    params: Dict[str, Any] = field(default_factory=dict)  # target_size, min/max, overlap, biases
+    samples: List[ChunkingSample] = field(default_factory=list)  # 3 representative chunks
+    timing_ms: float = 0.0
+    total_chunks: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        base = super().to_dict()
+        base.update({
             'params': self.params,
             'samples': [asdict(s) for s in self.samples],
             'timing_ms': round(self.timing_ms, 2),
             'total_chunks': self.total_chunks
-        }
+        })
+        return base
 
 
 @dataclass
@@ -273,35 +285,39 @@ class GuardrailDetection:
 
 
 @dataclass
-class GuardrailReport:
+class GuardrailReport(ArtifactBase):
     """Schema F: Guardrail outcomes"""
-    detections: List[GuardrailDetection]
-    service_errors: List[Dict[str, str]]  # {service, error, timestamp}
-    overall_safe: bool
+    detections: List[GuardrailDetection] = field(default_factory=list)
+    service_errors: List[Dict[str, str]] = field(default_factory=list)  # {service, error, timestamp}
+    overall_safe: bool = True
     
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        base = super().to_dict()
+        base.update({
             'detections': [asdict(d) for d in self.detections],
             'service_errors': self.service_errors,
             'overall_safe': self.overall_safe
-        }
+        })
+        return base
 
 
 @dataclass
-class ABEvaluation:
+class ABEvaluation(ArtifactBase):
     """Schema G: A/B evaluation rubric"""
-    setting: Literal["A", "B"]
-    dimensions: Dict[str, float]  # coverage, grounding, recency, retrieval_quality, etc.
-    overall_score: float
+    setting: Literal["A", "B"] = "A"
+    dimensions: Dict[str, float] = field(default_factory=dict)  # coverage, grounding, recency, retrieval_quality, etc.
+    overall_score: float = 0.0
     comparison: Optional[Dict[str, Any]] = None  # Δ vs other setting
     
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        base = super().to_dict()
+        base.update({
             'setting': self.setting,
             'dimensions': {k: round(v, 3) for k, v in self.dimensions.items()},
             'overall_score': round(self.overall_score, 3),
             'comparison': self.comparison
-        }
+        })
+        return base
 
 
 # ============================================================================
@@ -309,7 +325,7 @@ class ABEvaluation:
 # ============================================================================
 
 @dataclass
-class RecencyEvaluation:
+class RecencyEvaluation(ArtifactBase):
     """Recency gate outcome"""
     window_hours: int = 48
     passed: bool = False
@@ -318,13 +334,15 @@ class RecencyEvaluation:
     primary_sources_within_window: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        base = super().to_dict()
+        base.update({
             'window_hours': self.window_hours,
             'passed': self.passed,
             'notes': self.notes,
             'freshness_histogram': self.freshness_histogram,
             'primary_sources_within_window': self.primary_sources_within_window
-        }
+        })
+        return base
 
 
 # ============================================================================
@@ -337,7 +355,7 @@ class ModelRoutingEntry:
     stage: str
     model: str
     approximate_latency_ms: float
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             'stage': self.stage,
@@ -360,10 +378,10 @@ class Metrics:
     docs_retrieved: int
     docs_reranked: int
     cache_hit: bool = False
-    
+
     # Budget consumption
     budget_use: Dict[str, int] = field(default_factory=dict)  # {web_queries: 3, internal_queries: 10}
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             'total_ms': round(self.total_ms, 2),
@@ -394,17 +412,17 @@ class RagResponse:
     confidence: str
     sources: List[Source]
     trace_id: str
-    
+
     # Route decision
     route: Literal["rag", "web", "blended"]
     route_reason: str
-    
+
     # Model routing
     model_routing: List[ModelRoutingEntry]
-    
+
     # Recency evaluation
     recency: RecencyEvaluation
-    
+
     # Artifacts (Schemas A-G)
     planner: PlannerArtifact
     retrieval_log: RetrievalLog
@@ -413,18 +431,18 @@ class RagResponse:
     chunking_report: ChunkingReport
     guardrail_report: GuardrailReport
     ab_eval: ABEvaluation
-    
+
     # Metrics
     metrics: Metrics
-    
+
     # Footer
     source_mix: Dict[str, int]  # {rag: 5, web_search: 3, research_agent: 0}
     wall_time_ms: float
     sha256: str  # Hash of final answer
-    
+
     # Optional
     refusal: Optional[str] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             'answer': self.answer,
@@ -454,20 +472,20 @@ class RagResponse:
 # HELPER FUNCTIONS
 # ============================================================================
 
-def evaluate_recency(sources: List[Source], policy: Policy) -> RecencyEvaluation:
+def evaluate_recency(sources: List[Source], policy: Policy, query: str, ctx: OrchestrationContext) -> RecencyEvaluation:
     """Evaluate recency gate"""
     now = datetime.now(timezone.utc)
     histogram = {"<24h": 0, "24-48h": 0, "48h-1w": 0, ">1w": 0, "unknown": 0}
     primary_within_48h = 0
-    
+
     for source in sources:
         if not source.published_at:
             histogram["unknown"] += 1
             continue
-        
+
         pub_date = datetime.fromisoformat(source.published_at.replace('Z', '+00:00'))
         hours_old = (now - pub_date).total_seconds() / 3600
-        
+
         # Update histogram
         if hours_old < 24:
             histogram["<24h"] += 1
@@ -477,21 +495,23 @@ def evaluate_recency(sources: List[Source], policy: Policy) -> RecencyEvaluation
             histogram["48h-1w"] += 1
         else:
             histogram[">1w"] += 1
-        
+
         # Count primary sources within 48h
         if source.is_primary and hours_old <= 48:
             primary_within_48h += 1
-    
+
     # Evaluate pass/fail
     passed = True
     notes = ""
-    
+
     if policy.requires_recency:
         if primary_within_48h < policy.min_primary_sources:
             passed = False
             notes = f"Required {policy.min_primary_sources} primary sources ≤48h, found {primary_within_48h}"
-    
+
     return RecencyEvaluation(
+        trace_id=ctx.trace_id,
+        request_id=ctx.request_id,
         window_hours=48,
         passed=passed,
         notes=notes if not passed else "Recency requirements met",
@@ -525,20 +545,55 @@ llm_generate: Optional[callable] = None
 
 @app.before_request
 def before_request():
-    """Add request ID and timing"""
+    """
+    ID CORRELATION & PROPAGATION
+    
+    Extract or generate trace_id and request_id.
+    These IDs will be propagated to ALL artifacts and services.
+    """
+    # Extract trace_id from OTel context or header
+    span = trace.get_current_span()
+    span_context = span.get_span_context()
+    
+    if span_context.is_valid:
+        g.trace_id = format(span_context.trace_id, '032x')
+    else:
+        # Fallback: extract from header or generate
+        g.trace_id = request.headers.get('X-Trace-ID', str(uuid.uuid4()).replace('-', ''))
+    
+    # Extract or generate request_id
     g.request_id = request.headers.get('X-Request-ID', str(uuid.uuid4()))
+    
+    # Timing
     g.start_time = time.time()
+    
+    # Tenant (for multi-tenancy)
     g.tenant = request.json.get('tenant', 'unknown') if request.json else 'unknown'
+    
+    # Set OTel span attributes for correlation
+    span.set_attribute("request_id", g.request_id)
+    span.set_attribute("trace_id", g.trace_id)
+    span.set_attribute("tenant", g.tenant)
+    
+    logger.info(f"Request started: trace_id={g.trace_id}, request_id={g.request_id}, tenant={g.tenant}")
 
 
 @app.after_request
 def after_request(response):
-    """Add observability headers"""
+    """
+    Add observability headers for client-side correlation.
+    """
     if hasattr(g, 'request_id'):
         response.headers['X-Request-ID'] = g.request_id
+    if hasattr(g, 'trace_id'):
+        response.headers['X-Trace-ID'] = g.trace_id
     if hasattr(g, 'start_time'):
         duration_ms = (time.time() - g.start_time) * 1000
         response.headers['X-Response-Time'] = f"{duration_ms:.2f}ms"
+    
+    # Contract version for client compatibility checks
+    response.headers['X-Contract-Version'] = CONTRACT_VERSION
+    
     return response
 
 
@@ -551,7 +606,7 @@ def health():
 def query():
     """
     FULL OBSERVABILITY RAG ENDPOINT
-    
+
     See RagRequest and RagResponse dataclasses for complete contract.
     """
     with tracer.start_as_current_span("rag.request") as span:
@@ -559,22 +614,22 @@ def query():
             # Parse request
             if not request.json:
                 return jsonify({'error': 'Request body must be JSON'}), 400
-            
+
             rag_req = RagRequest.from_dict(request.json)
-            
+
             # Set span attributes
             span.set_attribute("tenant", rag_req.tenant)
             span.set_attribute("user_id", rag_req.user_id)
             span.set_attribute("plan_id", rag_req.plan_id)
             span.set_attribute("ab_setting", rag_req.ab_test.setting)
-            
+
             # Get trace ID
             ctx = span.get_span_context()
             trace_id = format(ctx.trace_id, '032x')
-            
+
             # TODO: Implement full pipeline with all artifacts
             # For now, return mock response with full contract
-            
+
             mock_sources = [
                 Source(
                     index=1,
@@ -590,9 +645,80 @@ def query():
                     freshness_hours=12
                 )
             ]
+
+            # Build orchestration context (ID correlation)
+            ctx = OrchestrationContext(
+                trace_id=trace_id,
+                request_id=g.request_id,
+                tenant=rag_req.tenant,
+                user_id=rag_req.user_id,
+                query=rag_req.query,
+                plan_id=rag_req.plan_id,
+                settings_snapshot=rag_req.settings_snapshot,
+                budgets=rag_req.budgets,
+                policy=rag_req.policy,
+                ab_test=rag_req.ab_test,
+                start_time=g.start_time
+            )
             
             # Evaluate recency
-            recency = evaluate_recency(mock_sources, rag_req.policy)
+            recency = evaluate_recency(mock_sources, rag_req.policy, rag_req.query, ctx)
+            
+            # Build artifacts with ID correlation
+            planner = PlannerArtifact(
+                trace_id=trace_id,
+                request_id=g.request_id,
+                subtasks=["retrieve", "synthesize"],
+                requires_recency=[False],
+                queries_planned=[rag_req.query],
+                budgets_applied=rag_req.budgets,
+                route_decision="rag",
+                route_reason="Query is factual, internal docs sufficient"
+            )
+            
+            retrieval_log = RetrievalLog(
+                trace_id=trace_id,
+                request_id=g.request_id,
+                internal_queries=[],
+                web_queries=[],
+                total_retrieved=1,
+                total_deduped=0,
+                domains_filtered=[],
+                timing_breakdown_ms={"vector_search": 120.0, "bm25": 80.0}
+            )
+            
+            evidence_map = EvidenceMap(
+                trace_id=trace_id,
+                request_id=g.request_id,
+                claims=[{"claim_text": "RAG combines retrieval and generation", "citation_indices": [1], "confidence": 0.9}],
+                ungrounded_claims=[],
+                grounding_rate=1.0
+            )
+            
+            chunking_report = ChunkingReport(
+                trace_id=trace_id,
+                request_id=g.request_id,
+                params={"target_size": 500, "min": 300, "max": 800, "overlap": 100},
+                samples=[],
+                timing_ms=10.0,
+                total_chunks=0
+            )
+            
+            guardrail_report = GuardrailReport(
+                trace_id=trace_id,
+                request_id=g.request_id,
+                detections=[],
+                service_errors=[],
+                overall_safe=True
+            )
+            
+            ab_eval = ABEvaluation(
+                trace_id=trace_id,
+                request_id=g.request_id,
+                setting=rag_req.ab_test.setting,
+                dimensions={"coverage": 0.8, "grounding": 0.9, "recency": 0.7, "retrieval_quality": 0.85},
+                overall_score=0.81
+            )
             
             # Build response
             response = RagResponse(
@@ -607,44 +733,13 @@ def query():
                     ModelRoutingEntry("generation", "gpt-4", 200.0)
                 ],
                 recency=recency,
-                planner=PlannerArtifact(
-                    subtasks=["retrieve", "synthesize"],
-                    requires_recency=[False],
-                    queries_planned=[rag_req.query],
-                    budgets_applied=rag_req.budgets,
-                    route_decision="rag",
-                    route_reason="Query is factual, internal docs sufficient"
-                ),
-                retrieval_log=RetrievalLog(
-                    internal_queries=[],
-                    web_queries=[],
-                    total_retrieved=1,
-                    total_deduped=0,
-                    domains_filtered=[],
-                    timing_breakdown_ms={"vector_search": 120.0, "bm25": 80.0}
-                ),
-                evidence_map=EvidenceMap(
-                    claims=[{"claim_text": "RAG combines retrieval and generation", "citation_indices": [1], "confidence": 0.9}],
-                    ungrounded_claims=[],
-                    grounding_rate=1.0
-                ),
+                planner=planner,
+                retrieval_log=retrieval_log,
+                evidence_map=evidence_map,
                 kg_log=None,
-                chunking_report=ChunkingReport(
-                    params={"target_size": 500, "min": 300, "max": 800, "overlap": 100},
-                    samples=[],
-                    timing_ms=10.0,
-                    total_chunks=0
-                ),
-                guardrail_report=GuardrailReport(
-                    detections=[],
-                    service_errors=[],
-                    overall_safe=True
-                ),
-                ab_eval=ABEvaluation(
-                    setting=rag_req.ab_test.setting,
-                    dimensions={"coverage": 0.8, "grounding": 0.9, "recency": 0.7, "retrieval_quality": 0.85},
-                    overall_score=0.81
-                ),
+                chunking_report=chunking_report,
+                guardrail_report=guardrail_report,
+                ab_eval=ab_eval,
                 metrics=Metrics(
                     total_ms=(time.time() - g.start_time) * 1000,
                     retrieve_ms=120.0,
@@ -658,9 +753,9 @@ def query():
                 wall_time_ms=(time.time() - g.start_time) * 1000,
                 sha256=hash_answer("Mock answer - wire real LLM")
             )
-            
+
             return jsonify(response.to_dict()), 200
-        
+
         except Exception as e:
             span.record_exception(e)
             span.set_status(Status(StatusCode.ERROR))
@@ -674,14 +769,14 @@ def mock_llm_generate(prompt: str) -> str:
 
 def initialize_app():
     global orchestrator, prompt_assembler, llm_generate
-    
+
     def mock_vector_search(query: str, k: int) -> List[Evidence]:
         return []
-    
+
     orchestrator = RAGOrchestrator(vector_search_fn=mock_vector_search)
     prompt_assembler = PromptAssembler()
     llm_generate = mock_llm_generate
-    
+
     logger.info("RAG API v2.0 initialized with full observability contract")
 
 

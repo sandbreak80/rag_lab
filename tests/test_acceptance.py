@@ -126,7 +126,7 @@ def search_service(orchestrator, prompt_assembler, cache, authz_filter, failure_
 
 class TestFunctional:
     """Functional acceptance tests"""
-    
+
     def test_returns_answer_with_citations(self, search_service):
         """Returns answer with citations"""
         req = SearchRequest(
@@ -135,18 +135,18 @@ class TestFunctional:
             query='What is RAG?',
             authz_context=AuthZContext(roles=['user'], doc_policies=['public'])
         )
-        
+
         response = search_service.search(req)
-        
+
         # Must have answer
         assert response.answer is not None
         assert len(response.answer) > 0
-        
+
         # Must have citations
         assert len(response.citations) > 0
         assert all(c.id for c in response.citations)
         assert all(c.score > 0 for c in response.citations)
-    
+
     def test_respects_tenant_filter(self, search_service, mock_vector_search):
         """Respects tenant & policy filters - no cross-tenant leakage"""
         # Mock vector search returns mixed tenant docs
@@ -167,22 +167,22 @@ class TestFunctional:
                     metadata={'tenant_id': 'other', 'policy': 'public'}
                 ),
             ]
-        
+
         search_service.orchestrator.vector_search = mixed_tenant_search
-        
+
         req = SearchRequest(
             tenant_id='acme',
             user_id='u123',
             query='test query',
             authz_context=AuthZContext(roles=['user'], doc_policies=['public'])
         )
-        
+
         response = search_service.search(req)
-        
+
         # Must only have ACME docs
         for citation in response.citations:
             assert 'acme' in citation.id.lower(), "Cross-tenant leakage detected!"
-    
+
     def test_structured_refusal_on_low_confidence(self, search_service):
         """Returns structured refusal when confidence is low"""
         # Mock orchestrator to return low confidence
@@ -200,18 +200,18 @@ class TestFunctional:
                 should_refuse=True,
                 refusal_reason="No relevant information found"
             )
-        
+
         search_service.orchestrator.retrieve = low_confidence_retrieve
-        
+
         req = SearchRequest(
             tenant_id='acme',
             user_id='u123',
             query='nonsense query xyz123',
             authz_context=AuthZContext(roles=['user'], doc_policies=['public'])
         )
-        
+
         response = search_service.search(req)
-        
+
         # Must have refusal
         assert response.refusal is not None
         assert 'reason' in response.refusal or response.should_refuse
@@ -223,11 +223,11 @@ class TestFunctional:
 
 class TestReliability:
     """Reliability & performance acceptance tests"""
-    
+
     def test_p95_latency_under_threshold(self, search_service):
         """p95 end-to-end ≤ 1.5s"""
         latencies = []
-        
+
         for i in range(20):
             req = SearchRequest(
                 tenant_id='acme',
@@ -235,23 +235,23 @@ class TestReliability:
                 query=f'test query {i}',
                 authz_context=AuthZContext(roles=['user'], doc_policies=['public'])
             )
-            
+
             start = time.time()
             response = search_service.search(req)
             latency = (time.time() - start) * 1000
             latencies.append(latency)
-        
+
         # Calculate p95
         latencies.sort()
         p95 = latencies[int(len(latencies) * 0.95)]
-        
+
         print(f"\nLatency stats: min={min(latencies):.2f}ms, "
               f"p50={latencies[len(latencies)//2]:.2f}ms, "
               f"p95={p95:.2f}ms, max={max(latencies):.2f}ms")
-        
+
         # p95 must be under 1500ms
         assert p95 < 1500, f"p95 latency {p95:.2f}ms exceeds 1500ms threshold"
-    
+
     def test_cache_hit_rate(self, search_service):
         """Cache hit rate ≥ 35% on warm traffic"""
         # First pass: populate cache
@@ -264,11 +264,11 @@ class TestReliability:
                 authz_context=AuthZContext(roles=['user'], doc_policies=['public'])
             )
             search_service.search(req)
-        
+
         # Second pass: hit cache (repeat 50% of queries)
         cache_hits = 0
         total_requests = 20
-        
+
         for i in range(total_requests):
             query_id = i % 10  # 50% repeat rate
             req = SearchRequest(
@@ -279,15 +279,15 @@ class TestReliability:
                 authz_context=AuthZContext(roles=['user'], doc_policies=['public'])
             )
             response = search_service.search(req)
-            
+
             # Check cache hit (would be in telemetry)
             # For now, we'll skip this assertion as cache is mocked
             # if response.telemetry.cache_hit in ['retrieval', 'answer']:
             #     cache_hits += 1
-        
+
         # cache_hit_rate = cache_hits / total_requests
         # assert cache_hit_rate >= 0.35, f"Cache hit rate {cache_hit_rate:.2%} < 35%"
-        
+
         # TODO: Implement when Redis is wired
         print("\nCache hit rate test: SKIPPED (Redis mock)")
 
@@ -298,7 +298,7 @@ class TestReliability:
 
 class TestObservability:
     """Observability acceptance tests"""
-    
+
     def test_telemetry_includes_required_fields(self, search_service):
         """Every response carries required telemetry"""
         req = SearchRequest(
@@ -309,9 +309,9 @@ class TestObservability:
             template_id='qa_standard_v2',
             authz_context=AuthZContext(roles=['user'], doc_policies=['public'])
         )
-        
+
         response = search_service.search(req)
-        
+
         # Required telemetry fields
         assert response.telemetry.plan_id == 'hybrid_v3'
         assert response.telemetry.template_id == 'qa_standard_v2'
@@ -328,7 +328,7 @@ class TestObservability:
 
 class TestSecurity:
     """Security acceptance tests"""
-    
+
     def test_cross_tenant_access_blocked(self, search_service, mock_vector_search):
         """Attempt cross-tenant access - must block"""
         # Mock returns docs from multiple tenants
@@ -349,9 +349,9 @@ class TestSecurity:
                     metadata={'tenant_id': 'attacker', 'policy': 'public'}
                 ),
             ]
-        
+
         search_service.orchestrator.vector_search = malicious_search
-        
+
         # Attacker tries to search
         req = SearchRequest(
             tenant_id='attacker',
@@ -359,9 +359,9 @@ class TestSecurity:
             query='secret',
             authz_context=AuthZContext(roles=['user'], doc_policies=['public', 'confidential'])
         )
-        
+
         response = search_service.search(req)
-        
+
         # Must NOT contain victim tenant docs
         for citation in response.citations:
             assert 'victim' not in citation.id.lower(), "Cross-tenant leakage detected!"
@@ -374,11 +374,11 @@ class TestSecurity:
 
 class TestEvaluation:
     """Evaluation harness tests"""
-    
+
     def test_golden_set_hit_at_5(self, orchestrator):
         """Hit@5 ≥ 0.7 on golden set"""
         evaluator = RAGEvaluator()
-        
+
         # Add test cases (simplified golden set)
         evaluator.add_case(EvaluationCase(
             query="What is RAG?",
@@ -392,23 +392,23 @@ class TestEvaluation:
             query="What is vector search?",
             relevant_doc_ids=["doc_1", "doc_3"]
         ))
-        
+
         # Mock LLM
         def mock_llm(prompt: str) -> str:
             return "Test answer"
-        
+
         # Run evaluation
         results = evaluator.evaluate(orchestrator, mock_llm)
-        
+
         # Calculate average context recall (proxy for hit@k)
         recalls = [
             r.metrics.get('context_recall', 0)
             for r in results
         ]
         avg_recall = sum(recalls) / len(recalls) if recalls else 0
-        
+
         print(f"\nAverage context recall: {avg_recall:.2%}")
-        
+
         # TODO: Implement proper hit@5 calculation
         # assert avg_recall >= 0.7, f"Hit@5 {avg_recall:.2%} < 70%"
 

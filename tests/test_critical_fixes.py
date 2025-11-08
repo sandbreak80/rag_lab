@@ -388,7 +388,7 @@ class TestZeroTotalWarning:
 # Regression tests to ensure fixes don't break existing functionality
 class TestRegressionTests:
     """Ensure fixes don't break existing functionality"""
-    
+
     def test_evidence_still_frozen(self):
         """Evidence objects should still be frozen (immutable)"""
         evidence = Evidence(
@@ -396,21 +396,21 @@ class TestRegressionTests:
             content='Test',
             origin_tool=OriginTool.RAG
         )
-        
+
         with pytest.raises(Exception):  # FrozenInstanceError
             evidence.content = 'Modified'
-    
+
     def test_timing_collector_still_works(self):
         """Basic TimingCollector functionality unchanged"""
         timer = TimingCollector()
-        
+
         with timer.measure('operation'):
             time.sleep(0.01)
-        
+
         timings = timer.get_timings()
         assert 'operation' in timings
         assert timings['operation'] >= 9
-    
+
     def test_evidence_serialization_still_works(self):
         """Evidence serialization/deserialization still works"""
         original = Evidence(
@@ -419,10 +419,10 @@ class TestRegressionTests:
             origin_tool=OriginTool.WEB_SEARCH,
             url='https://example.com'
         )
-        
+
         data = original.to_dict()
         reconstructed = Evidence.from_dict(data)
-        
+
         assert reconstructed.id == original.id
         assert reconstructed.origin_tool == original.origin_tool
 
@@ -430,36 +430,36 @@ class TestRegressionTests:
 class TestIssue5_ValidatorTypeCheck:
     """
     Test that ProvenanceValidator validates input types.
-    
+
     HIGH PRIORITY: No type validation in constructor.
     FIX: Add isinstance() check and raise TypeError.
     """
-    
+
     def test_strict_mode_must_be_bool(self):
         """ProvenanceValidator should reject non-bool strict_mode"""
         from services.common.validators import ProvenanceValidator
-        
+
         with pytest.raises(TypeError) as exc_info:
             ProvenanceValidator(strict_mode="true")  # String instead of bool
-        
+
         assert 'bool' in str(exc_info.value).lower()
-    
+
     def test_strict_mode_accepts_bool(self):
         """ProvenanceValidator should accept bool values"""
         from services.common.validators import ProvenanceValidator
-        
+
         # Should work with True
         validator1 = ProvenanceValidator(strict_mode=True)
         assert validator1.strict_mode is True
-        
+
         # Should work with False
         validator2 = ProvenanceValidator(strict_mode=False)
         assert validator2.strict_mode is False
-    
+
     def test_default_strict_mode_is_true(self):
         """ProvenanceValidator defaults to strict mode"""
         from services.common.validators import ProvenanceValidator
-        
+
         validator = ProvenanceValidator()
         assert validator.strict_mode is True
 
@@ -467,56 +467,56 @@ class TestIssue5_ValidatorTypeCheck:
 class TestIssue7_URLSanitization:
     """
     Test that URLs are validated to prevent XSS attacks.
-    
+
     HIGH PRIORITY: No URL validation, XSS risk.
     FIX: Add validate_url() function and check in from_dict().
     """
-    
+
     def test_validate_url_blocks_javascript(self):
         """validate_url() should block javascript: scheme"""
         from services.common.evidence import validate_url
-        
+
         assert validate_url('javascript:alert("XSS")') is False
         assert validate_url('JAVASCRIPT:alert("XSS")') is False  # Case insensitive
-    
+
     def test_validate_url_blocks_data_scheme(self):
         """validate_url() should block data: scheme"""
         from services.common.evidence import validate_url
-        
+
         assert validate_url('data:text/html,<script>alert("XSS")</script>') is False
         assert validate_url('DATA:text/html,test') is False
-    
+
     def test_validate_url_blocks_file_scheme(self):
         """validate_url() should block file: scheme"""
         from services.common.evidence import validate_url
-        
+
         assert validate_url('file:///etc/passwd') is False
         assert validate_url('FILE:///etc/passwd') is False
-    
+
     def test_validate_url_blocks_script_tags(self):
         """validate_url() should block URLs with script tags"""
         from services.common.evidence import validate_url
-        
+
         assert validate_url('https://evil.com/<script>alert("XSS")</script>') is False
         assert validate_url('https://evil.com/<SCRIPT>alert("XSS")</SCRIPT>') is False
-    
+
     def test_validate_url_blocks_event_handlers(self):
         """validate_url() should block URLs with event handlers"""
         from services.common.evidence import validate_url
-        
+
         assert validate_url('https://evil.com/page?param=onerror=alert("XSS")') is False
         assert validate_url('https://evil.com/page?param=onload=alert("XSS")') is False
         assert validate_url('https://evil.com/page?param=onclick=alert("XSS")') is False
-    
+
     def test_validate_url_accepts_safe_urls(self):
         """validate_url() should accept safe HTTP(S) URLs"""
         from services.common.evidence import validate_url
-        
+
         assert validate_url('https://example.com') is True
         assert validate_url('http://example.com/path') is True
         assert validate_url('https://blog.example.co.uk/post/123?id=456') is True
         assert validate_url('https://github.com/user/repo') is True
-    
+
     def test_from_dict_rejects_unsafe_url(self):
         """from_dict() should raise ValueError for unsafe URLs"""
         data = {
@@ -525,12 +525,12 @@ class TestIssue7_URLSanitization:
             'origin_tool': 'web_search',
             'url': 'javascript:alert("XSS")'  # Unsafe!
         }
-        
+
         with pytest.raises(ValueError) as exc_info:
             Evidence.from_dict(data)
-        
+
         assert 'unsafe' in str(exc_info.value).lower() or 'invalid' in str(exc_info.value).lower()
-    
+
     def test_from_dict_accepts_safe_url(self):
         """from_dict() should accept safe URLs"""
         data = {
@@ -539,10 +539,10 @@ class TestIssue7_URLSanitization:
             'origin_tool': 'web_search',
             'url': 'https://example.com'  # Safe
         }
-        
+
         evidence = Evidence.from_dict(data)
         assert evidence.url == 'https://example.com'
-    
+
     def test_from_dict_allows_no_url(self):
         """from_dict() should allow Evidence without URL (for RAG)"""
         data = {
@@ -551,7 +551,7 @@ class TestIssue7_URLSanitization:
             'origin_tool': 'rag'
             # No URL
         }
-        
+
         evidence = Evidence.from_dict(data)
         assert evidence.url is None
 

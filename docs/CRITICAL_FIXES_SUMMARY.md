@@ -1,7 +1,7 @@
 # ✅ Critical Bug Fixes Complete - Issues #1, #2, #3
 
-**Date:** November 8, 2025  
-**Branch:** `otel`  
+**Date:** November 8, 2025
+**Branch:** `otel`
 **Status:** ✅ **ALL 3 CRITICAL ISSUES FIXED**
 
 ---
@@ -53,7 +53,7 @@ from types import MappingProxyType
 @dataclass(frozen=True)
 class Evidence:
     _metadata: Dict[str, Any] = field(default_factory=dict, repr=False)
-    
+
     @property
     def metadata(self) -> Dict[str, Any]:
         """Return immutable view of metadata"""
@@ -84,7 +84,7 @@ evidence.metadata['key'] = 'value'  # ❌ TypeError: 'mappingproxy' object does 
 @dataclass
 class TimingCollector:
     timings: Dict[str, float] = field(default_factory=dict)  # ❌ No locking!
-    
+
     def record(self, operation: str, duration_ms: float):
         self.timings[operation] = duration_ms  # ❌ RACE CONDITION
 ```
@@ -117,11 +117,11 @@ import threading
 class TimingCollector:
     timings: Dict[str, float] = field(default_factory=dict)
     _lock: threading.RLock = field(default_factory=threading.RLock, repr=False)
-    
+
     def record(self, operation: str, duration_ms: float):
         with self._lock:  # ✅ Thread-safe
             self.timings[operation] = duration_ms
-    
+
     @contextmanager
     def measure(self, operation: str):
         start = time.time()
@@ -197,7 +197,7 @@ def from_dict(cls, data: Dict[str, Any]) -> 'Evidence':
             f"Evidence.from_dict() requires 'origin_tool' field. "
             f"This is critical for provenance tracking. Got: {list(data.keys())}"
         )
-    
+
     origin_tool = data['origin_tool']
     if isinstance(origin_tool, str):
         try:
@@ -374,7 +374,7 @@ evidence = Evidence.from_dict(data)  # ❌ ValueError: origin_tool required (GOO
    ```python
    # OLD
    Evidence(..., metadata={'key': 'value'})
-   
+
    # NEW
    Evidence(..., _metadata={'key': 'value'})
    ```
@@ -390,7 +390,7 @@ evidence = Evidence.from_dict(data)  # ❌ ValueError: origin_tool required (GOO
    ```python
    # OLD (added durations)
    timer.merge({'op': 100})  # If 'op' exists, adds to it
-   
+
    # NEW (replaces durations)
    timer.merge({'op': 100})  # Replaces value
    timer.merge_add({'op': 100})  # Adds to value
@@ -449,7 +449,7 @@ evidence = Evidence.from_dict(data)  # ❌ ValueError: origin_tool required (GOO
 
 ---
 
-**Fixes completed in 6 hours.** ✅  
-**All tests passing.** ✅  
+**Fixes completed in 6 hours.** ✅
+**All tests passing.** ✅
 **Ready for production.** ✅
 

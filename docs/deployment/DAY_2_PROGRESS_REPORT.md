@@ -1,7 +1,7 @@
 # Day 2 Progress Report: Waterfall Completeness & UX Polish
 
-**Date:** November 8, 2025  
-**Branch:** `otel`  
+**Date:** November 8, 2025
+**Branch:** `otel`
 **Status:** ✅ **COMPLETE**
 
 ---
@@ -12,7 +12,7 @@
 
 ### **Planned Tasks**
 1. ✅ Add timing instrumentation to all services
-2. ✅ Update waterfall chart to show all stages including KG timing  
+2. ✅ Update waterfall chart to show all stages including KG timing
 3. ✅ UX polish - copy buttons for messages
 
 ---
@@ -163,7 +163,7 @@ with timer.measure('vector_search'):
 └────────────────────────────────┘
 ```
 
-**Before:** Only code blocks had copy buttons  
+**Before:** Only code blocks had copy buttons
 **After:** Every message has a copy button (code blocks + whole messages)
 
 ---
@@ -212,8 +212,8 @@ with timer.measure('knowledge_graph'):
 
 ### **Waterfall Chart Compatibility**
 
-**Existing Chart:** Already configured to display `graph_expansion_ms`  
-**Our Change:** Now properly populates `graph_expansion_ms` from `timer.timings['knowledge_graph']`  
+**Existing Chart:** Already configured to display `graph_expansion_ms`
+**Our Change:** Now properly populates `graph_expansion_ms` from `timer.timings['knowledge_graph']`
 **Result:** No frontend changes needed! Chart automatically works.
 
 ```typescript

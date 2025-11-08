@@ -40,33 +40,33 @@ def rate_limit(max_requests: int = 100, window_seconds: int = 60):
     """Rate limiting decorator"""
     # Simple in-memory rate limiter (use Redis in production)
     request_counts = {}
-    
+
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
             tenant_id = request.json.get('tenant_id') if request.json else None
             if not tenant_id:
                 return jsonify({'error': 'Missing tenant_id'}), 400
-            
+
             now = time.time()
             # Clean old entries
             request_counts[tenant_id] = [
                 t for t in request_counts.get(tenant_id, [])
                 if now - t < window_seconds
             ]
-            
+
             if len(request_counts.get(tenant_id, [])) >= max_requests:
                 return jsonify(ServiceError(
                     code=ErrorCode.RATE_LIMIT_EXCEEDED,
                     message=f"Rate limit exceeded: {max_requests} requests per {window_seconds}s",
                     retry_after=window_seconds
                 ).to_dict()), 429
-            
+
             # Record this request
             if tenant_id not in request_counts:
                 request_counts[tenant_id] = []
             request_counts[tenant_id].append(now)
-            
+
             return f(*args, **kwargs)
         return wrapper
     return decorator
@@ -79,7 +79,7 @@ def request_id_middleware():
         import uuid
         g.request_id = request.headers.get('X-Request-ID', str(uuid.uuid4()))
         g.start_time = time.time()
-    
+
     @app.after_request
     def after_request(response):
         if hasattr(g, 'request_id'):
@@ -123,7 +123,7 @@ def readiness_check():
 def search():
     """
     Main search endpoint
-    
+
     Request:
     {
       "tenant_id": "acme",
@@ -136,7 +136,7 @@ def search():
       "enable_cache": true,
       "enable_fallback": true
     }
-    
+
     Response:
     {
       "answer": "...",
@@ -153,7 +153,7 @@ def search():
                 code=ErrorCode.INVALID_REQUEST,
                 message="Request body must be JSON"
             ).to_dict()), 400
-        
+
         # Required fields
         required = ['tenant_id', 'user_id', 'query']
         missing = [f for f in required if f not in request.json]
@@ -162,20 +162,20 @@ def search():
                 code=ErrorCode.INVALID_REQUEST,
                 message=f"Missing required fields: {missing}"
             ).to_dict()), 400
-        
+
         # Parse request
         search_req = SearchRequest.from_dict(request.json)
-        
+
         # Log request
         logger.info(
             f"Search request: tenant={search_req.tenant_id}, "
             f"user={search_req.user_id}, query={search_req.query[:50]}, "
             f"plan={search_req.retrieval_plan_id}, request_id={g.request_id}"
         )
-        
+
         # Execute search
         response = search_service.search(search_req)
-        
+
         # Log response
         logger.info(
             f"Search response: tenant={search_req.tenant_id}, "
@@ -185,13 +185,13 @@ def search():
             f"latency={response.telemetry.total_ms:.2f}ms, "
             f"request_id={g.request_id}"
         )
-        
+
         return jsonify(response.to_dict()), 200
-    
+
     except ServiceError as e:
         logger.warning(f"Service error: {e.code.value} - {e.message}, request_id={g.request_id}")
         return jsonify(e.to_dict()), 400 if e.code == ErrorCode.INVALID_REQUEST else 500
-    
+
     except Exception as e:
         logger.error(f"Unexpected error: {e}, request_id={g.request_id}", exc_info=True)
         return jsonify(ServiceError(
@@ -204,7 +204,7 @@ def search():
 def invalidate_cache():
     """
     Cache invalidation endpoint
-    
+
     Request:
     {
       "tenant_id": "acme",
@@ -217,18 +217,18 @@ def invalidate_cache():
                 code=ErrorCode.INVALID_REQUEST,
                 message="Missing tenant_id"
             ).to_dict()), 400
-        
+
         tenant_id = request.json['tenant_id']
         plan_id = request.json.get('plan_id')
-        
+
         search_service.cache.invalidate_tenant(tenant_id, plan_id)
-        
+
         return jsonify({
             'status': 'invalidated',
             'tenant_id': tenant_id,
             'plan_id': plan_id
         }), 200
-    
+
     except Exception as e:
         logger.error(f"Cache invalidation error: {e}", exc_info=True)
         return jsonify(ServiceError(

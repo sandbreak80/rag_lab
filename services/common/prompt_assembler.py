@@ -37,7 +37,7 @@ class PromptVersion:
     max_tokens: int
     created_at: datetime = field(default_factory=datetime.utcnow)
     metadata: Dict[str, Any] = field(default_factory=dict)
-    
+
     def get_hash(self) -> str:
         """Get content hash for diff tracking"""
         content = f"{self.template}||{self.system_prompt}"
@@ -47,7 +47,7 @@ class PromptVersion:
 class PromptAssembler:
     """
     Assembles prompts from templates + evidence with context management.
-    
+
     Features:
     - Template versioning (A/B testing)
     - Context window management (truncation)
@@ -55,7 +55,7 @@ class PromptAssembler:
     - Source attribution
     - Diff tracking
     """
-    
+
     # Template registry
     TEMPLATES = {
         PromptTemplate.QA_STANDARD: PromptVersion(
@@ -112,16 +112,16 @@ class PromptAssembler:
             max_tokens=8192
         ),
     }
-    
+
     def __init__(self, token_counter=None):
         """
         Initialize prompt assembler.
-        
+
         Args:
             token_counter: Function to count tokens (query, text) -> int
         """
         self.token_counter = token_counter or self._simple_token_count
-    
+
     def assemble(
         self,
         query: str,
@@ -132,14 +132,14 @@ class PromptAssembler:
     ) -> Dict[str, Any]:
         """
         Assemble prompt from template + evidence.
-        
+
         Args:
             query: User query
             evidence: Retrieved evidence list
             template: Which template to use
             max_context_tokens: Max tokens for context
             include_metadata: Include source metadata
-        
+
         Returns:
             Dict with:
             - prompt: Full assembled prompt
@@ -150,25 +150,25 @@ class PromptAssembler:
             - truncated: Whether context was truncated
         """
         prompt_version = self.TEMPLATES[template]
-        
+
         # Format context with token budget
         context, sources, truncated = self._format_context(
             evidence,
             max_context_tokens,
             include_metadata
         )
-        
+
         # Assemble full prompt
         full_prompt = prompt_version.template.format(
             context=context,
             query=query
         )
-        
+
         # Count tokens
         total_tokens = self.token_counter(
             prompt_version.system_prompt + full_prompt
         )
-        
+
         return {
             'prompt': full_prompt,
             'system_prompt': prompt_version.system_prompt,
@@ -180,7 +180,7 @@ class PromptAssembler:
             'template_version': prompt_version.version,
             'template_hash': prompt_version.get_hash()
         }
-    
+
     def _format_context(
         self,
         evidence: List[Evidence],
@@ -189,7 +189,7 @@ class PromptAssembler:
     ) -> tuple[str, List[Dict], bool]:
         """
         Format evidence into context string within token budget.
-        
+
         Returns:
             (context_string, source_list, was_truncated)
         """
@@ -197,7 +197,7 @@ class PromptAssembler:
         sources = []
         current_tokens = 0
         truncated = False
-        
+
         for idx, e in enumerate(evidence, 1):
             # Format source
             source_info = {
@@ -205,14 +205,14 @@ class PromptAssembler:
                 'origin': e.origin_tool.value,
                 'score': e.score,
             }
-            
+
             if e.url:
                 source_info['url'] = e.url
             if e.title:
                 source_info['title'] = e.title
             if e.domain:
                 source_info['domain'] = e.domain
-            
+
             # Format content block
             header = f"[{idx}]"
             if include_metadata:
@@ -222,26 +222,26 @@ class PromptAssembler:
                     header += f" ({e.domain or e.url})"
                 elif e.doc_id:
                     header += f" (Document: {e.doc_id})"
-            
+
             content_block = f"{header}\n{e.content}\n"
-            
+
             # Check token budget
             block_tokens = self.token_counter(content_block)
             if current_tokens + block_tokens > max_tokens:
                 truncated = True
                 break
-            
+
             context_parts.append(content_block)
             sources.append(source_info)
             current_tokens += block_tokens
-        
+
         context = "\n".join(context_parts)
         return context, sources, truncated
-    
+
     def _simple_token_count(self, text: str) -> int:
         """Simple token estimator (4 chars = 1 token)"""
         return len(text) // 4
-    
+
     def get_template_diff(
         self,
         template_a: PromptTemplate,
@@ -249,12 +249,12 @@ class PromptAssembler:
     ) -> Dict[str, Any]:
         """
         Compare two template versions for A/B testing.
-        
+
         Returns diff showing changes.
         """
         version_a = self.TEMPLATES[template_a]
         version_b = self.TEMPLATES[template_b]
-        
+
         return {
             'template_a': {
                 'id': version_a.template_id,

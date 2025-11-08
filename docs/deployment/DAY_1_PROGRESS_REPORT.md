@@ -99,7 +99,7 @@ from services.common.evidence import Evidence, OriginTool
 
 def vector_search_internal(query: str, limit: int) -> List[Evidence]:
     results = # ... existing vector search code ...
-    
+
     # Convert to Evidence objects
     evidence_list = []
     for result in results:
@@ -113,7 +113,7 @@ def vector_search_internal(query: str, limit: int) -> List[Evidence]:
             metadata=result['metadata'],
         )
         evidence_list.append(evidence)
-    
+
     return evidence_list
 ```
 
@@ -127,7 +127,7 @@ def web_search_internal(query: str, limit: int) -> List[Evidence]:
     # Call web-search service
     response = requests.post(f"{WEB_SEARCH_URL}/search", ...)
     web_results = response.json()['results']
-    
+
     # Convert to Evidence with WEB_SEARCH origin
     evidence_list = []
     for result in web_results:
@@ -143,7 +143,7 @@ def web_search_internal(query: str, limit: int) -> List[Evidence]:
             score=result.get('score', 0.0),
         )
         evidence_list.append(evidence)
-    
+
     return evidence_list
 ```
 
@@ -169,15 +169,15 @@ def rerank_with_llm(evidence_list: List[Evidence], query: str) -> List[Evidence]
 @app.route('/search_with_config', methods=['POST'])
 def search_with_config():
     # ... existing search logic ...
-    
+
     # final_results is List[Evidence]
-    
+
     # Validate provenance before returning
     from services.common.validators import ProvenanceValidator
     validator = ProvenanceValidator(strict_mode=False)
     if not validator.validate(final_results):
         print(f"⚠️ Provenance validation warnings: {validator.get_summary()}")
-    
+
     # Serialize Evidence to dict for JSON response
     return jsonify({
         'results': [e.to_dict() for e in final_results],

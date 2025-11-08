@@ -63,7 +63,7 @@ class ServiceError(Exception):
     message: str
     details: Dict[str, Any] = field(default_factory=dict)
     retry_after: Optional[int] = None  # Seconds
-    
+
     def to_dict(self):
         return {
             'error': {
@@ -93,18 +93,18 @@ class SearchRequest:
     tenant_id: str
     user_id: str
     query: str
-    
+
     # Optional parameters
     top_k: int = 20
     retrieval_plan_id: str = "hybrid_v3"
     template_id: str = "qa_standard_v2"
     authz_context: Optional[AuthZContext] = None
     trace_ctx: Dict[str, str] = field(default_factory=dict)
-    
+
     # Feature flags
     enable_cache: bool = True
     enable_fallback: bool = True
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'SearchRequest':
         """Parse and validate request"""
@@ -114,7 +114,7 @@ class SearchRequest:
             doc_policies=authz_data.get('doc_policies', []),
             groups=authz_data.get('groups', [])
         )
-        
+
         return cls(
             tenant_id=data['tenant_id'],
             user_id=data['user_id'],
@@ -147,18 +147,18 @@ class Telemetry:
     embed_model_v: str
     splitter_v: str
     index_alias: str
-    
+
     # Performance
     p95_ms: float
     total_ms: float
     cache_hit: str  # "retrieval", "answer", "miss"
-    
+
     # Quality
     hit_at_k: float
     mrr: Optional[float]  # Mean Reciprocal Rank
     rerank_gain: Optional[float]
     confidence_score: float
-    
+
     # Cost
     tokens_used: int
     cost_usd: float
@@ -172,7 +172,7 @@ class SearchResponse:
     citations: List[Citation]
     telemetry: Telemetry
     refusal: Optional[Dict[str, str]] = None  # {"reason": "...", "next_steps": "..."}
-    
+
     def to_dict(self):
         return {
             'answer': self.answer,
@@ -190,29 +190,29 @@ class SearchResponse:
 class RAGCache:
     """
     Two-tier cache: retrieval results + final answers
-    
+
     Keys:
     - Retrieval: r:v1:{tenant}:{hash(query_norm)}:{plan_id}
     - Answer: a:v1:{tenant}:{hash(query_norm)}:{template_id}:{hash(citations)}
-    
+
     Invalidation:
     - Subscribe to ingest.events (doc_updated, alias_flip)
     - Delete matching keys for affected tenants
     """
-    
+
     def __init__(self, redis_client: redis.Redis):
         self.redis = redis_client
         self.retrieval_ttl = 1800  # 30 minutes
         self.answer_ttl = 7200  # 2 hours
-    
+
     def _normalize_query(self, query: str) -> str:
         """Normalize query for cache keying (lowercase, strip, etc.)"""
         return query.lower().strip()
-    
+
     def _hash_string(self, s: str) -> str:
         """Hash string for cache key"""
         return hashlib.sha256(s.encode()).hexdigest()[:16]
-    
+
     def get_retrieval_result(
         self,
         tenant_id: str,
@@ -222,15 +222,15 @@ class RAGCache:
         """Get cached retrieval result"""
         query_norm = self._normalize_query(query)
         key = f"r:v1:{tenant_id}:{self._hash_string(query_norm)}:{plan_id}"
-        
+
         cached = self.redis.get(key)
         if cached:
             data = json.loads(cached)
             # Reconstruct Evidence objects
             return [Evidence.from_dict(e) for e in data['evidence']]
-        
+
         return None
-    
+
     def set_retrieval_result(
         self,
         tenant_id: str,
@@ -242,15 +242,15 @@ class RAGCache:
         """Cache retrieval result"""
         query_norm = self._normalize_query(query)
         key = f"r:v1:{tenant_id}:{self._hash_string(query_norm)}:{plan_id}"
-        
+
         data = {
             'evidence': [e.to_dict() for e in evidence],
             'ts': datetime.utcnow().isoformat(),
             'index_alias': index_alias
         }
-        
+
         self.redis.setex(key, self.retrieval_ttl, json.dumps(data))
-    
+
     def get_answer(
         self,
         tenant_id: str,
@@ -261,13 +261,13 @@ class RAGCache:
         """Get cached answer"""
         query_norm = self._normalize_query(query)
         key = f"a:v1:{tenant_id}:{self._hash_string(query_norm)}:{template_id}:{citations_hash}"
-        
+
         cached = self.redis.get(key)
         if cached:
             return json.loads(cached)
-        
+
         return None
-    
+
     def set_answer(
         self,
         tenant_id: str,
@@ -280,15 +280,15 @@ class RAGCache:
         """Cache answer"""
         query_norm = self._normalize_query(query)
         key = f"a:v1:{tenant_id}:{self._hash_string(query_norm)}:{template_id}:{citations_hash}"
-        
+
         data = {
             'answer': answer,
             'ts': datetime.utcnow().isoformat(),
             'token_cost': token_cost
         }
-        
+
         self.redis.setex(key, self.answer_ttl, json.dumps(data))
-    
+
     def invalidate_tenant(self, tenant_id: str, plan_id: Optional[str] = None):
         """Invalidate all caches for a tenant (e.g., on doc update)"""
         # Retrieval cache
@@ -296,13 +296,13 @@ class RAGCache:
         keys = self.redis.keys(pattern)
         if keys:
             self.redis.delete(*keys)
-        
+
         # Answer cache (broader invalidation)
         pattern = f"a:v1:{tenant_id}:*"
         keys = self.redis.keys(pattern)
         if keys:
             self.redis.delete(*keys)
-        
+
         logger.info(f"Invalidated cache for tenant={tenant_id}, plan={plan_id}")
 
 
@@ -313,17 +313,17 @@ class RAGCache:
 class AuthZFilter:
     """
     Tenant isolation + policy-based filtering
-    
+
     Defense-in-depth:
     1. Pre-retrieval: namespace/filter predicate
     2. Post-retrieval: sanitize results
     3. Provenance: stamp tenant_id into evidence
     """
-    
+
     def __init__(self):
         # In production, load from policy engine or IAM service
         self.tenant_namespaces = {}
-    
+
     def get_retrieval_filter(
         self,
         tenant_id: str,
@@ -331,19 +331,19 @@ class AuthZFilter:
     ) -> Dict[str, Any]:
         """
         Generate filter predicate for retrieval stage.
-        
+
         Returns ChromaDB/Qdrant filter dict.
         """
         filter_dict = {
             'tenant_id': tenant_id,  # Mandatory tenant isolation
         }
-        
+
         # Policy-based filtering
         if authz_context.doc_policies:
             filter_dict['policy'] = {'$in': authz_context.doc_policies}
-        
+
         return filter_dict
-    
+
     def sanitize_results(
         self,
         tenant_id: str,
@@ -352,26 +352,26 @@ class AuthZFilter:
     ) -> List[Evidence]:
         """
         Post-retrieval filtering (defense-in-depth).
-        
+
         Remove any evidence that shouldn't be visible to this user.
         """
         sanitized = []
-        
+
         for e in evidence:
             # Check tenant (paranoid check)
             if e.metadata.get('tenant_id') != tenant_id:
                 logger.warning(f"Cross-tenant leakage detected: {e.id}")
                 continue
-            
+
             # Check policy
             doc_policy = e.metadata.get('policy', 'public')
             if authz_context.doc_policies and doc_policy not in authz_context.doc_policies:
                 continue
-            
+
             sanitized.append(e)
-        
+
         return sanitized
-    
+
     def stamp_provenance(
         self,
         tenant_id: str,
@@ -392,38 +392,38 @@ class AuthZFilter:
 class FailurePolicy:
     """
     Timeouts, fallbacks, circuit breaker
-    
+
     Fallback ladder:
     1. Try hybrid (vector + BM25 + rerank)
     2. Fall back to vector only
     3. Fall back to BM25 only
     4. If all fail → structured refusal
     """
-    
+
     def __init__(self):
         self.retrieval_timeout = 1.0  # seconds
         self.llm_timeout = 3.0  # seconds
         self.total_timeout = 5.0  # seconds
-        
+
         # Circuit breaker state
         self.circuit_breaker_errors = {}
         self.circuit_breaker_threshold = 5
         self.circuit_breaker_reset_time = 60  # seconds
-    
+
     def is_circuit_open(self, service_name: str) -> bool:
         """Check if circuit breaker is open for a service"""
         if service_name not in self.circuit_breaker_errors:
             return False
-        
+
         errors, last_error_time = self.circuit_breaker_errors[service_name]
-        
+
         # Reset if timeout expired
         if (datetime.utcnow() - last_error_time).total_seconds() > self.circuit_breaker_reset_time:
             del self.circuit_breaker_errors[service_name]
             return False
-        
+
         return errors >= self.circuit_breaker_threshold
-    
+
     def record_error(self, service_name: str):
         """Record service error for circuit breaker"""
         if service_name not in self.circuit_breaker_errors:
@@ -431,12 +431,12 @@ class FailurePolicy:
         else:
             errors, _ = self.circuit_breaker_errors[service_name]
             self.circuit_breaker_errors[service_name] = (errors + 1, datetime.utcnow())
-    
+
     def record_success(self, service_name: str):
         """Record service success (reset circuit breaker)"""
         if service_name in self.circuit_breaker_errors:
             del self.circuit_breaker_errors[service_name]
-    
+
     def get_fallback_plan(self, original_strategy: RetrievalStrategy) -> Optional[RetrievalStrategy]:
         """Get fallback retrieval strategy"""
         fallback_ladder = {
@@ -447,7 +447,7 @@ class FailurePolicy:
             RetrievalStrategy.VECTOR_ONLY: RetrievalStrategy.BM25_ONLY,
             RetrievalStrategy.BM25_ONLY: None  # No fallback
         }
-        
+
         return fallback_ladder.get(original_strategy)
 
 
@@ -464,7 +464,7 @@ class ProductionSearchService:
     - Failure policies
     - OTEL instrumentation
     """
-    
+
     def __init__(
         self,
         orchestrator: RAGOrchestrator,
@@ -480,15 +480,15 @@ class ProductionSearchService:
         self.authz = authz_filter
         self.failure_policy = failure_policy
         self.llm_generate = llm_generate_fn
-        
+
         # Config (in production, load from feature flags)
         self.embed_model_v = "text-embedding-ada-002-v2"
         self.splitter_v = "recursive-v1"
         self.index_alias = "main"
-    
+
     def search(self, req: SearchRequest) -> SearchResponse:
         """Main search endpoint with full production features"""
-        
+
         with tracer.start_as_current_span("search_request") as span:
             # Set span attributes
             span.set_attribute("tenant_id", req.tenant_id)
@@ -496,19 +496,19 @@ class ProductionSearchService:
             span.set_attribute("query_length", len(req.query))
             span.set_attribute("plan_id", req.retrieval_plan_id)
             span.set_attribute("template_id", req.template_id)
-            
+
             start_time = time.time()
             cache_hit = "miss"
-            
+
             try:
                 # Step 1: Check answer cache (fastest path)
                 if req.enable_cache:
                     # TODO: Need citations hash, so check retrieval cache first
                     pass
-                
+
                 # Step 2: Retrieve with caching + authZ
                 evidence = self._retrieve_with_cache_and_authz(req, span)
-                
+
                 # Step 3: Assemble prompt
                 prompt_data = self.prompt_assembler.assemble(
                     query=req.query,
@@ -516,13 +516,13 @@ class ProductionSearchService:
                     template=PromptTemplate(req.template_id.split('_')[0].upper()),
                     max_context_tokens=4096
                 )
-                
+
                 # Step 4: Generate answer (with LLM)
                 answer = self._generate_with_timeout(prompt_data, span)
-                
+
                 # Step 5: Build response
                 total_ms = (time.time() - start_time) * 1000
-                
+
                 citations = [
                     Citation(
                         id=e.id,
@@ -533,7 +533,7 @@ class ProductionSearchService:
                     )
                     for e in evidence
                 ]
-                
+
                 telemetry = Telemetry(
                     plan_id=req.retrieval_plan_id,
                     template_id=req.template_id,
@@ -550,7 +550,7 @@ class ProductionSearchService:
                     tokens_used=prompt_data['token_count'],
                     cost_usd=prompt_data['token_count'] * 0.00001  # $0.01 per 1K tokens
                 )
-                
+
                 return SearchResponse(
                     answer=answer,
                     confidence="MEDIUM",  # TODO: Get from orchestrator
@@ -558,7 +558,7 @@ class ProductionSearchService:
                     telemetry=telemetry,
                     refusal=None
                 )
-            
+
             except Exception as e:
                 span.record_exception(e)
                 span.set_status(Status(StatusCode.ERROR))
@@ -567,14 +567,14 @@ class ProductionSearchService:
                     code=ErrorCode.INTERNAL_ERROR,
                     message=str(e)
                 )
-    
+
     def _retrieve_with_cache_and_authz(
         self,
         req: SearchRequest,
         span: trace.Span
     ) -> List[Evidence]:
         """Retrieve with caching + authZ filtering"""
-        
+
         # Check cache first
         if req.enable_cache:
             cached = self.cache.get_retrieval_result(
@@ -585,7 +585,7 @@ class ProductionSearchService:
             if cached:
                 span.set_attribute("cache_hit", "retrieval")
                 return cached
-        
+
         # Cache miss → retrieve with authZ
         with tracer.start_as_current_span("retrieve") as retrieve_span:
             # Get authZ filter
@@ -594,26 +594,26 @@ class ProductionSearchService:
                 req.authz_context
             )
             retrieve_span.set_attribute("authz_filter", json.dumps(authz_filter))
-            
+
             # TODO: Pass authz_filter to orchestrator
             # For now, retrieve without filter
             plan = RetrievalPlan(top_k=req.top_k)
             result = self.orchestrator.retrieve(req.query, plan)
-            
+
             # Post-retrieval sanitization (defense-in-depth)
             sanitized = self.authz.sanitize_results(
                 req.tenant_id,
                 req.authz_context,
                 result.evidence
             )
-            
+
             # Stamp provenance
             stamped = self.authz.stamp_provenance(
                 req.tenant_id,
                 req.user_id,
                 sanitized
             )
-            
+
             # Cache result
             if req.enable_cache:
                 self.cache.set_retrieval_result(
@@ -623,9 +623,9 @@ class ProductionSearchService:
                     stamped,
                     self.index_alias
                 )
-            
+
             return stamped
-    
+
     def _generate_with_timeout(
         self,
         prompt_data: Dict[str, Any],
@@ -635,12 +635,12 @@ class ProductionSearchService:
         with tracer.start_as_current_span("llm_generate") as llm_span:
             llm_span.set_attribute("token_count", prompt_data['token_count'])
             llm_span.set_attribute("template_id", prompt_data['template_id'])
-            
+
             # TODO: Implement timeout
             answer = self.llm_generate(prompt_data['prompt'])
-            
+
             return answer
-    
+
     def _calculate_hit_at_k(self, evidence: List[Evidence]) -> float:
         """Calculate hit@k metric (simplified)"""
         # TODO: Implement proper hit@k calculation

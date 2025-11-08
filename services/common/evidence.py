@@ -128,7 +128,7 @@ class Evidence:
 
         Returns:
             Evidence object
-            
+
         Raises:
             ValueError: If origin_tool missing, invalid, or URL is unsafe
         """
@@ -154,7 +154,7 @@ class Evidence:
                 f"Evidence.from_dict() requires 'origin_tool' field. "
                 f"This is critical for provenance tracking. Got: {list(data.keys())}"
             )
-        
+
         origin_tool = data['origin_tool']
         if isinstance(origin_tool, str):
             try:
@@ -164,7 +164,7 @@ class Evidence:
                     f"Invalid origin_tool value: '{origin_tool}'. "
                     f"Must be one of: {[e.value for e in OriginTool]}"
                 )
-        
+
         # SECURITY FIX: Validate URL to prevent XSS
         url = data.get('url')
         if url and not validate_url(url):
@@ -239,18 +239,18 @@ def extract_domain(url: str) -> Optional[str]:
 def validate_url(url: str) -> bool:
     """
     Validate URL to prevent XSS and other injection attacks.
-    
+
     Args:
         url: URL to validate
-        
+
     Returns:
         True if URL is safe, False otherwise
-        
+
     Security Checks:
     - Must start with http:// or https://
     - Blocks javascript:, data:, file:, vbscript: schemes
     - Blocks common XSS patterns
-    
+
     Examples:
         >>> validate_url("https://example.com")
         True
@@ -261,13 +261,13 @@ def validate_url(url: str) -> bool:
     """
     if not url or not isinstance(url, str):
         return False
-    
+
     url_lower = url.lower().strip()
-    
+
     # Must be http or https
     if not url_lower.startswith(('http://', 'https://')):
         return False
-    
+
     # Block dangerous schemes (even if embedded)
     dangerous_schemes = [
         'javascript:',
@@ -277,11 +277,11 @@ def validate_url(url: str) -> bool:
         'about:',
         'blob:',
     ]
-    
+
     for scheme in dangerous_schemes:
         if scheme in url_lower:
             return False
-    
+
     # Block common XSS patterns
     xss_patterns = [
         '<script',
@@ -291,11 +291,11 @@ def validate_url(url: str) -> bool:
         'javascript:',
         'eval(',
     ]
-    
+
     for pattern in xss_patterns:
         if pattern in url_lower:
             return False
-    
+
     return True
 
 

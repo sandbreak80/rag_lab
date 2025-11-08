@@ -1221,7 +1221,7 @@ def search_with_config():
 
         # Get all timings from TimingCollector
         all_timings = timer.get_timings()
-        
+
         # Merge timing data into perf_metrics for backwards compatibility
         perf_metrics.update({
             'query_expansion_ms': all_timings.get('query_expansion', 0),
@@ -1233,10 +1233,10 @@ def search_with_config():
             'reranking_ms': all_timings.get('reranking', 0),
             'total_latency_ms': all_timings.get('total', 0)
         })
-        
+
         # Add all raw timings for waterfall chart
         perf_metrics['timings'] = all_timings
-        
+
         print(f"⏱️  TOTAL SEARCH: {perf_metrics['total_latency_ms']:.0f}ms")
         print(timer.summary())
         print(f"✅ Returning {len(final_results)} results\n")

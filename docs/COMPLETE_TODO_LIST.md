@@ -1,8 +1,8 @@
 # 📋 **RAG LAB - COMPLETE TODO LIST**
 
-**Last Updated:** November 8, 2025  
-**Total Tasks:** 18  
-**Estimated Time:** 35-45 hours  
+**Last Updated:** November 8, 2025
+**Total Tasks:** 18
+**Estimated Time:** 35-45 hours
 **Current Status:** 77% foundation complete
 
 ---
@@ -35,8 +35,8 @@ This RAG Lab is designed for **hands-on learning** where each student gets their
 - ✅ TimingCollector (thread-safe performance instrumentation)
 - ✅ Acceptance Tests (10 tests covering security, performance, functional)
 
-**Quality Score:** 9.5/10  
-**Security Score:** 9.5/10  
+**Quality Score:** 9.5/10
+**Security Score:** 9.5/10
 **Test Coverage:** 85 tests passing
 
 ---
@@ -46,8 +46,8 @@ This RAG Lab is designed for **hands-on learning** where each student gets their
 **Goal:** Wire everything together, make it observable, ship MVP
 
 ### **Task 1.1: Wire RAG Orchestrator to API** ⏳
-**Priority:** CRITICAL  
-**Time:** 2-3 hours  
+**Priority:** CRITICAL
+**Time:** 2-3 hours
 **Files:** `services/search_api/app.py`, `services/search_api/routes/rag.py`, `services/search_api/types.py`
 
 **What to Build:**
@@ -72,8 +72,8 @@ curl -X POST localhost:8080/v1/rag/query \
 ---
 
 ### **Task 1.2: Redis Caching** ⏳
-**Priority:** HIGH  
-**Time:** 2-3 hours  
+**Priority:** HIGH
+**Time:** 2-3 hours
 **Files:** `services/common/cache.py`, `infra/redis/client.py`, `orchestrator.py` (modify)
 
 **What to Build:**
@@ -99,8 +99,8 @@ time curl -X POST localhost:8080/v1/rag/query -d '{"query":"test","tenant":"s1",
 ---
 
 ### **Task 1.3: OTEL Stage Spans** ⏳
-**Priority:** HIGH  
-**Time:** 2-3 hours  
+**Priority:** HIGH
+**Time:** 2-3 hours
 **Files:** `services/common/orchestrator.py`, `observability/otel.py`
 
 **What to Build:**
@@ -126,8 +126,8 @@ curl -X POST localhost:8080/v1/rag/query -d '{"query":"test","tenant":"s1","user
 ---
 
 ### **Task 1.4: Eval Harness CI Gate** ⏳
-**Priority:** MEDIUM  
-**Time:** 2-3 hours  
+**Priority:** MEDIUM
+**Time:** 2-3 hours
 **Files:** `eval/config.yaml`, `eval/cases/golden_set.json`, `.github/workflows/ci.yml`, `Makefile`
 
 **What to Build:**
@@ -150,8 +150,8 @@ cat artifacts/eval/latest.json | jq
 ---
 
 ### **Task 1.5: Docker Compose Stack** ⏳
-**Priority:** HIGH  
-**Time:** 1-2 hours  
+**Priority:** HIGH
+**Time:** 1-2 hours
 **Files:** `docker/docker-compose.yml`, `docker/Dockerfile.search-api`
 
 **What to Build:**
@@ -179,8 +179,8 @@ curl localhost:8080/health
 **Goal:** Add learning-critical features from enterprise best practices
 
 ### **Task 2.1: Structure-Aware Chunking** ⏳
-**Priority:** HIGH (Educational Value)  
-**Time:** 2-3 hours  
+**Priority:** HIGH (Educational Value)
+**Time:** 2-3 hours
 **Files:** `services/ingest/chunker.py` (create), integrate into ingest pipeline
 
 **What to Build:**
@@ -205,8 +205,8 @@ curl localhost:8080/health
 ---
 
 ### **Task 2.2: Query Understanding** ⏳
-**Priority:** MEDIUM (Educational Value)  
-**Time:** 2-3 hours  
+**Priority:** MEDIUM (Educational Value)
+**Time:** 2-3 hours
 **Files:** `services/common/query_understanding.py` (create), wire to orchestrator
 
 **What to Build:**
@@ -231,8 +231,8 @@ curl localhost:8080/health
 ---
 
 ### **Task 2.3: Extractive-First Prompts** ⏳
-**Priority:** HIGH (Educational Value)  
-**Time:** 1 hour  
+**Priority:** HIGH (Educational Value)
+**Time:** 1 hour
 **Files:** `services/common/prompt_assembler.py` (modify templates)
 
 **What to Build:**
@@ -257,8 +257,8 @@ curl localhost:8080/health
 ---
 
 ### **Task 2.4: Metadata Enrichment** ⏳
-**Priority:** MEDIUM (Educational Value)  
-**Time:** 1-2 hours  
+**Priority:** MEDIUM (Educational Value)
+**Time:** 1-2 hours
 **Files:** `services/common/evidence.py` (add fields), ingest pipeline
 
 **What to Build:**
@@ -283,8 +283,8 @@ curl localhost:8080/health
 ---
 
 ### **Task 2.5: Feedback Loop** ⏳
-**Priority:** HIGH (Educational Value)  
-**Time:** 2 hours  
+**Priority:** HIGH (Educational Value)
+**Time:** 2 hours
 **Files:** `services/search_api/routes/feedback.py` (create), UI buttons
 
 **What to Build:**
@@ -308,8 +308,8 @@ curl localhost:8080/health
 ---
 
 ### **Task 2.6: RetrievalPlan Registry** ⏳
-**Priority:** MEDIUM  
-**Time:** 2-3 hours  
+**Priority:** MEDIUM
+**Time:** 2-3 hours
 **Files:** `services/common/plans/registry.py`, `config/plans.yaml`
 
 **What to Build:**
@@ -332,8 +332,8 @@ curl localhost:8080/health
 ---
 
 ### **Task 2.7: OpenLLMetry Integration** ⏳
-**Priority:** MEDIUM  
-**Time:** 2-3 hours  
+**Priority:** MEDIUM
+**Time:** 2-3 hours
 **Files:** `observability/openllmetry.py`, wire to orchestrator
 
 **What to Build:**
@@ -356,8 +356,8 @@ curl localhost:8080/health
 ---
 
 ### **Task 2.8: Dashboards & Alerts** ⏳
-**Priority:** MEDIUM  
-**Time:** 2-3 hours  
+**Priority:** MEDIUM
+**Time:** 2-3 hours
 **Files:** `observability/grafana/dashboards/rag_core.json`, `observability/alerts/rag_core.yaml`
 
 **What to Build:**
@@ -390,8 +390,8 @@ curl localhost:8080/health
 **Goal:** Student-friendly features, not enterprise overhead
 
 ### **Task 3.1: Simple Student Auth** ⏳
-**Priority:** MEDIUM  
-**Time:** 2 hours  
+**Priority:** MEDIUM
+**Time:** 2 hours
 **Files:** `services/auth/simple_auth.py`, middleware
 
 **What to Build:**
@@ -410,8 +410,8 @@ curl localhost:8080/health
 ---
 
 ### **Task 3.2: Document Upload Interface** ⏳
-**Priority:** HIGH (Student UX)  
-**Time:** 2-3 hours  
+**Priority:** HIGH (Student UX)
+**Time:** 2-3 hours
 **Files:** `frontend/src/pages/Upload.tsx`, API endpoint
 
 **What to Build:**
@@ -430,8 +430,8 @@ curl localhost:8080/health
 ---
 
 ### **Task 3.3: Student Dashboard** ⏳
-**Priority:** MEDIUM (Student UX)  
-**Time:** 2-3 hours  
+**Priority:** MEDIUM (Student UX)
+**Time:** 2-3 hours
 **Files:** `frontend/src/pages/Dashboard.tsx`
 
 **What to Build:**
@@ -450,8 +450,8 @@ curl localhost:8080/health
 ---
 
 ### **Task 3.4: CI/CD Pipeline** ⏳
-**Priority:** LOW  
-**Time:** 2-3 hours  
+**Priority:** LOW
+**Time:** 2-3 hours
 **Files:** `.github/workflows/ci.yml`, `.github/workflows/cd.yml`
 
 **What to Build:**
@@ -469,8 +469,8 @@ curl localhost:8080/health
 ---
 
 ### **Task 3.5: Lab Guide & Exercises** ⏳
-**Priority:** HIGH (Educational)  
-**Time:** 3-4 hours  
+**Priority:** HIGH (Educational)
+**Time:** 3-4 hours
 **Files:** `docs/LAB_GUIDE.md`, `docs/EXERCISES.md`
 
 **What to Build:**

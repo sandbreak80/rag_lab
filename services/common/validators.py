@@ -52,13 +52,13 @@ class ProvenanceValidator:
 
         Args:
             strict_mode: If True, treat warnings as errors
-            
+
         Raises:
             TypeError: If strict_mode is not a boolean
         """
         if not isinstance(strict_mode, bool):
             raise TypeError(f"strict_mode must be bool, got {type(strict_mode).__name__}")
-        
+
         self.strict_mode = strict_mode
         self.violations: List[ProvenanceViolation] = []
 

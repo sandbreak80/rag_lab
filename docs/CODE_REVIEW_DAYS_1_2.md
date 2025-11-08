@@ -1,8 +1,8 @@
 # 🔍 Comprehensive Code Review: Provenance & Timing Infrastructure
 
-**Reviewer:** AI Code Analyst  
-**Date:** November 8, 2025  
-**Review Scope:** Days 1-2 (2,078 lines across 7 files)  
+**Reviewer:** AI Code Analyst
+**Date:** November 8, 2025
+**Review Scope:** Days 1-2 (2,078 lines across 7 files)
 **Review Type:** Security, Performance, Architecture, Quality
 
 ---
@@ -37,7 +37,7 @@ from types import MappingProxyType
 @dataclass(frozen=True)
 class Evidence:
     _metadata: Dict[str, Any] = field(default_factory=dict, repr=False)
-    
+
     @property
     def metadata(self) -> Dict[str, Any]:
         """Return immutable view of metadata"""
@@ -74,7 +74,7 @@ from dataclasses import dataclass, field
 class TimingCollector:
     timings: Dict[str, float] = field(default_factory=dict)
     _lock: threading.RLock = field(default_factory=threading.RLock, repr=False)
-    
+
     @contextmanager
     def measure(self, operation: str):
         start = time.time()
@@ -210,7 +210,7 @@ def __post_init__(self):
     if self.url:
         if not self.url.startswith(('http://', 'https://')):
             raise ValueError(f"Invalid URL scheme: {self.url}")
-        
+
         # Block javascript: and data: URLs
         if self.url.lower().startswith(('javascript:', 'data:')):
             raise ValueError(f"Blocked URL scheme: {self.url}")
@@ -241,7 +241,7 @@ def merge(self, other_timings: Dict[str, float]):
 def merge(self, other_timings: Dict[str, float], mode='replace'):
     """
     Merge timings from another source.
-    
+
     Args:
         other_timings: Timings to merge
         mode: 'replace' (default) or 'add' (for parallel operations)
@@ -302,7 +302,7 @@ fetched_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 class TimingCollector:
     timings: Dict[str, float] = field(default_factory=dict)
     _max_operations: int = 100
-    
+
     def record(self, operation: str, duration_ms: float):
         if len(self.timings) >= self._max_operations:
             logging.warning(f"TimingCollector at max capacity ({self._max_operations})")
@@ -325,7 +325,7 @@ def __init__(self, strict_mode: bool = True, max_violations: int = 100):
     self.violations: List[ProvenanceViolation] = []
     self.max_violations = max_violations
     self._violation_count = 0
-    
+
 def _add_violation(self, violation: ProvenanceViolation):
     self._violation_count += 1
     if len(self.violations) < self.max_violations:
@@ -489,25 +489,25 @@ def my_function():
 
 1. **Concurrent TimingCollector access** ❌
    - Need multi-threaded stress test
-   
+
 2. **Evidence with mutable metadata exploit** ❌
    - Test: `evidence.metadata['key'] = 'hacked'`
-   
+
 3. **from_dict with missing origin_tool** ❌
    - Test: `Evidence.from_dict({'id': '1', 'content': 'test'})`
-   
+
 4. **RRF with 10,000+ Evidence objects** ❌
    - Performance test needed
-   
+
 5. **ProvenanceValidator with all violations types** ❌
    - Test: Create evidence with every violation
-   
+
 6. **TimingCollector percentage breakdown with zero total** ❌
    - Test: Call `get_breakdown_percent()` immediately after init
-   
+
 7. **Evidence with XSS in URL** ❌
    - Test: `url='javascript:alert("XSS")'`
-   
+
 8. **Copy button on mobile/touch devices** ❌
    - Manual testing required
 
@@ -579,7 +579,7 @@ def my_function():
 
 1. **ProvenanceValidator is 250+ lines**
    - **Recommendation:** Split into separate validators per origin type
-   
+
 2. **Magic numbers in timing thresholds**
    - Example: `k=60` in RRF, `max_violations=100`
    - **Recommendation:** Move to constants or config
