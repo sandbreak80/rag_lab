@@ -25,6 +25,9 @@ from health import HealthCheck
 from evidence import Evidence, OriginTool, extract_domain, is_primary_source, parse_published_date
 from validators import ProvenanceValidator
 
+# Import timing instrumentation
+from timing import TimingCollector
+
 # Import BM25
 from rank_bm25 import BM25Okapi
 
@@ -88,11 +91,11 @@ def reciprocal_rank_fusion(rankings: List[List[Evidence]], k: int = 60) -> List[
     """
     Combine multiple rankings using Reciprocal Rank Fusion.
     CRITICAL: Preserves Evidence objects - does NOT create new dicts.
-    
+
     Args:
         rankings: List of ranking lists (Evidence objects)
         k: RRF constant (default 60)
-    
+
     Returns:
         Fused ranking of Evidence objects with updated scores
     """
@@ -104,7 +107,7 @@ def reciprocal_rank_fusion(rankings: List[List[Evidence]], k: int = 60) -> List[
             # Use Evidence ID as key
             evidence_id = evidence.id
             scores[evidence_id] += 1.0 / (k + rank + 1)
-            
+
             # Keep first occurrence (preserves provenance)
             if evidence_id not in evidence_map:
                 evidence_map[evidence_id] = evidence
@@ -959,20 +962,19 @@ def search_with_config():
 
         print(f"Config: QE={use_query_expansion}, BM25={use_bm25}, Hybrid={use_hybrid}, Graph={use_graph}, Rerank={use_reranking}, WebSearch={use_web_search}, K={top_k}")
 
-        # Performance tracking
+        # Performance tracking with TimingCollector
+        timer = TimingCollector()
         perf_metrics = {}
-        start_time = time.time()
 
         # Step 1: Query Expansion
         original_query = query
         if use_query_expansion and query_expander:
-            exp_start = time.time()
-            query = query_expander.expand_with_context(query)
-            perf_metrics['query_expansion_ms'] = round((time.time() - exp_start) * 1000, 2)
+            with timer.measure('query_expansion'):
+                query = query_expander.expand_with_context(query)
             perf_metrics['query_expanded'] = query != original_query
-            print(f"✓ Query Expansion: {perf_metrics['query_expansion_ms']}ms (expanded={perf_metrics['query_expanded']})")
+            print(f"✓ Query Expansion: {timer.timings['query_expansion']:.0f}ms (expanded={perf_metrics['query_expanded']})")
         else:
-            perf_metrics['query_expansion_ms'] = 0
+            timer.record('query_expansion', 0)
             perf_metrics['query_expanded'] = False
             print(f"⊘ Query Expansion: SKIPPED")
 
@@ -981,236 +983,228 @@ def search_with_config():
         bm25_results = []
 
         # Vector search (always do this as baseline)
-        vec_start = time.time()
-        vector_results = vector_search_internal(query, top_k * 2)
-        perf_metrics['vector_search_ms'] = round((time.time() - vec_start) * 1000, 2)
+        with timer.measure('vector_search'):
+            vector_results = vector_search_internal(query, top_k * 2)
         perf_metrics['vector_results_count'] = len(vector_results)
-        print(f"✓ Vector Search: {perf_metrics['vector_search_ms']}ms ({perf_metrics['vector_results_count']} results)")
+        print(f"✓ Vector Search: {timer.timings['vector_search']:.0f}ms ({perf_metrics['vector_results_count']} results)")
 
         # BM25 search (if enabled and index available)
         if use_bm25 and bm25_index:
-            bm25_start = time.time()
-            bm25_results = bm25_search_internal(query, top_k * 2)
-            perf_metrics['bm25_search_ms'] = round((time.time() - bm25_start) * 1000, 2)
+            with timer.measure('bm25_search'):
+                bm25_results = bm25_search_internal(query, top_k * 2)
             perf_metrics['bm25_results_count'] = len(bm25_results)
-            print(f"✓ BM25 Search: {perf_metrics['bm25_search_ms']}ms ({perf_metrics['bm25_results_count']} results)")
+            print(f"✓ BM25 Search: {timer.timings['bm25_search']:.0f}ms ({perf_metrics['bm25_results_count']} results)")
         else:
-            perf_metrics['bm25_search_ms'] = 0
+            timer.record('bm25_search', 0)
             perf_metrics['bm25_results_count'] = 0
 
         # Hybrid fusion
         if use_hybrid and bm25_results:
-            fusion_start = time.time()
-            fused = reciprocal_rank_fusion([vector_results, bm25_results])
-            perf_metrics['hybrid_fusion_ms'] = round((time.time() - fusion_start) * 1000, 2)
+            with timer.measure('hybrid_fusion'):
+                fused = reciprocal_rank_fusion([vector_results, bm25_results])
             perf_metrics['method'] = 'hybrid'
-            print(f"✓ Hybrid Fusion: {perf_metrics['hybrid_fusion_ms']}ms")
+            print(f"✓ Hybrid Fusion: {timer.timings['hybrid_fusion']:.0f}ms")
         else:
             fused = vector_results
-            perf_metrics['hybrid_fusion_ms'] = 0
+            timer.record('hybrid_fusion', 0)
             perf_metrics['method'] = 'vector_only'
 
         fused = fused[:top_k * 2]  # Keep extra for graph/reranking
 
         # Step 3: Knowledge Graph Enhancement
         if use_graph and fused:
-            graph_start = time.time()
-            kg_url = os.getenv('KNOWLEDGE_GRAPH_URL', 'http://knowledge-graph:8007')
-            print(f"🕸️  Calling knowledge graph: {kg_url}/search_related")
-            try:
-                related_docs = set()
-                for result in fused[:5]:
-                    doc_id = result.get('metadata', {}).get('file_name', '')
-                    if doc_id:
-                        response = requests.get(
-                            f"{kg_url}/related/{doc_id}",
-                            params={'limit': 5},
-                            timeout=5
-                        )
-                        if response.status_code == 200:
-                            related = response.json().get('related', [])
-                            related_docs.update(related)
+            with timer.measure('knowledge_graph'):
+                kg_url = os.getenv('KNOWLEDGE_GRAPH_URL', 'http://knowledge-graph:8007')
+                print(f"🕸️  Calling knowledge graph: {kg_url}/search_related")
+                try:
+                    related_docs = set()
+                    for result in fused[:5]:
+                        doc_id = result.get('metadata', {}).get('file_name', '')
+                        if doc_id:
+                            response = requests.get(
+                                f"{kg_url}/related/{doc_id}",
+                                params={'limit': 5},
+                                timeout=5
+                            )
+                            if response.status_code == 200:
+                                related = response.json().get('related', [])
+                                related_docs.update(related)
 
-                # Add related documents
-                existing_ids = {r.get('metadata', {}).get('file_name', '') for r in fused}
-                graph_added = 0
-                for doc_id in related_docs:
-                    if doc_id not in existing_ids:
-                        vector_db_url = os.getenv('VECTOR_DB_URL', 'http://vector-db:8005')
-                        response = requests.post(
-                            f"{vector_db_url}/search",
-                            json={'query': doc_id, 'limit': 1},
-                            timeout=5
-                        )
-                        if response.status_code == 200:
-                            results = response.json().get('results', [])
-                            if results:
-                                result = results[0]
-                                result['score'] = result.get('score', 0) * 0.5
-                                result['source'] = 'knowledge_graph'
-                                fused.append(result)
-                                graph_added += 1
+                    # Add related documents
+                    existing_ids = {r.get('metadata', {}).get('file_name', '') for r in fused}
+                    graph_added = 0
+                    for doc_id in related_docs:
+                        if doc_id not in existing_ids:
+                            vector_db_url = os.getenv('VECTOR_DB_URL', 'http://vector-db:8005')
+                            response = requests.post(
+                                f"{vector_db_url}/search",
+                                json={'query': doc_id, 'limit': 1},
+                                timeout=5
+                            )
+                            if response.status_code == 200:
+                                results = response.json().get('results', [])
+                                if results:
+                                    result = results[0]
+                                    result['score'] = result.get('score', 0) * 0.5
+                                    result['source'] = 'knowledge_graph'
+                                    fused.append(result)
+                                    graph_added += 1
 
-                perf_metrics['graph_expansion_ms'] = round((time.time() - graph_start) * 1000, 2)
-                perf_metrics['graph_docs_added'] = graph_added
-                print(f"✓ Knowledge Graph: {perf_metrics['graph_expansion_ms']}ms ({perf_metrics['graph_docs_added']} docs added)")
-            except Exception as e:
-                perf_metrics['graph_expansion_ms'] = 0
-                perf_metrics['graph_docs_added'] = 0
-                perf_metrics['graph_error'] = str(e)
+                    perf_metrics['graph_docs_added'] = graph_added
+                    print(f"✓ Knowledge Graph: {timer.timings['knowledge_graph']:.0f}ms ({perf_metrics['graph_docs_added']} docs added)")
+                except Exception as e:
+                    perf_metrics['graph_error'] = str(e)
+                    print(f"❌ Knowledge Graph Error: {e}")
         else:
-            perf_metrics['graph_expansion_ms'] = 0
+            timer.record('knowledge_graph', 0)
             perf_metrics['graph_docs_added'] = 0
             print(f"⊘ Knowledge Graph: SKIPPED")
 
         # Step 3.5: Web Search (if enabled) - Using Agentic Search
         if use_web_search:
-            web_start = time.time()
-            web_search_url = os.getenv('WEB_SEARCH_URL', 'http://web-search:8009')
-            web_docs_limit = config.get('web_search_docs', 5)
-            web_pages_per_doc = config.get('web_search_pages_per_doc', 1)
+            with timer.measure('web_search'):
+                web_search_url = os.getenv('WEB_SEARCH_URL', 'http://web-search:8009')
+                web_docs_limit = config.get('web_search_docs', 5)
+                web_pages_per_doc = config.get('web_search_pages_per_doc', 1)
 
-            # Determine if we should use agentic search (default: yes for complex queries)
-            use_agentic = config.get('use_agentic_web_search', True)
-            word_count = len(original_query.split())
+                # Determine if we should use agentic search (default: yes for complex queries)
+                use_agentic = config.get('use_agentic_web_search', True)
+                word_count = len(original_query.split())
 
-            try:
-                if use_agentic and word_count > 10:
-                    # 🤖 AGENTIC MODE: LLM-powered query generation + parallel search
-                    print(f"🤖 AGENTIC WEB SEARCH: {word_count}-word query")
+                try:
+                    if use_agentic and word_count > 10:
+                        # 🤖 AGENTIC MODE: LLM-powered query generation + parallel search
+                        print(f"🤖 AGENTIC WEB SEARCH: {word_count}-word query")
 
-                    # Determine number of queries based on complexity
-                    num_queries = 4 if word_count > 30 else 3
+                        # Determine number of queries based on complexity
+                        num_queries = 4 if word_count > 30 else 3
 
-                    response = requests.post(
-                        f"{web_search_url}/search_agentic",
-                        json={
-                            'query': original_query,
-                            'limit': web_docs_limit,
-                            'num_queries': num_queries
-                        },
-                        timeout=180
-                    )
+                        response = requests.post(
+                            f"{web_search_url}/search_agentic",
+                            json={
+                                'query': original_query,
+                                'limit': web_docs_limit,
+                                'num_queries': num_queries
+                            },
+                            timeout=180
+                        )
 
-                    if response.status_code == 200:
-                        web_data = response.json()
-                        web_results = web_data.get('results', [])
+                        if response.status_code == 200:
+                            web_data = response.json()
+                            web_results = web_data.get('results', [])
 
-                        # Track agentic search metadata
-                        perf_metrics['web_search_queries_generated'] = web_data.get('total_searches', num_queries)
-                        perf_metrics['web_search_dedup_rate'] = web_data.get('deduplication_rate', 0)
-                        perf_metrics['web_search_generated_queries'] = web_data.get('generated_queries', [])
+                            # Track agentic search metadata
+                            perf_metrics['web_search_queries_generated'] = web_data.get('total_searches', num_queries)
+                            perf_metrics['web_search_dedup_rate'] = web_data.get('deduplication_rate', 0)
+                            perf_metrics['web_search_generated_queries'] = web_data.get('generated_queries', [])
 
-                        # Quality filtering
-                        web_results = filter_web_results_by_quality(web_results)
+                            # Quality filtering
+                            web_results = filter_web_results_by_quality(web_results)
 
-                        print(f"✅ Agentic search: {len(web_results)} results ({perf_metrics.get('web_search_dedup_rate', 0):.1%} dedup)")
+                            print(f"✅ Agentic search: {len(web_results)} results ({perf_metrics.get('web_search_dedup_rate', 0):.1%} dedup)")
+                        else:
+                            print(f"⚠️  Agentic Web Search: HTTP {response.status_code}")
+                            web_results = []
+
                     else:
-                        print(f"⚠️  Agentic Web Search: HTTP {response.status_code}")
-                        web_results = []
+                        # 🔍 SIMPLE MODE: Direct search (fallback for simple queries)
+                        print(f"🔍 SIMPLE WEB SEARCH: {word_count}-word query")
 
-                else:
-                    # 🔍 SIMPLE MODE: Direct search (fallback for simple queries)
-                    print(f"🔍 SIMPLE WEB SEARCH: {word_count}-word query")
+                        perf_metrics['web_search_queries_generated'] = 1
 
-                    perf_metrics['web_search_queries_generated'] = 1
+                        response = requests.post(
+                            f"{web_search_url}/search",
+                            json={
+                                'query': original_query,
+                                'limit': web_docs_limit,
+                                'pages_per_result': web_pages_per_doc
+                            },
+                            timeout=180
+                        )
 
-                    response = requests.post(
-                        f"{web_search_url}/search",
-                        json={
-                            'query': original_query,
-                            'limit': web_docs_limit,
-                            'pages_per_result': web_pages_per_doc
-                        },
-                        timeout=180
-                    )
+                        if response.status_code == 200:
+                            web_data = response.json()
+                            web_results = web_data.get('results', [])
 
-                    if response.status_code == 200:
-                        web_data = response.json()
-                        web_results = web_data.get('results', [])
+                            # Quality filtering
+                            web_results = filter_web_results_by_quality(web_results)
+                        else:
+                            print(f"⚠️  Web Search: HTTP {response.status_code}")
+                            web_results = []
 
-                        # Quality filtering
-                        web_results = filter_web_results_by_quality(web_results)
-                    else:
-                        print(f"⚠️  Web Search: HTTP {response.status_code}")
-                        web_results = []
+                    # Convert web results to Evidence objects with WEB_SEARCH origin
+                    # Give web results competitive scores so they appear in top results
+                    for idx, web_result in enumerate(web_results):
+                        # Score decreases from 0.95 to 0.75
+                        web_score = 0.95 - (idx * 0.05)
 
-                # Convert web results to Evidence objects with WEB_SEARCH origin
-                # Give web results competitive scores so they appear in top results
-                for idx, web_result in enumerate(web_results):
-                    # Score decreases from 0.95 to 0.75
-                    web_score = 0.95 - (idx * 0.05)
-                    
-                    # Extract URL for domain and primary source detection
-                    url = web_result.get('url', '')
-                    
-                    # Create Evidence object with WEB_SEARCH origin
-                    evidence = Evidence(
-                        id=f"web-{hash(url)}",  # Unique ID based on URL
-                        content=web_result.get('content', web_result.get('snippet', '')),
-                        origin_tool=OriginTool.WEB_SEARCH,  # Set once - IMMUTABLE
-                        url=url,
-                        domain=extract_domain(url),
-                        title=web_result.get('title', 'Web Result'),
-                        published_at=parse_published_date(web_result.get('published')),
-                        is_primary=is_primary_source(url),
-                        score=web_score,
-                        metadata={
-                            'engine': web_result.get('engine', 'searxng'),
-                            'original_score': web_result.get('score', 0.0),
-                        }
-                    )
-                    fused.append(evidence)
+                        # Extract URL for domain and primary source detection
+                        url = web_result.get('url', '')
 
-                perf_metrics['web_search_ms'] = round((time.time() - web_start) * 1000, 2)
-                perf_metrics['web_results_count'] = len(web_results)
-                perf_metrics['web_search_success'] = True
-                print(f"✓ Web Search: {perf_metrics['web_search_ms']}ms ({perf_metrics['web_results_count']} results from {perf_metrics.get('web_search_queries_generated', 1)} queries)")
+                        # Create Evidence object with WEB_SEARCH origin
+                        evidence = Evidence(
+                            id=f"web-{hash(url)}",  # Unique ID based on URL
+                            content=web_result.get('content', web_result.get('snippet', '')),
+                            origin_tool=OriginTool.WEB_SEARCH,  # Set once - IMMUTABLE
+                            url=url,
+                            domain=extract_domain(url),
+                            title=web_result.get('title', 'Web Result'),
+                            published_at=parse_published_date(web_result.get('published')),
+                            is_primary=is_primary_source(url),
+                            score=web_score,
+                            metadata={
+                                'engine': web_result.get('engine', 'searxng'),
+                                'original_score': web_result.get('score', 0.0),
+                            }
+                        )
+                        fused.append(evidence)
 
-            except Exception as e:
-                perf_metrics['web_search_ms'] = 0
-                perf_metrics['web_results_count'] = 0
-                perf_metrics['web_search_success'] = False
-                perf_metrics['web_search_error'] = str(e)
-                print(f"❌ Web Search error: {e}")
+                    perf_metrics['web_results_count'] = len(web_results)
+                    perf_metrics['web_search_success'] = True
+                    print(f"✓ Web Search: {timer.timings['web_search']:.0f}ms ({perf_metrics['web_results_count']} results from {perf_metrics.get('web_search_queries_generated', 1)} queries)")
+
+                except Exception as e:
+                    perf_metrics['web_results_count'] = 0
+                    perf_metrics['web_search_success'] = False
+                    perf_metrics['web_search_error'] = str(e)
+                    print(f"❌ Web Search error: {e}")
         else:
-            perf_metrics['web_search_ms'] = 0
+            timer.record('web_search', 0)
             perf_metrics['web_results_count'] = 0
             perf_metrics['web_search_success'] = False
             print(f"⊘ Web Search: SKIPPED")
 
         # Step 4: LLM Re-ranking
         if use_reranking and fused:
-            rerank_start = time.time()
-            reranker_url = os.getenv('RERANKER_SERVICE_URL', 'http://reranker:8008')
-            print(f"🎯 Calling reranker: {reranker_url}/rerank")
-            try:
-                response = requests.post(
-                    f"{reranker_url}/rerank",
-                    json={
-                        'query': original_query,
-                        'results': fused,
-                        'limit': top_k
-                    },
-                    timeout=180
-                )
-                if response.status_code == 200:
-                    reranked_data = response.json()
-                    fused = reranked_data.get('results', fused)
-                    perf_metrics['reranking_ms'] = round((time.time() - rerank_start) * 1000, 2)
-                    perf_metrics['reranking_success'] = True
-                    print(f"✓ Reranking: {perf_metrics['reranking_ms']}ms (success={perf_metrics['reranking_success']})")
-                else:
-                    perf_metrics['reranking_ms'] = 0
+            with timer.measure('reranking'):
+                reranker_url = os.getenv('RERANKER_SERVICE_URL', 'http://reranker:8008')
+                print(f"🎯 Calling reranker: {reranker_url}/rerank")
+                try:
+                    response = requests.post(
+                        f"{reranker_url}/rerank",
+                        json={
+                            'query': original_query,
+                            'results': [r.to_dict() if isinstance(r, Evidence) else r for r in fused],
+                            'limit': top_k
+                        },
+                        timeout=180
+                    )
+                    if response.status_code == 200:
+                        reranked_data = response.json()
+                        # Reranker returns dicts, need to reconstruct Evidence objects
+                        # For now, just use the returned results as-is
+                        fused = reranked_data.get('results', fused)
+                        perf_metrics['reranking_success'] = True
+                        print(f"✓ Reranking: {timer.timings['reranking']:.0f}ms (success={perf_metrics['reranking_success']})")
+                    else:
+                        perf_metrics['reranking_success'] = False
+                        print(f"⚠️  Reranking: HTTP {response.status_code}")
+                except Exception as e:
                     perf_metrics['reranking_success'] = False
-                    print(f"⚠️  Reranking: HTTP {response.status_code}")
-            except Exception as e:
-                perf_metrics['reranking_ms'] = 0
-                perf_metrics['reranking_success'] = False
-                perf_metrics['reranking_error'] = str(e)
-                print(f"❌ Reranking error: {e}")
+                    perf_metrics['reranking_error'] = str(e)
+                    print(f"❌ Reranking error: {e}")
         else:
-            perf_metrics['reranking_ms'] = 0
+            timer.record('reranking', 0)
             perf_metrics['reranking_success'] = False
             print(f"⊘ Reranking: SKIPPED (enabled={use_reranking}, results={len(fused)})")
 
@@ -1225,9 +1219,26 @@ def search_with_config():
         if not is_valid:
             print(f"⚠️  Provenance validation warnings:\n{validator.get_summary()}")
 
-        # Total time
-        perf_metrics['total_latency_ms'] = round((time.time() - start_time) * 1000, 2)
-        print(f"⏱️  TOTAL SEARCH: {perf_metrics['total_latency_ms']}ms")
+        # Get all timings from TimingCollector
+        all_timings = timer.get_timings()
+        
+        # Merge timing data into perf_metrics for backwards compatibility
+        perf_metrics.update({
+            'query_expansion_ms': all_timings.get('query_expansion', 0),
+            'vector_search_ms': all_timings.get('vector_search', 0),
+            'bm25_search_ms': all_timings.get('bm25_search', 0),
+            'hybrid_fusion_ms': all_timings.get('hybrid_fusion', 0),
+            'graph_expansion_ms': all_timings.get('knowledge_graph', 0),
+            'web_search_ms': all_timings.get('web_search', 0),
+            'reranking_ms': all_timings.get('reranking', 0),
+            'total_latency_ms': all_timings.get('total', 0)
+        })
+        
+        # Add all raw timings for waterfall chart
+        perf_metrics['timings'] = all_timings
+        
+        print(f"⏱️  TOTAL SEARCH: {perf_metrics['total_latency_ms']:.0f}ms")
+        print(timer.summary())
         print(f"✅ Returning {len(final_results)} results\n")
 
         # Calculate source breakdown for logging
@@ -1238,16 +1249,7 @@ def search_with_config():
         print(f"📊 Source breakdown: {source_breakdown}")
 
         # Calculate breakdown percentages
-        total = perf_metrics['total_latency_ms']
-        if total > 0:
-            perf_metrics['breakdown_percent'] = {
-                'query_expansion': round((perf_metrics['query_expansion_ms'] / total) * 100, 1),
-                'vector_search': round((perf_metrics['vector_search_ms'] / total) * 100, 1),
-                'bm25_search': round((perf_metrics['bm25_search_ms'] / total) * 100, 1),
-                'hybrid_fusion': round((perf_metrics['hybrid_fusion_ms'] / total) * 100, 1),
-                'graph_expansion': round((perf_metrics['graph_expansion_ms'] / total) * 100, 1),
-                'reranking': round((perf_metrics['reranking_ms'] / total) * 100, 1)
-            }
+        perf_metrics['breakdown_percent'] = timer.get_breakdown_percent()
 
         return jsonify({
             'results': [e.to_dict() for e in final_results],  # Serialize Evidence to dict
