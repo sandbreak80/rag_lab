@@ -603,33 +603,54 @@ def query():
                 start_time=g.start_time
             )
 
-            # === RETRIEVAL PIPELINE WITH PROVENANCE ===
-
+            # === RETRIEVAL PIPELINE WITH PROVENANCE & OTEL SPANS ===
+            
             timings = {}
-
+            
             # Step 1: Vector search (sets origin_tool=RAG)
-            start = time.time()
-            internal_evidence = mock_vector_search(rag_req.query, k=10, ctx=orch_ctx)
-            timings['vector_search'] = (time.time() - start) * 1000
-
+            with tracer.start_as_current_span("retrieve_internal.vector") as span:
+                span.set_attribute("query_length", len(rag_req.query))
+                span.set_attribute("k", 10)
+                start = time.time()
+                internal_evidence = mock_vector_search(rag_req.query, k=10, ctx=orch_ctx)
+                timings['vector_search'] = (time.time() - start) * 1000
+                span.set_attribute("docs_retrieved", len(internal_evidence))
+                span.set_attribute("latency_ms", timings['vector_search'])
+            
             # Step 2: Web search (sets origin_tool=WEB_SEARCH)
-            start = time.time()
-            web_evidence = mock_web_search(rag_req.query, k=5, ctx=orch_ctx)
-            timings['web_search'] = (time.time() - start) * 1000
-
+            with tracer.start_as_current_span("retrieve_web.searxng") as span:
+                span.set_attribute("query_length", len(rag_req.query))
+                span.set_attribute("k", 5)
+                start = time.time()
+                web_evidence = mock_web_search(rag_req.query, k=5, ctx=orch_ctx)
+                timings['web_search'] = (time.time() - start) * 1000
+                span.set_attribute("docs_retrieved", len(web_evidence))
+                span.set_attribute("latency_ms", timings['web_search'])
+            
             # Step 3: Merge
             all_evidence = internal_evidence + web_evidence
-
+            
             # Step 4: Deduplication (preserves origin_tool)
-            start = time.time()
-            deduped_evidence, dedup_audit = deduplicate_evidence(all_evidence)
-            timings['dedup'] = (time.time() - start) * 1000
-
+            with tracer.start_as_current_span("dedup") as span:
+                start = time.time()
+                deduped_evidence, dedup_audit = deduplicate_evidence(all_evidence)
+                timings['dedup'] = (time.time() - start) * 1000
+                span.set_attribute("docs_input", len(all_evidence))
+                span.set_attribute("docs_output", len(deduped_evidence))
+                span.set_attribute("docs_dropped", len(all_evidence) - len(deduped_evidence))
+                span.set_attribute("latency_ms", timings['dedup'])
+            
             # Step 5: Domain filtering (preserves origin_tool)
-            domain_filter = create_default_filter()
-            start = time.time()
-            filtered_evidence, filter_audit = domain_filter.filter_evidence(deduped_evidence)
-            timings['domain_filter'] = (time.time() - start) * 1000
+            with tracer.start_as_current_span("domain_filter") as span:
+                domain_filter = create_default_filter()
+                start = time.time()
+                filtered_evidence, filter_audit = domain_filter.filter_evidence(deduped_evidence)
+                timings['domain_filter'] = (time.time() - start) * 1000
+                span.set_attribute("docs_input", len(deduped_evidence))
+                span.set_attribute("docs_output", len(filtered_evidence))
+                span.set_attribute("docs_dropped", len(deduped_evidence) - len(filtered_evidence))
+                span.set_attribute("domains_filtered", len(filter_audit))
+                span.set_attribute("latency_ms", timings['domain_filter'])
 
             # Step 6: Build Schema B (RetrievalLog)
             retrieval_log = build_retrieval_log(
@@ -661,13 +682,17 @@ def query():
             ]
 
             # Step 7: Evaluate recency gate (SERVER-SIDE freshness calculation)
-            recency_result = evaluate_recency_gate(
-                evidence_list=filtered_evidence[:10],
-                query=rag_req.query,
-                policy_requires_recency=rag_req.policy.requires_recency,
-                policy_min_primary_sources=rag_req.policy.min_primary_sources,
-                window_hours=48
-            )
+            with tracer.start_as_current_span("recency_gate") as span:
+                recency_result = evaluate_recency_gate(
+                    evidence_list=filtered_evidence[:10],
+                    query=rag_req.query,
+                    policy_requires_recency=rag_req.policy.requires_recency,
+                    policy_min_primary_sources=rag_req.policy.min_primary_sources,
+                    window_hours=48
+                )
+                span.set_attribute("passed", recency_result['passed'])
+                span.set_attribute("query_is_temporal", recency_result['query_is_temporal'])
+                span.set_attribute("primary_sources_within_window", recency_result['primary_sources_within_window'])
 
             # Update sources with freshness_hours (now computed server-side)
             for i, ev in enumerate(filtered_evidence[:10]):
@@ -685,11 +710,36 @@ def query():
                 primary_sources_within_window=recency_result['primary_sources_within_window']
             )
 
-            # If recency gate fails and query is temporal, return refusal
+            # Step 8: Synthesis (with LLM span attributes)
+            with tracer.start_as_current_span("synthesis_v1") as span:
+                # OpenLLMetry semantic attributes (no payloads)
+                span.set_attribute("llm.model.name", "llama2:13b")
+                span.set_attribute("llm.model.provider", "ollama")
+                span.set_attribute("llm.temperature", 0.7)
+                span.set_attribute("llm.max_tokens", 512)
+                
+                # Mock token counts (real implementation would use tokenizer)
+                prompt_tokens = len(rag_req.query.split()) * 1.3  # Rough estimate
+                completion_tokens = len(answer.split()) * 1.3 if answer else 0
+                
+                span.set_attribute("llm.tokens.input", int(prompt_tokens))
+                span.set_attribute("llm.tokens.output", int(completion_tokens))
+                span.set_attribute("llm.tokens.total", int(prompt_tokens + completion_tokens))
+                
+                # Mock cost (real implementation would calculate from pricing)
+                cost_per_1k = 0.0002  # Example: $0.20 per 1M tokens
+                total_cost = (prompt_tokens + completion_tokens) / 1000 * cost_per_1k
+                span.set_attribute("llm.cost.usd", round(total_cost, 6))
+                
+                timings['synthesis'] = 200.0  # Mock
+                span.set_attribute("latency_ms", timings['synthesis'])
+            
+            # Determine answer/refusal based on recency gate
             refusal = None
             answer = "Mock answer - wire real LLM"
             confidence = "MEDIUM"
-
+            
+            if not recency_result['passed'] and recency_result['query_is_temporal']:
             if not recency_result['passed'] and recency_result['query_is_temporal']:
                 refusal = (
                     f"Unable to provide a confident answer for this temporal query. "
@@ -729,7 +779,7 @@ def query():
                 ungrounded_claims=[],  # Would be populated by claim-citation analyzer
                 grounding_rate=1.0
             )
-            
+
             # Grade answer with A/B evaluator
             grader = ABGrader()
             grade_result = grader.grade(
@@ -745,7 +795,7 @@ def query():
                 budget_use=orch_ctx.budget_use,
                 budgets_applied=asdict(rag_req.budgets) if rag_req.budgets else {}
             )
-            
+
             # Build ABEvaluation artifact
             ab_eval = ABEvaluation(
                 trace_id=trace_id,
@@ -754,7 +804,7 @@ def query():
                 dimensions=grade_result['dimensions'],
                 overall_score=grade_result['overall_score']
             )
-            
+
             # Add dimension details to ab_eval if debug mode
             if rag_req.debug:
                 # Store dimension_scores in comparison field for debug visibility

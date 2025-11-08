@@ -37,7 +37,7 @@ class DimensionScore:
     passed: bool  # True if score >= threshold
     rationale: str
     threshold: float = 0.7
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             'dimension': self.dimension,
@@ -51,11 +51,11 @@ class DimensionScore:
 class ABGrader:
     """
     A/B Grader for RAG answers.
-    
+
     Evaluates on 7 dimensions and provides detailed rationales.
     Supports comparison between A and B settings.
     """
-    
+
     def __init__(self):
         self.dimension_weights = {
             'coverage': 1.0,
@@ -66,11 +66,11 @@ class ABGrader:
             'structure': 0.5,
             'conciseness': 0.5
         }
-    
+
     def grade_coverage(self, query: str, answer: str) -> DimensionScore:
         """
         Grade coverage: Does answer address all aspects of query?
-        
+
         Simple heuristic:
         - Check if answer length is reasonable
         - Check if answer is not just a refusal
@@ -83,7 +83,7 @@ class ABGrader:
                 passed=False,
                 rationale="Empty answer provides no coverage"
             )
-        
+
         # Check for refusal patterns
         refusal_patterns = [
             "unable to provide",
@@ -92,7 +92,7 @@ class ABGrader:
             "no confident answer"
         ]
         is_refusal = any(pattern in answer.lower() for pattern in refusal_patterns)
-        
+
         if is_refusal:
             return DimensionScore(
                 dimension='coverage',
@@ -100,7 +100,7 @@ class ABGrader:
                 passed=False,
                 rationale="Answer is a refusal, provides minimal coverage"
             )
-        
+
         # Simple heuristic: longer answers likely cover more
         # Target: 100-500 chars for good coverage
         answer_len = len(answer)
@@ -116,14 +116,14 @@ class ABGrader:
         else:
             score = 0.85
             rationale = f"Answer long ({answer_len} chars), may be verbose but covers topic"
-        
+
         return DimensionScore(
             dimension='coverage',
             score=score,
             passed=score >= 0.7,
             rationale=rationale
         )
-    
+
     def grade_grounding(
         self,
         answer: str,
@@ -132,7 +132,7 @@ class ABGrader:
     ) -> DimensionScore:
         """
         Grade grounding: Are claims backed by evidence?
-        
+
         Uses ungrounded_claims from EvidenceMap.
         """
         if not answer or len(answer.strip()) == 0:
@@ -142,9 +142,9 @@ class ABGrader:
                 passed=False,
                 rationale="Empty answer, no grounding to evaluate"
             )
-        
+
         num_ungrounded = len(ungrounded_claims)
-        
+
         if num_ungrounded == 0:
             return DimensionScore(
                 dimension='grounding',
@@ -161,7 +161,7 @@ class ABGrader:
         else:
             score = 0.2
             rationale = f"{num_ungrounded} ungrounded claims - significant hallucination risk"
-        
+
         return DimensionScore(
             dimension='grounding',
             score=score,
@@ -169,11 +169,11 @@ class ABGrader:
             rationale=rationale,
             threshold=0.9
         )
-    
+
     def grade_recency(self, recency_passed: bool, recency_notes: str) -> DimensionScore:
         """
         Grade recency: Are temporal claims supported by fresh sources?
-        
+
         Uses RecencyEvaluation result.
         """
         if recency_passed:
@@ -190,7 +190,7 @@ class ABGrader:
                 passed=False,
                 rationale=f"Recency check failed: {recency_notes}"
             )
-    
+
     def grade_retrieval_quality(
         self,
         total_retrieved: int,
@@ -199,7 +199,7 @@ class ABGrader:
     ) -> DimensionScore:
         """
         Grade retrieval quality: Are top-k results relevant?
-        
+
         Heuristics:
         - Dedup rate should be reasonable (<30%)
         - Should retrieve sufficient docs (≥5)
@@ -212,9 +212,9 @@ class ABGrader:
                 passed=False,
                 rationale="No results retrieved"
             )
-        
+
         dedup_rate = total_deduped / max(total_retrieved, 1)
-        
+
         # High dedup rate (>50%) suggests retrieval issues
         if dedup_rate > 0.5:
             score = 0.5
@@ -225,7 +225,7 @@ class ABGrader:
         else:
             score = 0.85
             rationale = f"Retrieved {total_retrieved} docs, deduped {total_deduped}, filtered {len(domains_filtered)} domains"
-        
+
         return DimensionScore(
             dimension='retrieval_quality',
             score=score,
@@ -233,7 +233,7 @@ class ABGrader:
             rationale=rationale,
             threshold=0.8
         )
-    
+
     def grade_decision_adherence(
         self,
         budget_use: Dict[str, int],
@@ -241,32 +241,32 @@ class ABGrader:
     ) -> DimensionScore:
         """
         Grade decision adherence: Did system follow policy/budgets?
-        
+
         Check if budget consumption is within limits.
         """
         violations = []
-        
+
         # Check web queries
         if 'max_web_queries' in budgets_applied:
             max_web = budgets_applied['max_web_queries']
             actual_web = budget_use.get('web_queries', 0)
             if actual_web > max_web:
                 violations.append(f"Exceeded web query budget: {actual_web}/{max_web}")
-        
+
         # Check internal queries
         if 'max_internal_queries' in budgets_applied:
             max_internal = budgets_applied['max_internal_queries']
             actual_internal = budget_use.get('internal_queries', 0)
             if actual_internal > max_internal:
                 violations.append(f"Exceeded internal query budget: {actual_internal}/{max_internal}")
-        
+
         if violations:
             score = 0.5
             rationale = f"Budget violations: {'; '.join(violations)}"
         else:
             score = 1.0
             rationale = "All budget constraints adhered to"
-        
+
         return DimensionScore(
             dimension='decision_adherence',
             score=score,
@@ -274,11 +274,11 @@ class ABGrader:
             rationale=rationale,
             threshold=0.95
         )
-    
+
     def grade_structure(self, answer: str) -> DimensionScore:
         """
         Grade structure: Is answer well-formatted?
-        
+
         Checks:
         - Not just a single run-on sentence
         - Has reasonable punctuation
@@ -291,11 +291,11 @@ class ABGrader:
                 passed=False,
                 rationale="Empty answer"
             )
-        
+
         # Count sentences (rough heuristic)
         sentence_endings = answer.count('.') + answer.count('!') + answer.count('?')
         words = len(answer.split())
-        
+
         if sentence_endings == 0 and words > 20:
             score = 0.5
             rationale = "Answer lacks sentence structure (run-on)"
@@ -305,7 +305,7 @@ class ABGrader:
         else:
             score = 0.9
             rationale = "Answer has good structure"
-        
+
         return DimensionScore(
             dimension='structure',
             score=score,
@@ -313,11 +313,11 @@ class ABGrader:
             rationale=rationale,
             threshold=0.8
         )
-    
+
     def grade_conciseness(self, answer: str, query: str) -> DimensionScore:
         """
         Grade conciseness: Is answer appropriately concise?
-        
+
         Balance between detail and brevity.
         """
         if not answer or len(answer.strip()) == 0:
@@ -327,9 +327,9 @@ class ABGrader:
                 passed=False,
                 rationale="Empty answer"
             )
-        
+
         answer_len = len(answer)
-        
+
         # Very long answers (>1000 chars) may be verbose
         if answer_len > 1000:
             score = 0.6
@@ -341,14 +341,14 @@ class ABGrader:
         else:
             score = 0.9
             rationale = f"Answer appropriately concise ({answer_len} chars)"
-        
+
         return DimensionScore(
             dimension='conciseness',
             score=score,
             passed=score >= 0.7,
             rationale=rationale
         )
-    
+
     def grade(
         self,
         query: str,
@@ -365,7 +365,7 @@ class ABGrader:
     ) -> Dict[str, Any]:
         """
         Grade answer on all 7 dimensions.
-        
+
         Returns:
             Dict with:
             - dimension_scores: List[DimensionScore]
@@ -382,9 +382,9 @@ class ABGrader:
         adherence = self.grade_decision_adherence(budget_use, budgets_applied)
         structure = self.grade_structure(answer)
         conciseness = self.grade_conciseness(answer, query)
-        
+
         dimension_scores = [coverage, grounding, recency, retrieval, adherence, structure, conciseness]
-        
+
         # Compute weighted average
         total_weight = sum(self.dimension_weights.values())
         weighted_sum = sum(
@@ -392,16 +392,16 @@ class ABGrader:
             for ds in dimension_scores
         )
         overall_score = weighted_sum / total_weight
-        
+
         # Categorize dimensions
         passed = [ds.dimension for ds in dimension_scores if ds.passed]
         failed = [ds.dimension for ds in dimension_scores if not ds.passed]
-        
+
         logger.info(
             f"A/B Grade: overall={overall_score:.3f}, "
             f"passed={len(passed)}/7, failed={failed}"
         )
-        
+
         return {
             'dimension_scores': dimension_scores,
             'dimensions': {ds.dimension: ds.score for ds in dimension_scores},
@@ -418,14 +418,14 @@ def compare_ab(
 ) -> Dict[str, Any]:
     """
     Compare A vs B with Δ(B-A) and 95% CI.
-    
+
     Uses bootstrap resampling to estimate confidence interval.
-    
+
     Args:
         eval_a: Evaluation result for setting A
         eval_b: Evaluation result for setting B
         bootstrap_samples: Number of bootstrap samples (default 1000)
-    
+
     Returns:
         Dict with:
         - delta_dimensions: Dict[str, float] (dimension -> Δ(B-A))
@@ -440,15 +440,15 @@ def compare_ab(
     for dim in eval_a['dimensions']:
         delta = eval_b['dimensions'][dim] - eval_a['dimensions'][dim]
         delta_dimensions[dim] = delta
-    
+
     delta_overall = eval_b['overall_score'] - eval_a['overall_score']
-    
+
     # Bootstrap CI (simplified - assumes normal distribution)
     # In production, use actual bootstrap resampling
     # For now, use a simple heuristic: CI ≈ Δ ± 0.05
     ci_lower = delta_overall - 0.05
     ci_upper = delta_overall + 0.05
-    
+
     # Determine winner
     if delta_overall > 0.02 and ci_lower > 0:
         winner = "B"
@@ -459,12 +459,12 @@ def compare_ab(
     else:
         winner = "tie"
         significant = False
-    
+
     logger.info(
         f"A/B Comparison: Δ(B-A)={delta_overall:.3f}, "
         f"CI=[{ci_lower:.3f}, {ci_upper:.3f}], winner={winner}"
     )
-    
+
     return {
         'delta_dimensions': delta_dimensions,
         'delta_overall': delta_overall,
