@@ -74,15 +74,15 @@ span.set_attribute("rag.abtest.bucket", ab_test_setting)
 
 ### P95 Latency by Intent
 ```promql
-histogram_quantile(0.95, 
+histogram_quantile(0.95,
   sum(rate(http_request_duration_seconds_bucket{rag_request_intent!=""}[5m])) by (le, rag_request_intent)
 )
 ```
 
 ### ACL Filter Rate
 ```promql
-sum(rate(rag_retrieve_acl_filtered_count_total[5m])) 
-/ 
+sum(rate(rag_retrieve_acl_filtered_count_total[5m]))
+/
 sum(rate(rag_retrieve_candidate_count_total[5m]))
 ```
 

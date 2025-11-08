@@ -216,7 +216,7 @@ scrape_configs:
 
 ---
 
-**Generated:** 2025-11-08  
-**Branch:** `otel`  
+**Generated:** 2025-11-08
+**Branch:** `otel`
 **Commit:** `c840a6d`
 

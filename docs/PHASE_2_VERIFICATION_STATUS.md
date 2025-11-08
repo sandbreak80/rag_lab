@@ -1,7 +1,7 @@
 # Phase 2: Verification & Hardening - Implementation Status
 
-**Date:** 2025-11-08  
-**Branch:** `otel`  
+**Date:** 2025-11-08
+**Branch:** `otel`
 **Status:** ✅ **COMPLETE - Infrastructure Ready**
 
 ---
@@ -189,15 +189,15 @@ make metrics
 
 ### P95 Latency by Intent
 ```promql
-histogram_quantile(0.95, 
+histogram_quantile(0.95,
   sum(rate(http_request_duration_seconds_bucket{rag_request_intent!=""}[5m])) by (le, rag_request_intent)
 )
 ```
 
 ### ACL Filter Rate
 ```promql
-sum(rate(rag_retrieve_acl_filtered_count_total[5m])) 
-/ 
+sum(rate(rag_retrieve_acl_filtered_count_total[5m]))
+/
 sum(rate(rag_retrieve_candidate_count_total[5m]))
 ```
 
@@ -393,19 +393,19 @@ evals/gqs_seed.csv (28,488 questions)
 
 ### Common Issues
 
-**Q: GQS seed has too many questions (28k+)**  
+**Q: GQS seed has too many questions (28k+)**
 **A:** This is expected. Run SME review pass to reduce to 150-200 curated questions. Focus on critical paths first.
 
-**Q: Eval harness fails with "Connection refused"**  
+**Q: Eval harness fails with "Connection refused"**
 **A:** Ensure RAG API is running: `docker compose up -d api-gateway`. Set `RAG_API=http://localhost:8080`.
 
-**Q: Metrics exporter shows no data**  
+**Q: Metrics exporter shows no data**
 **A:** Run eval at least once: `make eval`. The exporter reads from `evals/.last_summary.json`.
 
-**Q: Citation rate is low (<50%)**  
+**Q: Citation rate is low (<50%)**
 **A:** Check `evidence_map` field in API response. Verify Schema C is populated. May need to update mock retrievers.
 
-**Q: Freshness violations are high**  
+**Q: Freshness violations are high**
 **A:** Check ingestion lag. Verify `published_at` field is set on Evidence objects. Adjust `freshness_hours` in config.
 
 ---
@@ -420,8 +420,8 @@ Phase 2 Verification & Hardening infrastructure is **production-ready** and **fu
 
 ---
 
-**Generated:** 2025-11-08  
-**Author:** RAG Lab Development Team  
-**Branch:** `otel`  
+**Generated:** 2025-11-08
+**Author:** RAG Lab Development Team
+**Branch:** `otel`
 **Commit:** (pending)
 
