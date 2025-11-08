@@ -77,7 +77,7 @@ async def search_vector_real(
     Real vector search with ACL pre-filtering at index level.
 
     CRITICAL: ACL filter is applied BEFORE retrieval (not post-filter).
-    
+
     Flow:
     1. Get query embedding
     2. Search vector-db with embedding + ACL filter
@@ -87,22 +87,24 @@ async def search_vector_real(
         # Step 1: Get query embedding
         embed_response = requests.post(
             f"{embedding_url}/embed",
-            json={"texts": [query]},
+            json={"text": query},  # Note: singular 'text', not 'texts'
             timeout=3.0
         )
         embed_response.raise_for_status()
-        embeddings = embed_response.json()["embeddings"]
-        
+        embedding_data = embed_response.json()
+        # Wrap single embedding in a list for ChromaDB query format
+        embeddings = [embedding_data["embedding"]]
+
         # Step 2: Search vector database
         search_payload = {
             "query_embeddings": embeddings,
             "n_results": top_k * 2  # Over-fetch for ACL filtering
         }
-        
+
         # Add ACL metadata filters if available
         if hasattr(acl_predicate, 'to_filter'):
             search_payload["metadata_filters"] = acl_predicate.to_filter()
-        
+
         search_response = requests.post(
             f"{vector_db_url}/search",
             json=search_payload,
@@ -110,20 +112,20 @@ async def search_vector_real(
         )
         search_response.raise_for_status()
         raw_results = search_response.json()
-        
+
         # Step 3: Format results
         results = []
         ids = raw_results.get("ids", [[]])[0]
         documents = raw_results.get("documents", [[]])[0]
         distances = raw_results.get("distances", [[]])[0]
         metadatas = raw_results.get("metadatas", [[]])[0]
-        
+
         candidates_before_acl = len(ids)
-        
+
         for i in range(min(len(ids), top_k)):
             metadata = metadatas[i] if i < len(metadatas) else {}
             doc_content = documents[i] if i < len(documents) else ""
-            
+
             results.append(SearchResult(
                 doc_id=ids[i],
                 chunk_id=metadata.get("chunk_id", ids[i]),
