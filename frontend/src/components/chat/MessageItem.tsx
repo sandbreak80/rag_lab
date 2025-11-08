@@ -20,6 +20,7 @@ export function MessageItem({ message }: MessageItemProps) {
   const isUser = message.role === 'user';
   const [showPerformance, setShowPerformance] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [copiedMessage, setCopiedMessage] = useState(false);
 
   const hasPerformanceData = !isUser && message.metadata?.performance;
 
@@ -27,6 +28,12 @@ export function MessageItem({ message }: MessageItemProps) {
     navigator.clipboard.writeText(text);
     setCopiedCode(id);
     setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const copyMessageToClipboard = () => {
+    navigator.clipboard.writeText(message.content);
+    setCopiedMessage(true);
+    setTimeout(() => setCopiedMessage(false), 2000);
   };
 
   return (
@@ -39,12 +46,35 @@ export function MessageItem({ message }: MessageItemProps) {
 
       <div className={`flex-1 max-w-3xl ${isUser ? 'flex justify-end' : ''}`}>
         <div
-          className={`rounded-lg p-4 ${
+          className={`rounded-lg p-4 relative group ${
             isUser
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted'
           }`}
         >
+          {/* Copy Message Button */}
+          <button
+            onClick={copyMessageToClipboard}
+            className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded text-xs flex items-center gap-1 ${
+              isUser
+                ? 'bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground'
+                : 'bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200'
+            }`}
+            title="Copy message"
+          >
+            {copiedMessage ? (
+              <>
+                <Check className="h-3 w-3" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="h-3 w-3" />
+                Copy
+              </>
+            )}
+          </button>
+
           {/* Message content */}
           <div className={`prose max-w-none ${isUser ? 'prose-invert' : 'prose-slate dark:prose-invert'}`}>
             {isUser ? (
