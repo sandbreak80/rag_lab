@@ -1,8 +1,8 @@
 # 🚦 GO/NO-GO REPORT - otel Branch Testing
 
-**Date**: November 8, 2025  
-**Branch**: `otel`  
-**Tester**: Cursor AI  
+**Date**: November 8, 2025
+**Branch**: `otel`
+**Tester**: Cursor AI
 **Environment**: AWS EC2 g4dn.xlarge (Tesla T4)
 
 ---
@@ -11,8 +11,8 @@
 
 ### Bottom Line
 
-✅ **GO**: Merge Phase A (docs, evals, OTel infrastructure) **NOW** - safe, no breaking changes  
-❌ **NO-GO**: Enable `RAG_ENABLE_OBS=1` - **API contract not implemented yet**  
+✅ **GO**: Merge Phase A (docs, evals, OTel infrastructure) **NOW** - safe, no breaking changes
+❌ **NO-GO**: Enable `RAG_ENABLE_OBS=1` - **API contract not implemented yet**
 ❌ **NO-GO**: Disable mocks - **real backends not wired**
 
 ---
@@ -396,7 +396,7 @@ Choose one:
 
 **What's Missing**: The actual observability contract implementation (API endpoints, schema emission, feature integration)
 
-**Recommendation**: 
+**Recommendation**:
 1. **Merge Phase A immediately** - safe, valuable (GPU), no breaking changes
 2. **Budget 20-30 hours** for Phase B implementation
 3. **Run acceptance tests** after Phase B, before enabling features
