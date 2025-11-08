@@ -37,6 +37,7 @@ from services.common.domain_filter import create_default_filter, DomainFilterAud
 from services.common.mock_retrievers import mock_vector_search, mock_web_search, mock_research_agent_retrieve
 from services.common.schema_b_builder import build_retrieval_log, add_detailed_audit_to_retrieval_log
 from services.common.recency_gate import evaluate_recency_gate
+from services.common.ab_grader import ABGrader, compare_ab
 
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -667,12 +668,12 @@ def query():
                 policy_min_primary_sources=rag_req.policy.min_primary_sources,
                 window_hours=48
             )
-            
+
             # Update sources with freshness_hours (now computed server-side)
             for i, ev in enumerate(filtered_evidence[:10]):
                 if i < len(mock_sources):
                     mock_sources[i].freshness_hours = ev.metadata.get('freshness_hours')
-            
+
             # Build RecencyEvaluation artifact
             recency = RecencyEvaluation(
                 trace_id=trace_id,
@@ -683,12 +684,12 @@ def query():
                 freshness_histogram=recency_result['freshness_histogram'],
                 primary_sources_within_window=recency_result['primary_sources_within_window']
             )
-            
+
             # If recency gate fails and query is temporal, return refusal
             refusal = None
             answer = "Mock answer - wire real LLM"
             confidence = "MEDIUM"
-            
+
             if not recency_result['passed'] and recency_result['query_is_temporal']:
                 refusal = (
                     f"Unable to provide a confident answer for this temporal query. "
@@ -713,38 +714,55 @@ def query():
 
             # retrieval_log already built above with full audit trail
 
+            # Build EvidenceMap and A/B Evaluation
+            # For now, mock ungrounded claims - real implementation would analyze answer
             evidence_map = EvidenceMap(
                 trace_id=trace_id,
                 request_id=g.request_id,
-                claims=[{"claim_text": "RAG combines retrieval and generation", "citation_indices": [1], "confidence": 0.9}],
-                ungrounded_claims=[],
+                claims=[
+                    {
+                        "claim_text": "Mock claim from answer",
+                        "citation_indices": [1, 2],
+                        "confidence": 0.9
+                    }
+                ],
+                ungrounded_claims=[],  # Would be populated by claim-citation analyzer
                 grounding_rate=1.0
             )
-
-            chunking_report = ChunkingReport(
-                trace_id=trace_id,
-                request_id=g.request_id,
-                params={"target_size": 500, "min": 300, "max": 800, "overlap": 100},
-                samples=[],
-                timing_ms=10.0,
-                total_chunks=0
+            
+            # Grade answer with A/B evaluator
+            grader = ABGrader()
+            grade_result = grader.grade(
+                query=rag_req.query,
+                answer=answer,
+                evidence_list=filtered_evidence[:10],
+                ungrounded_claims=evidence_map.ungrounded_claims,
+                recency_passed=recency_result['passed'],
+                recency_notes=recency_result['notes'],
+                total_retrieved=retrieval_log.total_retrieved,
+                total_deduped=retrieval_log.total_deduped,
+                domains_filtered=retrieval_log.domains_filtered,
+                budget_use=orch_ctx.budget_use,
+                budgets_applied=asdict(rag_req.budgets) if rag_req.budgets else {}
             )
-
-            guardrail_report = GuardrailReport(
-                trace_id=trace_id,
-                request_id=g.request_id,
-                detections=[],
-                service_errors=[],
-                overall_safe=True
-            )
-
+            
+            # Build ABEvaluation artifact
             ab_eval = ABEvaluation(
                 trace_id=trace_id,
                 request_id=g.request_id,
                 setting=rag_req.ab_test.setting,
-                dimensions={"coverage": 0.8, "grounding": 0.9, "recency": 0.7, "retrieval_quality": 0.85},
-                overall_score=0.81
+                dimensions=grade_result['dimensions'],
+                overall_score=grade_result['overall_score']
             )
+            
+            # Add dimension details to ab_eval if debug mode
+            if rag_req.debug:
+                # Store dimension_scores in comparison field for debug visibility
+                ab_eval.comparison = {
+                    'dimension_details': [ds.to_dict() for ds in grade_result['dimension_scores']],
+                    'passed_dimensions': grade_result['passed_dimensions'],
+                    'failed_dimensions': grade_result['failed_dimensions']
+                }
 
             # Build response
             response = RagResponse(
