@@ -1,0 +1,29 @@
+faithfulness:
+  0: hallucinated or contradicts sources
+  1: partially aligned; critical claims uncited
+  2: fully grounded; all critical claims cited
+citation_precision:
+  0: spurious citations or wrong spans
+  1: mixed; some correct, some wrong
+  2: precise; minimal extraneous
+citation_recall:
+  0: key facts omitted; no supporting evidence
+  1: partial; some facts cited
+  2: comprehensive; all key facts cited
+correctness:
+  0: factually wrong or misleading
+  1: mostly correct with minor errors
+  2: factually accurate and complete
+completeness:
+  0: incomplete answer; missing key information
+  1: adequate but could be more thorough
+  2: comprehensive and complete
+style:
+  0: poorly structured or hard to understand
+  1: adequate structure and clarity
+  2: well-structured, clear, and professional
+usefulness:
+  0: not useful; does not address question
+  1: somewhat useful; partially addresses question
+  2: highly useful; fully addresses question
+

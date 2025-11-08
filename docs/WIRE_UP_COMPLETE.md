@@ -169,7 +169,7 @@ With the full contract, students can now:
 
 ---
 
-*Generated: 2025-11-08*  
-*Branch: `otel`*  
+*Generated: 2025-11-08*
+*Branch: `otel`*
 *Status: ✅ COMPLETE & PUSHED TO GITHUB*
 

@@ -1,0 +1,16 @@
+freshness_hours: 48
+min_primary_sources: 2
+contracts:
+  include_schemas: [B, C, F, G]
+  redact_payloads: true
+ab_eval:
+  dimensions: [faithfulness, correctness, completeness, citation_precision, citation_recall, style, usefulness]
+  confidence_interval: 0.95
+routes:
+  - intent: navigational
+    k: 20
+    rerank: false
+  - intent: definition
+    k: 60
+    rerank: true
+
