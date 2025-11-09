@@ -17,7 +17,7 @@ import time
 import os
 
 from .config import CONTRACT_VERSION, ENABLE_OBS, OTEL_COLLECTOR_URL
-from .routes.rag import router as rag_router
+from .routes import rag, documents, agent, health
 
 # Configure logging
 logging.basicConfig(
@@ -101,7 +101,7 @@ if ENABLE_OBS:
     FastAPIInstrumentor.instrument_app(app)
 
 # Include routers
-app.include_router(rag_router)
+app.include_router(rag.router)
 app.include_router(documents.router, tags=["documents"])
 app.include_router(agent.router, tags=["agent"])
 app.include_router(health.router, tags=["health"])
