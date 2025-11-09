@@ -50,7 +50,7 @@ if [ -f tests/e2e/playwright-report/results.xml ]; then
     echo "  - HTML: $(pwd)/tests/e2e/playwright-report/index.html"
     echo "  - JUnit: $(pwd)/tests/e2e/playwright-report/results.xml"
     echo ""
-    
+
     # Parse JUnit results
     if command -v xmllint &> /dev/null; then
         TOTAL=$(xmllint --xpath "string(//testsuite/@tests)" tests/e2e/playwright-report/results.xml 2>/dev/null || echo "?")
@@ -77,18 +77,18 @@ if [ $EXIT_CODE -ne 0 ]; then
     echo "❌ Tests FAILED - Dumping Logs"
     echo "=========================================="
     echo ""
-    
+
     echo "Frontend logs (last 200 lines):"
     docker logs rag-frontend --tail 200 2>&1 || echo "Failed to get frontend logs"
-    
+
     echo ""
     echo "RAG API v1 logs (last 200 lines):"
     docker logs rag-api-v1 --tail 200 2>&1 || echo "Failed to get api logs"
-    
+
     echo ""
     echo "Check for screenshots/videos in:"
     echo "  tests/e2e/test-results/"
-    
+
     if [ -d tests/e2e/test-results ]; then
         find tests/e2e/test-results -type f -name "*.png" -o -name "*.webm" 2>/dev/null | head -10
     fi
