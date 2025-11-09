@@ -234,7 +234,7 @@ server {
         proxy_http_version 1.1;
         proxy_read_timeout 75s;
         proxy_connect_timeout 5s;
-        
+
         # No caching for API responses
         add_header Cache-Control "no-store, no-cache, must-revalidate" always;
     }
@@ -306,7 +306,7 @@ async def liveness():
 async def readiness():
     """Returns 200 only when all dependencies are healthy (cached 10s)"""
     now = time.time()
-    
+
     # Return cached result if fresh
     if now - _last_ready_check["ts"] < 10:
         status = "ready" if _last_ready_check["ok"] else "degraded"
@@ -315,11 +315,11 @@ async def readiness():
             {"status": status, "dependencies": _last_ready_check["detail"]},
             status_code=status_code
         )
-    
+
     # Check all dependencies
     all_ok = True
     detail = {}
-    
+
     for name, url in DEPENDENCIES:
         try:
             status_code = await http_probe(url, timeout=2.0)
@@ -328,13 +328,13 @@ async def readiness():
         except Exception as e:
             all_ok = False
             detail[name] = f"ERR:{type(e).__name__}"
-    
+
     # Update cache
     _last_ready_check.update({"ts": now, "ok": all_ok, "detail": detail})
-    
+
     status = "ready" if all_ok else "degraded"
     status_code = 200 if all_ok else 503
-    
+
     return JSONResponse(
         {"status": status, "dependencies": detail},
         status_code=status_code
@@ -344,16 +344,16 @@ async def readiness():
 async def health():
     """Combined health check (always returns 200 but shows status)"""
     deps = {}
-    
+
     for name, url in DEPENDENCIES:
         try:
             status_code = await http_probe(url, timeout=2.0)
             deps[name] = status_code
         except Exception as e:
             deps[name] = f"ERR:{type(e).__name__}"
-    
+
     all_ok = all(isinstance(v, int) and 200 <= v < 400 for v in deps.values())
-    
+
     return {
         "status": "ok" if all_ok else "degraded",
         "dependencies": deps
@@ -367,11 +367,11 @@ if ! grep -q "from routes import health" services/api/app.py 2>/dev/null; then
     sed -i.bak '/from routes import rag/a\
 from routes import health
 ' services/api/app.py || true
-    
+
     sed -i.bak '/app.include_router(rag_router/a\
 app.include_router(health.router, tags=["health"])
 ' services/api/app.py || true
-    
+
     echo "✅ Updated services/api/app.py to include health router"
 fi
 

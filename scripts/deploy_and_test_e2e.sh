@@ -72,19 +72,19 @@ else
     # Fallback: run Playwright directly
     docker compose -f tests/e2e/docker-compose.e2e.yml up --build --abort-on-container-exit --exit-code-from e2e
     E2E_EXIT_CODE=$?
-    
+
     echo ""
     echo "=========================================="
     echo "E2E Test Results"
     echo "=========================================="
     echo "Exit Code: $E2E_EXIT_CODE"
-    
+
     if [ -d "tests/e2e/playwright-report" ]; then
         echo "✅ Reports generated in: tests/e2e/playwright-report/"
         echo "   - HTML: tests/e2e/playwright-report/index.html"
         echo "   - JUnit: tests/e2e/playwright-report/results.xml"
     fi
-    
+
     if [ "$E2E_EXIT_CODE" -eq 0 ]; then
         echo ""
         echo "✅ ALL E2E TESTS PASSED!"
@@ -93,7 +93,7 @@ else
         echo "❌ SOME E2E TESTS FAILED"
         echo "Check reports and logs for details"
     fi
-    
+
     exit "$E2E_EXIT_CODE"
 fi
 

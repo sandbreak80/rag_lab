@@ -102,6 +102,8 @@ if ENABLE_OBS:
 
 # Include routers
 app.include_router(rag_router)
+app.include_router(documents.router, tags=["documents"])
+app.include_router(agent.router, tags=["agent"])
 app.include_router(health.router, tags=["health"])
 
 # ============================================================================
