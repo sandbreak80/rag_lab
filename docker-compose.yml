@@ -823,10 +823,9 @@ services:
       timeout: 2s
       retries: 12
       start_period: 30s
-    # TEMP: Commenting out OTel dependency until collector config is fixed
-    # depends_on:
-    #   otel-collector:
-    #     condition: service_healthy
+    depends_on:
+      otel-collector:
+        condition: service_healthy
     restart: unless-stopped
 
   # React Frontend (Production Build with Nginx)
@@ -892,16 +891,19 @@ services:
       - "4317:4317"   # OTLP gRPC receiver
       - "4318:4318"   # OTLP HTTP receiver
       - "8889:8889"   # Prometheus metrics exporter
+      - "13133:13133" # Health check endpoint
     volumes:
       - ./config/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
     command: ["--config=/etc/otel-collector-config.yaml"]
+    environment:
+      - GODEBUG=http2server=0
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:13133/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+      test: ["CMD", "wget", "-qO-", "http://localhost:13133/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
   # Prometheus - Time Series Database & Metrics Collector
   prometheus:
