@@ -3,14 +3,14 @@ import { ExternalLink, Activity, Database, Cpu, Gauge } from 'lucide-react';
 import { TID } from '../../testids';
 
 export function MonitoringPage() {
-  // Get the current host for Grafana and Prometheus URLs
+  // Use nginx proxy paths for Grafana and Prometheus (same-origin, no CORS)
   const grafanaUrl = window.location.hostname === 'localhost'
     ? 'http://localhost:3001'
-    : `http://${window.location.hostname}:3001`;
+    : '/graf';
 
   const prometheusUrl = window.location.hostname === 'localhost'
     ? 'http://localhost:9090'
-    : `http://${window.location.hostname}:9090`;
+    : '/prom';
 
   const dashboardUrl = `${grafanaUrl}/d/rag-lab-overview/rag-lab-system-overview?orgId=1&refresh=10s&kiosk=tv`;
 

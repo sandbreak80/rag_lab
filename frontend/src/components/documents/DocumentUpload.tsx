@@ -54,11 +54,15 @@ export function DocumentUpload({ onUploadComplete }: DocumentUploadProps) {
         onUploadComplete?.();
       }, 2000);
     },
-    onError: (error: Error, file) => {
+    onError: (error: any, file) => {
+      const errorMsg = error?.response?.data?.message 
+        || error?.message 
+        || 'Upload failed';
+      
       setUploads((prev) =>
         prev.map((u) =>
           u.filename === file.name
-            ? { ...u, status: 'error', error: error.message }
+            ? { ...u, status: 'error', error: errorMsg }
             : u
         )
       );
