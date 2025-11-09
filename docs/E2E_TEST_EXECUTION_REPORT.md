@@ -1,8 +1,8 @@
 # E2E Test Suite Execution Report
 
-**Date**: November 9, 2025  
-**Branch**: `otel`  
-**Test Run**: First execution on AWS  
+**Date**: November 9, 2025
+**Branch**: `otel`
+**Test Run**: First execution on AWS
 **Status**: ⚠️ **PARTIAL PASS** (3/12 tests passing)
 
 ---
@@ -12,7 +12,7 @@
 ### ✅ PASSED (3/12)
 
 1. **00_home** - Homepage loads ✅
-2. **01_health /live** - Liveness endpoint ✅  
+2. **01_health /live** - Liveness endpoint ✅
 3. **07_nginx_rewrite** - API routing works ✅
 
 ### ❌ FAILED (9/12)
@@ -35,11 +35,11 @@
 
 ### Issue 1: OTel Collector Unavailable
 ```
-WARNING - Transient error StatusCode.UNAVAILABLE encountered while exporting 
+WARNING - Transient error StatusCode.UNAVAILABLE encountered while exporting
 traces to otel-collector:4318
 ```
 
-**Impact**: `/ready` endpoint returns 503, `/health` shows "degraded"  
+**Impact**: `/ready` endpoint returns 503, `/health` shows "degraded"
 **Fix**: Start OTel Collector service: `docker compose up -d otel-collector`
 
 ### Issue 2: UI Missing Components
@@ -49,8 +49,8 @@ Call log:
   - waiting for locator('button:has-text("Send")')
 ```
 
-**Impact**: All chat-related tests fail  
-**Root Cause**: Frontend UI hasn't been updated with expected elements  
+**Impact**: All chat-related tests fail
+**Root Cause**: Frontend UI hasn't been updated with expected elements
 **Fix Required**: Add UI components that E2E tests expect
 
 ---
@@ -120,20 +120,20 @@ tests/e2e/test-results/08_perf_smoke-chat-completes-under-3-5s-smoke--chromium/t
    ```
 
 2. **Update Frontend UI** (Required for tests to pass)
-   
+
    Add these elements to the chat interface:
-   
+
    **Chat Input & Send Button**:
    ```tsx
    <textarea data-testid="chat-input" />
    <button data-testid="chat-send">Send</button>
    ```
-   
+
    **Answer Display**:
    ```tsx
    <div data-testid="answer">{answer}</div>
    ```
-   
+
    **Optional (for full test coverage)**:
    ```tsx
    <div data-testid="provenance-badges">
@@ -281,8 +281,8 @@ Trace ID: 7758f91ee5614b7aac4085825ddc36db
 
 ---
 
-**Branch**: `otel`  
-**Commit**: `a7d32a7`  
+**Branch**: `otel`
+**Commit**: `a7d32a7`
 **Status**: ⚠️ **3/12 tests passing, frontend work required**
 
 **Recommendation**: Complete frontend UI updates, then re-run tests for full validation before merge.

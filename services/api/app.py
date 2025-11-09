@@ -102,6 +102,7 @@ if ENABLE_OBS:
 
 # Include routers
 app.include_router(rag_router)
+app.include_router(health.router, tags=["health"])
 
 # ============================================================================
 # Middleware - Request Logging & Metrics

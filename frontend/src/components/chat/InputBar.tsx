@@ -8,7 +8,6 @@ interface InputBarProps {
   disabled?: boolean;
 }
 
-// Baseline prompts for performance testing: Low, Medium, High complexity
 const BASELINE_PROMPTS = [
   {
     label: "🟢 Low",
@@ -30,7 +29,6 @@ const BASELINE_PROMPTS = [
 const DRAFT_KEY = 'chat_draft_message';
 
 export function InputBar({ onSend, disabled }: InputBarProps) {
-  // Load draft from localStorage on mount
   const [input, setInput] = useState(() => {
     try {
       return localStorage.getItem(DRAFT_KEY) || '';
@@ -40,7 +38,6 @@ export function InputBar({ onSend, disabled }: InputBarProps) {
   });
   const [showSuggestions, setShowSuggestions] = useState(true);
 
-  // Save draft to localStorage whenever it changes
   useEffect(() => {
     try {
       if (input) {
@@ -58,7 +55,6 @@ export function InputBar({ onSend, disabled }: InputBarProps) {
       onSend(input.trim());
       setInput('');
       setShowSuggestions(false);
-      // Clear draft from localStorage
       try {
         localStorage.removeItem(DRAFT_KEY);
       } catch (error) {
@@ -80,8 +76,7 @@ export function InputBar({ onSend, disabled }: InputBarProps) {
   };
 
   return (
-    <div className="space-y-3">
-      {/* Baseline Prompt Suggestions */}
+    <div className="space-y-3" data-testid="chat-form">
       {showSuggestions && input.length === 0 && (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">📊 Baseline Prompts for Performance Testing:</p>
@@ -105,9 +100,9 @@ export function InputBar({ onSend, disabled }: InputBarProps) {
         </div>
       )}
 
-      {/* Input area */}
       <div className="flex gap-2">
         <Textarea
+          data-testid="chat-input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -116,6 +111,7 @@ export function InputBar({ onSend, disabled }: InputBarProps) {
           disabled={disabled}
         />
         <Button
+          data-testid="chat-send"
           onClick={handleSend}
           disabled={!input.trim() || disabled}
           size="icon"
@@ -131,4 +127,3 @@ export function InputBar({ onSend, disabled }: InputBarProps) {
     </div>
   );
 }
-

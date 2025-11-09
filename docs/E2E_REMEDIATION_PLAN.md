@@ -1,7 +1,7 @@
 # E2E Test Remediation Implementation Plan
 
-**Status**: Step 1 Complete ✅, Steps 2-6 Ready for Implementation  
-**Branch**: `otel`  
+**Status**: Step 1 Complete ✅, Steps 2-6 Ready for Implementation
+**Branch**: `otel`
 **Goal**: Achieve 12/12 Playwright E2E tests passing
 
 ---
@@ -52,7 +52,7 @@ export default function Chat() {
   const [q, setQ] = useState("");
   const [resp, setResp] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  
+
   async function onSend() {
     setLoading(true);
     try {
@@ -62,7 +62,7 @@ export default function Chat() {
       setLoading(false);
     }
   }
-  
+
   return (
     <div data-testid="chat-root">
       {/* Chat Input */}
@@ -72,7 +72,7 @@ export default function Chat() {
         value={q}
         onChange={(e) => setQ(e.target.value)}
       />
-      
+
       {/* Send Button */}
       <button
         data-testid="chat-send"
@@ -128,10 +128,10 @@ export default function Chat() {
             {resp.citations.map((c: any, i: number) => (
               <li key={i} data-testid="citation-item">
                 <span data-testid="citation-origin">{c.origin_tool}</span> ·
-                <a 
-                  data-testid="citation-link" 
-                  href={c.source_uri} 
-                  target="_blank" 
+                <a
+                  data-testid="citation-link"
+                  href={c.source_uri}
+                  target="_blank"
                   rel="noreferrer"
                 >
                   {c.doc_id}@{c.version}#{c.chunk_id}
@@ -158,7 +158,7 @@ export default function Chat() {
           data-testid="json-inspector-download"
           onClick={() => {
             const blob = new Blob(
-              [JSON.stringify(resp.artifacts, null, 2)], 
+              [JSON.stringify(resp.artifacts, null, 2)],
               { type: "application/json" }
             );
             const url = URL.createObjectURL(blob);
@@ -266,10 +266,10 @@ def readiness():
         "ollama": http_probe("http://ollama:11434/api/tags"),
         "otel_collector": http_probe("http://otel-collector:13133/"),
     }
-    
+
     all_ok = all(deps.values())
     status_code = 200 if all_ok else 503
-    
+
     return JSONResponse(
         {
             "status": "ready" if all_ok else "degraded",
@@ -287,9 +287,9 @@ def health():
         "ollama": http_probe("http://ollama:11434/api/tags"),
         "otel_collector": http_probe("http://otel-collector:13133/"),
     }
-    
+
     all_ok = all(deps.values())
-    
+
     return {
         "status": "ok" if all_ok else "degraded",
         "dependencies": deps
