@@ -82,17 +82,27 @@ class ApiClient {
     // Transform new API response to match old format
     return {
       answer: response.data.answer,
-      sources: response.data.citations.map((c: any) => ({
-        content: c.content || '',
-        document_id: c.doc_id || c.document_id,
-        score: 1.0,
+      sources: (response.data.citations || []).map((c: any, idx: number) => ({
+        file_name: c.doc_id || `Document ${idx + 1}`,
+        chunk_text: c.content || `Citation from ${c.doc_id || c.source_uri || 'unknown source'}`,
+        score: c.score || 0.95, // Mock score if not provided
+        source: c.origin_tool as 'rag' | 'web_search' || 'rag',
         metadata: {
-          version: c.version,
-          chunk_id: c.chunk_id,
-          source_uri: c.source_uri,
+          tags: c.tags || [],
+          url: c.source_uri,
+          title: c.doc_id,
         },
       })),
-      metrics: response.data.metrics,
+      metrics: {
+        // Map API metrics to expected format
+        total_latency_ms: response.data.metrics?.latency_ms || 0,
+        llm_tokens_generated: response.data.metrics?.tokens_out || 0,
+        llm_tokens_prompt: response.data.metrics?.tokens_in || 0,
+        // Add stage timings if available (from artifacts)
+        vector_search_ms: response.data.artifacts?.retrieval_log?.timing_ms || 0,
+        reranking_ms: response.data.artifacts?.reranking_ms || 0,
+        llm_generation_ms: response.data.metrics?.latency_ms || 0,
+      },
     };
   }
 
