@@ -40,10 +40,8 @@ async def http_probe(url: str, timeout: float = 2.0) -> int:
     except Exception:
         return 0
 
-@router.get("/live")
-async def liveness():
-    """Always returns 200 if process is running"""
-    return {"status": "alive"}
+# NOTE: /live endpoint is defined in app.py with full details (service, version)
+# This avoids duplication and ensures consistent response format
 
 @router.get("/ready")
 async def readiness():
