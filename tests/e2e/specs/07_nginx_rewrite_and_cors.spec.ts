@@ -7,7 +7,7 @@ test('nginx /api rewrite works (no CORS)', async ({ request, baseURL }) => {
       'Content-Type': 'application/json'
     }
   });
-  
+
   expect(r.status()).toBe(200);
   const json = await r.json();
   expect(json).toHaveProperty('answer');
@@ -17,29 +17,29 @@ test('nginx /api rewrite works (no CORS)', async ({ request, baseURL }) => {
 
 test('no CORS errors in browser console', async ({ page, baseURL }) => {
   const consoleErrors: string[] = [];
-  
+
   page.on('console', msg => {
     if (msg.type() === 'error') {
       consoleErrors.push(msg.text());
     }
   });
-  
+
   await page.goto(baseURL!);
   await page.waitForLoadState('networkidle');
-  
+
   // Submit a query to trigger API call
   const input = page.locator('textarea, [data-testid="chat-input"], input[type="text"]').first();
   await input.fill('CORS test query');
-  
+
   const sendBtn = page.locator('button:has-text("Send"), [data-testid="chat-send"], button[type="submit"]').first();
   await sendBtn.click();
-  
+
   await page.waitForTimeout(3000);
-  
+
   // Check for CORS errors
   const corsErrors = consoleErrors.filter(err => err.toLowerCase().includes('cors'));
   expect(corsErrors.length).toBe(0);
-  
+
   if (corsErrors.length > 0) {
     console.log('❌ CORS errors found:', corsErrors);
   } else {

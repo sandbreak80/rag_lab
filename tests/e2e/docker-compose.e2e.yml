@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.48.0-jammy
+    container_name: rag-e2e-tests
+    working_dir: /workspace/tests/e2e
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        echo "Installing dependencies..."
+        npm install
+        echo "Installing Playwright browsers..."
+        npx playwright install --with-deps chromium
+        echo "Running E2E test suite..."
+        npx playwright test --reporter=list,html,junit
+        EXIT_CODE=$?
+        echo ""
+        echo "=========================================="
+        echo "E2E Test Suite Complete"
+        echo "=========================================="
+        exit $EXIT_CODE
+    environment:
+      BASE_URL: http://frontend:3000
+      CI: "true"
+      PLAYWRIGHT_HTML_REPORT: playwright-report
+      PLAYWRIGHT_JUNIT_OUTPUT_NAME: playwright-report/results.xml
+    volumes:
+      - ../../:/workspace
+    networks:
+      - rag_rag-network
+    profiles:
+      - e2e-testing
+
+networks:
+  rag_rag-network:
+    external: true
+

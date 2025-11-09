@@ -115,7 +115,7 @@ Add to GitHub Actions:
 ```yaml
 - name: Run E2E Tests
   run: bash scripts/run_e2e.sh
-  
+
 - name: Upload Test Results
   if: always()
   uses: actions/upload-artifact@v3
