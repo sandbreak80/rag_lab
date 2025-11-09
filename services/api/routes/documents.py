@@ -15,12 +15,15 @@ async def upload_document(file: UploadFile = File(...)):
     Currently returns a stub response. Wire to ingestion queue when ready.
     """
     try:
-        # Validate file type
-        allowed_types = ['text/plain', 'text/markdown', 'application/pdf', 
-                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+        # Validate file type by extension (more reliable than MIME type)
+        allowed_extensions = ['.txt', '.md', '.pdf', '.docx', '.doc', '.pptx', '.xlsx', '.rtf']
+        file_ext = file.filename.lower()[file.filename.rfind('.'):] if '.' in file.filename else ''
         
-        if file.content_type not in allowed_types:
-            raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
+        if file_ext not in allowed_extensions:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Unsupported file type. Allowed: {', '.join(allowed_extensions)}"
+            )
         
         # Validate file size (50MB max)
         contents = await file.read()
@@ -28,7 +31,7 @@ async def upload_document(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="File too large (max 50MB)")
         
         # TODO: Wire to ingestion service/queue
-        logger.info(f"Document upload: {file.filename} ({len(contents)} bytes)")
+        logger.info(f"Document upload: {file.filename} ({len(contents)} bytes, type: {file.content_type})")
         
         return JSONResponse({
             "status": "queued",
