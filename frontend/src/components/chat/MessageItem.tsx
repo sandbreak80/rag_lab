@@ -11,6 +11,7 @@ import { WaterfallChart } from '../metrics/WaterfallChart';
 import { SecurityStatus } from '../security/SecurityStatus';
 import { formatDate } from '../../utils/formatting';
 import { User, Bot, BarChart3, Copy, Check } from 'lucide-react';
+import { TID } from '../../testids';
 
 interface MessageItemProps {
   message: ChatMessage;
@@ -51,6 +52,8 @@ export function MessageItem({ message }: MessageItemProps) {
               ? 'bg-primary text-primary-foreground'
               : 'bg-muted'
           }`}
+          data-testid={!isUser ? TID.Chat.Answer : undefined}
+          aria-live={!isUser ? 'polite' : undefined}
         >
           {/* Copy Message Button */}
           <button
@@ -218,13 +221,15 @@ export function MessageItem({ message }: MessageItemProps) {
 
         {/* Sources */}
         {message.sources && message.sources.length > 0 && (
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 space-y-2" data-testid={TID.Chat.Sources}>
             <h4 className="text-sm font-medium text-muted-foreground">
               Sources ({message.sources.length})
             </h4>
             <div className="grid gap-2">
               {message.sources.map((source, index) => (
-                <SourceCard key={index} source={source} index={index + 1} />
+                <div key={index} data-testid={TID.Chat.SourceItem(index)}>
+                  <SourceCard source={source} index={index + 1} />
+                </div>
               ))}
             </div>
           </div>
@@ -271,7 +276,7 @@ export function MessageItem({ message }: MessageItemProps) {
 
         {/* Performance Waterfall */}
         {hasPerformanceData && (
-          <div className="mt-4 border border-border rounded-lg bg-background/50 overflow-hidden">
+          <div className="mt-4 border border-border rounded-lg bg-background/50 overflow-hidden" data-testid={TID.Chat.PerfBlock}>
             <button
               onClick={() => setShowPerformance(!showPerformance)}
               className="w-full px-4 py-2 flex items-center justify-between hover:bg-muted/50 transition-colors"

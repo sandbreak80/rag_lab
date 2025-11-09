@@ -7,6 +7,7 @@ import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Upload, File, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { formatBytes } from '../../utils/formatting';
+import { TID } from '../../testids';
 
 const ALLOWED_TYPES = [
   'application/pdf',
@@ -96,9 +97,10 @@ export function DocumentUpload({ onUploadComplete }: DocumentUploadProps) {
         className={`cursor-pointer transition-colors ${
           isDragActive ? 'border-primary bg-primary/5' : 'border-dashed'
         }`}
+        data-testid={TID.Upload.Zone}
       >
         <CardContent className="p-8">
-          <input {...getInputProps()} />
+          <input {...getInputProps()} data-testid={TID.Upload.Input} />
           <div className="flex flex-col items-center text-center">
             <Upload
               className={`h-12 w-12 mb-4 ${
@@ -126,10 +128,10 @@ export function DocumentUpload({ onUploadComplete }: DocumentUploadProps) {
 
       {/* Upload progress */}
       {uploads.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-2" data-testid={TID.Upload.List}>
           <h3 className="text-sm font-medium">Uploading files</h3>
           {uploads.map((upload) => (
-            <Card key={upload.filename}>
+            <Card key={upload.filename} data-testid={TID.Upload.Item(upload.filename)}>
               <CardContent className="p-3">
                 <div className="flex items-center gap-3">
                   <File className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
@@ -171,7 +173,7 @@ export function DocumentUpload({ onUploadComplete }: DocumentUploadProps) {
                       {upload.status === 'error' && (
                         <>
                           <XCircle className="h-4 w-4 text-destructive" />
-                          <span className="text-xs text-destructive">
+                          <span className="text-xs text-destructive" data-testid={TID.Upload.Error}>
                             {upload.error || 'Upload failed'}
                           </span>
                         </>

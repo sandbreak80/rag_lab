@@ -1,5 +1,6 @@
 import React from 'react';
 import { Activity, Coins, Zap } from 'lucide-react';
+import { TID } from '../testids';
 
 interface MetricsRowProps {
   traceId: string;
@@ -23,7 +24,7 @@ export const MetricsRow: React.FC<MetricsRowProps> = ({
   const traceUrl = `${grafanaUrl}/explore?left={"queries":[{"expr":"${traceId}"}]}`;
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-2 text-xs text-gray-600">
+    <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-2 text-xs text-gray-600" data-testid={TID.Metrics.Panel}>
       {/* Trace ID */}
       <a
         href={traceUrl}
@@ -31,24 +32,25 @@ export const MetricsRow: React.FC<MetricsRowProps> = ({
         rel="noopener noreferrer"
         className="flex items-center gap-1 hover:text-blue-600"
         title="View trace in Grafana"
+        data-testid={TID.Metrics.TraceId}
       >
         <Activity className="h-3.5 w-3.5" />
         <span className="font-mono">{traceId.slice(0, 8)}...</span>
       </a>
 
       {/* Latency */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1" data-testid={TID.Metrics.Latency}>
         <Zap className="h-3.5 w-3.5" />
         <span>{latencyMs.toFixed(0)}ms</span>
       </div>
 
       {/* Tokens */}
-      <div>
+      <div data-testid={TID.Metrics.Tokens}>
         <span className="text-gray-400">Tokens:</span> {tokensIn}→{tokensOut}
       </div>
 
       {/* Cost */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1" data-testid={TID.Metrics.Cost}>
         <Coins className="h-3.5 w-3.5" />
         <span>${costUsd.toFixed(6)}</span>
       </div>

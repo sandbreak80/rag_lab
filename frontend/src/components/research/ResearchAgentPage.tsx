@@ -6,6 +6,7 @@ import { Slider } from '../ui/slider';
 import { Badge } from '../ui/badge';
 import { Play, RefreshCw, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '../ui/toast';
+import { TID } from '../../testids';
 
 interface ResearchAgentStats {
   active_sources: number;
@@ -65,7 +66,7 @@ export function ResearchAgentPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid={TID.Research.Panel}>
       {/* Header Card */}
       <Card className="border-blue-500/50 bg-blue-500/5">
         <CardHeader>
@@ -81,7 +82,7 @@ export function ResearchAgentPage() {
 
       {/* Current Status */}
       {stats && (
-        <Card>
+        <Card data-testid={TID.Research.Status}>
           <CardHeader>
             <CardTitle>Current Status</CardTitle>
           </CardHeader>
@@ -186,6 +187,7 @@ export function ResearchAgentPage() {
             disabled={triggerFetch.isPending}
             className="w-full"
             size="lg"
+            data-testid={TID.Research.Run}
           >
             {triggerFetch.isPending ? (
               <>

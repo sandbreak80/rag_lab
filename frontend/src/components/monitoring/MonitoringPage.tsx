@@ -1,5 +1,6 @@
 import React from 'react';
 import { ExternalLink, Activity, Database, Cpu, Gauge } from 'lucide-react';
+import { TID } from '../../testids';
 
 export function MonitoringPage() {
   // Get the current host for Grafana and Prometheus URLs
@@ -50,8 +51,8 @@ export function MonitoringPage() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-4 gap-4 mt-6">
-          <div className="bg-background border rounded-lg p-4">
+        <div className="grid grid-cols-4 gap-4 mt-6" data-testid={TID.Monitoring.Panel}>
+          <div className="bg-background border rounded-lg p-4" data-testid={TID.Monitoring.CpuChart}>
             <div className="flex items-center gap-3">
               <Cpu className="h-8 w-8 text-blue-500" />
               <div>
@@ -61,7 +62,7 @@ export function MonitoringPage() {
             </div>
           </div>
 
-          <div className="bg-background border rounded-lg p-4">
+          <div className="bg-background border rounded-lg p-4" data-testid={TID.Monitoring.GpuChart}>
             <div className="flex items-center gap-3">
               <Gauge className="h-8 w-8 text-green-500" />
               <div>
@@ -71,7 +72,7 @@ export function MonitoringPage() {
             </div>
           </div>
 
-          <div className="bg-background border rounded-lg p-4">
+          <div className="bg-background border rounded-lg p-4" data-testid={TID.Monitoring.HealthChart}>
             <div className="flex items-center gap-3">
               <Activity className="h-8 w-8 text-purple-500" />
               <div>
