@@ -78,8 +78,10 @@ def extract_citations(answer: str, results: list) -> list[dict]:
                 "version": result.metadata.get("version", "1.0"),
                 "chunk_id": result.chunk_id,
                 "char_range": [0, len(result.content)],  # Full chunk for now
+                "content": result.content,  # Add content field for frontend display
                 "source_uri": result.metadata.get("source_uri", ""),
-                "origin_tool": result.origin_tool
+                "origin_tool": result.origin_tool,
+                "score": getattr(result, 'score', 0.95)  # Include score if available
             })
 
     return citations
