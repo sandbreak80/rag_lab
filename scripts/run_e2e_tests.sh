@@ -59,20 +59,20 @@ if [ -d "tests/e2e/playwright-report" ]; then
     echo "   - HTML: tests/e2e/playwright-report/index.html"
     echo "   - JUnit: tests/e2e/playwright-report/results.xml"
     echo ""
-    
+
     # Count tests
     if [ -f "tests/e2e/playwright-report/results.xml" ]; then
         TOTAL=$(grep -oP 'tests="\K[0-9]+' tests/e2e/playwright-report/results.xml 2>/dev/null || echo "0")
         FAILURES=$(grep -oP 'failures="\K[0-9]+' tests/e2e/playwright-report/results.xml 2>/dev/null || echo "0")
         ERRORS=$(grep -oP 'errors="\K[0-9]+' tests/e2e/playwright-report/results.xml 2>/dev/null || echo "0")
-        
+
         echo "Test Summary:"
         echo "  Total: $TOTAL"
         echo "  Failures: $FAILURES"
         echo "  Errors: $ERRORS"
         echo ""
     fi
-    
+
     echo "To view HTML report:"
     echo "  python3 -m http.server -d tests/e2e/playwright-report 8888 &"
     echo "  Then open: http://16.146.148.184:8888/"

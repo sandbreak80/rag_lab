@@ -19,11 +19,53 @@ import os
 from .config import CONTRACT_VERSION, ENABLE_OBS, OTEL_COLLECTOR_URL
 from .routes import rag, documents, agent, health
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# ============================================================================
+# Import metrics module to register all metrics with Prometheus REGISTRY
+# This MUST happen at startup before /metrics endpoint is called
+# ============================================================================
+from . import metrics as _metrics  # noqa: F401 - side-effect import for registration
+
+# ============================================================================
+# JSON Logging with OpenTelemetry Trace Correlation
+# ============================================================================
+import json
+import sys
+from opentelemetry.instrumentation.logging import LoggingInstrumentor
+
+class JsonFormatter(logging.Formatter):
+    """JSON formatter with OpenTelemetry trace correlation"""
+    def format(self, record):
+        log_data = {
+            "ts": self.formatTime(record, self.datefmt),
+            "level": record.levelname,
+            "msg": record.getMessage(),
+            "logger": record.name,
+            "otelTraceID": getattr(record, "otelTraceID", ""),
+            "otelSpanID": getattr(record, "otelSpanID", ""),
+            "otelTraceSampled": getattr(record, "otelTraceSampled", ""),
+        }
+        # Add trace_id alias for Loki derived fields
+        if log_data["otelTraceID"]:
+            log_data["trace_id"] = log_data["otelTraceID"]
+
+        # Add extra fields if present
+        if hasattr(record, "status_code"):
+            log_data["status_code"] = record.status_code
+        if hasattr(record, "route"):
+            log_data["route"] = record.route
+
+        return json.dumps(log_data)
+
+# Configure JSON logging with trace correlation
+handler = logging.StreamHandler(sys.stdout)
+handler.setFormatter(JsonFormatter())
+root_logger = logging.getLogger()
+root_logger.handlers = [handler]
+root_logger.setLevel(logging.INFO)
+
+# Instrument logging to inject trace context
+LoggingInstrumentor().instrument(set_logging_format=True)
+
 logger = logging.getLogger(__name__)
 
 # ============================================================================
@@ -162,15 +204,19 @@ async def readiness():
     """
     import aiohttp
 
-    # Check OTel collector (if observability enabled)
-    otel_ready = True
+    # Check OTel collector (if observability enabled) - NON-BLOCKING
+    # OTel collector doesn't have a health endpoint, so we just check if it's reachable via TCP
+    otel_ready = True  # Default to true - observability is optional
     if ENABLE_OBS:
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"http://otel-collector:13133/", timeout=aiohttp.ClientTimeout(total=2)) as resp:
-                    otel_ready = resp.status == 200
+            import socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1.0)
+            result = sock.connect_ex(("otel-collector", 4318))
+            sock.close()
+            otel_ready = (result == 0)
         except:
-            otel_ready = False
+            otel_ready = False  # Don't block on OTel failure
 
     # Check vector DB (if not using mocks)
     from config import USE_MOCK_VECTOR, VECTOR_DB_URL
@@ -183,7 +229,9 @@ async def readiness():
         except:
             vector_ready = False
 
-    all_ready = otel_ready and vector_ready
+    # Only block on critical dependencies (vector DB when not mocked)
+    # OTel is optional - don't block startup
+    all_ready = vector_ready if not USE_MOCK_VECTOR else True
 
     if not all_ready:
         return JSONResponse(
@@ -191,7 +239,7 @@ async def readiness():
             content={
                 "status": "not_ready",
                 "checks": {
-                    "otel_collector": "ok" if otel_ready else "failed",
+                    "otel_collector": "ok" if otel_ready else "degraded (non-blocking)",
                     "vector_db": "ok" if vector_ready else "failed (mocked)" if USE_MOCK_VECTOR else "failed"
                 }
             }
@@ -201,7 +249,11 @@ async def readiness():
         "status": "ready",
         "service": "rag-api",
         "version": CONTRACT_VERSION,
-        "observability_enabled": ENABLE_OBS
+        "observability_enabled": ENABLE_OBS,
+        "checks": {
+            "otel_collector": "ok" if otel_ready else "degraded",
+            "vector_db": "ok" if vector_ready else "mocked" if USE_MOCK_VECTOR else "failed"
+        }
     }
 
 

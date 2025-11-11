@@ -106,6 +106,7 @@ async def rag_query(req: RagQuery):
     with tracer.start_as_current_span("rag.query") as span:
         try:
             t0 = time.perf_counter()
+            stage_timings = {}  # Track stage latencies
 
             # ===================================================================
             # STAGE 0: IDs & Context
@@ -123,12 +124,14 @@ async def rag_query(req: RagQuery):
             # ===================================================================
             # STAGE 1: AuthZ & ACL Claims
             # ===================================================================
+            t_acl = time.perf_counter()
             acl_pred = build_acl_predicate(req.user_id, req.groups, req.dept)
             span.set_attribute("rag.auth.perms_tag", acl_pred.tag)
 
             # ===================================================================
             # STAGE 2: Retrieval (Hybrid with ACL pre-filter)
             # ===================================================================
+            t_retrieve_start = time.perf_counter()
             with tracer.start_as_current_span("retrieve_internal.vector") as retrieve_span:
                 vector_results, vector_stats = await vector.search(
                     query=req.query,
@@ -138,6 +141,8 @@ async def rag_query(req: RagQuery):
                 )
                 retrieve_span.set_attribute("docs_retrieved", len(vector_results))
                 retrieve_span.set_attribute("acl_filtered", vector_stats.get("acl_filtered_count", 0))
+            t_vector_end = time.perf_counter()
+            stage_timings["vector_ms"] = int((t_vector_end - t_retrieve_start) * 1000)
 
             with tracer.start_as_current_span("retrieve_web.searxng") as web_span:
                 web_results = await web.search(
@@ -146,6 +151,8 @@ async def rag_query(req: RagQuery):
                     use_mock=USE_MOCK_WEB
                 )
                 web_span.set_attribute("docs_retrieved", len(web_results))
+            t_web_end = time.perf_counter()
+            stage_timings["web_ms"] = int((t_web_end - t_vector_end) * 1000)
 
             # Combine results
             all_results = vector_results + web_results
@@ -200,6 +207,9 @@ async def rag_query(req: RagQuery):
                     "overall_safe": False
                 }
 
+                # Add stage timings for early exit
+                stage_timings["total_ms"] = int((time.perf_counter() - t0) * 1000)
+
                 return RagResponse(
                     answer="I apologize, but I don't have sufficiently recent information to answer this query with confidence.",
                     citations=[],
@@ -208,7 +218,10 @@ async def rag_query(req: RagQuery):
                         "guardrail_report": guardrail_report,
                         "recency": recency_result
                     },
-                    metrics={"latency_ms": (time.perf_counter() - t0) * 1000},
+                    metrics={
+                        "latency_ms": (time.perf_counter() - t0) * 1000,
+                        "stage_timings": stage_timings
+                    },
                     security_status="degraded",
                     request_id=request_id,
                     trace_id=str(trace_id),
@@ -226,6 +239,7 @@ async def rag_query(req: RagQuery):
             # ===================================================================
             # STAGE 5: Synthesis (LLM)
             # ===================================================================
+            t_llm_start = time.perf_counter()
             messages = build_prompt_messages(req.query, top_results)
 
             with tracer.start_as_current_span("synthesis_v1") as synth_span:
@@ -245,6 +259,9 @@ async def rag_query(req: RagQuery):
                 synth_span.set_attribute("llm.tokens.output", llm_response.tokens_out)
                 synth_span.set_attribute("llm.tokens.total", llm_response.tokens_total)
                 synth_span.set_attribute("llm.cost.usd", llm_response.cost_usd)
+
+            t_llm_end = time.perf_counter()
+            stage_timings["llm_ms"] = int((t_llm_end - t_llm_start) * 1000)
 
             span.set_attribute("rag.synth.model", llm_response.model)
 
@@ -360,12 +377,16 @@ async def rag_query(req: RagQuery):
 
             # Metrics
             latency_ms = (time.perf_counter() - t0) * 1000
+            # Add total timing
+            stage_timings["total_ms"] = int(latency_ms)
+
             metrics = {
                 "latency_ms": round(latency_ms, 2),
                 "tokens_in": llm_response.tokens_in,
                 "tokens_out": llm_response.tokens_out,
                 "model": llm_response.model,
-                "cost_usd": llm_response.cost_usd
+                "cost_usd": llm_response.cost_usd,
+                "stage_timings": stage_timings  # Include stage breakdown
             }
 
             logger.info(f"RAG query completed: request_id={request_id}, latency_ms={latency_ms:.0f}, citations={len(citations)}")

@@ -1,0 +1,27 @@
+{
+  "discoveredLabels": {
+    "__address__": "cadvisor:8080",
+    "__metrics_path__": "/metrics",
+    "__scheme__": "http",
+    "__scrape_interval__": "30s",
+    "__scrape_timeout__": "10s",
+    "job": "cadvisor",
+    "service": "cadvisor",
+    "type": "container-metrics"
+  },
+  "labels": {
+    "instance": "cadvisor:8080",
+    "job": "cadvisor",
+    "service": "cadvisor",
+    "type": "container-metrics"
+  },
+  "scrapePool": "cadvisor",
+  "scrapeUrl": "http://cadvisor:8080/metrics",
+  "globalUrl": "http://cadvisor:8080/metrics",
+  "lastError": "",
+  "lastScrape": "2025-11-11T01:41:31.388901052Z",
+  "lastScrapeDuration": 0.187850673,
+  "health": "up",
+  "scrapeInterval": "30s",
+  "scrapeTimeout": "10s"
+}

@@ -9,5 +9,7 @@ opentelemetry-sdk==1.22.0
 opentelemetry-exporter-otlp-proto-grpc==1.22.0
 opentelemetry-instrumentation-fastapi==0.43b0
 opentelemetry-instrumentation-requests==0.43b0
+opentelemetry-instrumentation-logging==0.43b0
 python-multipart==0.0.6
 httpx==0.25.2
+orjson==3.9.10

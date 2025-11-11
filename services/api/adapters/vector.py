@@ -5,6 +5,7 @@ from typing import Any
 from dataclasses import dataclass
 import requests
 import logging
+import os
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
@@ -83,35 +84,49 @@ async def search_vector_real(
     2. Search vector-db with embedding + ACL filter
     3. Format results
     """
+    import httpx
+    import time
+
     try:
-        # Step 1: Get query embedding
-        embed_response = requests.post(
-            f"{embedding_url}/embed",
-            json={"text": query},  # Note: singular 'text', not 'texts'
-            timeout=3.0
-        )
-        embed_response.raise_for_status()
-        embedding_data = embed_response.json()
-        # Wrap single embedding in a list for ChromaDB query format
-        embeddings = [embedding_data["embedding"]]
+        t0 = time.perf_counter()
+        async with httpx.AsyncClient(timeout=8.0) as cx:
+            # Step 1: Get query embedding
+            embed_response = await cx.post(
+                f"{embedding_url}/embed",
+                json={"text": query}  # Note: singular 'text', not 'texts'
+            )
+            embed_response.raise_for_status()
+            embedding_data = embed_response.json()
+            # Wrap single embedding in a list for ChromaDB query format
+            embeddings = [embedding_data["embedding"]]
 
-        # Step 2: Search vector database
-        search_payload = {
-            "query_embeddings": embeddings,
-            "n_results": top_k * 2  # Over-fetch for ACL filtering
-        }
+            # Step 2: Search vector database with ACL prefilter
+            search_payload = {
+                "query_embeddings": embeddings,
+                "n_results": top_k * 2,  # Over-fetch for ACL filtering
+            }
 
-        # Add ACL metadata filters if available
-        if hasattr(acl_predicate, 'to_filter'):
-            search_payload["metadata_filters"] = acl_predicate.to_filter()
+            # Add ACL metadata filters if available
+            # TEMP DEBUG: Disable ACL filter to test retrieval
+            acl_tag = getattr(acl_predicate, 'tag', None) if acl_predicate else None
+            if acl_tag and os.getenv("RAG_DISABLE_ACL_FOR_DEBUG") != "1":
+                search_payload["where"] = {"perms_tag": acl_tag}
+                logger.info(f"Vector search with ACL filter: perms_tag={acl_tag}")
+            else:
+                logger.info(f"Vector search WITHOUT ACL filter (debug mode or no ACL)")
 
-        search_response = requests.post(
-            f"{vector_db_url}/search",
-            json=search_payload,
-            timeout=3.0
-        )
-        search_response.raise_for_status()
-        raw_results = search_response.json()
+            logger.info(f"Vector search payload: {search_payload}")
+
+            search_response = await cx.post(
+                f"{vector_db_url}/search",
+                json=search_payload
+            )
+            search_response.raise_for_status()
+            raw_results = search_response.json()
+
+            logger.info(f"Vector search raw results: ids={len(raw_results.get('ids', [[]])[0])}, distances={raw_results.get('distances', [[]])[0][:3] if raw_results.get('distances') else []}")
+
+        latency_ms = (time.perf_counter() - t0) * 1000
 
         # Step 3: Format results
         results = []
@@ -136,18 +151,19 @@ async def search_vector_real(
                     "version": metadata.get("version", "1.0"),
                     "source_uri": metadata.get("source_uri", metadata.get("file_name", ""))
                 },
-                origin_tool="rag",
+                origin_tool="rag",  # Immutable
                 published_at=datetime.fromisoformat(metadata["published_at"]) if metadata.get("published_at") else None,
-                is_primary=metadata.get("is_primary", i < 3)  # First 3 are primary by default
+                is_primary=metadata.get("is_primary", i < 3)
             ))
 
         stats = {
             "candidates_before_acl": candidates_before_acl,
             "candidates_after_acl": len(results),
-            "acl_filtered_count": candidates_before_acl - len(results)
+            "acl_filtered_count": candidates_before_acl - len(results),
+            "latency_ms": latency_ms
         }
 
-        logger.info(f"Real vector search: retrieved {len(results)} results (filtered {stats['acl_filtered_count']})")
+        logger.info(f"Real vector search: retrieved {len(results)} results (filtered {stats['acl_filtered_count']}) in {latency_ms:.0f}ms")
         return results, stats
 
     except Exception as e:

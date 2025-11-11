@@ -1,0 +1,28 @@
+NAMES                     IMAGE                                                      STATUS                      PORTS
+rag-prometheus            prom/prometheus:latest                                     Up 2 minutes (healthy)      0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp
+rag-cadvisor              gcr.io/cadvisor/cadvisor:latest                            Up 25 minutes (healthy)     0.0.0.0:9080->8080/tcp, [::]:9080->8080/tcp
+rag-node-exporter         prom/node-exporter:latest                                  Up 25 minutes               0.0.0.0:9100->9100/tcp, [::]:9100->9100/tcp
+rag-frontend              rag_lab-frontend                                           Up 39 minutes (healthy)     0.0.0.0:3000->80/tcp, [::]:3000->80/tcp
+rag-api-v1                rag-api-v1:latest                                          Up 39 minutes (unhealthy)   8080/tcp
+rag-promtail              grafana/promtail:2.9.8                                     Up 50 minutes               
+rag-loki                  grafana/loki:2.9.8                                         Up 50 minutes               0.0.0.0:3100->3100/tcp, [::]:3100->3100/tcp
+rag-tempo                 grafana/tempo:latest                                       Up 3 hours                  0.0.0.0:3200->3200/tcp, [::]:3200->3200/tcp, 0.0.0.0:4319->4317/tcp, [::]:4319->4317/tcp
+rag-grafana               grafana/grafana:latest                                     Up 7 minutes                0.0.0.0:3001->3000/tcp, [::]:3001->3000/tcp
+rag-otel-collector        otel/opentelemetry-collector-contrib:latest                Up 2 hours                  0.0.0.0:4317-4318->4317-4318/tcp, [::]:4317-4318->4317-4318/tcp, 0.0.0.0:8889->8889/tcp, [::]:8889->8889/tcp, 0.0.0.0:13133->13133/tcp, [::]:13133->13133/tcp, 55679/tcp
+rag-web-search            python:3.11-slim                                           Up 2 days (unhealthy)       0.0.0.0:8009->8009/tcp, [::]:8009->8009/tcp
+rag-searxng               searxng/searxng:latest                                     Up 2 days (healthy)         0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+rag-api-gateway           python:3.11-slim                                           Up 2 days (unhealthy)       0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+rag-chat-service          python:3.11-slim                                           Up 2 days (unhealthy)       0.0.0.0:8003->8003/tcp, [::]:8003->8003/tcp
+rag-search-service        python:3.11-slim                                           Up 2 days (unhealthy)       0.0.0.0:8002->8002/tcp, [::]:8002->8002/tcp
+rag-prompt-enhancement    python:3.11-slim                                           Up 2 days (healthy)         0.0.0.0:8012->8012/tcp, [::]:8012->8012/tcp
+rag-model-router          python:3.11-slim                                           Up 2 days (healthy)         0.0.0.0:8018->8018/tcp, [::]:8018->8018/tcp
+rag-embedding-service     python:3.11-slim                                           Up 2 days (unhealthy)       0.0.0.0:8006->8006/tcp, [::]:8006->8006/tcp
+rag-reranker              python:3.11-slim                                           Up 2 days (unhealthy)       0.0.0.0:8008->8008/tcp, [::]:8008->8008/tcp
+rag-knowledge-graph       python:3.11-slim                                           Up 2 days (unhealthy)       0.0.0.0:8007->8007/tcp, [::]:8007->8007/tcp
+rag-redis                 redis:7-alpine                                             Up 2 days (healthy)         0.0.0.0:6379->6379/tcp, [::]:6379->6379/tcp
+rag-ollama                ollama/ollama:latest                                       Up 2 days (healthy)         0.0.0.0:11434->11434/tcp, [::]:11434->11434/tcp
+rag-security-guardrails   python:3.11-slim                                           Up 2 days (healthy)         0.0.0.0:8013->8013/tcp, [::]:8013->8013/tcp
+rag-prompt-classifier     python:3.11-slim                                           Up 2 days (unhealthy)       0.0.0.0:8017->8017/tcp, [::]:8017->8017/tcp
+rag-vector-db             python:3.11-slim                                           Up 2 days (unhealthy)       0.0.0.0:8005->8005/tcp, [::]:8005->8005/tcp
+rag-auth-service          python:3.11-slim                                           Up 2 days (healthy)         0.0.0.0:8014->8014/tcp, [::]:8014->8014/tcp
+rag-dcgm-exporter         nvcr.io/nvidia/k8s/dcgm-exporter:3.1.8-3.1.5-ubuntu20.04   Up 2 days                   0.0.0.0:9400->9400/tcp, [::]:9400->9400/tcp

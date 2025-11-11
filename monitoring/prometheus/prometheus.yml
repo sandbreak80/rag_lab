@@ -8,6 +8,11 @@ global:
     cluster: 'rag-lab'
     environment: 'production'
 
+# Enable exemplars for linking metrics to traces (Prometheus 2.26+)
+storage:
+  exemplars:
+    max_exemplars: 100000
+
 # Alertmanager configuration (optional)
 # alerting:
 #   alertmanagers:
@@ -15,9 +20,10 @@ global:
 #         - targets:
 #           - alertmanager:9093
 
-# Load alert rules
+# Load recording and alert rules
 rule_files:
-  - "alerts.yml"
+  - "recording_rules.yml"
+  - "alert_rules.yml"
 
 # Scrape configurations
 scrape_configs:
@@ -238,5 +244,64 @@ scrape_configs:
           service: 'rag-api-v1'
           type: 'application'
           pipeline: 'observability'
+    metrics_path: '/metrics'
+
+  # ============================================================================
+  # RAG Infrastructure Services (D1.1 - Sprint Completion)
+  # ============================================================================
+
+  # Vector Database (ChromaDB)
+  - job_name: 'rag-vector-db'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['rag-vector-db:8005']
+        labels:
+          service: 'vector-db'
+          type: 'infrastructure'
+          component: 'storage'
+    metrics_path: '/metrics'
+
+  # Embedding Service
+  - job_name: 'rag-embedding'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['embedding-service:8006']
+        labels:
+          service: 'embedding-service'
+          type: 'infrastructure'
+          component: 'ml'
+    metrics_path: '/metrics'
+
+  # SearXNG (Web Search)
+  - job_name: 'searxng'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['searxng:8080']
+        labels:
+          service: 'searxng'
+          type: 'infrastructure'
+          component: 'search'
+    metrics_path: '/stats'  # SearXNG uses /stats for metrics
+
+  # Ollama (LLM Service)
+  - job_name: 'ollama'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['ollama:11434']
+        labels:
+          service: 'ollama'
+          type: 'infrastructure'
+          component: 'ml'
+    metrics_path: '/metrics'  # If Ollama exposes metrics
+
+  # Nginx (Frontend Proxy)
+  - job_name: 'nginx'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['nginx:9113']  # nginx-prometheus-exporter if configured
+        labels:
+          service: 'nginx'
+          type: 'infrastructure'
+          component: 'proxy'
     metrics_path: '/metrics'
 

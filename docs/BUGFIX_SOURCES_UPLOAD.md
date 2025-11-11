@@ -1,7 +1,7 @@
 # Bug Fix Report: Upload 404 & Sources Not Showing
 
-**Date:** 2025-11-09  
-**Branch:** `otel`  
+**Date:** 2025-11-09
+**Branch:** `otel`
 **Status:** ✅ **FIXED**
 
 ---
@@ -120,7 +120,7 @@ MessageItem (MessageItem.tsx:223-236)
   │   {message.sources && message.sources.length > 0 && (
   │     <div data-testid="chat-sources">
   │       <h4>Sources ({message.sources.length})</h4>
-  │       {message.sources.map(source => 
+  │       {message.sources.map(source =>
   │         <SourceCard source={source} />  ← Now displays text
   │       )}
   │     </div>
@@ -162,9 +162,9 @@ These are **infrastructure issues**, not code bugs. The fixes above are COMPLETE
 
 ## Impact
 
-✅ **File Upload**: Users can now upload documents up to 50MB  
-✅ **Sources Display**: Chat responses now show clickable source citations with document text  
-✅ **Observability**: Citations include provenance (`origin_tool`), score, and full content for debugging  
+✅ **File Upload**: Users can now upload documents up to 50MB
+✅ **Sources Display**: Chat responses now show clickable source citations with document text
+✅ **Observability**: Citations include provenance (`origin_tool`), score, and full content for debugging
 
 **Production Ready:** Both features are now fully functional and ready for user testing.
 

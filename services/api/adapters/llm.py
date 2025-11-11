@@ -65,9 +65,9 @@ Please note that policies may vary based on specific circumstances [3]."""
 
 async def generate_real(
     messages: list[dict[str, str]],
-    model: str = "llama3.1:8b",
+    model: str = "llama3.2:3b",
     temperature: float = 0.7,
-    max_tokens: int = 512,
+    max_tokens: int = 300,
     ollama_url: str = "http://ollama:11434"
 ) -> LLMResponse:
     """
@@ -75,32 +75,40 @@ async def generate_real(
 
     NO PAYLOAD LOGGING - only metadata.
     """
+    import httpx
+    import time
+
     try:
+        t0 = time.perf_counter()
         # Format for Ollama chat API
-        response = requests.post(
-            f"{ollama_url}/api/chat",
-            json={
-                "model": model,
-                "messages": messages,
-                "stream": False,
-                "options": {
-                    "temperature": temperature,
-                    "num_predict": max_tokens
+        async with httpx.AsyncClient(timeout=30.0) as cx:
+            response = await cx.post(
+                f"{ollama_url}/api/chat",
+                json={
+                    "model": model,
+                    "messages": messages,
+                    "stream": False,
+                    "options": {
+                        "temperature": temperature,
+                        "num_predict": max_tokens
+                    }
                 }
-            },
-            timeout=60
-        )
-        response.raise_for_status()
-        data = response.json()
+            )
+            response.raise_for_status()
+            data = response.json()
+
+        latency_ms = (time.perf_counter() - t0) * 1000
 
         # Extract tokens from response
         prompt_eval_count = data.get("prompt_eval_count", 0)
         eval_count = data.get("eval_count", 0)
 
-        # Rough cost estimate (replace with actual pricing)
-        cost_per_1k = 0.0002  # $0.20 per 1M tokens
+        # Rough cost estimate (local Ollama = $0)
+        cost_per_1k = 0.0  # Free for local Ollama
         total_tokens = prompt_eval_count + eval_count
         cost_usd = (total_tokens / 1000) * cost_per_1k
+
+        logger.info(f"Real LLM: model={model}, tokens_in={prompt_eval_count}, tokens_out={eval_count}, latency={latency_ms:.0f}ms")
 
         return LLMResponse(
             text=data["message"]["content"],
@@ -114,7 +122,7 @@ async def generate_real(
         )
 
     except Exception as e:
-        logger.error(f"LLM generation failed: {e}")
+        logger.error(f"LLM generation failed: {e}, falling back to error response")
         # Fallback to error response
         return LLMResponse(
             text="I apologize, but I'm unable to generate a response at this time due to a technical issue.",

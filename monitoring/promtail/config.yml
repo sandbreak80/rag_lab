@@ -1,0 +1,40 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+positions:
+  filename: /tmp/positions.yaml
+
+scrape_configs:
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/*/*-json.log
+    pipeline_stages:
+      - docker: {}
+      # Parse JSON if app logs are JSON
+      - json:
+          expressions:
+            level: level
+            message: message
+            msg: msg
+            trace_id: trace_id
+            otelTraceID: otelTraceID
+            otelSpanID: otelSpanID
+            logger: logger
+      - labels:
+          level:
+          logger:
+      # Normalize trace_id field
+      - template:
+          source: trace_id
+          template: '{{ if .otelTraceID }}{{ .otelTraceID }}{{ else }}{{ .trace_id }}{{ end }}'
+      - labels:
+          trace_id:
+

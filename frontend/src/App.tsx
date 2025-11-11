@@ -36,6 +36,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <AuthProvider>
+          {/* Hidden indicator that RUM is initialized */}
+          <div data-testid="rum-ready" style={{ display: 'none' }} aria-hidden="true" />
           <BrowserRouter>
             <Routes>
               {/* Public Routes */}

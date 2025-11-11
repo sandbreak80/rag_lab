@@ -1,0 +1,65 @@
+# RAG System Basics
+
+## What is RAG?
+
+Retrieval-Augmented Generation (RAG) is a technique that combines information retrieval with large language model generation. Instead of relying solely on the model's training data, RAG systems retrieve relevant documents from a knowledge base and use them to generate more accurate, up-to-date responses.
+
+## Key Components
+
+### 1. Vector Database
+The vector database stores document embeddings, enabling semantic search. When a query comes in, it's converted to a vector and compared against stored document vectors using cosine similarity.
+
+### 2. Embedding Model
+The embedding model converts text into high-dimensional vectors that capture semantic meaning. The same model must be used for both indexing documents and processing queries to ensure compatibility.
+
+### 3. Large Language Model
+The LLM generates the final response using both the user's query and the retrieved context. This allows it to provide accurate answers grounded in your specific documents.
+
+## Why Use Hybrid Retrieval?
+
+Hybrid retrieval combines multiple search strategies:
+
+### Vector Search
+- Captures semantic similarity
+- Finds conceptually related content
+- Works well for natural language queries
+
+### Lexical Search
+- Exact keyword matching
+- Fast and deterministic
+- Good for specific terms and codes
+
+### Web Search
+- Provides current information
+- Supplements internal knowledge
+- Useful for recent events
+
+By combining these approaches, hybrid retrieval achieves higher recall and precision than any single method alone.
+
+## Benefits of RAG
+
+1. **Accuracy**: Responses are grounded in actual documents
+2. **Freshness**: Can incorporate recently added information
+3. **Transparency**: Citations show where information came from
+4. **Customization**: Works with your specific knowledge base
+5. **Cost-effective**: No need to fine-tune large models
+
+## Chunking Strategies
+
+### Fixed-size Chunking
+Simple approach that splits text into equal-sized chunks with overlap. Fast but may break semantic boundaries.
+
+### Agentic Chunking
+Uses an LLM to identify natural section boundaries based on topic shifts, headings, and semantic coherence. Produces higher-quality chunks but requires more processing time.
+
+### Overlap
+Chunks should overlap by 10-20% to ensure important information at boundaries isn't lost during retrieval.
+
+## Performance Considerations
+
+A well-optimized RAG system should:
+- Return results in under 3 seconds
+- Provide at least 3-5 relevant citations
+- Balance vector, lexical, and web sources
+- Use caching for frequently asked questions
+- Monitor metrics like latency, hit rate, and relevance scores

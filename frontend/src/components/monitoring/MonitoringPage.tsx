@@ -3,16 +3,9 @@ import { ExternalLink, Activity, Database, Cpu, Gauge } from 'lucide-react';
 import { TID } from '../../testids';
 
 export function MonitoringPage() {
-  // Use nginx proxy paths for Grafana and Prometheus (same-origin, no CORS)
-  const grafanaUrl = window.location.hostname === 'localhost'
-    ? 'http://localhost:3001'
-    : '/graf';
-
-  const prometheusUrl = window.location.hostname === 'localhost'
-    ? 'http://localhost:9090'
-    : '/prom';
-
-  const dashboardUrl = `${grafanaUrl}/d/rag-lab-overview/rag-lab-system-overview?orgId=1&refresh=10s&kiosk=tv`;
+  // Direct links to Grafana and Prometheus (avoid iframe subpath issues)
+  const grafanaUrl = import.meta.env.VITE_GRAFANA_URL || 'http://16.146.148.184:3001';
+  const prometheusUrl = import.meta.env.VITE_PROMETHEUS_URL || 'http://16.146.148.184:9090';
 
   return (
     <div className="flex flex-col w-full">
@@ -94,15 +87,45 @@ export function MonitoringPage() {
         </div>
       </div>
 
-      {/* Grafana Dashboard Embed */}
-      <div className="w-full" style={{ minHeight: '3500px' }}>
-        <iframe
-          src={dashboardUrl}
-          className="w-full border-0"
-          style={{ height: '3500px' }}
-          title="Grafana Dashboard"
-          allow="fullscreen"
-        />
+      {/* Grafana Dashboard - Open in New Tab */}
+      <div className="w-full p-12 bg-background flex flex-col items-center justify-center gap-6">
+        <div className="text-center max-w-2xl">
+          <h2 className="text-2xl font-semibold mb-4">Open Dashboards in New Tab</h2>
+          <p className="text-muted-foreground mb-6">
+            Grafana dashboards are best viewed in their native interface. Click the buttons above to open
+            Grafana or Prometheus in a new tab with full functionality.
+          </p>
+        </div>
+
+        <div className="flex gap-4">
+          <a
+            href={grafanaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-lg font-medium"
+            data-testid="monitoring-open-grafana"
+          >
+            <ExternalLink className="h-5 w-5" />
+            Open Grafana Dashboard
+          </a>
+          <a
+            href={prometheusUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors text-lg font-medium"
+            data-testid="monitoring-open-prometheus"
+          >
+            <Database className="h-5 w-5" />
+            Open Prometheus
+          </a>
+        </div>
+
+        <div className="mt-8 p-4 bg-muted rounded-lg max-w-xl">
+          <p className="text-sm text-muted-foreground">
+            <strong>Note:</strong> Embedding Grafana under a subpath can cause rendering issues.
+            Direct access provides the best experience with full dashboard functionality.
+          </p>
+        </div>
       </div>
 
       {/* Footer Help */}

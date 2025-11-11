@@ -1,8 +1,8 @@
 # 🐛 Bug Fixes Deployed - Sources & Performance Now Working!
 
-**Date:** November 9, 2025, 02:10 UTC  
-**Branch:** `otel`  
-**Deploy Commit:** `30670ca`  
+**Date:** November 9, 2025, 02:10 UTC
+**Branch:** `otel`
+**Deploy Commit:** `30670ca`
 **URL:** http://16.146.148.184:3000/
 
 ---
@@ -203,10 +203,10 @@ These bugs still exist:
   - ❌ Monitoring tests still fail (proxy issue)
 
 ### Manual Testing Results:
-✅ **Sources are visible** - 8 citations displayed  
-✅ **Performance breakdown works** - Timing metrics shown  
-✅ **Chat functionality works** - Full Q&A flow  
-✅ **No JavaScript errors** - Console is clean  
+✅ **Sources are visible** - 8 citations displayed
+✅ **Performance breakdown works** - Timing metrics shown
+✅ **Chat functionality works** - Full Q&A flow
+✅ **No JavaScript errors** - Console is clean
 
 ---
 
@@ -250,16 +250,16 @@ Expected: 13-15/30 passing (up from 11/30)
 ## 🏆 Summary
 
 ### What Was Wrong:
-❌ Test IDs alone don't fix bugs  
-❌ API response schema didn't match frontend expectations  
-❌ Citations had no content field  
-❌ Metrics had flat structure, not nested  
+❌ Test IDs alone don't fix bugs
+❌ API response schema didn't match frontend expectations
+❌ Citations had no content field
+❌ Metrics had flat structure, not nested
 
 ### What Was Fixed:
-✅ API adapter properly maps citations → sources  
-✅ Sources now display with titles and links  
-✅ Performance metrics now show timing breakdown  
-✅ Frontend handles missing fields gracefully  
+✅ API adapter properly maps citations → sources
+✅ Sources now display with titles and links
+✅ Performance metrics now show timing breakdown
+✅ Frontend handles missing fields gracefully
 
 ### What To Do Now:
 **GO TEST IT!** Visit http://16.146.148.184:3000/ and type a question. You should see:

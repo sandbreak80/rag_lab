@@ -1,0 +1,46 @@
+groups:
+  - name: rag_recording_rules
+    interval: 30s
+    rules:
+      # Request rate (1-minute window)
+      - record: rag:req_rate_1m
+        expr: rate(rag_requests_total[1m])
+
+      # P95 latency
+      - record: rag:p95_latency
+        expr: histogram_quantile(0.95, sum(rate(rag_request_duration_seconds_bucket[5m])) by (le))
+
+      # Error rate (4xx + 5xx)
+      - record: rag:error_rate
+        expr: sum(rate(rag_requests_total{status=~"4..|5.."}[5m])) / sum(rate(rag_requests_total[5m]))
+
+      # Citation rate
+      - record: rag:citation_rate
+        expr: sum(rate(rag_citations_total[5m])) / sum(rate(rag_requests_total{status="200"}[5m]))
+
+      # Chunking: documents processed
+      - record: rag:chunk_docs
+        expr: rag_chunking_docs_total
+
+      # Chunking: rate
+      - record: rag:chunk_rate
+        expr: rate(rag_chunking_docs_total[5m])
+
+      # LLM tokens in
+      - record: rag:llm_tokens_in
+        expr: rate(rag_llm_tokens_total{direction="input"}[5m])
+
+      # LLM tokens out
+      - record: rag:llm_tokens_out
+        expr: rate(rag_llm_tokens_total{direction="output"}[5m])
+
+      # Stage timings (P95)
+      - record: rag:vector_p95_ms
+        expr: histogram_quantile(0.95, sum(rate(rag_adapter_vector_seconds_bucket[5m])) by (le)) * 1000
+
+      - record: rag:web_p95_ms
+        expr: histogram_quantile(0.95, sum(rate(rag_adapter_web_seconds_bucket[5m])) by (le)) * 1000
+
+      - record: rag:llm_p95_ms
+        expr: histogram_quantile(0.95, sum(rate(rag_adapter_llm_seconds_bucket[5m])) by (le)) * 1000
+

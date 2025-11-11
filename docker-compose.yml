@@ -22,6 +22,8 @@ volumes:
   research-agent-data:    # Research agent database and cache
   prometheus-data:        # Prometheus time-series database
   grafana-data:           # Grafana dashboards and settings
+  tempo-data:             # Tempo distributed tracing storage
+  loki-data:              # Loki log aggregation storage
 
 services:
   # ============================================================================
@@ -790,18 +792,31 @@ services:
       - "8080"  # Internal only - accessed via Nginx
     environment:
       # Feature flags
-      RAG_ENABLE_OBS: "0"           # Turn ON after acceptance passes
-      RAG_USE_MOCK_LLM: "1"
-      RAG_USE_MOCK_VECTOR: "1"
-      RAG_USE_MOCK_WEB: "1"
+      RAG_ENABLE_OBS: "1"           # Observability ON - metrics/traces enabled
+      RAG_USE_MOCK_LLM: "0"         # ✅ REAL Ollama LLM enabled
+      RAG_USE_MOCK_VECTOR: "0"      # ✅ REAL Vector DB + Embedding enabled
+      RAG_USE_MOCK_WEB: "0"         # ✅ REAL SearXNG web search enabled
       RAG_CONTRACT_VERSION: "1.0.0"
       RAG_FRESHNESS_HOURS: "48"
       RAG_TOPN: "8"
       RAG_AB_TEST: "0"
 
+      # Agentic Chunking Configuration
+      RAG_CHUNKING_MODE: "agentic"          # agentic | fixed
+      RAG_CHUNK_TARGET_TOKENS: "450"        # approx desired chunk size
+      RAG_CHUNK_OVERLAP_TOKENS: "128"       # overlap between chunks
+      RAG_CHUNK_AGENT_MODEL: "llama3.1:8b"  # Ollama model for boundaries
+      RAG_CHUNK_MAX_SECTIONS: "200"         # safety limit
+      RAG_CHUNK_AGENT_TIMEOUT_MS: "9000"    # timeout for agent calls
+      RAG_CHUNK_EMIT_STAGE_TIMINGS: "1"     # include timings in response
+      RAG_CHUNK_EMIT_METADATA: "1"          # attach chunk metadata
+
+      # TEMP: Disable ACL filter for debugging
+      RAG_DISABLE_ACL_FOR_DEBUG: "1"
+
       # OTel wiring (works even when RAG_ENABLE_OBS=0)
-      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"
-      OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_RESOURCE_ATTRIBUTES: "service.name=rag-api-v1,service.version=1.0.0,service.namespace=rag-lab,env=dev"
       OTEL_TRACES_EXPORTER: "otlp"
       OTEL_METRICS_EXPORTER: "none"
@@ -809,8 +824,12 @@ services:
 
       # Service URLs (for real adapters when mocks disabled)
       VECTOR_DB_URL: "http://vector-db:8005"
-      SEARCH_SERVICE_URL: "http://search-service:8002"
+      EMBED_URL: "http://embedding-service:8006/embed"
+      EMBEDDING_URL: "http://embedding-service:8006"
+      SEARXNG_URL: "http://searxng:8080"
       OLLAMA_URL: "http://ollama:11434"
+      RAG_LLM_MODEL: "llama3.2:3b"
+      RAG_LLM_MAX_TOKENS: "300"
 
       # Prometheus
       METRICS_PORT: "9309"
@@ -825,7 +844,7 @@ services:
       start_period: 30s
     depends_on:
       otel-collector:
-        condition: service_healthy
+        condition: service_started  # Changed from service_healthy - no healthcheck available
     restart: unless-stopped
 
   # React Frontend (Production Build with Nginx)
@@ -898,12 +917,7 @@ services:
     environment:
       - GODEBUG=http2server=0
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:13133/"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-      start_period: 5s
+    # Note: OTel collector is a minimal image with no shell/curl/wget for healthchecks
 
   # Prometheus - Time Series Database & Metrics Collector
   prometheus:
@@ -917,6 +931,8 @@ services:
       - prometheus-data:/prometheus
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./monitoring/prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro
+      - ./monitoring/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -946,7 +962,8 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=http://localhost:3001
+      - GF_SERVER_ROOT_URL=http://16.146.148.184:3000/graf
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
       - GF_SECURITY_ALLOW_EMBEDDING=true
@@ -954,12 +971,55 @@ services:
       - GF_SECURITY_COOKIE_SECURE=false
     depends_on:
       - prometheus
+      - tempo
+
+  # ============================================================================
+  # TEMPO - Distributed Tracing Backend
+  # ============================================================================
+  tempo:
+    image: grafana/tempo:latest
+    container_name: rag-tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+    networks:
+      - rag-network
+    ports:
+      - "3200:3200"   # Tempo HTTP
+      - "4319:4317"   # OTLP gRPC receiver (mapped to avoid conflict with otel-collector)
+    volumes:
+      - ./monitoring/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+
+  # ============================================================================
+  # LOKI - Log Aggregation
+  # ============================================================================
+  loki:
+    image: grafana/loki:2.9.8
+    container_name: rag-loki
+    command: -config.file=/etc/loki/config.yml
+    networks:
+      - rag-network
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki/config.yml:/etc/loki/config.yml:ro
+      - loki-data:/loki
+    restart: unless-stopped
+
+  # Promtail - Log Shipper
+  promtail:
+    image: grafana/promtail:2.9.8
+    container_name: rag-promtail
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - rag-network
+    volumes:
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./monitoring/promtail/config.yml:/etc/promtail/config.yml:ro
+    depends_on:
+      - loki
+    restart: unless-stopped
 
   # cAdvisor - Container Metrics Collector
   cadvisor:

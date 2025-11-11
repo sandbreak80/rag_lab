@@ -1,0 +1,28 @@
+{
+  "discoveredLabels": {
+    "__address__": "node-exporter:9100",
+    "__metrics_path__": "/metrics",
+    "__scheme__": "http",
+    "__scrape_interval__": "15s",
+    "__scrape_timeout__": "10s",
+    "instance": "ec2-host",
+    "job": "node-exporter",
+    "service": "node-exporter",
+    "type": "system-metrics"
+  },
+  "labels": {
+    "instance": "ec2-host",
+    "job": "node-exporter",
+    "service": "node-exporter",
+    "type": "system-metrics"
+  },
+  "scrapePool": "node-exporter",
+  "scrapeUrl": "http://node-exporter:9100/metrics",
+  "globalUrl": "http://node-exporter:9100/metrics",
+  "lastError": "",
+  "lastScrape": "2025-11-11T01:41:34.635446541Z",
+  "lastScrapeDuration": 0.0364397,
+  "health": "up",
+  "scrapeInterval": "15s",
+  "scrapeTimeout": "10s"
+}

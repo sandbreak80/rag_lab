@@ -1,0 +1,11 @@
+{
+  "ts": "2025-11-11 01:27:09,755",
+  "level": "INFO",
+  "msg": "RAG query completed: request_id=7e99ba93af7a4a34bd033dc67caafdb0, latency_ms=9488, citations=2",
+  "logger": "services.api.routes.rag",
+  "otelTraceID": "f61a3d0b95a4c7f8afadc31160638283",
+  "otelSpanID": "7479715d5acaff29",
+  "otelTraceSampled": true,
+  "trace_id": "f61a3d0b95a4c7f8afadc31160638283"
+}
+

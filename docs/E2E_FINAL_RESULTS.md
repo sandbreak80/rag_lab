@@ -1,8 +1,8 @@
 # E2E Test Suite - Final Results 🎉
 
-**Date:** November 9, 2025, 01:22 UTC  
-**Branch:** `otel`  
-**Commit:** `2b5746c` - Fixed Nginx optional upstreams  
+**Date:** November 9, 2025, 01:22 UTC
+**Branch:** `otel`
+**Commit:** `2b5746c` - Fixed Nginx optional upstreams
 **Instance:** AWS EC2 (16.146.148.184)
 
 ---

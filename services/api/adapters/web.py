@@ -56,27 +56,33 @@ async def search_web_mock(
 async def search_web_real(
     query: str,
     top_k: int = 5,
-    web_search_url: str = "http://web-search:8009"
+    searxng_url: str = "http://searxng:8080"
 ) -> list[WebSearchResult]:
     """
-    Real web search via web-search service (SearXNG wrapper).
+    Real web search via SearXNG directly.
 
     Flow:
-    1. Call web-search service
-    2. Parse results from SearXNG
-    3. Format with origin_tool="web_search"
+    1. Call SearXNG search endpoint
+    2. Parse JSON results
+    3. Format with origin_tool="web"
     """
+    import httpx
+    import time
+
     try:
-        response = requests.post(
-            f"{web_search_url}/search",
-            json={"query": query, "limit": top_k},  # Note: 'limit' not 'top_k'
-            timeout=10.0
-        )
-        response.raise_for_status()
-        data = response.json()
+        t0 = time.perf_counter()
+        async with httpx.AsyncClient(timeout=8.0) as cx:
+            response = await cx.get(
+                f"{searxng_url}/search",
+                params={"q": query, "format": "json"}
+            )
+            response.raise_for_status()
+            data = response.json()
+
+        latency_ms = (time.perf_counter() - t0) * 1000
 
         results = []
-        for idx, hit in enumerate(data.get("results", [])):
+        for idx, hit in enumerate(data.get("results", [])[:top_k]):
             # Extract URL as unique ID
             url = hit.get("url", "")
             doc_id = f"web_{hash(url) % 100000}"  # Stable hash-based ID
@@ -84,20 +90,21 @@ async def search_web_real(
             results.append(WebSearchResult(
                 doc_id=doc_id,
                 chunk_id=f"{doc_id}_chunk",
-                content=hit.get("content", hit.get("snippet", hit.get("title", ""))),
+                content=hit.get("content", hit.get("snippet", hit.get("title", "")))[:2000],
                 score=hit.get("score", 0.7),
                 metadata={
                     "title": hit.get("title", ""),
                     "domain": hit.get("engine", "unknown"),
                     "source_uri": url,
-                    "engine": hit.get("engine", "unknown")
+                    "engine": hit.get("engine", "unknown"),
+                    "latency_ms": latency_ms
                 },
-                origin_tool="web_search",
+                origin_tool="web",  # Immutable
                 published_at=datetime.fromisoformat(hit["published_at"]) if hit.get("published_at") else datetime.now(timezone.utc),
                 is_primary=False  # External web sources are secondary by default
             ))
 
-        logger.info(f"Real web search: retrieved {len(results)} results from SearXNG")
+        logger.info(f"Real web search: retrieved {len(results)} results from SearXNG in {latency_ms:.0f}ms")
         return results
 
     except Exception as e:

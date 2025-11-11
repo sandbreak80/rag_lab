@@ -1,0 +1,25 @@
+rag-frontend	rag_lab-frontend	Up 10 minutes (healthy)
+rag-api-v1	rag-api-v1:latest	Up 10 minutes (unhealthy)
+rag-promtail	grafana/promtail:2.9.8	Up 20 minutes
+rag-loki	grafana/loki:2.9.8	Up 20 minutes
+rag-tempo	grafana/tempo:latest	Up 2 hours
+rag-grafana	grafana/grafana:latest	Up 19 minutes
+rag-otel-collector	otel/opentelemetry-collector-contrib:latest	Up About an hour
+rag-web-search	python:3.11-slim	Up 2 days (unhealthy)
+rag-searxng	searxng/searxng:latest	Up 2 days (healthy)
+rag-prometheus	prom/prometheus:latest	Up 47 minutes (healthy)
+rag-api-gateway	python:3.11-slim	Up 2 days (unhealthy)
+rag-chat-service	python:3.11-slim	Up 2 days (unhealthy)
+rag-search-service	python:3.11-slim	Up 2 days (unhealthy)
+rag-prompt-enhancement	python:3.11-slim	Up 2 days (healthy)
+rag-model-router	python:3.11-slim	Up 2 days (healthy)
+rag-embedding-service	python:3.11-slim	Up 2 days (unhealthy)
+rag-reranker	python:3.11-slim	Up 2 days (unhealthy)
+rag-knowledge-graph	python:3.11-slim	Up 2 days (unhealthy)
+rag-redis	redis:7-alpine	Up 2 days (healthy)
+rag-ollama	ollama/ollama:latest	Up 2 days (healthy)
+rag-security-guardrails	python:3.11-slim	Up 2 days (healthy)
+rag-prompt-classifier	python:3.11-slim	Up 2 days (unhealthy)
+rag-vector-db	python:3.11-slim	Up 2 days (unhealthy)
+rag-auth-service	python:3.11-slim	Up 2 days (healthy)
+rag-dcgm-exporter	nvcr.io/nvidia/k8s/dcgm-exporter:3.1.8-3.1.5-ubuntu20.04	Up 2 days

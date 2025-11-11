@@ -1,10 +1,10 @@
 /**
  * Centralized test IDs for E2E testing with Playwright
- * 
+ *
  * Usage:
  *   import { TID } from '@/testids';
  *   <div data-testid={TID.Chat.Answer}>...</div>
- *   
+ *
  * Benefits:
  * - Type-safe test selectors
  * - Single source of truth
