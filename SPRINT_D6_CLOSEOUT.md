@@ -1,7 +1,7 @@
 # 🎯 SPRINT D6 CLOSEOUT CHECKLIST
 
-**Date:** 2025-11-11  
-**Branch:** `otel`  
+**Date:** 2025-11-11
+**Branch:** `otel`
 **Sprint Objective:** Full MELT observability + E2E validation + ACL security
 
 ---
@@ -242,7 +242,7 @@
 - Monitoring: Nginx config needs `/graf/` → `/` redirect fix
 - Settings: Toggle click intercepted, needs z-index fix
 
-**Owner:** Frontend team  
+**Owner:** Frontend team
 **ETA:** 1-2 hours
 
 ---
@@ -261,7 +261,7 @@
 - Add explicit service discovery configs
 - Enable metrics endpoints where missing
 
-**Owner:** DevOps team  
+**Owner:** DevOps team
 **ETA:** 2-3 hours
 
 ---
@@ -277,7 +277,7 @@
 - Generate frontend-initiated trace and verify in Tempo
 - Check `traceparent` header propagation through Nginx
 
-**Owner:** Frontend team  
+**Owner:** Frontend team
 **ETA:** 1 hour
 
 ---
@@ -375,8 +375,8 @@ MELT Coverage: 93%
 
 **Recommendation:** Merge to main. All primary objectives achieved. Research page backend can be addressed in follow-up sprint.
 
-**Signed off by:** AI Agent  
-**Date:** 2025-11-11  
+**Signed off by:** AI Agent
+**Date:** 2025-11-11
 **Branch:** `otel`
 
 ---
