@@ -107,11 +107,21 @@ async def search_vector_real(
             }
 
             # Add ACL metadata filters if available
-            # TEMP DEBUG: Disable ACL filter to test retrieval
-            acl_tag = getattr(acl_predicate, 'tag', None) if acl_predicate else None
-            if acl_tag and os.getenv("RAG_DISABLE_ACL_FOR_DEBUG") != "1":
-                search_payload["where"] = {"perms_tag": acl_tag}
-                logger.info(f"Vector search with ACL filter: perms_tag={acl_tag}")
+            # Build proper ACL where clause based on user's groups
+            if acl_predicate and os.getenv("RAG_DISABLE_ACL_FOR_DEBUG") != "1":
+                # User can access documents with perms_tag matching any of their groups
+                user_groups = acl_predicate.groups if acl_predicate.groups else ["public"]
+                if "public" not in user_groups:
+                    user_groups.append("public")  # Always include public access
+
+                # ChromaDB where clause: perms_tag must be in user's allowed groups
+                search_payload["where"] = {
+                    "$or": [
+                        {"perms_tag": {"$in": user_groups}},
+                        {"acl_allow_groups": {"$in": user_groups}}  # Support both field names
+                    ]
+                }
+                logger.info(f"Vector search with ACL filter: user_groups={user_groups}")
             else:
                 logger.info(f"Vector search WITHOUT ACL filter (debug mode or no ACL)")
 

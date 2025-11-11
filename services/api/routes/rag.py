@@ -213,6 +213,7 @@ async def rag_query(req: RagQuery):
                 return RagResponse(
                     answer="I apologize, but I don't have sufficiently recent information to answer this query with confidence.",
                     citations=[],
+                    sources=[],  # Empty sources for E2E test compatibility
                     artifacts={
                         "retrieval_log": retrieval_log,
                         "guardrail_report": guardrail_report,
@@ -391,9 +392,23 @@ async def rag_query(req: RagQuery):
 
             logger.info(f"RAG query completed: request_id={request_id}, latency_ms={latency_ms:.0f}, citations={len(citations)}")
 
+            # Build sources array for backward compatibility with E2E tests
+            sources = [
+                {
+                    "doc_id": c["doc_id"],
+                    "chunk_id": c["chunk_id"],
+                    "score": c["score"],
+                    "origin_tool": c["origin_tool"],
+                    "source_type": "rag" if c["origin_tool"] == "rag" else "web",
+                    "content": c["content"][:200] + "..." if len(c["content"]) > 200 else c["content"]
+                }
+                for c in citations
+            ]
+
             return RagResponse(
                 answer=llm_response.text,
                 citations=citations,
+                sources=sources,  # Add sources field for E2E test compatibility
                 artifacts=artifacts,
                 metrics=metrics,
                 security_status=security_status,

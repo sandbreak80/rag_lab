@@ -1,13 +1,15 @@
 """
 Document upload and indexing endpoint with agentic chunking
 """
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from pydantic import BaseModel
+from typing import Optional
 import httpx
 import asyncio
 import os
 import logging
 import time
+import json
 
 from ..config import (
     EMBED_URL,
@@ -53,27 +55,36 @@ async def _read_file(file: UploadFile) -> str:
 # Removed: Simple chunking replaced by agentic chunking pipeline
 
 
-@router.post("", response_model=IngestResponse)
+@router.post("", response_model=IngestResponse, status_code=201)
 async def upload_documents(
-    files: list[UploadFile] = File(...),
-    perms_tag: str = "public"  # TODO: Wire to real auth with Depends(get_perms_tag)
+    files: list[UploadFile] = File(..., description="One or more files to upload"),
+    perms_tag: str = Form("public", description="Permission tag for ACL (public, secret, etc.)"),
+    metadata: Optional[str] = Form(None, description="Optional JSON metadata")
 ):
     """
-    Upload and index documents into vector database.
+    Upload and index documents into vector database with multipart/form-data.
 
     Flow:
     1. Read file content
-    2. Chunk text (800 tokens, 120 overlap)
+    2. Chunk text using agentic chunking (800 tokens, 120 overlap)
     3. Generate embeddings
     4. Upsert to vector DB with ACL metadata
 
     Args:
-        files: List of uploaded files
+        files: List of uploaded files (multipart/form-data)
         perms_tag: Permission tag for ACL (default: public)
+        metadata: Optional JSON string with additional metadata
 
     Returns:
-        IngestResponse with file count and chunks indexed
+        IngestResponse with file count and chunks indexed (201 Created)
     """
+    # Parse optional metadata
+    extra_meta = {}
+    if metadata:
+        try:
+            extra_meta = json.loads(metadata)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid metadata JSON: {e}")
     if not files:
         raise HTTPException(status_code=400, detail="No files provided")
 
@@ -101,7 +112,8 @@ async def upload_documents(
                         "title": f.filename,
                         "file_type": f.content_type or "text/plain",
                         "perms_tag": perms_tag,
-                        "acl_allow_groups": "public",  # ChromaDB needs primitives, not lists
+                        "acl_allow_groups": perms_tag,  # Use perms_tag for ACL filtering
+                        **extra_meta  # Merge in any extra metadata from form
                     }
 
                     chunk_objects = await make_chunks(

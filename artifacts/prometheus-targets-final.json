@@ -1,0 +1,156 @@
+{
+  "job": "api-gateway",
+  "instance": "api-gateway:8000",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:02:52.414788965Z"
+}
+{
+  "job": "auth-service",
+  "instance": "auth-service:8014",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:02:52.664515546Z"
+}
+{
+  "job": "cadvisor",
+  "instance": "cadvisor:8080",
+  "health": "up",
+  "lastScrape": "2025-11-11T09:02:55.658730668Z"
+}
+{
+  "job": "chat-service",
+  "instance": "chat-service:8003",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:02:53.108921943Z"
+}
+{
+  "job": "dcgm-exporter",
+  "instance": "dcgm-exporter:9400",
+  "health": "up",
+  "lastScrape": "2025-11-11T09:02:43.652688747Z"
+}
+{
+  "job": "embedding-service",
+  "instance": "embedding-service:8006",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:03:04.574910668Z"
+}
+{
+  "job": "entity-extraction",
+  "instance": "entity-extraction:8010",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:02:58.402688664Z"
+}
+{
+  "job": "health-exporter",
+  "instance": "health-exporter:9099",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:02:59.093111264Z"
+}
+{
+  "job": "ingest-service",
+  "instance": "ingest-service:8001",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:02:53.77056353Z"
+}
+{
+  "job": "knowledge-graph",
+  "instance": "knowledge-graph:8007",
+  "health": "up",
+  "lastScrape": "2025-11-11T09:03:05.513381977Z"
+}
+{
+  "job": "metrics-store",
+  "instance": "metrics-store:8011",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:02:57.197586182Z"
+}
+{
+  "job": "nginx",
+  "instance": "nginx:9113",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:02:57.26158535Z"
+}
+{
+  "job": "node-exporter",
+  "instance": "ec2-host",
+  "health": "up",
+  "lastScrape": "2025-11-11T09:02:56.390257606Z"
+}
+{
+  "job": "ollama",
+  "instance": "ollama:11434",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:02:55.178008551Z"
+}
+{
+  "job": "prometheus",
+  "instance": "localhost:9090",
+  "health": "up",
+  "lastScrape": "2025-11-11T09:03:01.594046948Z"
+}
+{
+  "job": "query-decomposer",
+  "instance": "query-decomposer:8019",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:03:03.233678019Z"
+}
+{
+  "job": "rag-api-v1",
+  "instance": "rag-api-v1:8080",
+  "health": "up",
+  "lastScrape": "2025-11-11T09:03:05.772802316Z"
+}
+{
+  "job": "rag-embedding",
+  "instance": "embedding-service:8006",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:03:05.086850893Z"
+}
+{
+  "job": "rag-vector-db",
+  "instance": "rag-vector-db:8005",
+  "health": "up",
+  "lastScrape": "2025-11-11T09:03:02.177193912Z"
+}
+{
+  "job": "reranker",
+  "instance": "reranker:8008",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:02:57.527912053Z"
+}
+{
+  "job": "research-agent",
+  "instance": "research-agent:8015",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:02:54.296057106Z"
+}
+{
+  "job": "search-service",
+  "instance": "search-service:8002",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:03:02.126420858Z"
+}
+{
+  "job": "searxng",
+  "instance": "searxng:8080",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:03:05.341585088Z"
+}
+{
+  "job": "security-guardrails",
+  "instance": "security-guardrails:8013",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:03:02.555134907Z"
+}
+{
+  "job": "vector-db",
+  "instance": "vector-db:8005",
+  "health": "up",
+  "lastScrape": "2025-11-11T09:02:57.319246997Z"
+}
+{
+  "job": "web-search",
+  "instance": "web-search:8009",
+  "health": "down",
+  "lastScrape": "2025-11-11T09:02:52.860705785Z"
+}

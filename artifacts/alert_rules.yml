@@ -1,0 +1,81 @@
+groups:
+  - name: rag_alerts
+    interval: 30s
+    rules:
+      # Alert: High P95 latency
+      - alert: RAGHighLatency
+        expr: rag:p95_latency > 3.5
+        for: 5m
+        labels:
+          severity: warning
+          component: rag-pipeline
+        annotations:
+          summary: "RAG P95 latency is high"
+          description: "P95 latency is {{ $value | humanizeDuration }} (threshold: 3.5s) for the last 5 minutes"
+
+      # Alert: High error rate
+      - alert: RAGErrorRateHigh
+        expr: rag:error_rate > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: rag-pipeline
+        annotations:
+          summary: "RAG error rate is high"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%) for the last 5 minutes"
+
+      # Alert: Low citation rate
+      - alert: RAGNoCitations
+        expr: rag:citation_rate < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          component: rag-retrieval
+        annotations:
+          summary: "RAG citation rate is low"
+          description: "Citation rate is {{ $value | humanizePercentage }} (threshold: 50%) for the last 10 minutes"
+
+      # Alert: Chunking stalled
+      - alert: ChunkingStalled
+        expr: increase(rag_chunking_docs_total[30m]) == 0
+        for: 30m
+        labels:
+          severity: warning
+          component: rag-chunking
+        annotations:
+          summary: "Document chunking has stalled"
+          description: "No new documents have been chunked in the last 30 minutes"
+
+      # Alert: Vector DB down
+      - alert: VectorDown
+        expr: up{job="vector-db"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: vector-db
+        annotations:
+          summary: "Vector database is down"
+          description: "Vector DB has been unreachable for 2 minutes"
+
+      # Alert: Freshness violations
+      - alert: RAGFreshnessViolations
+        expr: increase(rag_freshness_violations_total[10m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          component: rag-retrieval
+        annotations:
+          summary: "RAG freshness policy violations detected"
+          description: "{{ $value }} freshness violations in the last 10 minutes"
+
+      # Alert: LLM service down
+      - alert: LLMServiceDown
+        expr: up{job="ollama"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: llm
+        annotations:
+          summary: "LLM service (Ollama) is down"
+          description: "Ollama has been unreachable for 2 minutes"
+

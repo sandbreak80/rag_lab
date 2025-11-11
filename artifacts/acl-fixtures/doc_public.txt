@@ -1,0 +1,19 @@
+Public Document - Accessible to All Users
+
+This document contains general information that is available to all users regardless of their group membership.
+
+Topic: RAG System Overview
+Content: Retrieval-Augmented Generation (RAG) is a technique that combines information retrieval with large language models to provide accurate, grounded responses based on a knowledge base.
+
+Key Features:
+- Vector search for semantic similarity
+- Web search for real-time information
+- Citation tracking for transparency
+- Agentic chunking for optimal document processing
+
+This information is publicly available and can be accessed by any authenticated user.
+
+Document ID: doc_public_001
+Group Access: public
+Classification: Public
+

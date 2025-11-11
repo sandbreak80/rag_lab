@@ -1,0 +1,25 @@
+CONFIDENTIAL - Secret Group Access Only
+
+This document contains sensitive information restricted to members of the 'secret' group.
+
+Topic: Internal Security Architecture
+Content: The RAG system implements multi-layer security controls including ABAC (Attribute-Based Access Control) for fine-grained authorization. Documents are tagged with group metadata and access is enforced at query time through pre-filtering in the vector database adapter.
+
+Sensitive Details:
+- ACL predicates are built from user_id, groups[], and dept attributes
+- Vector queries include WHERE clauses to filter unauthorized documents
+- Zero-knowledge design ensures no existence leaks (no doc titles/snippets for unauthorized users)
+- Prometheus metrics track ACL denials for security monitoring
+
+Implementation Notes:
+- authz/abac.py: build_acl_predicate() constructs ChromaDB where clauses
+- adapters/vector.py: Applies ACL filter before semantic search
+- Metrics: rag_acl_denied_total counter increments on access denials
+
+This information is CONFIDENTIAL and must only be accessed by authorized personnel in the 'secret' group.
+
+Document ID: doc_private_001
+Group Access: secret
+Classification: Confidential
+Security Level: High
+

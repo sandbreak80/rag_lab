@@ -80,11 +80,12 @@ export function MetricsOverview() {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4" data-testid="metrics-panel">
       {metrics.map((metric, index) => {
         const Icon = metric.icon;
+        const testId = metric.label.toLowerCase().replace(/\s+/g, '-');
         return (
-          <Card key={index}>
+          <Card key={index} data-testid={`metrics-${testId}`}>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className={`${metric.color}`}>
@@ -92,7 +93,7 @@ export function MetricsOverview() {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground">{metric.label}</p>
-                  <p className="text-2xl font-bold">{metric.value}</p>
+                  <p className="text-2xl font-bold" data-testid={`metrics-${testId}-value`}>{metric.value}</p>
                   {metric.subtitle && (
                     <p className="text-xs text-muted-foreground mt-1">{metric.subtitle}</p>
                   )}

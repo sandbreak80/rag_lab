@@ -1,0 +1,105 @@
+{
+  "sprint": "D5-F2",
+  "date": "2025-11-11",
+  "objective": "Raise E2E test pass rate to ≥18/21",
+  "results": {
+    "total_tests": 26,
+    "passing": 17,
+    "failing": 9,
+    "pass_rate": "65%",
+    "core_tests": {
+      "total": 21,
+      "passing": 13,
+      "pass_rate": "62%"
+    }
+  },
+  "test_suites": {
+    "10_chat": {
+      "total": 2,
+      "passing": 2,
+      "status": "GREEN"
+    },
+    "11_documents": {
+      "total": 2,
+      "passing": 2,
+      "status": "GREEN"
+    },
+    "12_research": {
+      "total": 3,
+      "passing": 0,
+      "status": "RED",
+      "reason": "Backend endpoint not implemented"
+    },
+    "13_settings": {
+      "total": 3,
+      "passing": 2,
+      "status": "PARTIAL",
+      "reason": "Toggle click intercepted"
+    },
+    "14_metrics": {
+      "total": 5,
+      "passing": 2,
+      "status": "PARTIAL",
+      "reason": "Missing test IDs"
+    },
+    "15_monitoring": {
+      "total": 7,
+      "passing": 5,
+      "status": "PARTIAL",
+      "reason": "Grafana redirect loop"
+    },
+    "16_acl_security": {
+      "total": 5,
+      "passing": 3,
+      "status": "PARTIAL",
+      "reason": "Metadata structure mismatch"
+    }
+  },
+  "changes_made": [
+    "Added data-testid='metrics-panel' to MetricsOverview",
+    "Added data-testid='metrics-avg-latency', 'metrics-total-queries', etc.",
+    "Added data-testid='grafana-link' to Monitoring page",
+    "Rebuilt frontend with new test IDs"
+  ],
+  "acceptance_criteria": {
+    "target": "≥18/21 passing",
+    "actual": "13/21 passing",
+    "status": "NOT MET",
+    "gap": 5
+  },
+  "known_issues": [
+    {
+      "issue": "Research page backend incomplete",
+      "impact": "0/3 tests passing",
+      "mitigation": "Feature flag to skip tests"
+    },
+    {
+      "issue": "Metrics page missing test IDs",
+      "impact": "2/5 tests passing",
+      "mitigation": "Test IDs added, needs verification"
+    },
+    {
+      "issue": "Monitoring Grafana redirect loop",
+      "impact": "5/7 tests passing",
+      "mitigation": "Nginx config needs redirect fix"
+    },
+    {
+      "issue": "Settings toggle click intercepted",
+      "impact": "2/3 tests passing",
+      "mitigation": "Z-index fix needed"
+    }
+  ],
+  "next_steps": [
+    "Fix Nginx /graf/ redirect",
+    "Add research feature flag",
+    "Verify metrics test IDs",
+    "Fix settings z-index"
+  ],
+  "artifacts": [
+    "tests/e2e/playwright-report/index.html",
+    "tests/e2e/test-results/ (screenshots + videos)",
+    "frontend/src/components/metrics/MetricsOverview.tsx (updated)",
+    "frontend/src/components/monitoring/MonitoringPage.tsx (updated)"
+  ]
+}
+

@@ -1,0 +1,392 @@
+{
+  "status": "success",
+  "data": {
+    "resultType": "vector",
+    "result": [
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/v1/rag/query",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "0.1",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/v1/rag/query",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "0.5",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/v1/rag/query",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "1.0",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/v1/rag/query",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "2.0",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/v1/rag/query",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "3.5",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/v1/rag/query",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "5.0",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "2"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/v1/rag/query",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "10.0",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "8"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/v1/rag/query",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "+Inf",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "10"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/metrics",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "0.1",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "2622"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/metrics",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "0.5",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "2622"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/metrics",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "1.0",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "2622"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/metrics",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "2.0",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "2622"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/metrics",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "3.5",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "2622"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/metrics",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "5.0",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "2622"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/metrics",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "10.0",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "2622"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/metrics",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "+Inf",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "2622"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/v1/documents",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "0.1",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "30"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/v1/documents",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "0.5",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "30"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/v1/documents",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "1.0",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "30"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/v1/documents",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "2.0",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "30"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/v1/documents",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "3.5",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "30"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/v1/documents",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "5.0",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "30"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/v1/documents",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "10.0",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "30"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "rag_request_duration_seconds_bucket",
+          "endpoint": "/v1/documents",
+          "instance": "rag-api-v1:8080",
+          "job": "rag-api-v1",
+          "le": "+Inf",
+          "pipeline": "observability",
+          "service": "rag-api-v1",
+          "type": "application"
+        },
+        "value": [
+          1762880307.907,
+          "30"
+        ]
+      }
+    ]
+  }
+}

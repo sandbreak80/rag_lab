@@ -38,6 +38,10 @@ class RagResponse(BaseModel):
         ...,
         description="Sentence-level citations with (doc_id, version, chunk_id, char_range, source_uri)"
     )
+    sources: list[dict[str, Any]] | None = Field(
+        None,
+        description="Simplified source list for E2E test compatibility (doc_id, score, origin_tool)"
+    )
     artifacts: dict[str, Any] = Field(
         ...,
         description="Schemas A-G serialized (A=planner, B=retrieval_log, C=evidence_map, etc.)"

@@ -811,8 +811,8 @@ services:
       RAG_CHUNK_EMIT_STAGE_TIMINGS: "1"     # include timings in response
       RAG_CHUNK_EMIT_METADATA: "1"          # attach chunk metadata
 
-      # TEMP: Disable ACL filter for debugging
-      RAG_DISABLE_ACL_FOR_DEBUG: "1"
+      # ACL/ABAC enforcement enabled (D6 security testing)
+      RAG_DISABLE_ACL_FOR_DEBUG: "0"
 
       # OTel wiring (works even when RAG_ENABLE_OBS=0)
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"

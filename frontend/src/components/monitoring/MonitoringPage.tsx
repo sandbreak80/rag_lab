@@ -27,6 +27,7 @@ export function MonitoringPage() {
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              data-testid="grafana-link"
             >
               <ExternalLink className="h-4 w-4" />
               Open Grafana
