@@ -38,7 +38,7 @@ export function initializeOpenTelemetry(): void {
 
   // Configure OTLP exporter to send traces to OTel Collector via Nginx
   const exporter = new OTLPTraceExporter({
-    url: '/api/v1/traces', // Routed through Nginx to otel-collector:4318
+    url: import.meta.env.VITE_OTEL_EXPORT_URL || '/api/v1/traces',
     headers: {
       'Content-Type': 'application/json',
     },
