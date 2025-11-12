@@ -187,8 +187,8 @@ async def rag_query(req: RagQuery):
                         web_skipped = True
                         web_results = []
                         web_ms = 0
-                        retrieve_span.set_attribute("web.skipped", True)
-                        retrieve_span.set_attribute("web.skip_reason", "strong_vector_hits")
+                        span.set_attribute("web.skipped", True)
+                        span.set_attribute("web.skip_reason", "strong_vector_hits")
                         RAG_RETRIEVAL_WEB_SKIPPED.inc()
                         logger.info(
                             f"Early-stop: Skipping web search (vector: {len(vector_results)} hits, "
@@ -198,7 +198,7 @@ async def rag_query(req: RagQuery):
             # Execute web search if not skipped
             if not web_skipped:
                 web_results, web_ms = await web_search_task()
-                retrieve_span.set_attribute("web.skipped", False)
+                span.set_attribute("web.skipped", False)
 
             t_retrieve_end = time.perf_counter()
             stage_timings["vector_ms"] = vector_ms
