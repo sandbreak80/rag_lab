@@ -71,6 +71,7 @@ export function RAGToggles() {
           <div
             key={feature.key}
             className="flex items-start justify-between p-3 rounded-lg bg-muted/50"
+            data-testid={`settings-toggle-${feature.key}`}
           >
             <div className="flex-1 mr-4">
               <Label htmlFor={feature.key} className="cursor-pointer">
@@ -87,6 +88,7 @@ export function RAGToggles() {
               id={feature.key}
               checked={store[feature.key] as boolean}
               onCheckedChange={() => store.toggleFeature(feature.key)}
+              data-testid={`settings-switch-${feature.key}`}
             />
           </div>
         ))}

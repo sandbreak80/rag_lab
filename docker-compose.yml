@@ -859,6 +859,7 @@ services:
       - "3000:80"
     environment:
       - NEXT_PUBLIC_RAG_API=/api
+      - VITE_RESEARCH_ENABLED=false  # Feature flag for research agent (A2)
     depends_on:
       - rag-api-v1
     restart: unless-stopped
