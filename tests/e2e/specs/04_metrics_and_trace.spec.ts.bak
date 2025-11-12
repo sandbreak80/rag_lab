@@ -35,7 +35,7 @@ test('metrics row shows trace and token stats', async ({ page, baseURL }) => {
   }
 
   // At minimum, check if the response completed successfully
-  const answer = page.locator('[data-testid="chat-answer"], .answer, .response, .message').first();
+  const answer = page.locator('[data-testid="answer"], .answer, .response, .message').first();
   await expect(answer).toBeVisible();
 });
 

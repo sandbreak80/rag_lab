@@ -8,7 +8,7 @@ test('Chat P95 under 3.5s (smoke)', async ({ page }) => {
   await page.locator('[data-testid="chat-input"], textarea').first().fill('Give me a 2-sentence overview of our RAG system.');
   await page.locator('[data-testid="chat-send"], button:has-text("Send")').first().click();
 
-  await expect(page.locator('[data-testid="chat-answer"]')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('[data-testid="answer"]')).toBeVisible({ timeout: 15000 });
 
   const elapsed = Date.now() - start;
 

@@ -204,12 +204,12 @@ export function MessageItem({ message }: MessageItemProps) {
           </div>
 
           {/* Metadata */}
-          <div className="mt-2 flex items-center gap-2 text-xs opacity-70">
+          <div className="mt-2 flex items-center gap-2 text-xs opacity-70" data-testid="metrics-row">
             <span>{formatDate(message.timestamp)}</span>
             {message.metadata?.latency && (
               <>
                 <span>•</span>
-                <span>{message.metadata.latency}ms</span>
+                <span data-testid={TID.Metrics.Latency}>{message.metadata.latency}ms</span>
               </>
             )}
             {message.metadata?.model && (

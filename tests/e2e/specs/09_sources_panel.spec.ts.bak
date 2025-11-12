@@ -11,7 +11,7 @@ test('Sources panel shows retrieved docs', async ({ page, baseURL }) => {
   await page.locator('[data-testid="chat-send"]').click();
 
   // Wait for answer
-  await expect(page.locator('[data-testid="chat-answer"]')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('[data-testid="answer"]')).toBeVisible({ timeout: 15000 });
 
   // Check sources panel exists and has items
   const sourcesPanel = page.locator('[data-testid="sources-panel"]');

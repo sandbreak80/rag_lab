@@ -6,7 +6,7 @@ test('Performance breakdown shows timings after a chat run', async ({ page }) =>
   await page.locator('[data-testid="chat-input"], textarea').first().fill('Explain our RAG pipeline');
   await page.locator('[data-testid="chat-send"], button:has-text("Send")').first().click();
 
-  await expect(page.locator('[data-testid="chat-answer"]')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('[data-testid="answer"]')).toBeVisible({ timeout: 15000 });
 
   // Look for performance breakdown panel
   const panel = page.locator('text=Performance').first();

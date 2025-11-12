@@ -30,7 +30,7 @@ test('Chat page has no serious accessibility violations', async ({ page }) => {
   await page.locator('[data-testid="chat-input"], textarea').first().fill('Test message');
   await page.locator('[data-testid="chat-send"], button:has-text("Send")').first().click();
 
-  await expect(page.locator('[data-testid="chat-answer"]')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('[data-testid="answer"]')).toBeVisible({ timeout: 15000 });
 
   const results = await new AxeBuilder({ page }).analyze();
 

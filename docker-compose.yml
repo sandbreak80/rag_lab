@@ -1156,6 +1156,9 @@ services:
       CI: "true"
       PLAYWRIGHT_HTML_REPORT: playwright-report
       PLAYWRIGHT_JUNIT_OUTPUT_NAME: playwright-report/results.xml
+      # Feature flags for tests
+      VITE_RESEARCH_ENABLED: "false"
+      VITE_ENABLE_OTEL: "true"
     volumes:
       - ./:/workspace
     depends_on:

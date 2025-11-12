@@ -27,7 +27,7 @@ test('guardrail degradation renders safe fallback', async ({ page, baseURL }) =>
   }
 
   // Answer should still be visible (even if degraded)
-  const answer = page.locator('[data-testid="chat-answer"], .answer, .response, .message').first();
+  const answer = page.locator('[data-testid="answer"], .answer, .response, .message').first();
   await expect(answer).toBeVisible();
   console.log('✓ Safe fallback answer rendered');
 });

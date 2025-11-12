@@ -13,7 +13,7 @@ test('Chat sources render with valid items', async ({ page }) => {
   await page.locator('[data-testid="chat-send"], button:has-text("Send")').first().click();
 
   // Wait for answer render
-  await expect(page.locator('[data-testid="chat-answer"]')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('[data-testid="answer"]')).toBeVisible({ timeout: 15000 });
 
   // Sources panel should exist and have items
   const sourcesList = page.locator('text=Sources').locator('..'); // container near label

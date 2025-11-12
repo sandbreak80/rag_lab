@@ -11,7 +11,7 @@ test('Performance section shows stage timings', async ({ page, baseURL }) => {
   await page.locator('[data-testid="chat-send"]').click();
 
   // Wait for answer
-  await expect(page.locator('[data-testid="chat-answer"]')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('[data-testid="answer"]')).toBeVisible({ timeout: 15000 });
 
   // Check metrics row is visible
   const metricsRow = page.locator('[data-testid="metrics-row"]');

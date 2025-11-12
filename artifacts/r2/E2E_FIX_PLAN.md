@@ -1,8 +1,8 @@
 # E2E Test Fix Plan - 27 Failing Tests
 
-**Date:** 2025-11-12  
-**Branch:** `otel`  
-**Current Status:** 29/57 passing (51%)  
+**Date:** 2025-11-12
+**Branch:** `otel`
+**Current Status:** 29/57 passing (51%)
 **Target:** 50+/57 passing (88%+)
 
 ---
@@ -483,8 +483,8 @@ Update this plan with actual results and learnings
 
 ---
 
-**Status:** READY TO START  
-**Estimated Time:** 4-5 hours  
+**Status:** READY TO START
+**Estimated Time:** 4-5 hours
 **Expected Result:** 50+/57 tests passing (88%+)
 
 ---

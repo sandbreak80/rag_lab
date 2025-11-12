@@ -34,7 +34,7 @@ test('JSON inspector can download artifacts A–G', async ({ page, baseURL }) =>
   } else {
     console.log('⚠ JSON download button not found in UI - may need implementation');
     // Still pass the test if response was successful
-    const answer = page.locator('[data-testid="chat-answer"], .answer, .response, .message').first();
+    const answer = page.locator('[data-testid="answer"], .answer, .response, .message').first();
     await expect(answer).toBeVisible();
   }
 });
