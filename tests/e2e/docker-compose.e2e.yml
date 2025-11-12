@@ -20,7 +20,7 @@ services:
         echo "=========================================="
         exit $EXIT_CODE
     environment:
-      BASE_URL: http://16.146.148.184:3000
+      BASE_URL: http://localhost:3000
       CI: "true"
       PLAYWRIGHT_HTML_REPORT: playwright-report
       PLAYWRIGHT_JUNIT_OUTPUT_NAME: playwright-report/results.xml

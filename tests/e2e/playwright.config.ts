@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'http://frontend:3000'; // docker network default
+// Use localhost as default since E2E tests run with network_mode: host
+// This can be overridden by setting BASE_URL environment variable
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const HEADLESS = process.env.PW_HEADLESS !== '0';
 
 export default defineConfig({
