@@ -10,9 +10,9 @@ echo ""
 cd "$(dirname "$0")/.."
 
 # Run E2E tests in Docker
-docker compose run --rm \
-  -e BASE_URL="http://frontend:3000" \
-  e2e
+# BASE_URL is set in docker-compose.yml to http://frontend:80
+# (frontend container listens on port 80 internally, mapped to host 3000)
+docker compose run --rm e2e
 
 echo ""
 echo "=========================================="
