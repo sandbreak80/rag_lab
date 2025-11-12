@@ -129,30 +129,48 @@ async def rag_query(req: RagQuery):
             span.set_attribute("rag.auth.perms_tag", acl_pred.tag)
 
             # ===================================================================
-            # STAGE 2: Retrieval (Hybrid with ACL pre-filter)
+            # STAGE 2: Retrieval (Parallel Hybrid with ACL pre-filter)
             # ===================================================================
             t_retrieve_start = time.perf_counter()
-            with tracer.start_as_current_span("retrieve_internal.vector") as retrieve_span:
-                vector_results, vector_stats = await vector.search(
-                    query=req.query,
-                    acl_predicate=acl_pred,
-                    top_k=req.top_k * 2,  # Over-fetch
-                    use_mock=USE_MOCK_VECTOR
-                )
-                retrieve_span.set_attribute("docs_retrieved", len(vector_results))
-                retrieve_span.set_attribute("acl_filtered", vector_stats.get("acl_filtered_count", 0))
-            t_vector_end = time.perf_counter()
-            stage_timings["vector_ms"] = int((t_vector_end - t_retrieve_start) * 1000)
-
-            with tracer.start_as_current_span("retrieve_web.searxng") as web_span:
-                web_results = await web.search(
-                    query=req.query,
-                    top_k=5,
-                    use_mock=USE_MOCK_WEB
-                )
-                web_span.set_attribute("docs_retrieved", len(web_results))
-            t_web_end = time.perf_counter()
-            stage_timings["web_ms"] = int((t_web_end - t_vector_end) * 1000)
+            
+            # Define parallel retrieval tasks
+            async def vector_search_task():
+                with tracer.start_as_current_span("retrieve_internal.vector") as retrieve_span:
+                    t_vec_start = time.perf_counter()
+                    results, stats = await vector.search(
+                        query=req.query,
+                        acl_predicate=acl_pred,
+                        top_k=req.top_k * 2,  # Over-fetch
+                        use_mock=USE_MOCK_VECTOR
+                    )
+                    t_vec_end = time.perf_counter()
+                    retrieve_span.set_attribute("docs_retrieved", len(results))
+                    retrieve_span.set_attribute("acl_filtered", stats.get("acl_filtered_count", 0))
+                    return results, stats, int((t_vec_end - t_vec_start) * 1000)
+            
+            async def web_search_task():
+                with tracer.start_as_current_span("retrieve_web.searxng") as web_span:
+                    t_web_start = time.perf_counter()
+                    results = await web.search(
+                        query=req.query,
+                        top_k=5,
+                        use_mock=USE_MOCK_WEB
+                    )
+                    t_web_end = time.perf_counter()
+                    web_span.set_attribute("docs_retrieved", len(results))
+                    return results, int((t_web_end - t_web_start) * 1000)
+            
+            # Execute retrieval in parallel
+            import asyncio
+            (vector_results, vector_stats, vector_ms), (web_results, web_ms) = await asyncio.gather(
+                vector_search_task(),
+                web_search_task()
+            )
+            
+            t_retrieve_end = time.perf_counter()
+            stage_timings["vector_ms"] = vector_ms
+            stage_timings["web_ms"] = web_ms
+            stage_timings["retrieve_parallel_ms"] = int((t_retrieve_end - t_retrieve_start) * 1000)
 
             # Combine results
             all_results = vector_results + web_results
