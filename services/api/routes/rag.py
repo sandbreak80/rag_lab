@@ -33,6 +33,13 @@ RAG_RETRIEVAL_WEB_SKIPPED = Counter(
     'Number of queries where web search was skipped due to strong vector hits'
 )
 
+# Issue #5: Prometheus metrics for token accounting
+RAG_LLM_TOKENS = Counter(
+    'rag_llm_tokens_total',
+    'Total LLM tokens consumed (input + output)',
+    ['model', 'token_type']  # token_type: 'input' or 'output'
+)
+
 
 def infer_query_intent(query: str) -> str:
     """Classify query intent for observability"""
@@ -189,7 +196,7 @@ async def rag_query(req: RagQuery):
                 span.set_attribute("web.skipped", True)
                 span.set_attribute("web.skip_reason", "disabled_in_settings")
                 logger.info("Web search disabled in settings")
-            
+
             # Evaluate early-stop: skip web if vector has strong hits (only if web is enabled)
             elif len(vector_results) >= RAG_EARLYSTOP_MIN_HITS:
                 # Check if median score is above threshold
@@ -327,6 +334,10 @@ async def rag_query(req: RagQuery):
                 synth_span.set_attribute("llm.tokens.output", llm_response.tokens_out)
                 synth_span.set_attribute("llm.tokens.total", llm_response.tokens_total)
                 synth_span.set_attribute("llm.cost.usd", llm_response.cost_usd)
+                
+                # Issue #5: Increment Prometheus token counters
+                RAG_LLM_TOKENS.labels(model=llm_response.model, token_type='input').inc(llm_response.tokens_in)
+                RAG_LLM_TOKENS.labels(model=llm_response.model, token_type='output').inc(llm_response.tokens_out)
 
             t_llm_end = time.perf_counter()
             stage_timings["llm_ms"] = int((t_llm_end - t_llm_start) * 1000)
@@ -452,6 +463,10 @@ async def rag_query(req: RagQuery):
                 "latency_ms": round(latency_ms, 2),
                 "tokens_in": llm_response.tokens_in,
                 "tokens_out": llm_response.tokens_out,
+                # Issue #5: Add frontend-compatible field names
+                "prompt_tokens": llm_response.tokens_in,
+                "completion_tokens": llm_response.tokens_out,
+                "total_tokens": llm_response.tokens_total,
                 "model": llm_response.model,
                 "cost_usd": llm_response.cost_usd,
                 "stage_timings": stage_timings  # Include stage breakdown
