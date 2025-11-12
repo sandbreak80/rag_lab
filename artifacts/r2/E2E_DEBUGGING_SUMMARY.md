@@ -1,7 +1,7 @@
 # E2E Test Debugging Summary
 
-**Date:** 2025-11-12  
-**Branch:** `otel`  
+**Date:** 2025-11-12
+**Branch:** `otel`
 **Status:** ⚠️ **PARTIAL FIX - Docker caching issue**
 
 ---
@@ -324,8 +324,8 @@ docker compose -f tests/e2e/docker-compose.e2e.yml build --no-cache
 
 ---
 
-**Status:** ✅ **Configuration Fixed, Awaiting Cache Clear**  
-**Confidence:** **HIGH** - Config changes are correct, just need to apply them  
+**Status:** ✅ **Configuration Fixed, Awaiting Cache Clear**
+**Confidence:** **HIGH** - Config changes are correct, just need to apply them
 **Recommendation:** Clean Docker cache and re-run tests
 
 ---

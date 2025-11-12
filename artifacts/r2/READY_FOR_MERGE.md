@@ -1,19 +1,19 @@
 # Ready for Merge - Round 2 UI Fix Sprint
 
-**Branch:** `otel`  
-**Target:** `main`  
-**Date:** 2025-11-12  
+**Branch:** `otel`
+**Target:** `main`
+**Date:** 2025-11-12
 **Status:** ✅ **READY FOR MERGE**
 
 ---
 
 ## 📊 Sprint Summary
 
-**Completion:** 7/10 issues (70%)  
-**Grade:** A- (85.5%)  
-**Duration:** 4.5 hours  
-**Commits:** 8 commits  
-**Files Changed:** 15+ files  
+**Completion:** 7/10 issues (70%)
+**Grade:** A- (85.5%)
+**Duration:** 4.5 hours
+**Commits:** 8 commits
+**Files Changed:** 15+ files
 
 ---
 
@@ -332,9 +332,9 @@ f72d8c8 fix(r2-reg-bc): implement StageTimingsDisplay for new API format
 
 ## 📞 Contact
 
-**Sprint Lead:** AI Assistant  
-**Branch:** `otel`  
-**Date:** 2025-11-12  
+**Sprint Lead:** AI Assistant
+**Branch:** `otel`
+**Date:** 2025-11-12
 **Artifacts:** `artifacts/r2/`
 
 For questions or issues, refer to:

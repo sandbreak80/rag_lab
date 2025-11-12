@@ -3,7 +3,7 @@ services:
     image: mcr.microsoft.com/playwright:v1.48.0-jammy
     container_name: rag-e2e-tests
     working_dir: /workspace/tests/e2e
-    entrypoint: ["/bin/bash", "-c"]
+    entrypoint: [ "/bin/bash", "-c" ]
     command:
       - |
         set -e
@@ -27,4 +27,3 @@ services:
     volumes:
       - ../../:/workspace
     network_mode: "host"
-
