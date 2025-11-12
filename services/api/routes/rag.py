@@ -6,8 +6,10 @@ from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode
 import time
 import logging
+import os
 from uuid import uuid4
 from datetime import datetime, timezone
+from prometheus_client import Counter
 
 # Local imports
 from ..models import RagQuery, RagResponse
@@ -24,6 +26,12 @@ from ..pipeline.guardrail_client import check_guardrails, get_security_status
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
 router = APIRouter(prefix="/v1/rag", tags=["rag-v1"])
+
+# B1: Prometheus metrics for early-stop
+RAG_RETRIEVAL_WEB_SKIPPED = Counter(
+    'rag_retrieval_web_skipped_total',
+    'Number of queries where web search was skipped due to strong vector hits'
+)
 
 
 def infer_query_intent(query: str) -> str:
@@ -132,7 +140,7 @@ async def rag_query(req: RagQuery):
             # STAGE 2: Retrieval (Parallel Hybrid with ACL pre-filter)
             # ===================================================================
             t_retrieve_start = time.perf_counter()
-            
+
             # Define parallel retrieval tasks
             async def vector_search_task():
                 with tracer.start_as_current_span("retrieve_internal.vector") as retrieve_span:
@@ -147,7 +155,7 @@ async def rag_query(req: RagQuery):
                     retrieve_span.set_attribute("docs_retrieved", len(results))
                     retrieve_span.set_attribute("acl_filtered", stats.get("acl_filtered_count", 0))
                     return results, stats, int((t_vec_end - t_vec_start) * 1000)
-            
+
             async def web_search_task():
                 with tracer.start_as_current_span("retrieve_web.searxng") as web_span:
                     t_web_start = time.perf_counter()
@@ -159,18 +167,44 @@ async def rag_query(req: RagQuery):
                     t_web_end = time.perf_counter()
                     web_span.set_attribute("docs_retrieved", len(results))
                     return results, int((t_web_end - t_web_start) * 1000)
+
+            # B1: Early-stop logic - check if vector results are strong enough
+            RAG_EARLYSTOP_MIN_HITS = int(os.getenv("RAG_EARLYSTOP_MIN_HITS", "8"))
+            RAG_EARLYSTOP_MIN_SCORE = float(os.getenv("RAG_EARLYSTOP_MIN_SCORE", "0.60"))
             
-            # Execute retrieval in parallel
+            # Execute vector search first to evaluate early-stop
             import asyncio
-            (vector_results, vector_stats, vector_ms), (web_results, web_ms) = await asyncio.gather(
-                vector_search_task(),
-                web_search_task()
-            )
+            vector_results, vector_stats, vector_ms = await vector_search_task()
             
+            # Evaluate early-stop: skip web if vector has strong hits
+            web_skipped = False
+            if len(vector_results) >= RAG_EARLYSTOP_MIN_HITS:
+                # Check if median score is above threshold
+                scores = [r.score for r in vector_results if hasattr(r, 'score')]
+                if scores:
+                    median_score = sorted(scores)[len(scores) // 2]
+                    if median_score >= RAG_EARLYSTOP_MIN_SCORE:
+                        web_skipped = True
+                        web_results = []
+                        web_ms = 0
+                        retrieve_span.set_attribute("web.skipped", True)
+                        retrieve_span.set_attribute("web.skip_reason", "strong_vector_hits")
+                        RAG_RETRIEVAL_WEB_SKIPPED.inc()
+                        logger.info(
+                            f"Early-stop: Skipping web search (vector: {len(vector_results)} hits, "
+                            f"median_score: {median_score:.3f} >= {RAG_EARLYSTOP_MIN_SCORE})"
+                        )
+            
+            # Execute web search if not skipped
+            if not web_skipped:
+                web_results, web_ms = await web_search_task()
+                retrieve_span.set_attribute("web.skipped", False)
+
             t_retrieve_end = time.perf_counter()
             stage_timings["vector_ms"] = vector_ms
             stage_timings["web_ms"] = web_ms
             stage_timings["retrieve_parallel_ms"] = int((t_retrieve_end - t_retrieve_start) * 1000)
+            stage_timings["web_skipped"] = web_skipped
 
             # Combine results
             all_results = vector_results + web_results
