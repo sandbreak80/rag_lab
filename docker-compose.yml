@@ -1150,8 +1150,12 @@ services:
         npx playwright install --with-deps &&
         npx playwright test
     environment:
-      BASE_URL: http://frontend:3000
+      # Use frontend service name with internal port 80 (not host port 3000)
+      # Frontend container listens on port 80 internally, mapped to host 3000
+      BASE_URL: http://frontend:80
       CI: "true"
+      PLAYWRIGHT_HTML_REPORT: playwright-report
+      PLAYWRIGHT_JUNIT_OUTPUT_NAME: playwright-report/results.xml
     volumes:
       - ./:/workspace
     depends_on:
