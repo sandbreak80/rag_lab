@@ -31,6 +31,7 @@ router = APIRouter(prefix="/v1/documents", tags=["documents"])
 
 # Service URLs
 VECTOR_ADD_URL = VECTOR_DB_URL + "/add"
+VECTOR_LIST_URL = VECTOR_DB_URL + "/list"
 
 
 class IngestResponse(BaseModel):
@@ -38,6 +39,12 @@ class IngestResponse(BaseModel):
     files: int
     chunks_indexed: int
     status: str = "success"
+
+
+class DocumentListResponse(BaseModel):
+    """Response from document list endpoint"""
+    documents: list[str]
+    count: int
 
 
 async def _read_file(file: UploadFile) -> str:
@@ -194,16 +201,32 @@ async def upload_documents(
     )
 
 
-@router.get("")
+@router.get("", response_model=DocumentListResponse)
 async def list_documents():
     """
-    List all indexed documents.
+    List all documents in the vector database.
 
-    TODO: Implement by querying vector DB for unique doc_title metadata
+    Returns:
+        DocumentListResponse with list of document IDs and count
     """
-    # Placeholder - would query vector DB for unique documents
-    return {
-        "documents": [],
-        "total": 0,
-        "message": "Document listing not yet implemented"
-    }
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            # Query vector DB for list of unique document IDs
+            response = await client.get(VECTOR_LIST_URL)
+            response.raise_for_status()
+            data = response.json()
+
+            # Extract unique document IDs
+            documents = data.get("documents", [])
+
+            return DocumentListResponse(
+                documents=documents,
+                count=len(documents)
+            )
+    except Exception as e:
+        logger.error(f"Failed to list documents: {e}")
+        # Return empty list on error rather than failing
+        return DocumentListResponse(
+            documents=[],
+            count=0
+        )

@@ -1,8 +1,8 @@
 # Phase 1 Status: Parallel Retrieval Implementation
 
-**Sprint:** Performance + Retrieval Quality  
-**Date:** 2025-11-12  
-**Branch:** `otel`  
+**Sprint:** Performance + Retrieval Quality
+**Date:** 2025-11-12
+**Branch:** `otel`
 **Commit:** `ca7d5c4`
 
 ---
@@ -64,13 +64,13 @@ Author: bmstoner
 Date:   2025-11-12
 
     feat: Implement parallel retrieval (Phase 1.1)
-    
+
     - Parallelize vector + web search using asyncio.gather()
     - Add retrieve_parallel_ms metric to track actual wall-clock time
     - Preserve individual vector_ms and web_ms timings
     - Maintain OpenTelemetry span instrumentation
     - Expected speedup: 1.5-1.7x (33-41% faster retrieval)
-    
+
     Validation pending full stack deployment.
 ```
 
@@ -84,7 +84,7 @@ Date:   2025-11-12
 
 **Issue:**
 ```
-Error: ports are not available: exposing port TCP 0.0.0.0:11434 -> 127.0.0.1:0: 
+Error: ports are not available: exposing port TCP 0.0.0.0:11434 -> 127.0.0.1:0:
 listen tcp 0.0.0.0:11434: bind: address already in use
 ```
 

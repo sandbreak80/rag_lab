@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { UploadProgress } from '../../types/documents';
 import { Button } from '../ui/button';
@@ -30,6 +30,7 @@ interface DocumentUploadProps {
 
 export function DocumentUpload({ onUploadComplete }: DocumentUploadProps) {
   const [uploads, setUploads] = useState<UploadProgress[]>([]);
+  const queryClient = useQueryClient();
 
   const uploadMutation = useMutation({
     mutationFn: (file: File) => {
@@ -49,6 +50,8 @@ export function DocumentUpload({ onUploadComplete }: DocumentUploadProps) {
             : u
         )
       );
+      // Invalidate documents query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
       setTimeout(() => {
         setUploads((prev) => prev.filter((u) => u.filename !== file.name));
         onUploadComplete?.();

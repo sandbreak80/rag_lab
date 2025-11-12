@@ -4,7 +4,7 @@ import { TID } from '../../testids';
 
 export function MonitoringPage() {
   // Direct links to Grafana and Prometheus (avoid iframe subpath issues)
-  const grafanaUrl = import.meta.env.VITE_GRAFANA_URL || 'http://16.146.148.184:3001';
+  const grafanaUrl = import.meta.env.VITE_GRAFANA_URL || 'http://16.146.148.184:3001/graf/dashboards/f/af3iptnjdc8owe/?orgId=1';
   const prometheusUrl = import.meta.env.VITE_PROMETHEUS_URL || 'http://16.146.148.184:9090';
 
   return (

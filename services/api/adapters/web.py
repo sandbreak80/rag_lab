@@ -83,18 +83,18 @@ async def search_web_real(
     from opentelemetry import trace
 
     tracer = trace.get_tracer(__name__)
-    
+
     # Apply guardrails
     effective_top_k = min(top_k, RAG_WEB_RESULTS)
     timeout_sec = RAG_WEB_TIMEOUT_SEC
-    
+
     try:
         t0 = time.perf_counter()
-        
+
         with tracer.start_as_current_span("web_search.searxng") as span:
             span.set_attribute("web.timeout_ms", RAG_WEB_TIMEOUT_MS)
             span.set_attribute("web.top_k", effective_top_k)
-            
+
             try:
                 async with httpx.AsyncClient(timeout=timeout_sec) as cx:
                     response = await cx.get(
@@ -103,29 +103,29 @@ async def search_web_real(
                     )
                     response.raise_for_status()
                     data = response.json()
-                
+
                 timeout_hit = False
             except (httpx.TimeoutException, httpx.ReadTimeout) as e:
                 logger.warning(f"Web search timeout after {timeout_sec}s, returning partial results")
                 timeout_hit = True
                 data = {"results": []}  # Return empty on timeout
-            
+
             latency_ms = (time.perf_counter() - t0) * 1000
-            
+
             # Deduplicate by URL
             seen_urls = set()
             results = []
-            
+
             for idx, hit in enumerate(data.get("results", [])):
                 url = hit.get("url", "")
                 if not url or url in seen_urls:
                     continue
                 seen_urls.add(url)
-                
+
                 # Stop at effective_top_k
                 if len(results) >= effective_top_k:
                     break
-                
+
                 # Extract URL as unique ID
                 doc_id = f"web_{hash(url) % 100000}"  # Stable hash-based ID
 
@@ -146,16 +146,16 @@ async def search_web_real(
                     published_at=datetime.fromisoformat(hit["published_at"]) if hit.get("published_at") else datetime.now(timezone.utc),
                     is_primary=False  # External web sources are secondary by default
                 ))
-            
+
             span.set_attribute("web.results_returned", len(results))
             span.set_attribute("web.timeout_hit", timeout_hit)
             span.set_attribute("web.latency_ms", int(latency_ms))
-            
+
             logger.info(
                 f"Web search: {len(results)} results in {latency_ms:.0f}ms "
                 f"(timeout: {timeout_hit}, budget: {RAG_WEB_TIMEOUT_MS}ms)"
             )
-            
+
             return results
 
     except Exception as e:

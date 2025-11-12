@@ -167,7 +167,7 @@ export function DocumentList() {
           const colorClass = getFileColor(filename);
 
           return (
-            <Card key={index}>
+            <Card key={index} data-testid="doc-row">
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
                   <div className={`flex-shrink-0 ${colorClass}`}>
@@ -175,7 +175,7 @@ export function DocumentList() {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium truncate">{filename}</h4>
+                    <h4 className="font-medium truncate" data-testid="doc-filename">{filename}</h4>
                     <p className="text-sm text-muted-foreground">
                       User uploaded
                     </p>

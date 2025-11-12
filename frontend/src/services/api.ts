@@ -133,7 +133,8 @@ class ApiClient {
     onProgress?: (progress: UploadProgress) => void
   ): Promise<{ success: boolean; message: string }> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('files', file);  // Backend expects 'files' (plural)
+    formData.append('perms_tag', 'public');  // Default to public
 
     const response = await this.client.post('/v1/documents', formData, {
       headers: {

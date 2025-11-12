@@ -16,7 +16,7 @@ export function ResearchPage() {
                 <Beaker className="h-16 w-16 text-muted-foreground" />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <h2 className="text-2xl font-bold">Research Agent Coming Soon</h2>
               <p className="text-muted-foreground">

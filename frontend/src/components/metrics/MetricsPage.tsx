@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMetricsStore } from '../../stores/metricsStore';
 import { QueryMetric } from '../../types/metrics';
 import { MetricsOverview } from './MetricsOverview';
 import { QueryHistoryTable } from './QueryHistoryTable';
 import { WaterfallChart } from './WaterfallChart';
+import { StageTimingsDisplay } from './StageTimingsDisplay';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Download, Trash2, X } from 'lucide-react';
@@ -12,7 +13,39 @@ import { formatDuration, formatDate } from '../../utils/formatting';
 export function MetricsPage() {
   const clearMetrics = useMetricsStore((state) => state.clearMetrics);
   const exportCSV = useMetricsStore((state) => state.exportCSV);
+  const queries = useMetricsStore((state) => state.queries);
   const [selectedMetric, setSelectedMetric] = useState<QueryMetric | null>(null);
+  const [latestStageTimings, setLatestStageTimings] = useState<any>(null);
+
+  // Fetch latest stage timings from API
+  useEffect(() => {
+    const fetchLatestTimings = async () => {
+      try {
+        const response = await fetch('/api/v1/rag/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: 'test',
+            user_id: 'metrics-page',
+            groups: ['public']
+          })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.metrics?.stage_timings) {
+            setLatestStageTimings(data.metrics.stage_timings);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch stage timings:', error);
+      }
+    };
+
+    // Only fetch if we have queries but no timings yet
+    if (queries.length > 0 && !latestStageTimings) {
+      fetchLatestTimings();
+    }
+  }, [queries.length, latestStageTimings]);
 
   const handleExport = () => {
     const csv = exportCSV();
@@ -55,6 +88,21 @@ export function MetricsPage() {
 
       {/* Overview Cards */}
       <MetricsOverview />
+
+      {/* Stage Timings (Latest Query) */}
+      {latestStageTimings && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Latest Query Performance</CardTitle>
+            <CardDescription>
+              Stage-by-stage timing breakdown from most recent query
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <StageTimingsDisplay timings={latestStageTimings} />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Query History */}
       <Card>

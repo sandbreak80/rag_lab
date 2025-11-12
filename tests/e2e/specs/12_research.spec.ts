@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL || 'http://16.146.148.184:3000';
+const RESEARCH_ENABLED = process.env.VITE_RESEARCH_ENABLED !== 'false';
 
 test.describe('Research Page', () => {
+  test.skip(!RESEARCH_ENABLED, 'Research feature is disabled');
+
   test('should display research panel and allow triggering research agent', async ({ page }) => {
     // Navigate to research page
     await page.goto(`${BASE_URL}/research`);
@@ -20,6 +23,8 @@ test.describe('Research Page', () => {
     const statusIndicator = page.getByTestId('research-status');
     await expect(statusIndicator).toBeAttached();
   });
+
+  test.skip(!RESEARCH_ENABLED, 'Research feature is disabled');
 
   test('should show research status updates when triggered', async ({ page }) => {
     await page.goto(`${BASE_URL}/research`);
@@ -58,6 +63,8 @@ test.describe('Research Page', () => {
       // The important part is that the UI responded to the click
     });
   });
+
+  test.skip(!RESEARCH_ENABLED, 'Research feature is disabled');
 
   test('should handle research panel rendering without errors', async ({ page }) => {
     // Listen for console errors

@@ -21,12 +21,12 @@ echo ""
 # Run 5 test queries
 for i in {1..5}; do
     echo "Query $i:"
-    
+
     # Execute query and capture response
     response=$(docker compose exec -T rag-api-v1 curl -s -X POST http://localhost:8080/v1/rag/query \
         -H "Content-Type: application/json" \
         -d '{"query":"What is RAG?","user_id":"test_user","groups":["public"]}')
-    
+
     # Extract timing metrics
     echo "$response" | python3 -c "
 import sys, json
@@ -37,7 +37,7 @@ try:
     print(f\"  web_ms: {timings.get('web_ms', 'N/A')}\")
     print(f\"  retrieve_parallel_ms: {timings.get('retrieve_parallel_ms', 'N/A')}\")
     print(f\"  total_ms: {timings.get('total_ms', 'N/A')}\")
-    
+
     # Calculate speedup
     vector_ms = timings.get('vector_ms', 0)
     web_ms = timings.get('web_ms', 0)

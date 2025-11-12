@@ -17,7 +17,7 @@ import time
 import os
 
 from .config import CONTRACT_VERSION, ENABLE_OBS, OTEL_COLLECTOR_URL
-from .routes import rag, documents, agent, health
+from .routes import rag, documents, agent, health, settings
 
 # ============================================================================
 # Import metrics module to register all metrics with Prometheus REGISTRY
@@ -147,6 +147,7 @@ app.include_router(rag.router)
 app.include_router(documents.router, tags=["documents"])
 app.include_router(agent.router, tags=["agent"])
 app.include_router(health.router, tags=["health"])
+app.include_router(settings.router, tags=["settings"])
 
 # ============================================================================
 # Middleware - Request Logging & Metrics

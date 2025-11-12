@@ -102,23 +102,14 @@ test.describe('Monitoring Page', () => {
     await page.goto(`${BASE_URL}/monitoring`);
     await page.waitForLoadState('networkidle');
 
-    // Look for dashboard links
-    const dashboardLinks = page.locator('a[href*="grafana"], a[href*="3001"]');
-    const count = await dashboardLinks.count();
+    // Verify Grafana link exists with correct testid
+    const grafanaLink = page.getByTestId('grafana-link');
+    await expect(grafanaLink).toBeVisible();
 
-    if (count > 0) {
-      const firstLink = dashboardLinks.first();
-      const href = await firstLink.getAttribute('href');
-
-      // Verify the link points to a valid URL
-      expect(href).toBeTruthy();
-
-      // If it's a full URL, verify it's accessible
-      if (href?.startsWith('http')) {
-        const response = await page.request.get(href);
-        expect([200, 302]).toContain(response.status());
-      }
-    }
+    // Verify link has href attribute pointing to Grafana
+    const href = await grafanaLink.getAttribute('href');
+    expect(href).toBeTruthy();
+    expect(href).toContain('3001'); // Grafana port
   });
 });
 

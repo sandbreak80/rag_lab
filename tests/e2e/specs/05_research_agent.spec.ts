@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 
+const RESEARCH_ENABLED = process.env.VITE_RESEARCH_ENABLED !== 'false';
+
+test.skip(!RESEARCH_ENABLED, 'Research feature is disabled');
+
 test('Research agent starts and reports running state', async ({ page }) => {
   await page.goto('/');
 

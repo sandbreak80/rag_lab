@@ -73,13 +73,14 @@ export function SettingsPanel() {
           <ModelSelector />
 
           {/* Temperature */}
-          <div className="space-y-2">
+          <div className="space-y-2" data-testid="settings-temperature-container">
             <div className="flex justify-between">
               <Label htmlFor="temperature">Temperature</Label>
-              <span className="text-sm text-muted-foreground">{temperature}</span>
+              <span className="text-sm text-muted-foreground" data-testid="settings-temperature-value">{temperature}</span>
             </div>
             <Slider
               id="temperature"
+              data-testid="settings-temperature"
               min={0}
               max={2}
               step={0.1}
@@ -92,13 +93,14 @@ export function SettingsPanel() {
           </div>
 
           {/* Context Window */}
-          <div className="space-y-2">
+          <div className="space-y-2" data-testid="settings-context-container">
             <div className="flex justify-between">
               <Label htmlFor="context">Context Window</Label>
-              <span className="text-sm text-muted-foreground">{contextWindow}</span>
+              <span className="text-sm text-muted-foreground" data-testid="settings-context-value">{contextWindow}</span>
             </div>
             <Slider
               id="context"
+              data-testid="settings-context"
               min={1024}
               max={128000}
               step={1024}
@@ -124,13 +126,14 @@ export function SettingsPanel() {
           <RAGToggles />
 
           {/* Top-K */}
-          <div className="space-y-2">
+          <div className="space-y-2" data-testid="settings-topk-container">
             <div className="flex justify-between">
               <Label htmlFor="top-k">Top-K Results</Label>
-              <span className="text-sm text-muted-foreground">{topK}</span>
+              <span className="text-sm text-muted-foreground" data-testid="settings-topk-value">{topK}</span>
             </div>
             <Slider
               id="top-k"
+              data-testid="settings-topk"
               min={1}
               max={20}
               step={1}
@@ -217,6 +220,7 @@ export function SettingsPanel() {
             <button
               type="button"
               id="prompt-enhancement"
+              data-testid="settings-prompt-enhancement"
               onClick={(e) => {
                 e.preventDefault();
                 console.log('🔍 Prompt Enhancement toggle clicked');
@@ -393,6 +397,7 @@ export function SettingsPanel() {
             <button
               type="button"
               id="vector-db"
+              data-testid="settings-vector-db"
               onClick={(e) => {
                 e.preventDefault();
                 console.log('🔍 Vector DB toggle clicked');
@@ -459,6 +464,7 @@ export function SettingsPanel() {
             <button
               type="button"
               id="web-search-source"
+              data-testid="settings-web-search"
               onClick={(e) => {
                 e.preventDefault();
                 console.log('🔍 Web Search toggle clicked');

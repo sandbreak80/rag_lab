@@ -237,6 +237,7 @@ export function PromptLoggingPage() {
                     className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${
                       isRisky ? 'border-yellow-500/50 bg-yellow-500/5' : ''
                     }`}
+                    data-testid="promptlog-row"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 space-y-1">
@@ -249,9 +250,9 @@ export function PromptLoggingPage() {
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           <span>{formatDate(query.timestamp)}</span>
                           <span>•</span>
-                          <span>{query.config.model}</span>
+                          <span data-testid="promptlog-model">{query.config.model}</span>
                           <span>•</span>
-                          <span>{query.tokens.total_tokens} tokens</span>
+                          <span data-testid="promptlog-tokens-total">{query.tokens.total_tokens} tokens</span>
                           <span>•</span>
                           <span>{query.performance.total_latency_ms.toFixed(0)}ms</span>
                         </div>
@@ -307,7 +308,13 @@ export function PromptLoggingPage() {
                   <h4 className="text-sm font-medium mb-2">Performance</h4>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between"><span className="text-muted-foreground">Latency:</span> <span>{selectedQuery.performance.total_latency_ms.toFixed(0)}ms</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Tokens:</span> <span>{selectedQuery.tokens.total_tokens}</span></div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tokens:</span>
+                      <span>
+                        <span data-testid="promptlog-tokens-in">{selectedQuery.tokens.prompt_tokens}</span> in /
+                        <span data-testid="promptlog-tokens-out">{selectedQuery.tokens.completion_tokens}</span> out
+                      </span>
+                    </div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Results:</span> <span>{selectedQuery.results.total_results}</span></div>
                   </div>
                 </div>

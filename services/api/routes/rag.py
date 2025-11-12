@@ -334,7 +334,7 @@ async def rag_query(req: RagQuery):
                 synth_span.set_attribute("llm.tokens.output", llm_response.tokens_out)
                 synth_span.set_attribute("llm.tokens.total", llm_response.tokens_total)
                 synth_span.set_attribute("llm.cost.usd", llm_response.cost_usd)
-                
+
                 # Issue #5: Increment Prometheus token counters
                 RAG_LLM_TOKENS.labels(model=llm_response.model, token_type='input').inc(llm_response.tokens_in)
                 RAG_LLM_TOKENS.labels(model=llm_response.model, token_type='output').inc(llm_response.tokens_out)

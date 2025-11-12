@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test('app mounts and logs no fatal errors', async ({ page }) => {
   const messages: string[] = [];
   const errors: string[] = [];
-  
+
   // Capture all console messages
   page.on('console', (msg) => {
     const text = `${msg.type()}: ${msg.text()}`;
@@ -33,8 +33,8 @@ test('app mounts and logs no fatal errors', async ({ page }) => {
   messages.forEach(m => console.log(m));
 
   // Check for fatal errors (ignore 404s and known non-blocking errors)
-  const fatalErrors = errors.filter(e => 
-    !e.includes('[OTEL') && 
+  const fatalErrors = errors.filter(e =>
+    !e.includes('[OTEL') &&
     !e.includes('[WEBVITALS') &&
     !e.includes('DevTools') &&
     !e.includes('404') &&

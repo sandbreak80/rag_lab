@@ -1,7 +1,7 @@
 import React from 'react';
 import { Source } from '../../types/chat';
 import { Card, CardContent } from '../ui/card';
-import { FileText, Globe, ExternalLink } from 'lucide-react';
+import { FileText, Globe, ExternalLink, Sparkles } from 'lucide-react';
 
 interface SourceCardProps {
   source: Source;
@@ -10,28 +10,34 @@ interface SourceCardProps {
 
 export function SourceCard({ source, index }: SourceCardProps) {
   const isWebSource = source.source === 'web_search';
-  const url = source.metadata?.url;
-  const title = source.metadata?.title || source.file_name;
+  const isResearchSource = source.source === 'research' || source.origin_tool === 'research';
+  const url = source.metadata?.url || source.url;
+  const title = source.metadata?.title || source.title || source.file_name;
   const engine = source.metadata?.engine;
 
+  // Determine source type for display
+  const sourceType = isResearchSource ? 'Research' : (isWebSource ? 'Web' : 'RAG');
+  const iconBgColor = isResearchSource ? 'bg-purple-500/10' : (isWebSource ? 'bg-blue-500/10' : 'bg-primary/10');
+  const iconColor = isResearchSource ? 'text-purple-500' : (isWebSource ? 'text-blue-500' : 'text-primary');
+
   return (
-    <Card className="bg-background">
+    <Card className="bg-background" data-testid="source-item" data-origin={source.origin_tool || (isWebSource ? 'web' : 'rag')}>
       <CardContent className="p-3">
         <div className="flex items-start gap-3">
-          <div className={`flex-shrink-0 w-8 h-8 rounded flex items-center justify-center ${
-            isWebSource ? 'bg-blue-500/10' : 'bg-primary/10'
-          }`}>
-            {isWebSource ? (
-              <Globe className="h-4 w-4 text-blue-500" />
+          <div className={`flex-shrink-0 w-8 h-8 rounded flex items-center justify-center ${iconBgColor}`}>
+            {isResearchSource ? (
+              <Sparkles className={`h-4 w-4 ${iconColor}`} />
+            ) : isWebSource ? (
+              <Globe className={`h-4 w-4 ${iconColor}`} />
             ) : (
-              <FileText className="h-4 w-4 text-primary" />
+              <FileText className={`h-4 w-4 ${iconColor}`} />
             )}
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-medium text-muted-foreground">
-                {isWebSource ? 'Web' : 'RAG'} {index}
+                {sourceType} {index}
               </span>
               {source.score !== undefined && (
                 <>
