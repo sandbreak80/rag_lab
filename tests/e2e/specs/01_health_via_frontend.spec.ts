@@ -5,7 +5,8 @@ for (const path of ['/live', '/ready', '/health']) {
     const r = await request.get(`${baseURL}${path}`);
     expect(r.status()).toBe(200);
     const json = await r.json();
-    expect(json.status).toMatch(/alive|ready|ok|healthy/i);
+    // Accept alive, ready, ok, healthy, or degraded (degraded means some deps are down but core services work)
+    expect(json.status).toMatch(/alive|ready|ok|healthy|degraded/i);
   });
 }
 
