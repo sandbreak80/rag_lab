@@ -1,7 +1,7 @@
 # Regression A: Chat Sources (RAG + Web) - VERIFIED ✅
 
-**Date:** 2025-11-12  
-**Sprint:** Round 2 UI Fix Sprint  
+**Date:** 2025-11-12
+**Sprint:** Round 2 UI Fix Sprint
 **Status:** ✅ Backend Merge Logic Verified
 
 ---
@@ -235,7 +235,7 @@ This doesn't check `web_search_enabled` setting, causing web to be skipped even 
 
 ---
 
-**Status:** ✅ VERIFIED (with known limitation)  
-**Duration:** 20 minutes  
+**Status:** ✅ VERIFIED (with known limitation)
+**Duration:** 20 minutes
 **Confidence:** HIGH
 

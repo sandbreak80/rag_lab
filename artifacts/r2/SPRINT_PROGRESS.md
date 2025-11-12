@@ -1,7 +1,7 @@
 # Round 2 UI Fix Sprint - Progress Report
 
-**Date:** 2025-11-12  
-**Time:** 20:15 UTC  
+**Date:** 2025-11-12
+**Time:** 20:15 UTC
 **Status:** 🚧 IN PROGRESS (3/10 complete)
 
 ---
@@ -231,7 +231,7 @@ test(r2-reg-a): verify chat sources merge logic
 
 ---
 
-**Status:** 🚧 IN PROGRESS  
-**Next Update:** After Regression B & C completion  
+**Status:** 🚧 IN PROGRESS
+**Next Update:** After Regression B & C completion
 **ETA for Sprint Completion:** ~6 hours remaining
 
