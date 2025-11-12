@@ -5,9 +5,13 @@ import './index.css';
 import { initializeOpenTelemetry, initializeWebVitals } from './instrumentation';
 
 // Initialize OpenTelemetry BEFORE rendering the app
-// This ensures all fetch/XHR calls and user interactions are instrumented
-initializeOpenTelemetry();
-initializeWebVitals();
+// Wrap in try-catch to prevent blocking app if OTel fails
+try {
+  initializeOpenTelemetry();
+  initializeWebVitals();
+} catch (error) {
+  console.warn('⚠️ OpenTelemetry initialization failed (non-blocking):', error);
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
