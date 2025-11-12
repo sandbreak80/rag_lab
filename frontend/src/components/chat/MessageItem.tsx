@@ -8,6 +8,7 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { ChatMessage } from '../../types/chat';
 import { SourceCard } from './SourceCard';
 import { WaterfallChart } from '../metrics/WaterfallChart';
+import { StageTimingsDisplay } from '../metrics/StageTimingsDisplay';
 import { SecurityStatus } from '../security/SecurityStatus';
 import { formatDate } from '../../utils/formatting';
 import { User, Bot, BarChart3, Copy, Check } from 'lucide-react';
@@ -24,6 +25,7 @@ export function MessageItem({ message }: MessageItemProps) {
   const [copiedMessage, setCopiedMessage] = useState(false);
 
   const hasPerformanceData = !isUser && message.metadata?.performance;
+  const hasStageTimings = !isUser && message.metadata?.stage_timings;
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -274,8 +276,32 @@ export function MessageItem({ message }: MessageItemProps) {
           </div>
         )}
 
-        {/* Performance Waterfall */}
-        {hasPerformanceData && (
+        {/* Performance Breakdown - New Stage Timings Format */}
+        {hasStageTimings && (
+          <div className="mt-4 border border-border rounded-lg bg-background/50 overflow-hidden" data-testid={TID.Chat.PerfBlock}>
+            <button
+              onClick={() => setShowPerformance(!showPerformance)}
+              className="w-full px-4 py-2 flex items-center justify-between hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <BarChart3 className="h-4 w-4 text-primary" />
+                <span>Performance Breakdown</span>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {showPerformance ? '▼ Hide' : '▶ Show'}
+              </span>
+            </button>
+
+            {showPerformance && (
+              <div className="p-4 border-t border-border">
+                <StageTimingsDisplay timings={message.metadata!.stage_timings!} compact />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Performance Waterfall - Legacy Format (Fallback) */}
+        {!hasStageTimings && hasPerformanceData && (
           <div className="mt-4 border border-border rounded-lg bg-background/50 overflow-hidden" data-testid={TID.Chat.PerfBlock}>
             <button
               onClick={() => setShowPerformance(!showPerformance)}

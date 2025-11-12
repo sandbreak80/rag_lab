@@ -12,7 +12,10 @@ export interface Source {
   file_name: string;
   chunk_text: string;
   score: number;
-  source?: 'rag' | 'web_search';  // Source type
+  source?: 'rag' | 'web_search' | 'research';  // Source type
+  origin_tool?: string;  // 'rag' | 'web' | 'research' - from API
+  title?: string;  // Title (for web/research sources)
+  url?: string;  // URL (for web/research sources)
   metadata?: {
     tags?: string[];
     page?: number;
@@ -41,6 +44,17 @@ export interface QueryDecomposition {
   original_query: string;
 }
 
+export interface StageTimings {
+  vector_ms?: number;
+  web_ms?: number;
+  llm_ms?: number;
+  total_ms?: number;
+  retrieve_parallel_ms?: number;
+  web_skipped?: boolean;
+  web_reason?: 'disabled' | 'early_stop' | 'timeout' | 'ok';
+  web_enabled?: boolean;
+}
+
 export interface MessageMetadata {
   model?: string;
   temperature?: number;
@@ -49,6 +63,7 @@ export interface MessageMetadata {
   latency?: number;
   token_count?: number;
   performance?: PerformanceMetrics;
+  stage_timings?: StageTimings;  // New stage timings format
   security?: SecurityInfo;
   decomposition?: QueryDecomposition;
 }
