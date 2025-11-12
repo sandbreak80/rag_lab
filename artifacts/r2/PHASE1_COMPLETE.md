@@ -1,7 +1,7 @@
 # Phase 1: Documents List Endpoint - COMPLETE ✅
 
-**Date:** 2025-11-12  
-**Sprint:** Round 2 UI Fix Sprint  
+**Date:** 2025-11-12
+**Sprint:** Round 2 UI Fix Sprint
 **Issue:** #1 - Documents page shows empty list after successful upload
 
 ---
@@ -30,7 +30,7 @@ def list_documents():
     """List all unique documents in the collection"""
     # Get all metadatas to extract unique document IDs
     all_data = collection.get(include=['metadatas'])
-    
+
     # Extract unique document_id or file_name from metadata
     unique_docs = set()
     if all_data['metadatas']:
@@ -38,9 +38,9 @@ def list_documents():
             doc_id = meta.get('document_id') or meta.get('file_name') or meta.get('title', 'unknown')
             if doc_id and doc_id != 'unknown':
                 unique_docs.add(doc_id)
-    
+
     documents_list = sorted(list(unique_docs))
-    
+
     return jsonify({
         'documents': documents_list,
         'count': len(documents_list)
@@ -176,8 +176,8 @@ Documents: ['001 - ENG (GAI) I am Responsible 4 AI.md', ...]
 - `rag-api-v1` (healthy)
 - `frontend` (healthy)
 
-**Build Time:** ~2 minutes  
-**Restart Time:** ~20 seconds  
+**Build Time:** ~2 minutes
+**Restart Time:** ~20 seconds
 **Total Downtime:** <30 seconds
 
 ---
@@ -238,7 +238,7 @@ This ensures compatibility with different document ingestion methods.
 
 ---
 
-**Status:** ✅ COMPLETE  
-**Duration:** 1.5 hours  
+**Status:** ✅ COMPLETE
+**Duration:** 1.5 hours
 **Confidence:** HIGH
 

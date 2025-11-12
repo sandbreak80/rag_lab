@@ -23,7 +23,11 @@ export function QuickPresets() {
     <div className="space-y-4">
       {/* Currently Active Preset Indicator */}
       {currentPreset && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/30 rounded-lg">
+        <div 
+          className="flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/30 rounded-lg"
+          data-testid="preset-selected"
+          data-preset-name={currentPreset}
+        >
           <Check className="h-4 w-4 text-primary flex-shrink-0" />
           <div className="flex-1">
             <span className="text-sm font-medium text-primary">
@@ -48,6 +52,8 @@ export function QuickPresets() {
                   : 'hover:border-primary hover:shadow-sm'
               }`}
               onClick={() => loadPreset(preset)}
+              data-testid={`preset-card-${preset.name}`}
+              data-selected={isSelected}
             >
               <CardContent className="p-4">
                 <div className="flex items-start gap-2">

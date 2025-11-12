@@ -1,8 +1,8 @@
 # Round 2 UI Fix Sprint - Implementation Roadmap
 
-**Project:** RAG Lab Production Readiness  
-**Sprint:** Round 2 UI Fixes & Regressions  
-**Date:** 2025-11-12  
+**Project:** RAG Lab Production Readiness
+**Sprint:** Round 2 UI Fixes & Regressions
+**Date:** 2025-11-12
 **Status:** Phase 1 Complete, 9 Issues Remaining
 
 ---
@@ -53,7 +53,7 @@ interface SettingsState {
   researchAgentEnabled: boolean;
   promptEnhancementEnabled: boolean;
   // ... other settings
-  
+
   setPreset: (preset: string) => void;
   updateSettings: (settings: Partial<SettingsState>) => void;
 }
@@ -69,7 +69,7 @@ export const useSettingsStore = create<SettingsState>()(
       vectorDbEnabled: true,
       researchAgentEnabled: false,
       promptEnhancementEnabled: false,
-      
+
       setPreset: (preset) => set({ preset }),
       updateSettings: (settings) => set(settings),
     }),
@@ -98,7 +98,7 @@ import { useSettingsStore } from '@/state/settingsStore';
 
 export function SettingsPanel() {
   const { preset, setPreset, ...settings } = useSettingsStore();
-  
+
   // Render preset selector with active state
   return (
     <div>
@@ -160,17 +160,17 @@ class RagResponse(BaseModel):
 @router.post("/query")
 async def query_rag(req: RagQuery):
     message_id = str(uuid.uuid4())
-    
+
     # Store initial status
     message_store[message_id] = {
         "status": "processing",
         "query": req.query,
         "created_at": datetime.utcnow().isoformat()
     }
-    
+
     try:
         # ... existing RAG pipeline ...
-        
+
         # Store completed result
         message_store[message_id] = {
             "status": "completed",
@@ -181,7 +181,7 @@ async def query_rag(req: RagQuery):
             "metrics": metrics,
             "completed_at": datetime.utcnow().isoformat()
         }
-        
+
         return RagResponse(
             message_id=message_id,
             answer=answer,
@@ -199,7 +199,7 @@ async def get_message_result(message_id: str):
     """Get result for a specific message ID"""
     if message_id not in message_store:
         raise HTTPException(404, "Message not found")
-    
+
     return message_store[message_id]
 ```
 
@@ -232,26 +232,26 @@ export const useChatStore = create<ChatState>()(
   persist(
     (set, get) => ({
       messages: [],
-      
+
       addMessage: (message) => set((state) => ({
         messages: [...state.messages, message]
       })),
-      
+
       updateMessage: (id, updates) => set((state) => ({
         messages: state.messages.map((m) =>
           m.id === id ? { ...m, ...updates } : m
         )
       })),
-      
+
       pollPendingMessages: async () => {
         const { messages, updateMessage } = get();
         const pending = messages.filter((m) => m.status === 'pending' && m.message_id);
-        
+
         for (const msg of pending) {
           try {
             const response = await fetch(`/api/v1/rag/result/${msg.message_id}`);
             const data = await response.json();
-            
+
             if (data.status === 'completed') {
               updateMessage(msg.id, {
                 status: 'completed',
@@ -288,17 +288,17 @@ import { useChatStore } from '@/state/chatStore';
 
 export function ChatPage() {
   const { messages, pollPendingMessages } = useChatStore();
-  
+
   useEffect(() => {
     // Poll for pending messages on mount
     pollPendingMessages();
-    
+
     // Set up interval for active polling
     const interval = setInterval(pollPendingMessages, 2000);
-    
+
     return () => clearInterval(interval);
   }, [pollPendingMessages]);
-  
+
   return (
     <div>
       {messages.map((msg) => (
@@ -392,15 +392,15 @@ export function StageTimingsDisplay({ timings }: { timings: StageTimings }) {
     if (!timings.web_skipped) {
       return null;  // Web ran successfully
     }
-    
+
     const badgeConfig = {
       disabled: { color: 'gray', text: 'Web Skipped (Disabled)' },
       early_stop: { color: 'amber', text: 'Web Skipped (Early-stop)' },
       timeout: { color: 'red', text: 'Web Timed Out' },
     };
-    
+
     const config = badgeConfig[timings.web_reason || 'disabled'];
-    
+
     return (
       <Badge
         variant={config.color}
@@ -411,7 +411,7 @@ export function StageTimingsDisplay({ timings }: { timings: StageTimings }) {
       </Badge>
     );
   };
-  
+
   return (
     <div className="grid grid-cols-2 gap-4">
       <MetricCard label="Vector Search" value={`${timings.vector_ms}ms`} testid="metrics-vector-ms" />
@@ -470,24 +470,24 @@ def count_tokens(text: str, model: str = "gpt-3.5-turbo") -> int:
 async def generate_answer(prompt: str, context: str, model: str = "llama3"):
     """Generate answer with token accounting"""
     full_prompt = f"{context}\n\nQuestion: {prompt}\n\nAnswer:"
-    
+
     tokens_in = count_tokens(full_prompt, model)
-    
+
     # Call LLM
     response = await ollama_client.generate(
         model=model,
         prompt=full_prompt,
     )
-    
+
     answer = response.get("response", "")
     tokens_out = count_tokens(answer, model)
-    
+
     # Also try to get from Ollama response if available
     if "eval_count" in response:
         tokens_out = response["eval_count"]
     if "prompt_eval_count" in response:
         tokens_in = response["prompt_eval_count"]
-    
+
     return {
         "answer": answer,
         "tokens": {
@@ -505,7 +505,7 @@ async def generate_answer(prompt: str, context: str, model: str = "llama3"):
 # In the LLM generation span
 with tracer.start_as_current_span("llm.generate") as llm_span:
     result = await llm_adapter.generate_answer(...)
-    
+
     # Add token attributes
     llm_span.set_attribute("llm.tokens_in", result["tokens"]["tokens_in"])
     llm_span.set_attribute("llm.tokens_out", result["tokens"]["tokens_out"])
@@ -539,7 +539,7 @@ RAG_LLM_TOKENS.labels(direction='out').inc(tokens_out)
 <div data-testid="promptlog-row">
   <span data-testid="promptlog-model">{log.model}</span>
   <span data-testid="promptlog-tokens-total">{log.tokens_total}</span>
-  
+
   {/* In detail modal */}
   <div>
     <span data-testid="promptlog-tokens-in">{log.tokens_in}</span>
@@ -609,7 +609,7 @@ export function MonitoringPage() {
       <a href={GRAFANA_URL} data-testid="grafana-link">
         Open Grafana
       </a>
-      
+
       {/* New comprehensive dashboard link */}
       <a href={GRAFANA_COMPREHENSIVE_URL} data-testid="grafana-link-comprehensive">
         System Overview Dashboard
@@ -634,7 +634,7 @@ export function MonitoringPage() {
 - E2E spec: `tests/e2e/specs/monitoring_links.spec.ts` (updated)
 
 ### Estimated Time
-**30-45 minutes** (if dashboard JSON exists)  
+**30-45 minutes** (if dashboard JSON exists)
 **90-120 minutes** (if creating from scratch)
 
 ---
@@ -714,9 +714,9 @@ interface StageTimings {
 
 export function MessageItem({ message }: { message: Message }) {
   const timings = message.metrics?.stage_timings;
-  
+
   if (!timings) return null;
-  
+
   return (
     <div data-testid="perf-breakdown">
       <div data-testid="perf-vector-ms">{timings.vector_ms}ms</div>
@@ -768,18 +768,18 @@ import { StageTimingsDisplay } from './StageTimingsDisplay';
 
 export function MetricsPage() {
   const [latestTimings, setLatestTimings] = useState<StageTimings | null>(null);
-  
+
   useEffect(() => {
     // Fetch latest query timings
     fetch('/api/v1/rag/query/latest')
       .then(res => res.json())
       .then(data => setLatestTimings(data.metrics?.stage_timings));
   }, []);
-  
+
   return (
     <div>
       <MetricsOverview />
-      
+
       {latestTimings && (
         <div data-testid="metrics-query-details">
           <h3>Latest Query Performance</h3>
@@ -918,6 +918,6 @@ Closes: #2, #3, #4, #5, #6, Regression A/B/C
 
 ---
 
-**Status:** Ready for Execution  
+**Status:** Ready for Execution
 **Next Action:** Begin Issue #2 (Settings Persistence)
 
