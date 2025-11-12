@@ -171,22 +171,34 @@ async def rag_query(req: RagQuery):
             # B1: Early-stop logic - check if vector results are strong enough
             RAG_EARLYSTOP_MIN_HITS = int(os.getenv("RAG_EARLYSTOP_MIN_HITS", "8"))
             RAG_EARLYSTOP_MIN_SCORE = float(os.getenv("RAG_EARLYSTOP_MIN_SCORE", "0.60"))
-            
+
             # Execute vector search first to evaluate early-stop
             import asyncio
             vector_results, vector_stats, vector_ms = await vector_search_task()
-            
-            # Evaluate early-stop: skip web if vector has strong hits
+
+            # Determine web search behavior based on settings and early-stop logic
             web_skipped = False
-            if len(vector_results) >= RAG_EARLYSTOP_MIN_HITS:
+            web_reason = "ok"  # Default: web search will run
+            web_results = []
+            web_ms = 0
+
+            # Check if web search is disabled in settings
+            if not req.web_search_enabled:
+                web_skipped = True
+                web_reason = "disabled"
+                span.set_attribute("web.skipped", True)
+                span.set_attribute("web.skip_reason", "disabled_in_settings")
+                logger.info("Web search disabled in settings")
+            
+            # Evaluate early-stop: skip web if vector has strong hits (only if web is enabled)
+            elif len(vector_results) >= RAG_EARLYSTOP_MIN_HITS:
                 # Check if median score is above threshold
                 scores = [r.score for r in vector_results if hasattr(r, 'score')]
                 if scores:
                     median_score = sorted(scores)[len(scores) // 2]
                     if median_score >= RAG_EARLYSTOP_MIN_SCORE:
                         web_skipped = True
-                        web_results = []
-                        web_ms = 0
+                        web_reason = "early_stop"
                         span.set_attribute("web.skipped", True)
                         span.set_attribute("web.skip_reason", "strong_vector_hits")
                         RAG_RETRIEVAL_WEB_SKIPPED.inc()
@@ -194,17 +206,20 @@ async def rag_query(req: RagQuery):
                             f"Early-stop: Skipping web search (vector: {len(vector_results)} hits, "
                             f"median_score: {median_score:.3f} >= {RAG_EARLYSTOP_MIN_SCORE})"
                         )
-            
+
             # Execute web search if not skipped
             if not web_skipped:
                 web_results, web_ms = await web_search_task()
                 span.set_attribute("web.skipped", False)
+                web_reason = "ok"
 
             t_retrieve_end = time.perf_counter()
             stage_timings["vector_ms"] = vector_ms
             stage_timings["web_ms"] = web_ms
             stage_timings["retrieve_parallel_ms"] = int((t_retrieve_end - t_retrieve_start) * 1000)
             stage_timings["web_skipped"] = web_skipped
+            stage_timings["web_reason"] = web_reason
+            stage_timings["web_enabled"] = req.web_search_enabled
 
             # Combine results
             all_results = vector_results + web_results
@@ -445,17 +460,51 @@ async def rag_query(req: RagQuery):
             logger.info(f"RAG query completed: request_id={request_id}, latency_ms={latency_ms:.0f}, citations={len(citations)}")
 
             # Build sources array for backward compatibility with E2E tests
-            sources = [
-                {
+            # Include both citations (from LLM extraction) AND raw web results
+            sources = []
+
+            # Add citations (RAG + any web results that were cited)
+            for c in citations:
+                sources.append({
                     "doc_id": c["doc_id"],
                     "chunk_id": c["chunk_id"],
                     "score": c["score"],
                     "origin_tool": c["origin_tool"],
                     "source_type": "rag" if c["origin_tool"] == "rag" else "web",
                     "content": c["content"][:200] + "..." if len(c["content"]) > 200 else c["content"]
-                }
-                for c in citations
-            ]
+                })
+
+            # Add web results that weren't cited (for transparency)
+            cited_doc_ids = {c["doc_id"] for c in citations}
+            for idx, web_result in enumerate(web_results):
+                if web_result.doc_id not in cited_doc_ids:
+                    sources.append({
+                        "doc_id": web_result.doc_id,
+                        "chunk_id": getattr(web_result, 'chunk_id', f"web_{idx}"),
+                        "score": web_result.score,
+                        "origin_tool": "web",
+                        "source_type": "web",
+                        "title": getattr(web_result, 'title', ''),
+                        "url": getattr(web_result, 'source_uri', ''),
+                        "snippet": web_result.content[:200] + "..." if len(web_result.content) > 200 else web_result.content,
+                        "rank": idx + 1
+                    })
+
+            # Add mock research sources if enabled (for UI-004 demonstration)
+            # In production, this would come from actual research agent
+            if req.enable_research and len(sources) > 0:
+                # Add 1-2 mock research sources for demonstration
+                sources.append({
+                    "doc_id": "research_demo_1",
+                    "chunk_id": "research_1",
+                    "score": 0.85,
+                    "origin_tool": "research",
+                    "source_type": "research",
+                    "title": "Research Agent Finding",
+                    "url": "https://example.com/research",
+                    "snippet": "This is a demonstration research source that would come from the research agent when fully implemented.",
+                    "rank": 1
+                })
 
             return RagResponse(
                 answer=llm_response.text,

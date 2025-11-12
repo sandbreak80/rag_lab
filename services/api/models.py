@@ -18,6 +18,8 @@ class RagQuery(BaseModel):
     request_id: str | None = Field(None, description="Client-provided request ID for correlation")
     trace_id: str | None = Field(None, description="Distributed trace ID")
     contract_version: str | None = Field(None, description="Expected contract version")
+    enable_research: bool = Field(False, description="Enable research agent sources (UI-004)")
+    web_search_enabled: bool = Field(True, description="Enable web search (Issue #4)")
 
     class Config:
         schema_extra = {
