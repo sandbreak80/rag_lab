@@ -344,6 +344,43 @@ def get_all_documents():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/list', methods=['GET'])
+@timed(metrics, 'list_documents')
+def list_documents():
+    """
+    List all unique documents in the collection
+
+    Returns:
+    {
+        "documents": ["doc1.txt", "doc2.pdf", ...],
+        "count": 2
+    }
+    """
+    try:
+        # Get all metadatas to extract unique document IDs
+        all_data = collection.get(include=['metadatas'])
+
+        # Extract unique document_id or file_name from metadata
+        unique_docs = set()
+        if all_data['metadatas']:
+            for meta in all_data['metadatas']:
+                # Try document_id first, then file_name, then title
+                doc_id = meta.get('document_id') or meta.get('file_name') or meta.get('title', 'unknown')
+                if doc_id and doc_id != 'unknown':
+                    unique_docs.add(doc_id)
+
+        documents_list = sorted(list(unique_docs))
+
+        metrics.increment('lists')
+
+        return jsonify({
+            'documents': documents_list,
+            'count': len(documents_list)
+        })
+    except Exception as e:
+        metrics.increment('errors')
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/get', methods=['POST'])
 @timed(metrics, 'get_documents')
 def get_documents():
