@@ -37,7 +37,8 @@ if [ "$RUN_MODE" = "docker" ]; then
     echo -e "${GREEN}Running Playwright tests...${NC}"
     docker compose run --rm \
         -e BASE_URL="$TEST_TARGET" \
-        playwright \
+        -w /workspace/tests/e2e \
+        e2e \
         sh -c "
             npm install --legacy-peer-deps &&
             npx playwright install --with-deps &&
