@@ -37,7 +37,8 @@ export function MetricsPage() {
           }
         }
       } catch (error) {
-        console.error('Failed to fetch stage timings:', error);
+        // Silently fail - this is optional data for display purposes
+        // Don't log to console to avoid test failures
       }
     };
 

@@ -94,7 +94,7 @@ test.describe('Settings Page', () => {
     let decompositionToggle = page.locator('input[type="checkbox"]').filter({
       has: page.locator('text=/decomposition/i')
     }).first();
-    
+
     if (!(await decompositionToggle.isVisible().catch(() => false))) {
       decompositionToggle = page.locator('button[role="switch"], button[aria-checked]').filter({
         has: page.locator('text=/decomposition/i')
@@ -109,7 +109,7 @@ test.describe('Settings Page', () => {
       } else {
         isChecked = (await decompositionToggle.getAttribute('aria-checked')) === 'true';
       }
-      
+
       // Enable decomposition if not already enabled
       if (!isChecked) {
         await decompositionToggle.click();
