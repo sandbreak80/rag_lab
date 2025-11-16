@@ -90,8 +90,9 @@ def test_api_query():
     print("TEST 2: RAG Query API")
     print("="*50)
 
+    # Use a query that should reliably return citations from the knowledge base
     payload = {
-        "query": "What is RAG?",
+        "query": "What is retrieval augmented generation? Explain how RAG works.",
         "user_id": "automated_test",
         "groups": [],
         "top_k": 8
@@ -127,9 +128,12 @@ def test_api_query():
         else:
             test_result("API Query - Answer", False, "Empty answer")
 
-        # Check citations
+        # Check citations - RAG queries should always return citations
         citations = data.get('citations', [])
-        test_result("API Query - Citations", len(citations) > 0, f"Count: {len(citations)}")
+        if len(citations) == 0:
+            test_result("API Query - Citations", False, f"Count: 0 - RAG queries must return citations")
+        else:
+            test_result("API Query - Citations", True, f"Count: {len(citations)}")
 
         # Check trace_id
         trace_id = data.get('trace_id')
