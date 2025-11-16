@@ -36,12 +36,16 @@ if [ "$RUN_MODE" = "docker" ]; then
     # Run Playwright tests
     echo -e "${GREEN}Running Playwright tests...${NC}"
     docker compose run --rm \
+        --entrypoint /bin/bash \
         -e BASE_URL="$TEST_TARGET" \
         e2e \
-        sh -c "
+        -c "
             cd /workspace/tests/e2e &&
+            echo 'Installing dependencies...' &&
             npm install --legacy-peer-deps &&
-            npx playwright install --with-deps &&
+            echo 'Installing Playwright browsers...' &&
+            npx playwright install --with-deps chromium &&
+            echo 'Running E2E tests...' &&
             npx playwright test --reporter=list
         "
 
