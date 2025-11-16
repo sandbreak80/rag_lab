@@ -12,7 +12,7 @@ test.describe('Settings Page', () => {
     // Try checkboxes first, then buttons with role="switch" or aria-checked
     let toggles = page.locator('input[type="checkbox"]');
     let toggleCount = await toggles.count();
-    
+
     // If no checkboxes, look for switch buttons
     if (toggleCount === 0) {
       toggles = page.locator('button[role="switch"], button[aria-checked]');
@@ -22,7 +22,7 @@ test.describe('Settings Page', () => {
     if (toggleCount > 0) {
       // Get first toggle
       const firstToggle = toggles.first();
-      
+
       // For checkboxes, use isChecked(); for buttons, use aria-checked attribute
       let initialState: boolean;
       if (await firstToggle.evaluate(el => el.tagName === 'INPUT')) {
@@ -90,13 +90,28 @@ test.describe('Settings Page', () => {
     await page.waitForLoadState('networkidle');
 
     // Look for query decomposition or similar toggle
-    const decompositionToggle = page.locator('input[type="checkbox"]').filter({
+    // Try checkbox first, then switch button
+    let decompositionToggle = page.locator('input[type="checkbox"]').filter({
       has: page.locator('text=/decomposition/i')
     }).first();
+    
+    if (!(await decompositionToggle.isVisible().catch(() => false))) {
+      decompositionToggle = page.locator('button[role="switch"], button[aria-checked]').filter({
+        has: page.locator('text=/decomposition/i')
+      }).first();
+    }
 
-    if (await decompositionToggle.isVisible()) {
-      // Enable decomposition
-      if (!await decompositionToggle.isChecked()) {
+    if (await decompositionToggle.isVisible().catch(() => false)) {
+      // Check if it's checked (for checkbox) or aria-checked (for button)
+      let isChecked: boolean;
+      if (await decompositionToggle.evaluate(el => el.tagName === 'INPUT')) {
+        isChecked = await decompositionToggle.isChecked();
+      } else {
+        isChecked = (await decompositionToggle.getAttribute('aria-checked')) === 'true';
+      }
+      
+      // Enable decomposition if not already enabled
+      if (!isChecked) {
         await decompositionToggle.click();
       }
 
