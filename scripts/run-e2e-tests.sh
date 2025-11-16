@@ -34,10 +34,19 @@ if [ "$RUN_MODE" = "docker" ]; then
     }
 
     # Run Playwright tests
+    # When running from Docker, use internal service name (frontend:80) instead of localhost:3000
+    # The frontend service listens on port 80 internally, mapped to host port 3000
+    if [[ "$TEST_TARGET" == *"localhost:3000"* ]] || [[ "$TEST_TARGET" == *"127.0.0.1:3000"* ]]; then
+        INTERNAL_URL="http://frontend:80"
+        echo -e "${YELLOW}Note: Using internal Docker network URL: $INTERNAL_URL${NC}"
+    else
+        INTERNAL_URL="$TEST_TARGET"
+    fi
+    
     echo -e "${GREEN}Running Playwright tests...${NC}"
     docker compose run --rm \
         --entrypoint /bin/bash \
-        -e BASE_URL="$TEST_TARGET" \
+        -e BASE_URL="$INTERNAL_URL" \
         e2e \
         -c "
             cd /workspace/tests/e2e &&
