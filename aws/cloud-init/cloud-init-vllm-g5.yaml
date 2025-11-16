@@ -3,7 +3,8 @@
 # Instance Type: g5.2xlarge (NVIDIA A10G Tensor Core GPU - Ampere Architecture)
 # OS: Ubuntu 24.04 LTS
 # Features: NVIDIA A10G + vLLM + RAG Lab
-# Security: Uses AWS Secrets Manager for GitHub token
+# Note: Uses public GitHub repository (no authentication required)
+# Two-phase deployment: Phase 1 installs drivers and reboots, Phase 2 deploys services
 
 package_update: true
 package_upgrade: true
@@ -20,193 +21,116 @@ packages:
   - lsb-release
   - python3-pip
   - python3-venv
-  - awscli
 
-runcmd:
-  # ==========================================
-  # NVIDIA GPU DRIVERS (Latest for A10G)
-  # ==========================================
-  - echo "===== Installing NVIDIA Drivers for A10G ====="
-  - ubuntu-drivers install --gpgpu
-  - nvidia-smi || echo "GPU driver installation pending reboot"
-
-  # ==========================================
-  # DOCKER INSTALLATION
-  # ==========================================
-  - echo "===== Installing Docker ====="
-  - mkdir -p /etc/apt/keyrings
-  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-  - apt-get update
-  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-  # ==========================================
-  # DOCKER POST-INSTALL
-  # ==========================================
-  - echo "===== Configuring Docker ====="
-  - usermod -aG docker ubuntu
-  - systemctl enable docker
-  - systemctl start docker
-
-  # ==========================================
-  # NVIDIA CONTAINER TOOLKIT
-  # ==========================================
-  - echo "===== Installing NVIDIA Container Toolkit ====="
-  - curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
-  - curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
-  - apt-get update
-  - apt-get install -y nvidia-container-toolkit
-  - nvidia-ctk runtime configure --runtime=docker
-  - systemctl restart docker
-
-  # ==========================================
-  # RETRIEVE GITHUB TOKEN FROM SECRETS MANAGER
-  # ==========================================
-  - echo "===== Retrieving GitHub credentials from AWS Secrets Manager ====="
-  - |
-    REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
-    GITHUB_TOKEN=$(aws secretsmanager get-secret-value \
-      --secret-id rag-lab/github-token \
-      --region $REGION \
-      --query SecretString \
-      --output text 2>/dev/null || echo "")
-
-    if [ -z "$GITHUB_TOKEN" ]; then
-      echo "ERROR: Could not retrieve GitHub token from Secrets Manager"
-      echo "Please create secret 'rag-lab/github-token' with your GitHub PAT"
-      exit 1
-    fi
-
-    echo "$GITHUB_TOKEN" > /tmp/github_token
-    chmod 600 /tmp/github_token
-
-  # ==========================================
-  # CLONE PRIVATE GITHUB REPO
-  # ==========================================
-  - echo "===== Cloning Private RAG Lab Repository ====="
-  - |
-    cd /home/ubuntu
-    GITHUB_TOKEN=$(cat /tmp/github_token)
-
-    su - ubuntu -c "git clone https://${GITHUB_TOKEN}@github.com/sandbreak80/rag_lab.git /home/ubuntu/rag_lab"
-    su - ubuntu -c "cd /home/ubuntu/rag_lab && git remote set-url origin https://github.com/sandbreak80/rag_lab.git"
-
-    rm -f /tmp/github_token
-    chown -R ubuntu:ubuntu /home/ubuntu/rag_lab
-    echo "Repository cloned successfully"
-
-  # ==========================================
-  # INSTALL vLLM (Native - Faster than Docker for A10G)
-  # ==========================================
-  - echo "===== Installing vLLM for A10G GPU ====="
-  - |
-    su - ubuntu -c "python3 -m venv /home/ubuntu/vllm-env"
-    su - ubuntu -c "/home/ubuntu/vllm-env/bin/pip install --upgrade pip"
-    su - ubuntu -c "/home/ubuntu/vllm-env/bin/pip install vllm"
-    su - ubuntu -c "/home/ubuntu/vllm-env/bin/pip install ray"
-    echo "vLLM installed successfully"
-
-  # ==========================================
-  # VERIFY vLLM GPU ACCESS
-  # ==========================================
-  - echo "===== Verifying vLLM GPU Access ====="
-  - su - ubuntu -c "/home/ubuntu/vllm-env/bin/python -c 'import torch; print(f\"CUDA available: {torch.cuda.is_available()}\"); print(f\"GPU: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"None\"})'"
-
-  # ==========================================
-  # OLLAMA WITH GPU SUPPORT (Backup LLM)
-  # ==========================================
-  - echo "===== Starting Ollama with GPU ====="
-  - docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama --restart unless-stopped ollama/ollama
-  - sleep 10
-
-  # ==========================================
-  # PULL OLLAMA MODELS (Smaller models for Ollama)
-  # ==========================================
-  - echo "===== Pulling Ollama Models ====="
-  - docker exec ollama ollama pull llama3.1:8b
-  - docker exec ollama ollama pull nomic-embed-text
-
-  # ==========================================
-  # vLLM MODEL DOWNLOAD (Large models for vLLM)
-  # ==========================================
-  - echo "===== Downloading Models for vLLM ====="
-  - mkdir -p /home/ubuntu/models
-  - chown ubuntu:ubuntu /home/ubuntu/models
-  - |
-    # Download a model for vLLM (you can change this)
-    # Example: Llama-2-7B, Mistral-7B, etc.
-    su - ubuntu -c "cd /home/ubuntu/models && /home/ubuntu/vllm-env/bin/huggingface-cli download meta-llama/Llama-2-7b-chat-hf --local-dir /home/ubuntu/models/llama-2-7b-chat" || echo "Model download optional - can be done later"
-
-  # ==========================================
-  # START vLLM SERVER (Optional - comment out if using Ollama only)
-  # ==========================================
-  - echo "===== Starting vLLM Server ====="
-  - |
-    # Create systemd service for vLLM
-    cat > /etc/systemd/system/vllm.service <<'EOF'
-    [Unit]
-    Description=vLLM OpenAI-Compatible Server
-    After=network.target
-
-    [Service]
-    Type=simple
-    User=ubuntu
-    WorkingDirectory=/home/ubuntu
-    Environment="PATH=/home/ubuntu/vllm-env/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-    ExecStart=/home/ubuntu/vllm-env/bin/python -m vllm.entrypoints.openai.api_server \
-        --model /home/ubuntu/models/llama-2-7b-chat \
-        --host 0.0.0.0 \
-        --port 8001 \
-        --tensor-parallel-size 1
-    Restart=always
-    RestartSec=10
-
-    [Install]
-    WantedBy=multi-user.target
-    EOF
-
-    systemctl daemon-reload
-    # systemctl enable vllm  # Uncomment to auto-start vLLM
-    # systemctl start vllm   # Uncomment to start vLLM now
-    echo "vLLM service configured (disabled by default)"
-
-  # ==========================================
-  # BUILD AND START RAG LAB
-  # ==========================================
-  - echo "===== Building and Starting RAG Lab ====="
-  - cd /home/ubuntu/rag_lab
-  - su - ubuntu -c "cd /home/ubuntu/rag_lab && docker compose build"
-  - su - ubuntu -c "cd /home/ubuntu/rag_lab && docker compose up -d"
-
-  # ==========================================
-  # WAIT FOR SERVICES
-  # ==========================================
-  - echo "===== Waiting for services to start ====="
-  - sleep 60
-  - su - ubuntu -c "cd /home/ubuntu/rag_lab && docker compose ps"
-
-  # ==========================================
-  # SYSTEM STATUS
-  # ==========================================
-  - echo "===== Installation Complete ====="
-  - nvidia-smi
-  - docker ps
-  - echo ""
-  - echo "==================================="
-  - echo "GPU: NVIDIA A10G (24GB VRAM)"
-  - echo "Architecture: Ampere (vLLM supported)"
-  - echo "==================================="
-  - echo ""
-  - PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
-  - echo "RAG Lab Frontend: http://${PUBLIC_IP}:3000"
-  - echo "RAG Lab API: http://${PUBLIC_IP}:8000"
-  - echo "Ollama API: http://${PUBLIC_IP}:11434"
-  - echo "vLLM API: http://${PUBLIC_IP}:8001 (if enabled)"
-  - echo "==================================="
-
+# Phase 2 script (runs after reboot)
 write_files:
+  - path: /usr/local/bin/rag-lab-vllm-deploy.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+      LOG=/var/log/rag-lab-setup.log
+
+      [ -f /var/lib/rag-lab-stage2-complete ] && exit 0
+
+      echo "===== RAG Lab Phase 2 (vLLM Deployment) =====" | tee -a "$LOG"
+      date | tee -a "$LOG"
+
+      # Verify GPU is loaded
+      echo "Verifying GPU..." | tee -a "$LOG"
+      nvidia-smi 2>&1 | tee -a "$LOG" || echo "Warning: nvidia-smi not available" | tee -a "$LOG"
+
+      # Fix home ownership
+      chown -R ubuntu:ubuntu /home/ubuntu 2>/dev/null || true
+
+      # Clone repo (public - no token needed)
+      if [ ! -d /home/ubuntu/rag_lab ]; then
+        echo "Cloning RAG Lab repository..." | tee -a "$LOG"
+        sudo -H -u ubuntu bash -c 'cd ~ && git clone https://github.com/sandbreak80/rag_lab.git' 2>&1 | tee -a "$LOG"
+        chown -R ubuntu:ubuntu /home/ubuntu/rag_lab
+      else
+        echo "Repository already exists" | tee -a "$LOG"
+      fi
+
+      # Install vLLM (Native - Faster than Docker for A10G)
+      echo "===== Installing vLLM for A10G GPU =====" | tee -a "$LOG"
+      if [ ! -d /home/ubuntu/vllm-env ]; then
+        sudo -H -u ubuntu bash -c 'python3 -m venv /home/ubuntu/vllm-env' 2>&1 | tee -a "$LOG"
+        sudo -H -u ubuntu bash -c '/home/ubuntu/vllm-env/bin/pip install --upgrade pip' 2>&1 | tee -a "$LOG"
+        sudo -H -u ubuntu bash -c '/home/ubuntu/vllm-env/bin/pip install vllm ray' 2>&1 | tee -a "$LOG"
+        echo "vLLM installed successfully" | tee -a "$LOG"
+      else
+        echo "vLLM environment already exists" | tee -a "$LOG"
+      fi
+
+      # Verify vLLM GPU access
+      echo "Verifying vLLM GPU access..." | tee -a "$LOG"
+      sudo -H -u ubuntu bash -c '/home/ubuntu/vllm-env/bin/python -c "import torch; print(\"CUDA available:\", torch.cuda.is_available()); print(\"GPU:\", torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"None\")"' 2>&1 | tee -a "$LOG"
+
+      # Start Ollama with GPU support (backup LLM)
+      echo "===== Starting Ollama with GPU =====" | tee -a "$LOG"
+      if ! docker ps -a | grep -q rag-ollama; then
+        docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name rag-ollama --restart unless-stopped ollama/ollama 2>&1 | tee -a "$LOG"
+        sleep 10
+        echo "Pulling Ollama models..." | tee -a "$LOG"
+        docker exec rag-ollama ollama pull llama3.1:8b 2>&1 | tee -a "$LOG" || echo "Model pull failed, can retry later" | tee -a "$LOG"
+        docker exec rag-ollama ollama pull nomic-embed-text 2>&1 | tee -a "$LOG" || echo "Model pull failed, can retry later" | tee -a "$LOG"
+      else
+        echo "Ollama container already exists" | tee -a "$LOG"
+        docker start rag-ollama 2>/dev/null || true
+      fi
+
+      # Build and start RAG Lab
+      echo "===== Building and Starting RAG Lab =====" | tee -a "$LOG"
+      cd /home/ubuntu/rag_lab
+      sudo -H -u ubuntu docker compose build 2>&1 | tee -a "$LOG"
+      sudo -H -u ubuntu docker compose up -d 2>&1 | tee -a "$LOG"
+
+      # Wait for services
+      echo "Waiting for services to start..." | tee -a "$LOG"
+      sleep 60
+
+      # Generate deployment info
+      echo "" | tee -a "$LOG"
+      echo "📊 DEPLOYMENT INFO:" | tee -a "$LOG"
+      echo "================================" | tee -a "$LOG"
+      PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 || echo "unknown")
+      echo "Public IP: $PUBLIC_IP" | tee -a "$LOG"
+      echo "Frontend: http://$PUBLIC_IP:3000" | tee -a "$LOG"
+      echo "API Gateway: http://$PUBLIC_IP:8000" | tee -a "$LOG"
+      echo "Ollama API: http://$PUBLIC_IP:11434" | tee -a "$LOG"
+      echo "vLLM API: http://$PUBLIC_IP:8001 (if enabled)" | tee -a "$LOG"
+
+      # Final service status
+      echo "" | tee -a "$LOG"
+      echo "🏥 FINAL SERVICE STATUS:" | tee -a "$LOG"
+      echo "================================" | tee -a "$LOG"
+      sudo -H -u ubuntu docker compose ps 2>&1 | tee -a "$LOG"
+
+      touch /var/lib/rag-lab-stage2-complete
+      echo "" | tee -a "$LOG"
+      echo "===== ✅ RAG LAB vLLM DEPLOYMENT COMPLETE =====" | tee -a "$LOG"
+      date | tee -a "$LOG"
+
+  - path: /etc/systemd/system/rag-lab-vllm-deploy.service
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=RAG Lab vLLM Deployment (Phase 2)
+      After=network-online.target docker.service
+      Wants=network-online.target
+      ConditionPathExists=!/var/lib/rag-lab-stage2-complete
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/rag-lab-vllm-deploy.sh
+      StandardOutput=append:/var/log/rag-lab-setup.log
+      StandardError=append:/var/log/rag-lab-setup.log
+
+      [Install]
+      WantedBy=multi-user.target
+
   - path: /home/ubuntu/deployment-info.txt
-    owner: ubuntu:ubuntu
     permissions: '0644'
     content: |
       ====================================
@@ -240,43 +164,14 @@ write_files:
       # Test vLLM API (OpenAI-compatible)
       curl http://localhost:8001/v1/models
 
-      # Use vLLM with RAG Lab
-      # Update config.env to point to http://localhost:8001
-
-      Model Management:
-      # List downloaded models
-      ls -lh /home/ubuntu/models/
-
-      # Download more models for vLLM
-      source /home/ubuntu/vllm-env/bin/activate
-      huggingface-cli download MODEL_NAME --local-dir /home/ubuntu/models/MODEL_NAME
-
-      # Popular vLLM models:
-      # - meta-llama/Llama-2-7b-chat-hf
-      # - meta-llama/Llama-2-13b-chat-hf
-      # - mistralai/Mistral-7B-Instruct-v0.2
-      # - tiiuae/falcon-7b-instruct
-
-      GPU Monitoring:
-      nvidia-smi -l 1          # Live GPU stats
-      watch -n 1 nvidia-smi    # Continuous monitoring
-
       Cost Information:
       - Running: ~$1.21/hour (~$29/day, ~$870/month)
       - Stopped: ~$0.65/day (EBS only)
       - Savings when stopped: 98%
 
-      Comparison to g4dn.2xlarge:
-      - 60% more expensive
-      - 50% more VRAM (24GB vs 16GB)
-      - vLLM support (A10G Ampere vs T4 Turing)
-      - Better ML performance
-      - Faster inference
-
       ====================================
 
   - path: /home/ubuntu/start-vllm.sh
-    owner: ubuntu:ubuntu
     permissions: '0755'
     content: |
       #!/bin/bash
@@ -299,7 +194,6 @@ write_files:
           --gpu-memory-utilization 0.9
 
   - path: /home/ubuntu/test-vllm.sh
-    owner: ubuntu:ubuntu
     permissions: '0755'
     content: |
       #!/bin/bash
@@ -322,20 +216,7 @@ write_files:
               "temperature": 0.7
           }' | jq .
 
-      echo ""
-      echo "3. Testing chat completion (OpenAI-compatible):"
-      curl -s http://localhost:8001/v1/chat/completions \
-          -H "Content-Type: application/json" \
-          -d '{
-              "model": "/home/ubuntu/models/llama-2-7b-chat",
-              "messages": [
-                  {"role": "user", "content": "What is RAG in AI?"}
-              ],
-              "max_tokens": 100
-          }' | jq .
-
   - path: /home/ubuntu/update-rag-lab.sh
-    owner: ubuntu:ubuntu
     permissions: '0755'
     content: |
       #!/bin/bash
@@ -346,21 +227,9 @@ write_files:
 
       docker compose down
 
-      REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
-      GITHUB_TOKEN=$(aws secretsmanager get-secret-value \
-        --secret-id rag-lab/github-token \
-        --region $REGION \
-        --query SecretString \
-        --output text)
-
-      if [ -z "$GITHUB_TOKEN" ]; then
-        echo "ERROR: Could not retrieve GitHub token"
-        exit 1
-      fi
-
-      git remote set-url origin https://${GITHUB_TOKEN}@github.com/sandbreak80/rag_lab.git
-      git pull origin security
+      # Using public repo - no token needed
       git remote set-url origin https://github.com/sandbreak80/rag_lab.git
+      git pull origin main
 
       docker compose build
       docker compose up -d
@@ -369,27 +238,61 @@ write_files:
       sleep 30
       docker compose ps
 
-final_message: |
-  ====================================
-  RAG Lab with vLLM - g5.2xlarge
-  ====================================
+# Phase 1: First boot only (install drivers, then reboot)
+runcmd:
+  - echo "===== RAG Lab Phase 1 (vLLM) =====" | tee /var/log/rag-lab-setup.log
+  - date | tee -a /var/log/rag-lab-setup.log
 
-  ✅ NVIDIA A10G GPU (Ampere architecture)
-  ✅ vLLM installed and configured
-  ✅ Ollama running (for smaller models)
-  ✅ RAG Lab services starting
+  # Docker installation
+  - echo "Installing Docker..." | tee -a /var/log/rag-lab-setup.log
+  - mkdir -p /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - usermod -aG docker ubuntu
+  - systemctl enable docker
+  - systemctl start docker
 
-  GPU Info:
-  - 24GB VRAM
-  - vLLM supported (Ampere)
-  - ~2x faster than T4
+  # NVIDIA drivers (full package including nvidia-smi)
+  - echo "Installing NVIDIA drivers..." | tee -a /var/log/rag-lab-setup.log
+  - ubuntu-drivers install --gpgpu 2>&1 | tee -a /var/log/rag-lab-setup.log
+  # Install full driver package - check what was installed and install corresponding full package
+  - |
+    # Check which driver packages are installed (compute libraries)
+    if dpkg -l | grep -q "nvidia-compute-utils-580-server"; then
+      echo "Installing full driver package: nvidia-driver-580-server" | tee -a /var/log/rag-lab-setup.log
+      apt-get install -y nvidia-driver-580-server 2>&1 | tee -a /var/log/rag-lab-setup.log || echo "Driver package install attempted" | tee -a /var/log/rag-lab-setup.log
+    elif dpkg -l | grep -q "nvidia-compute-utils-570-server"; then
+      echo "Installing full driver package: nvidia-driver-570-server" | tee -a /var/log/rag-lab-setup.log
+      apt-get install -y nvidia-driver-570-server 2>&1 | tee -a /var/log/rag-lab-setup.log || echo "Driver package install attempted" | tee -a /var/log/rag-lab-setup.log
+    else
+      # Fallback: try common driver packages
+      echo "No driver detected, trying common packages..." | tee -a /var/log/rag-lab-setup.log
+      apt-get install -y nvidia-driver-580-server nvidia-driver-570-server 2>&1 | tee -a /var/log/rag-lab-setup.log || echo "Driver package install attempted" | tee -a /var/log/rag-lab-setup.log
+    fi
 
-  Access:
-  - Frontend: http://PUBLIC_IP:3000
-  - API: http://PUBLIC_IP:8000
-  - vLLM: http://PUBLIC_IP:8001
+  # NVIDIA Container Toolkit
+  - echo "Installing NVIDIA Container Toolkit..." | tee -a /var/log/rag-lab-setup.log
+  - curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+  - curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+  - apt-get update
+  - apt-get install -y nvidia-container-toolkit
+  - nvidia-ctk runtime configure --runtime=docker
+  - systemctl restart docker
 
-  Cost: ~$29/day running, ~$0.65/day stopped
+  # Enable Phase 2
+  - systemctl daemon-reload
+  - systemctl enable rag-lab-vllm-deploy.service
 
-  ====================================
+  - touch /var/lib/rag-lab-stage1-complete
+  - echo "Phase 1 complete, will reboot to activate NVIDIA drivers" | tee -a /var/log/rag-lab-setup.log
+  - date | tee -a /var/log/rag-lab-setup.log
 
+# Conditional reboot (CRITICAL: only once)
+power_state:
+  mode: reboot
+  message: "Activating NVIDIA drivers"
+  condition: test -f /var/lib/rag-lab-stage1-complete && test ! -f /var/lib/rag-lab-stage2-complete
+
+final_message: "RAG Lab vLLM: Phase 1 complete, rebooting. Phase 2 will deploy services after reboot."
