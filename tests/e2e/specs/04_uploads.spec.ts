@@ -4,7 +4,8 @@ test('Document upload succeeds and indexes', async ({ page }) => {
   await page.goto('/');
 
   // Look for file input (ensure your UI exposes one with a testid)
-  const fileInput = page.locator('input[type="file"], [data-testid="file-input"], [data-testid="uploader-input"]').first();
+  // Try multiple selectors including test IDs from testids.ts
+  const fileInput = page.locator('input[type="file"], [data-testid="upload-input"], [data-testid="file-input"], [data-testid="uploader-input"]').first();
 
   // Check if upload UI is visible
   const isVisible = await fileInput.isVisible().catch(() => false);

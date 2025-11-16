@@ -28,7 +28,7 @@ test.describe('Metrics Page', () => {
       const response = await page.request.get(`${PROMETHEUS_URL}/api/v1/query?query=up`, {
         timeout: 5000
       });
-      
+
       if (response.status() === 200) {
         const data = await response.json();
         expect(data).toHaveProperty('status', 'success');
