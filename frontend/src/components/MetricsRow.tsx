@@ -24,7 +24,7 @@ export const MetricsRow: React.FC<MetricsRowProps> = ({
   const traceUrl = `${grafanaUrl}/explore?left={"queries":[{"expr":"${traceId}"}]}`;
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-2 text-xs text-gray-600" data-testid={TID.Metrics.Panel}>
+    <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-2 text-xs text-gray-600" data-testid="metrics-row">
       {/* Trace ID */}
       <a
         href={traceUrl}

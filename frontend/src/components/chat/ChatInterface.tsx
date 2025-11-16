@@ -139,6 +139,14 @@ export function ChatInterface() {
           temperature: config.temperature,
           topK: config.topK,
           latency: data.metrics?.total_latency_ms,
+          // RAG API v1 observability fields
+          trace_id: data.trace_id,
+          request_id: data.request_id,
+          tokens_in: data.tokens_in,
+          tokens_out: data.tokens_out,
+          cost_usd: data.cost_usd,
+          // Stage timings
+          stage_timings: data.stage_timings,
           performance: data.metrics ? {
             // Search Service Components
             query_expansion_ms: data.metrics.query_expansion_ms,

@@ -66,6 +66,12 @@ export interface MessageMetadata {
   stage_timings?: StageTimings;  // New stage timings format
   security?: SecurityInfo;
   decomposition?: QueryDecomposition;
+  // Metrics from RAG API v1
+  trace_id?: string;
+  request_id?: string;
+  tokens_in?: number;
+  tokens_out?: number;
+  cost_usd?: number;
 }
 
 export interface PerformanceMetrics {

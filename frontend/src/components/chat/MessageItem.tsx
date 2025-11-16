@@ -10,6 +10,7 @@ import { SourceCard } from './SourceCard';
 import { WaterfallChart } from '../metrics/WaterfallChart';
 import { StageTimingsDisplay } from '../metrics/StageTimingsDisplay';
 import { SecurityStatus } from '../security/SecurityStatus';
+import { MetricsRow } from '../MetricsRow';
 import { formatDate } from '../../utils/formatting';
 import { User, Bot, BarChart3, Copy, Check } from 'lucide-react';
 import { TID } from '../../testids';
@@ -206,22 +207,32 @@ export function MessageItem({ message }: MessageItemProps) {
             )}
           </div>
 
-          {/* Metadata */}
-          <div className="mt-2 flex items-center gap-2 text-xs opacity-70" data-testid="metrics-row">
-            <span>{formatDate(message.timestamp)}</span>
-            {message.metadata?.latency && (
-              <>
-                <span>•</span>
-                <span data-testid={TID.Metrics.Latency}>{message.metadata.latency}ms</span>
-              </>
-            )}
-            {message.metadata?.model && (
-              <>
-                <span>•</span>
-                <span>{message.metadata.model}</span>
-              </>
-            )}
-          </div>
+          {/* Metadata - Use full MetricsRow if we have trace_id, otherwise simple row */}
+          {!isUser && message.metadata?.trace_id && message.metadata?.tokens_in !== undefined ? (
+            <MetricsRow
+              traceId={message.metadata.trace_id}
+              tokensIn={message.metadata.tokens_in || 0}
+              tokensOut={message.metadata.tokens_out || 0}
+              costUsd={message.metadata.cost_usd || 0}
+              latencyMs={message.metadata.latency || message.metadata.performance?.total_latency_ms || 0}
+            />
+          ) : (
+            <div className="mt-2 flex items-center gap-2 text-xs opacity-70" data-testid="metrics-row">
+              <span>{formatDate(message.timestamp)}</span>
+              {message.metadata?.latency && (
+                <>
+                  <span>•</span>
+                  <span data-testid={TID.Metrics.Latency}>{message.metadata.latency}ms</span>
+                </>
+              )}
+              {message.metadata?.model && (
+                <>
+                  <span>•</span>
+                  <span>{message.metadata.model}</span>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Sources */}
