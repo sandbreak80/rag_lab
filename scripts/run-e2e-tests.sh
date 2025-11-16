@@ -35,7 +35,7 @@ if [ "$RUN_MODE" = "docker" ]; then
 
     # Run Playwright tests
     echo -e "${GREEN}Running Playwright tests...${NC}"
-    docker compose run --rm --profile testing \
+    docker compose run --rm \
         -e BASE_URL="$TEST_TARGET" \
         e2e \
         sh -c "
