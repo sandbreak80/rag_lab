@@ -32,6 +32,12 @@ class ApiClient {
       sub_queries: string[];
       original_query: string;
     };
+    trace_id?: string;
+    request_id?: string;
+    tokens_in?: number;
+    tokens_out?: number;
+    cost_usd?: number;
+    stage_timings?: any;
   }> {
     // Convert camelCase to snake_case for backend
     const backendConfig = {
@@ -103,6 +109,14 @@ class ApiClient {
         reranking_ms: response.data.artifacts?.reranking_ms || 0,
         llm_generation_ms: response.data.metrics?.latency_ms || 0,
       },
+      // Include RAG API v1 observability fields
+      trace_id: response.data.trace_id,
+      request_id: response.data.request_id,
+      tokens_in: response.data.metrics?.tokens_in,
+      tokens_out: response.data.metrics?.tokens_out,
+      cost_usd: response.data.metrics?.cost_usd,
+      // Stage timings from artifacts
+      stage_timings: response.data.artifacts?.stage_timings,
     };
   }
 
