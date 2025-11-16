@@ -68,18 +68,8 @@ if [ ! -f "$CLOUD_INIT_SCRIPT" ]; then
     exit 1
 fi
 
-# Check GitHub secret
-SECRET_CHECK=$(aws secretsmanager describe-secret \
-    --secret-id rag-lab/github-token \
-    --region $REGION 2>&1 || echo "NOT_FOUND")
-
-if [[ $SECRET_CHECK == *"NOT_FOUND"* ]] || [[ $SECRET_CHECK == *"ResourceNotFoundException"* ]]; then
-    echo -e "${RED}ERROR: GitHub token not found in Secrets Manager${NC}"
-    echo "Please run: ./setup-github-secret.sh"
-    exit 1
-fi
-
-echo -e "${GREEN}✓ All prerequisites met${NC}"
+# Note: Using public repo - no GitHub secret needed
+echo -e "${GREEN}✓ All prerequisites met (using public repo)${NC}"
 
 # ==========================================
 # SECURITY GROUP
@@ -103,18 +93,67 @@ if [ "$SG_ID" = "None" ]; then
         --query 'GroupId' \
         --output text)
 
-    # Add rules
+    # Get current IP for SSH restriction
+    MY_IP=$(curl -s ifconfig.me)
+    echo "Your current IP: $MY_IP"
+    echo "Restricting SSH (port 22) to your IP only for security..."
+
+    # Add rules - SSH restricted to current IP, others open
     aws ec2 authorize-security-group-ingress --region $REGION --group-id $SG_ID \
         --ip-permissions \
-        IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges='[{CidrIp=0.0.0.0/0,Description="SSH"}]' \
+        IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges="[{CidrIp=$MY_IP/32,Description=\"SSH from my IP only\"}]" \
         IpProtocol=tcp,FromPort=3000,ToPort=3000,IpRanges='[{CidrIp=0.0.0.0/0,Description="Frontend"}]' \
         IpProtocol=tcp,FromPort=8000,ToPort=8000,IpRanges='[{CidrIp=0.0.0.0/0,Description="API Gateway"}]' \
         IpProtocol=tcp,FromPort=11434,ToPort=11434,IpRanges='[{CidrIp=0.0.0.0/0,Description="Ollama"}]' \
         IpProtocol=tcp,FromPort=8001,ToPort=8001,IpRanges='[{CidrIp=0.0.0.0/0,Description="vLLM API"}]'
 
     echo -e "${GREEN}✓ Security group created: $SG_ID${NC}"
+    echo -e "${GREEN}✓ Port 22 restricted to your IP: $MY_IP/32${NC}"
 else
     echo -e "${GREEN}✓ Using existing security group: $SG_ID${NC}"
+
+    # Check if port 22 is open to 0.0.0.0/0 and restrict to current IP
+    MY_IP=$(curl -s ifconfig.me)
+    EXISTING_RULE=$(aws ec2 describe-security-group-rules \
+        --filters "Name=group-id,Values=$SG_ID" \
+        --region $REGION \
+        --query "SecurityGroupRules[?FromPort==\`22\` && IsEgress==\`false\` && CidrIpv4==\`0.0.0.0/0\`].SecurityGroupRuleId" \
+        --output text 2>/dev/null)
+
+    if [ ! -z "$EXISTING_RULE" ] && [ "$EXISTING_RULE" != "None" ]; then
+        echo "Updating SSH rule to restrict to your IP: $MY_IP/32"
+        # Remove old rule
+        aws ec2 revoke-security-group-ingress \
+            --group-id $SG_ID \
+            --region $REGION \
+            --ip-permissions IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges='[{CidrIp=0.0.0.0/0}]' 2>/dev/null || true
+
+        # Add new restricted rule
+        aws ec2 authorize-security-group-ingress \
+            --group-id $SG_ID \
+            --region $REGION \
+            --ip-permissions IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges="[{CidrIp=$MY_IP/32,Description=\"SSH from my IP only\"}]" 2>/dev/null || true
+
+        echo -e "${GREEN}✓ Port 22 updated to your IP: $MY_IP/32${NC}"
+    else
+        # Check if already restricted to current IP
+        CURRENT_RULE=$(aws ec2 describe-security-group-rules \
+            --filters "Name=group-id,Values=$SG_ID" \
+            --region $REGION \
+            --query "SecurityGroupRules[?FromPort==\`22\` && IsEgress==\`false\` && CidrIpv4==\`$MY_IP/32\`].SecurityGroupRuleId" \
+            --output text 2>/dev/null)
+
+        if [ ! -z "$CURRENT_RULE" ] && [ "$CURRENT_RULE" != "None" ]; then
+            echo -e "${GREEN}✓ Port 22 already restricted to your IP: $MY_IP/32${NC}"
+        else
+            echo "Adding SSH rule restricted to your IP: $MY_IP/32"
+            aws ec2 authorize-security-group-ingress \
+                --group-id $SG_ID \
+                --region $REGION \
+                --ip-permissions IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges="[{CidrIp=$MY_IP/32,Description=\"SSH from my IP only\"}]" 2>/dev/null || true
+            echo -e "${GREEN}✓ Port 22 restricted to your IP: $MY_IP/32${NC}"
+        fi
+    fi
 fi
 
 # ==========================================
@@ -147,7 +186,6 @@ INSTANCE_ID=$(aws ec2 run-instances \
     --instance-type $INSTANCE_TYPE \
     --key-name $KEY_NAME \
     --security-group-ids $SG_ID \
-    --iam-instance-profile Name=RAGLabEC2InstanceProfile \
     --block-device-mappings "DeviceName=/dev/sda1,Ebs={VolumeSize=$VOLUME_SIZE,VolumeType=gp3,DeleteOnTermination=true,Encrypted=true}" \
     --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$INSTANCE_NAME}]" \
     --user-data file://$CLOUD_INIT_SCRIPT \
