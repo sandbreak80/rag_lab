@@ -175,11 +175,13 @@ def test_golden_queries():
                 answer = data.get('answer', '')
                 citations = len(data.get('citations', []))
 
-                # Accept queries with answers even if no citations (some queries may not find matches)
-                if answer:
-                    test_result(f"Golden Query - {name}", True, f"Answer: {len(answer)} chars, Citations: {citations}")
-                else:
+                # RAG queries should return citations - if no citations, the system may not be finding relevant documents
+                if not answer:
                     test_result(f"Golden Query - {name}", False, "Empty answer")
+                elif citations == 0:
+                    test_result(f"Golden Query - {name}", False, f"Answer: {len(answer)} chars, Citations: 0 - RAG queries must return citations")
+                else:
+                    test_result(f"Golden Query - {name}", True, f"Answer: {len(answer)} chars, Citations: {citations}")
             else:
                 test_result(f"Golden Query - {name}", False, f"HTTP {resp.status_code}: {resp.text[:100]}")
         except Exception as e:
