@@ -20,7 +20,10 @@ interface MessageItemProps {
 
 export function MessageItem({ message }: MessageItemProps) {
   const isUser = message.role === 'user';
-  const [showPerformance, setShowPerformance] = useState(false);
+  // Show performance breakdown by default if stage timings exist
+  const [showPerformance, setShowPerformance] = useState(
+    !isUser && !!message.metadata?.stage_timings
+  );
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [copiedMessage, setCopiedMessage] = useState(false);
 
@@ -229,7 +232,7 @@ export function MessageItem({ message }: MessageItemProps) {
             </h4>
             <div className="grid gap-2">
               {message.sources.map((source, index) => (
-                <div key={index} data-testid={TID.Chat.SourceItem(index)}>
+                <div key={index} data-testid={TID.Chat.SourceItem(index + 1)}>
                   <SourceCard source={source} index={index + 1} />
                 </div>
               ))}
