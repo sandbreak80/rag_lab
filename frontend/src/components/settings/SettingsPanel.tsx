@@ -219,6 +219,8 @@ export function SettingsPanel() {
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={usePromptEnhancement}
               id="prompt-enhancement"
               data-testid="settings-prompt-enhancement"
               onClick={(e) => {
@@ -253,6 +255,8 @@ export function SettingsPanel() {
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={useAutoModelRouting}
               id="auto-routing"
               onClick={(e) => {
                 e.preventDefault();
@@ -286,6 +290,8 @@ export function SettingsPanel() {
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={useQueryDecomposition}
               id="query-decomposition"
               onClick={(e) => {
                 e.preventDefault();
@@ -319,6 +325,8 @@ export function SettingsPanel() {
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={useSelfRAG}
               id="self-rag"
               onClick={(e) => {
                 e.preventDefault();
@@ -352,6 +360,8 @@ export function SettingsPanel() {
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={showReasoningProcess}
               id="show-reasoning"
               onClick={(e) => {
                 e.preventDefault();
@@ -396,6 +406,8 @@ export function SettingsPanel() {
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={useVectorDB}
               id="vector-db"
               data-testid="settings-vector-db"
               onClick={(e) => {
@@ -430,6 +442,8 @@ export function SettingsPanel() {
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={useResearchAgent}
               id="research-agent"
               onClick={(e) => {
                 e.preventDefault();
@@ -463,6 +477,8 @@ export function SettingsPanel() {
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={useWebSearch}
               id="web-search-source"
               data-testid="settings-web-search"
               onClick={(e) => {
@@ -497,6 +513,8 @@ export function SettingsPanel() {
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={useGraph}
               id="knowledge-graph-source"
               onClick={(e) => {
                 e.preventDefault();

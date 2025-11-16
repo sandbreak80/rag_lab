@@ -9,25 +9,52 @@ test.describe('Settings Page', () => {
     await page.waitForLoadState('networkidle');
 
     // Look for any toggle switches or checkboxes
-    const toggles = page.locator('input[type="checkbox"]');
-    const toggleCount = await toggles.count();
+    // Try checkboxes first, then buttons with role="switch" or aria-checked
+    let toggles = page.locator('input[type="checkbox"]');
+    let toggleCount = await toggles.count();
+    
+    // If no checkboxes, look for switch buttons
+    if (toggleCount === 0) {
+      toggles = page.locator('button[role="switch"], button[aria-checked]');
+      toggleCount = await toggles.count();
+    }
 
     if (toggleCount > 0) {
       // Get first toggle
       const firstToggle = toggles.first();
-      const initialState = await firstToggle.isChecked();
+      
+      // For checkboxes, use isChecked(); for buttons, use aria-checked attribute
+      let initialState: boolean;
+      if (await firstToggle.evaluate(el => el.tagName === 'INPUT')) {
+        initialState = await firstToggle.isChecked();
+      } else {
+        initialState = (await firstToggle.getAttribute('aria-checked')) === 'true';
+      }
 
       // Toggle it
       await firstToggle.click();
 
       // Verify state changed
-      const newState = await firstToggle.isChecked();
+      let newState: boolean;
+      if (await firstToggle.evaluate(el => el.tagName === 'INPUT')) {
+        newState = await firstToggle.isChecked();
+      } else {
+        newState = (await firstToggle.getAttribute('aria-checked')) === 'true';
+      }
       expect(newState).toBe(!initialState);
 
       // Toggle back
       await firstToggle.click();
-      const finalState = await firstToggle.isChecked();
+      let finalState: boolean;
+      if (await firstToggle.evaluate(el => el.tagName === 'INPUT')) {
+        finalState = await firstToggle.isChecked();
+      } else {
+        finalState = (await firstToggle.getAttribute('aria-checked')) === 'true';
+      }
       expect(finalState).toBe(initialState);
+    } else {
+      // If no toggles found, test should still pass (page might not have toggles)
+      console.log('No toggles found on settings page');
     }
   });
 
