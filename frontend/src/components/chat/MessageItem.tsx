@@ -295,6 +295,8 @@ export function MessageItem({ message }: MessageItemProps) {
           <div className="mt-4 border border-border rounded-lg bg-background/50 overflow-hidden" data-testid={TID.Chat.PerfBlock}>
             <button
               onClick={() => setShowPerformance(!showPerformance)}
+              aria-label={showPerformance ? 'Hide performance breakdown' : 'Show performance breakdown'}
+              aria-expanded={showPerformance}
               className="w-full px-4 py-2 flex items-center justify-between hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-2 text-sm font-medium">

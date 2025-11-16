@@ -115,6 +115,7 @@ export function InputBar({ onSend, disabled }: InputBarProps) {
           onClick={handleSend}
           disabled={!input.trim() || disabled}
           size="icon"
+          aria-label="Send message"
           className="h-[60px] w-[60px] flex-shrink-0"
         >
           <Send className="h-5 w-5" />
