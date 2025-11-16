@@ -21,7 +21,7 @@ test.describe('Monitoring Page', () => {
       const response = await page.request.get(GRAFANA_URL, {
         timeout: 5000
       });
-      
+
       if (response.status() === 200) {
         const contentType = response.headers()['content-type'];
         expect(contentType).toContain('text/html');
