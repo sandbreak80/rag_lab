@@ -12,7 +12,18 @@ import requests
 from typing import Dict, Any
 
 # Configuration
-API_BASE = os.environ.get('RAG_API', 'http://16.146.148.184:8000')
+# Note: rag-api-v1 is on port 8080 internally, or accessible via nginx on port 3000
+# Default to port 3000 (via nginx) for same-origin routing
+API_BASE = os.environ.get('RAG_API', 'http://16.146.148.184:3000')
+
+# Helper to get correct endpoint path
+def get_api_endpoint(path: str) -> str:
+    """Get correct API endpoint path based on API_BASE"""
+    # If accessing via nginx (port 3000), use /api prefix
+    if ":3000" in API_BASE:
+        return f"{API_BASE}/api{path}"
+    # Direct access (port 8080) uses path as-is
+    return f"{API_BASE}{path}"
 RESULTS = {
     'passed': 0,
     'failed': 0,
@@ -86,7 +97,7 @@ def test_api_query():
 
     try:
         resp = requests.post(
-            f"{API_BASE}/v1/rag/query",
+            get_api_endpoint("/v1/rag/query"),
             json=payload,
             headers={'Content-Type': 'application/json'},
             timeout=15
@@ -148,7 +159,7 @@ def test_golden_queries():
     for name, query in queries:
         try:
             resp = requests.post(
-                f"{API_BASE}/v1/rag/query",
+                get_api_endpoint("/v1/rag/query"),
                 json={"query": query, "user_id": "test", "groups": []},
                 timeout=15
             )
@@ -194,7 +205,7 @@ def test_performance():
     try:
         start = time.time()
         resp = requests.post(
-            f"{API_BASE}/v1/rag/query",
+            get_api_endpoint("/v1/rag/query"),
             json={"query": "Quick test", "user_id": "perf", "groups": []},
             timeout=15
         )
@@ -218,7 +229,7 @@ def test_opentelemetry():
 
     try:
         resp = requests.post(
-            f"{API_BASE}/v1/rag/query",
+            get_api_endpoint("/v1/rag/query"),
             json={"query": "Test trace", "user_id": "trace_test", "groups": []},
             headers={
                 'Content-Type': 'application/json',
