@@ -2,63 +2,63 @@
 RAG Lab EC2 Instance - OTEL BRANCH
 ====================================
 
-Instance ID: i-0607a7dd199717fc9
+Instance ID: i-077d14f5b4fedd74e
 Instance Type: g4dn.2xlarge
 Region: us-west-2
-Security Group: sg-00190bfb0aee43904 (rag-lab-security-group)
+Security Group: sg-00032159d8f1c65ec (rag-lab-security-group)
 Branch: otel
 Purpose: Phase 2 Verification & Hardening Testing
 
 Network:
-  Public IP: 16.146.148.184
-  Public DNS: ec2-16-146-148-184.us-west-2.compute.amazonaws.com
-  Private IP: 172.31.23.167
+  Public IP: 16.146.36.90
+  Public DNS: ec2-16-146-36-90.us-west-2.compute.amazonaws.com
+  Private IP: 172.31.3.106
 
 Access URLs (available in 15-20 minutes):
-  Frontend: http://16.146.148.184:3000
-  API Gateway: http://16.146.148.184:8080
-  Ollama: http://16.146.148.184:11434
-  Grafana: http://16.146.148.184:3001
-  Prometheus: http://16.146.148.184:9090
-  OTel Collector (gRPC): http://16.146.148.184:4317
-  OTel Collector (HTTP): http://16.146.148.184:4318
-  OTel Metrics: http://16.146.148.184:8889
-  GQS Metrics: http://16.146.148.184:9309
+  Frontend: http://16.146.36.90:3000
+  API Gateway: http://16.146.36.90:8080
+  Ollama: http://16.146.36.90:11434
+  Grafana: http://16.146.36.90:3001
+  Prometheus: http://16.146.36.90:9090
+  OTel Collector (gRPC): http://16.146.36.90:4317
+  OTel Collector (HTTP): http://16.146.36.90:4318
+  OTel Metrics: http://16.146.36.90:8889
+  GQS Metrics: http://16.146.36.90:9309
 
 SSH Access:
-  ssh -i bootcamp.pem ubuntu@16.146.148.184
+  ssh -i bootcamp.pem ubuntu@16.146.36.90
 
 Phase 2 Testing Commands:
   # Check deployment status
-  ssh -i bootcamp.pem ubuntu@16.146.148.184 "cd rag_lab && docker compose ps"
+  ssh -i bootcamp.pem ubuntu@16.146.36.90 "cd rag_lab && docker compose ps"
 
   # Check OTel Collector
-  ssh -i bootcamp.pem ubuntu@16.146.148.184 "curl http://localhost:8889/metrics"
+  ssh -i bootcamp.pem ubuntu@16.146.36.90 "curl http://localhost:8889/metrics"
 
   # Verify GQS seed
-  ssh -i bootcamp.pem ubuntu@16.146.148.184 "wc -l rag_lab/evals/gqs_seed.csv"
+  ssh -i bootcamp.pem ubuntu@16.146.36.90 "wc -l rag_lab/evals/gqs_seed.csv"
 
   # Run evaluation sample
-  ssh -i bootcamp.pem ubuntu@16.146.148.184 "cd rag_lab && make seed"
+  ssh -i bootcamp.pem ubuntu@16.146.36.90 "cd rag_lab && make seed"
 
   # Start GQS metrics
-  ssh -i bootcamp.pem ubuntu@16.146.148.184 "cd rag_lab && make metrics &"
+  ssh -i bootcamp.pem ubuntu@16.146.36.90 "cd rag_lab && make metrics &"
 
   # Check cloud-init progress
-  ssh -i bootcamp.pem ubuntu@16.146.148.184 "tail -f /var/log/cloud-init-output.log"
+  ssh -i bootcamp.pem ubuntu@16.146.36.90 "tail -f /var/log/cloud-init-output.log"
 
   # Check GPU
-  ssh -i bootcamp.pem ubuntu@16.146.148.184 "nvidia-smi"
+  ssh -i bootcamp.pem ubuntu@16.146.36.90 "nvidia-smi"
 
 Instance Management:
   Stop Instance (to save costs):
-    aws ec2 stop-instances --region us-west-2 --instance-ids i-0607a7dd199717fc9
+    aws ec2 stop-instances --region us-west-2 --instance-ids i-077d14f5b4fedd74e
 
   Start Instance:
-    aws ec2 start-instances --region us-west-2 --instance-ids i-0607a7dd199717fc9
+    aws ec2 start-instances --region us-west-2 --instance-ids i-077d14f5b4fedd74e
 
   Terminate Instance:
-    aws ec2 terminate-instances --region us-west-2 --instance-ids i-0607a7dd199717fc9
+    aws ec2 terminate-instances --region us-west-2 --instance-ids i-077d14f5b4fedd74e
 
 ====================================
 Estimated Setup Time: 15-20 minutes
@@ -74,10 +74,10 @@ The cloud-init script is installing:
   7. Required Ollama models (llama3.1:8b, nomic-embed-text)
 
 Monitor progress:
-  ssh -i bootcamp.pem ubuntu@16.146.148.184 "tail -f /var/log/cloud-init-output.log"
+  ssh -i bootcamp.pem ubuntu@16.146.36.90 "tail -f /var/log/cloud-init-output.log"
 
 Check if complete:
-  ssh -i bootcamp.pem ubuntu@16.146.148.184 "grep 'Cloud-init.*finished' /var/log/cloud-init-output.log"
+  ssh -i bootcamp.pem ubuntu@16.146.36.90 "grep 'Cloud-init.*finished' /var/log/cloud-init-output.log"
 
 Post-Deployment Testing:
   See: docs/AWS_DEPLOYMENT_OTEL_BRANCH.md

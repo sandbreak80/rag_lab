@@ -42,7 +42,7 @@ if [ "$RUN_MODE" = "docker" ]; then
     else
         INTERNAL_URL="$TEST_TARGET"
     fi
-    
+
     echo -e "${GREEN}Running Playwright tests...${NC}"
     docker compose run --rm \
         --entrypoint /bin/bash \

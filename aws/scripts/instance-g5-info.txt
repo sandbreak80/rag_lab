@@ -1,0 +1,85 @@
+====================================
+RAG Lab - g5.2xlarge with vLLM
+====================================
+
+Instance Details:
+  Instance ID: i-0e36db8d358ef11ad
+  Instance Type: g5.2xlarge
+  Region: us-west-2
+  Public IP: 44.244.69.169
+  Public DNS: ec2-44-244-69-169.us-west-2.compute.amazonaws.com
+
+GPU Specifications:
+  GPU: NVIDIA A10G Tensor Core
+  VRAM: 24GB
+  Architecture: Ampere (vLLM supported ✅)
+  CUDA Cores: 9,216
+  Tensor Cores: 320 (3rd gen)
+  Ray Tracing Cores: 80
+
+Access URLs (available in 15-20 minutes):
+  Frontend: http://44.244.69.169:3000
+  API Gateway: http://44.244.69.169:8000
+  Ollama API: http://44.244.69.169:11434
+  vLLM API: http://44.244.69.169:8001
+
+SSH/Session Manager:
+  # Session Manager (recommended)
+  aws ssm start-session --target i-0e36db8d358ef11ad
+
+  # Traditional SSH
+  ssh -i bootcamp.pem ubuntu@44.244.69.169
+
+  # Port forwarding
+  aws ssm start-session --target i-0e36db8d358ef11ad \
+      --document-name AWS-StartPortForwardingSession \
+      --parameters '{"portNumber":["3000"],"localPortNumber":["3000"]}'
+
+Monitor Setup Progress:
+  ssh -i bootcamp.pem ubuntu@44.244.69.169 "tail -f /var/log/cloud-init-output.log"
+
+Check Installation:
+  ssh -i bootcamp.pem ubuntu@44.244.69.169 "cat /home/ubuntu/deployment-info.txt"
+
+vLLM Commands (after SSH):
+  # Start vLLM server
+  sudo systemctl start vllm
+
+  # Check vLLM status
+  sudo systemctl status vllm
+
+  # Test vLLM API
+  /home/ubuntu/test-vllm.sh
+
+  # Custom model
+  /home/ubuntu/start-vllm.sh /home/ubuntu/models/MODEL_NAME 8001
+
+Cost Management:
+  # Stop instance (save 98% - only EBS charges)
+  aws ec2 stop-instances --region us-west-2 --instance-ids i-0e36db8d358ef11ad
+
+  # Start instance
+  aws ec2 start-instances --region us-west-2 --instance-ids i-0e36db8d358ef11ad
+
+  # Terminate (delete everything)
+  aws ec2 terminate-instances --region us-west-2 --instance-ids i-0e36db8d358ef11ad
+
+Cost Breakdown:
+  Running: ~$1.21/hour (~$29/day, ~$870/month)
+  Stopped: ~$0.65/day (EBS storage only)
+  Savings when stopped: 98%
+
+Performance Comparison (vs g4dn.2xlarge):
+  ✅ 50% more VRAM (24GB vs 16GB)
+  ✅ vLLM support (Ampere vs Turing)
+  ✅ ~50% faster inference
+  ✅ Better for large models
+  ⚠️  60% more expensive
+
+Recommended Usage:
+  - Use g5 for: vLLM, large models (13B+), production inference
+  - Use g4dn for: Ollama only, smaller models, cost-sensitive dev
+
+Setup Time: 15-20 minutes (includes vLLM installation)
+
+====================================
