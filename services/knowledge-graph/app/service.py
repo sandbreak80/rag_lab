@@ -80,7 +80,7 @@ def get_metrics():
     if kg and hasattr(kg, 'graph'):
         metrics.set_gauge('graph_nodes', len(kg.graph.nodes()))
         metrics.set_gauge('graph_edges', len(kg.graph.edges()))
-    
+
     metrics_bytes, content_type = metrics.get_prometheus_metrics()
     from flask import Response
     return Response(metrics_bytes, mimetype=content_type)
@@ -106,7 +106,7 @@ def get_stats():
         # Set Prometheus metrics
         metrics.set_gauge('graph_nodes', stats['nodes'])
         metrics.set_gauge('graph_edges', stats['edges'])
-        
+
         # Set node type metrics
         for node_type, count in stats['node_types'].items():
             metrics.set_gauge(f'graph_nodes_{node_type}', count)
@@ -422,14 +422,19 @@ def reset_knowledge_graph():
 
         # Create new empty knowledge graph
         if KG_AVAILABLE:
+            # Create new empty graph
             kg = KnowledgeGraph()
 
-            # Save empty graph to disk
+            # Save empty graph to disk (overwrite old file)
             kg_path.parent.mkdir(parents=True, exist_ok=True)
             with open(kg_path, 'wb') as f:
                 pickle.dump(kg, f)
 
-            print("✅ Knowledge graph reset successfully")
+            # Verify it's actually empty
+            node_count = len(kg.graph.nodes())
+            edge_count = len(kg.graph.edges())
+
+            print(f"✅ Knowledge graph reset successfully: {node_count} nodes, {edge_count} edges")
 
             metrics.increment('resets')
 
@@ -437,8 +442,8 @@ def reset_knowledge_graph():
                 'success': True,
                 'message': 'Knowledge graph reset',
                 'stats': {
-                    'nodes': 0,
-                    'edges': 0
+                    'nodes': node_count,
+                    'edges': edge_count
                 }
             })
         else:
