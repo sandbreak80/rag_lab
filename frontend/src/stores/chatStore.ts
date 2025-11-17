@@ -24,13 +24,38 @@ export const useChatStore = create<ChatStore>((set, get) => {
   try {
     localStorage.removeItem('chat_messages');
     localStorage.removeItem('metadata_filters');
-    console.log('🧹 Cleared old localStorage chat data');
+    localStorage.removeItem('pending_request_ids');
   } catch (e) {
     // Ignore errors
   }
   
-  // Load pending requests from sessionStorage (survives page refresh)
-  // sessionStorage is cleared when tab closes, perfect for this use case
+  // Load messages from sessionStorage (survives page refresh, cleared when tab closes)
+  let savedMessages: ChatMessage[] = [];
+  try {
+    const saved = sessionStorage.getItem('chat_messages');
+    if (saved) {
+      savedMessages = JSON.parse(saved);
+      // Filter out any error messages (no error messages should persist)
+      savedMessages = savedMessages.filter((msg) => {
+        if (msg.content && typeof msg.content === 'string') {
+          const contentLower = msg.content.toLowerCase();
+          const isErrorMessage = 
+            contentLower.includes('request interrupted') ||
+            contentLower.includes('request timed out') ||
+            contentLower.includes('error occurred') ||
+            contentLower.includes('❌') ||
+            contentLower.includes('⏱️');
+          return !isErrorMessage;
+        }
+        return true;
+      });
+      console.log(`🔄 Restored ${savedMessages.length} message(s) from sessionStorage`);
+    }
+  } catch (e) {
+    console.warn('Failed to load messages from sessionStorage:', e);
+  }
+  
+  // Load pending requests from sessionStorage
   let savedPendingRequests: string[] = [];
   try {
     const saved = sessionStorage.getItem('pending_request_ids');
@@ -42,20 +67,25 @@ export const useChatStore = create<ChatStore>((set, get) => {
     console.warn('Failed to load pending requests from sessionStorage:', e);
   }
   
-  // Messages are in-memory only (cleared on refresh)
-  // Pending requests persist in sessionStorage (polling retrieves responses)
+  // Use sessionStorage for messages and pending requests
+  // Persists during session, cleared when tab closes
   // Redis on backend is the source of truth
   
   return {
-    messages: [], // Start fresh - no localStorage
+    messages: savedMessages, // Restore from sessionStorage
     isLoading: false,
     metadataFilters: {},
-    pendingRequestIds: savedPendingRequests, // Restore from sessionStorage
+    pendingRequestIds: savedPendingRequests,
 
     addMessage: (message) => {
       const messages = [...get().messages, message];
       set({ messages });
-      // NO localStorage - messages are in-memory only
+      // Save to sessionStorage (persists during session)
+      try {
+        sessionStorage.setItem('chat_messages', JSON.stringify(messages));
+      } catch (e) {
+        console.warn('Failed to save messages to sessionStorage:', e);
+      }
     },
 
     setLoading: (isLoading) => {
@@ -66,7 +96,13 @@ export const useChatStore = create<ChatStore>((set, get) => {
 
     clearMessages: () => {
       set({ messages: [], pendingRequestIds: [] });
-      // NO localStorage - just clear in-memory state
+      // Clear sessionStorage
+      try {
+        sessionStorage.removeItem('chat_messages');
+        sessionStorage.removeItem('pending_request_ids');
+      } catch (e) {
+        console.warn('Failed to clear sessionStorage:', e);
+      }
     },
 
     setMetadataFilters: (metadataFilters) => {
