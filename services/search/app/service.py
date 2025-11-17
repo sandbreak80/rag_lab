@@ -993,21 +993,31 @@ def search_with_config():
             with timer.measure('bm25_search'):
                 bm25_results = bm25_search_internal(query, top_k * 2)
             perf_metrics['bm25_results_count'] = len(bm25_results)
-            print(f"✓ BM25 Search: {timer.timings['bm25_search']:.0f}ms ({perf_metrics['bm25_results_count']} results)")
+            bm25_timing = timer.timings.get('bm25_search', 0)
+            print(f"✓ BM25 Search: {bm25_timing:.2f}ms ({perf_metrics['bm25_results_count']} results)")
         else:
             timer.record('bm25_search', 0)
             perf_metrics['bm25_results_count'] = 0
+            if use_bm25:
+                print(f"⚠️  BM25 Search: SKIPPED (index not loaded: bm25_index={bm25_index is not None})")
+            else:
+                print(f"⊘ BM25 Search: SKIPPED (disabled in config)")
 
         # Hybrid fusion
         if use_hybrid and bm25_results:
             with timer.measure('hybrid_fusion'):
                 fused = reciprocal_rank_fusion([vector_results, bm25_results])
             perf_metrics['method'] = 'hybrid'
-            print(f"✓ Hybrid Fusion: {timer.timings['hybrid_fusion']:.0f}ms")
+            hybrid_timing = timer.timings.get('hybrid_fusion', 0)
+            print(f"✓ Hybrid Fusion: {hybrid_timing:.2f}ms")
         else:
             fused = vector_results
             timer.record('hybrid_fusion', 0)
             perf_metrics['method'] = 'vector_only'
+            if use_hybrid:
+                print(f"⚠️  Hybrid Fusion: SKIPPED (no BM25 results: {len(bm25_results) if 'bm25_results' in locals() else 0} results)")
+            else:
+                print(f"⊘ Hybrid Fusion: SKIPPED (disabled in config)")
 
         fused = fused[:top_k * 2]  # Keep extra for graph/reranking
 

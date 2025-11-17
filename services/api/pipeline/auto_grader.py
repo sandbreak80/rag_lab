@@ -65,17 +65,24 @@ async def grade_ab_responses(
         if response_a == response_b:
             logger.warning("⚠️ Both responses are IDENTICAL - auto-grader will still evaluate but scores may be similar")
 
-        logger.info(f"Calling LLM for auto-grading with model={model}, temperature=0.5")
+        # Use higher temperature for more variation in grading
+        # Add random seed to prevent caching
+        import random
+        grading_temperature = 0.8  # Increased from 0.5 to 0.8 for more variation
+        random_seed = random.randint(1000, 9999)
+        
+        logger.info(f"Calling LLM for auto-grading with model={model}, temperature={grading_temperature}, seed={random_seed}")
         llm_response = await llm.generate(
             messages=messages,
             model=model,
-            temperature=0.5,  # Increased from 0.3 to 0.5 for more variation
+            temperature=grading_temperature,  # Increased to 0.8 for more variation
             max_tokens=2000,  # Increased from 1500 for more detailed evaluation
             use_mock=False  # Use real LLM for grading
         )
 
         logger.info(f"LLM response received: {len(llm_response.text)} chars")
         logger.info(f"LLM response preview: {llm_response.text[:200]}...")
+        logger.info(f"LLM response FULL: {llm_response.text}")  # Log FULL response for debugging
 
         # Store raw LLM response for debugging/transparency
         raw_llm_output = llm_response.text
@@ -120,15 +127,19 @@ def build_grading_prompt(
     if is_error_response(response_b):
         error_warning += "\n⚠️ WARNING: Response B appears to be an error message. It should receive very low scores (0.0-0.2).\n"
 
-    # Add unique identifier to prevent LLM caching/determinism
+    # Add unique identifier and randomness to prevent LLM caching/determinism
     import time
     import hashlib
-    unique_id = hashlib.md5(f"{prompt}{response_a[:50]}{response_b[:50]}{time.time()}".encode()).hexdigest()[:8]
+    import random
+    timestamp = time.time()
+    random_val = random.random()
+    unique_id = hashlib.md5(f"{prompt}{response_a[:50]}{response_b[:50]}{timestamp}{random_val}".encode()).hexdigest()[:8]
 
     return f"""You are an expert RAG evaluator. Compare two responses to the same query.
 {error_warning}
 
 EVALUATION ID: {unique_id} (This is a unique identifier for this evaluation - evaluate each response independently)
+TIMESTAMP: {timestamp} (Evaluate each response independently - do not use cached scores)
 
 QUERY: "{prompt}"
 
