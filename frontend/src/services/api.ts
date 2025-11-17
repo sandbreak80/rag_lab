@@ -136,6 +136,10 @@ class ApiClient {
       query,
       user_id: 'demo', // TODO: Get from auth
       groups: [], // TODO: Get from auth
+      top_k: backendConfig.top_k, // CRITICAL: Send top_k from config
+      web_search_enabled: backendConfig.use_web_search,
+      use_graph: backendConfig.use_graph,
+      enable_research: backendConfig.use_research_agent,
     };
 
     // If request_id provided, use it (for response caching after refresh)
