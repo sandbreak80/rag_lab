@@ -42,9 +42,13 @@ class IngestResponse(BaseModel):
 
 
 class DocumentListResponse(BaseModel):
-    """Response from document list endpoint"""
+    """Response from document list endpoint with pagination"""
     documents: list[str]
-    count: int
+    count: int  # Count of items in this page
+    total: int  # Total number of documents
+    page: int = 1
+    page_size: int = 20
+    total_pages: int = 1
 
 
 async def _read_file(file: UploadFile) -> str:
@@ -284,31 +288,55 @@ async def upload_documents(
 
 
 @router.get("", response_model=DocumentListResponse)
-async def list_documents():
+async def list_documents(
+    page: int = 1,
+    page_size: int = 20
+):
     """
-    List all documents in the vector database.
+    List documents in the vector database with pagination.
+
+    Query Parameters:
+        page: Page number (1-indexed, default: 1)
+        page_size: Number of documents per page (default: 20, max: 100)
 
     Returns:
-        DocumentListResponse with list of document IDs and count
+        DocumentListResponse with paginated list of document IDs and pagination metadata
     """
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            # Query vector DB for list of unique document IDs
-            response = await client.get(VECTOR_LIST_URL)
+        # Validate pagination params
+        page = max(1, page)
+        page_size = max(1, min(100, page_size))  # Clamp between 1 and 100
+
+        async with httpx.AsyncClient(timeout=30.0) as client:  # Increased timeout for large datasets
+            # Query vector DB for paginated list of unique document IDs
+            response = await client.get(
+                VECTOR_LIST_URL,
+                params={"page": page, "page_size": page_size}
+            )
             response.raise_for_status()
             data = response.json()
 
-            # Extract unique document IDs
+            # Extract paginated results
             documents = data.get("documents", [])
+            total = data.get("total", len(documents))
+            total_pages = data.get("total_pages", 1)
 
             return DocumentListResponse(
                 documents=documents,
-                count=len(documents)
+                count=len(documents),
+                total=total,
+                page=page,
+                page_size=page_size,
+                total_pages=total_pages
             )
     except Exception as e:
         logger.error(f"Failed to list documents: {e}")
         # Return empty list on error rather than failing
         return DocumentListResponse(
             documents=[],
-            count=0
+            count=0,
+            total=0,
+            page=page,
+            page_size=page_size,
+            total_pages=0
         )

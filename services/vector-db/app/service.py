@@ -348,15 +348,31 @@ def get_all_documents():
 @timed(metrics, 'list_documents')
 def list_documents():
     """
-    List all unique documents in the collection
+    List unique documents in the collection with pagination support
+
+    Query Parameters:
+        page: Page number (1-indexed, default: 1)
+        page_size: Number of documents per page (default: 20, max: 100)
 
     Returns:
     {
         "documents": ["doc1.txt", "doc2.pdf", ...],
-        "count": 2
+        "count": 2,
+        "total": 100,
+        "page": 1,
+        "page_size": 20,
+        "total_pages": 5
     }
     """
     try:
+        # Parse pagination parameters
+        page = int(request.args.get('page', 1))
+        page_size = int(request.args.get('page_size', 20))
+        
+        # Validate pagination params
+        page = max(1, page)  # Ensure page >= 1
+        page_size = max(1, min(100, page_size))  # Clamp between 1 and 100
+
         # Get all metadatas to extract unique document IDs
         all_data = collection.get(include=['metadatas'])
 
@@ -369,13 +385,27 @@ def list_documents():
                 if doc_id and doc_id != 'unknown':
                     unique_docs.add(doc_id)
 
+        # Sort all documents
         documents_list = sorted(list(unique_docs))
+        total = len(documents_list)
+
+        # Calculate pagination
+        total_pages = max(1, (total + page_size - 1) // page_size)  # Ceiling division
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+
+        # Slice the list for the requested page
+        paginated_documents = documents_list[start_idx:end_idx]
 
         metrics.increment('lists')
 
         return jsonify({
-            'documents': documents_list,
-            'count': len(documents_list)
+            'documents': paginated_documents,
+            'count': len(paginated_documents),  # Count of items in this page
+            'total': total,  # Total number of documents
+            'page': page,
+            'page_size': page_size,
+            'total_pages': total_pages
         })
     except Exception as e:
         metrics.increment('errors')

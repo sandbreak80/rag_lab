@@ -43,10 +43,10 @@ def load_prompts() -> Dict[str, PromptTemplate]:
     Reloads if file has been modified.
     """
     global _prompts_cache, _prompts_mtime
-    
+
     try:
         current_mtime = os.path.getmtime(PROMPTS_FILE)
-        
+
         # Check if we need to reload
         if _prompts_cache is None or _prompts_mtime != current_mtime:
             with open(PROMPTS_FILE, 'r') as f:
@@ -57,9 +57,9 @@ def load_prompts() -> Dict[str, PromptTemplate]:
                 }
                 _prompts_mtime = current_mtime
                 logger.info(f"📝 Loaded {len(_prompts_cache)} prompts from {PROMPTS_FILE}")
-        
+
         return _prompts_cache
-    
+
     except FileNotFoundError:
         logger.error(f"Prompts file not found: {PROMPTS_FILE}")
         return {}
@@ -76,17 +76,17 @@ def save_prompts(prompts: Dict[str, PromptTemplate]) -> None:
             key: value.model_dump()
             for key, value in prompts.items()
         }
-        
+
         with open(PROMPTS_FILE, 'w') as f:
             json.dump(data, f, indent=2)
-        
+
         # Invalidate cache
         global _prompts_cache, _prompts_mtime
         _prompts_cache = None
         _prompts_mtime = None
-        
+
         logger.info(f"💾 Saved {len(prompts)} prompts to {PROMPTS_FILE}")
-    
+
     except Exception as e:
         logger.error(f"Error saving prompts: {e}", exc_info=True)
         raise HTTPException(
@@ -109,13 +109,13 @@ async def list_prompts():
 async def get_prompt(prompt_id: str):
     """Get a specific prompt template by ID"""
     prompts = load_prompts()
-    
+
     if prompt_id not in prompts:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Prompt '{prompt_id}' not found"
         )
-    
+
     return prompts[prompt_id]
 
 
@@ -126,24 +126,24 @@ async def update_prompt(prompt_id: str, update: PromptUpdate):
     The new prompt takes effect immediately without container restart.
     """
     prompts = load_prompts()
-    
+
     if prompt_id not in prompts:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Prompt '{prompt_id}' not found"
         )
-    
+
     # Update the prompt
     existing = prompts[prompt_id]
     existing.template = update.template
     existing.updated_at = datetime.now(timezone.utc).isoformat()
     existing.updated_by = update.updated_by
-    
+
     # Save back to file
     save_prompts(prompts)
-    
+
     logger.info(f"✅ Updated prompt '{prompt_id}' by {update.updated_by}")
-    
+
     return existing
 
 
@@ -154,35 +154,35 @@ async def validate_prompt(prompt_id: str, update: PromptUpdate):
     Checks for syntax errors, missing variables, etc.
     """
     prompts = load_prompts()
-    
+
     if prompt_id not in prompts:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Prompt '{prompt_id}' not found"
         )
-    
+
     existing = prompts[prompt_id]
     errors = []
     warnings = []
-    
+
     # Check that required variables are present
     for var in existing.variables:
         if f"{{{var}}}" not in update.template:
             errors.append(f"Missing required variable: {{{var}}}")
-    
+
     # Check for unknown variables
     import re
     found_vars = set(re.findall(r'\{(\w+)\}', update.template))
     unknown_vars = found_vars - set(existing.variables)
     if unknown_vars:
         warnings.append(f"Unknown variables found: {', '.join(f'{{{v}}}' for v in unknown_vars)}")
-    
+
     # Check length
     if len(update.template) < 50:
         warnings.append("Prompt seems very short - are you sure it's complete?")
     if len(update.template) > 5000:
         warnings.append("Prompt is very long - consider breaking it down")
-    
+
     return {
         "valid": len(errors) == 0,
         "errors": errors,
@@ -204,22 +204,22 @@ async def render_prompt(
     Useful for testing how the prompt will look with actual data.
     """
     prompts = load_prompts()
-    
+
     if prompt_id not in prompts:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Prompt '{prompt_id}' not found"
         )
-    
+
     template = prompts[prompt_id].template
-    
+
     # Build variable substitution dict
     variables = {
         "query": query,
         "source_context": source_context,
         "citation_instruction": citation_instruction
     }
-    
+
     # Render template
     try:
         rendered = template.format(**variables)

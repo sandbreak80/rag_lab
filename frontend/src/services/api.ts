@@ -204,8 +204,17 @@ class ApiClient {
   }
 
   // Document endpoints
-  async getDocuments(): Promise<{ documents: string[]; count: number }> {
-    const response = await this.client.get('/v1/documents');
+  async getDocuments(page: number = 1, pageSize: number = 20): Promise<{ 
+    documents: string[]; 
+    count: number;
+    total: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
+  }> {
+    const response = await this.client.get('/v1/documents', {
+      params: { page, page_size: pageSize }
+    });
     return response.data;
   }
 

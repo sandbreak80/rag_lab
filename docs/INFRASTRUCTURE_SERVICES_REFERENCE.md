@@ -1,7 +1,7 @@
 # RAG Lab - Complete Infrastructure & Services Reference
 
-**Last Updated:** November 17, 2025  
-**Version:** 3.0  
+**Last Updated:** November 17, 2025
+**Version:** 3.0
 **Total Services:** 20+ microservices
 
 ---
@@ -930,6 +930,6 @@ curl http://localhost:8080/ready   # RAG API v1
 
 ---
 
-**Last Updated:** November 17, 2025  
+**Last Updated:** November 17, 2025
 **Maintained by:** RAG Lab Team
 

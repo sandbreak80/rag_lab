@@ -273,7 +273,7 @@ User Query → Frontend (React) → Nginx → RAG API v1
 - Redis - Response caching & rate limiting
 - Metrics Store (8011) - Historical metrics
 
-📖 **Complete Services Reference**: [docs/INFRASTRUCTURE_SERVICES_REFERENCE.md](docs/INFRASTRUCTURE_SERVICES_REFERENCE.md)  
+📖 **Complete Services Reference**: [docs/INFRASTRUCTURE_SERVICES_REFERENCE.md](docs/INFRASTRUCTURE_SERVICES_REFERENCE.md)
 📖 **Full Architecture Documentation**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ---
