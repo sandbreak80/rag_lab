@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { FileText, FileImage, FileSpreadsheet, File as FileIcon, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Button } from '../ui/button';
+import { FileText, FileImage, FileSpreadsheet, File as FileIcon, RefreshCw, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../ui/toast';
+
+const DOCUMENTS_PER_PAGE = 20;
 
 const getFileIcon = (filename: string) => {
   const ext = filename.split('.').pop()?.toLowerCase();
@@ -46,6 +49,7 @@ const getFileColor = (filename: string) => {
 
 export function DocumentList() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
@@ -91,15 +95,30 @@ export function DocumentList() {
   const documents = response?.documents || [];
 
   // Filter out only test/debug documents (show everything else including lab docs)
-  const userDocuments = documents.filter((doc: string) => {
-    const lower = doc.toLowerCase();
-    // Only exclude test/debug files
-    return !(
-      doc.startsWith('test_') ||
-      lower.includes('_summary') ||
-      lower.includes('archive/')
-    );
-  });
+  const userDocuments = useMemo(() => {
+    return documents.filter((doc: string) => {
+      const lower = doc.toLowerCase();
+      // Only exclude test/debug files
+      return !(
+        doc.startsWith('test_') ||
+        lower.includes('_summary') ||
+        lower.includes('archive/')
+      );
+    });
+  }, [documents]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(userDocuments.length / DOCUMENTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * DOCUMENTS_PER_PAGE;
+  const endIndex = startIndex + DOCUMENTS_PER_PAGE;
+  const paginatedDocuments = userDocuments.slice(startIndex, endIndex);
+
+  // Reset to page 1 if current page is out of bounds
+  React.useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
 
   if (userDocuments.length === 0) {
     return (
@@ -161,32 +180,99 @@ export function DocumentList() {
       </Card>
 
       {/* Document List */}
-      <div className="grid gap-3">
-        {userDocuments.map((filename: string, index: number) => {
-          const Icon = getFileIcon(filename);
-          const colorClass = getFileColor(filename);
+      <div className="space-y-4">
+        <div className="grid gap-3">
+          {paginatedDocuments.map((filename: string, index: number) => {
+            const Icon = getFileIcon(filename);
+            const colorClass = getFileColor(filename);
+            const globalIndex = startIndex + index;
 
-          return (
-            <Card key={index} data-testid="doc-row">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <div className={`flex-shrink-0 ${colorClass}`}>
-                    <Icon className="h-8 w-8" />
+            return (
+              <Card key={globalIndex} data-testid="doc-row">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    <div className={`flex-shrink-0 ${colorClass}`}>
+                      <Icon className="h-8 w-8" />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium truncate" data-testid="doc-filename">{filename}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        User uploaded
+                      </p>
+                    </div>
+
+                    <Badge variant="secondary">#{globalIndex + 1}</Badge>
                   </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
 
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium truncate" data-testid="doc-filename">{filename}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      User uploaded
-                    </p>
-                  </div>
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Showing {startIndex + 1} to {Math.min(endIndex, userDocuments.length)} of {userDocuments.length} documents
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  // Show first page, last page, current page, and pages around current
+                  const showPage = 
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1);
+                  
+                  if (!showPage) {
+                    // Show ellipsis
+                    if (page === currentPage - 2 || page === currentPage + 2) {
+                      return (
+                        <span key={page} className="px-2 text-muted-foreground">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  }
 
-                  <Badge variant="secondary">#{index + 1}</Badge>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                  return (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className="min-w-[2.5rem]"
+                    >
+                      {page}
+                    </Button>
+                  );
+                })}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
