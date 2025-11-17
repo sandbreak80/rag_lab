@@ -63,17 +63,17 @@ def collect_gpu_metrics():
     gpu_info = run_nvidia_smi('index,name')
     if not gpu_info:
         return
-    
+
     gpus = []
     for line in gpu_info:
         if ',' in line:
             index, name = line.split(',', 1)
             gpus.append((index.strip(), name.strip()))
-    
+
     if not gpus:
         logger.warning("No GPUs found")
         return
-    
+
     # Collect metrics for each GPU
     metrics = {
         'temperature': run_nvidia_smi('index,name,temperature.gpu'),
@@ -86,13 +86,13 @@ def collect_gpu_metrics():
         'clock_memory': run_nvidia_smi('index,name,clocks.current.memory'),
         'fan_speed': run_nvidia_smi('index,name,fan.speed'),
     }
-    
+
     # Parse and set metrics
     for gpu_idx, gpu_name in gpus:
         for metric_type, lines in metrics.items():
             if not lines:
                 continue
-            
+
             for line in lines:
                 if ',' in line:
                     parts = line.split(',')
@@ -100,7 +100,7 @@ def collect_gpu_metrics():
                         value_str = parts[2].strip()
                         try:
                             value = float(value_str)
-                            
+
                             if metric_type == 'temperature':
                                 gpu_temperature.labels(gpu=gpu_idx, name=gpu_name).set(value)
                             elif metric_type == 'utilization':
@@ -124,7 +124,7 @@ def collect_gpu_metrics():
                         except ValueError:
                             logger.warning(f"Could not parse value '{value_str}' for {metric_type}")
                             continue
-    
+
     # Count processes per GPU
     processes = run_nvidia_smi('index,name,processes.count')
     if processes:
@@ -143,12 +143,12 @@ def collect_gpu_metrics():
 
 class MetricsHandler(BaseHTTPRequestHandler):
     """HTTP handler for Prometheus metrics endpoint"""
-    
+
     def do_GET(self):
         if self.path == '/metrics':
             # Collect fresh metrics
             collect_gpu_metrics()
-            
+
             # Generate Prometheus format
             output = generate_latest()
             self.send_response(200)
@@ -163,7 +163,7 @@ class MetricsHandler(BaseHTTPRequestHandler):
         else:
             self.send_response(404)
             self.end_headers()
-    
+
     def log_message(self, format, *args):
         logger.info(format % args)
 
