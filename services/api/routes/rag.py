@@ -55,18 +55,33 @@ def infer_query_intent(query: str) -> str:
         return "general"
 
 
-def build_prompt_messages(query: str, results: list) -> list[dict]:
+def build_prompt_messages(query: str, results: list, require_web_citation: bool = False, require_kg_citation: bool = False) -> list[dict]:
     """Build extractive-first prompt with citations"""
     context_parts = []
+    web_indices = []
+    kg_indices = []
+    
     for i, result in enumerate(results):
         context_parts.append(f"[{i+1}] {result.content}")
+        # Track which indices are web/KG results
+        if result.origin_tool == "web_search":
+            web_indices.append(i + 1)
+        elif result.origin_tool == "knowledge_graph":
+            kg_indices.append(i + 1)
 
     context = "\n\n".join(context_parts)
+    
+    # Build citation instruction
+    citation_instruction = "Include citations [1], [2], etc. to reference sources."
+    if require_web_citation and web_indices:
+        citation_instruction += f" IMPORTANT: You must cite at least one web source from [{', '.join(map(str, web_indices))}]."
+    if require_kg_citation and kg_indices:
+        citation_instruction += f" IMPORTANT: You must cite at least one knowledge graph source from [{', '.join(map(str, kg_indices))}]."
 
     return [
         {
             "role": "system",
-            "content": "You are a helpful assistant. Answer the question based ONLY on the provided context. Include citations [1], [2], etc. to reference sources. If the context doesn't contain enough information, say so."
+            "content": f"You are a helpful assistant. Answer the question based ONLY on the provided context. {citation_instruction} If the context doesn't contain enough information, say so."
         },
         {
             "role": "user",
@@ -351,46 +366,46 @@ async def rag_query(req: RagQuery):
             # ===================================================================
             # Sort results by score, but ensure we have a mix of source types in top results
             sorted_results = sorted(all_results, key=lambda x: x.score, reverse=True)
-            
+
             # Take top results, ensuring web and KG results are included if available
             top_results = sorted_results[:TOPN]
-            
+
             # If we have web/KG results but they're not in top_results, add them
             # This ensures web/KG sources appear in citations
             # We'll prioritize them by inserting them at the beginning or ensuring they're included
             if len(web_results) > 0 or len(kg_results) > 0:
                 # Get top web and KG results that aren't already in top_results
                 top_result_ids = {(r.doc_id, r.chunk_id) for r in top_results}
-                
+
                 # Collect web and KG results to add
                 results_to_add = []
-                
+
                 # Add top web results if not already included
                 for web_result in web_results[:3]:  # Add up to 3 web results
                     if (web_result.doc_id, web_result.chunk_id) not in top_result_ids:
                         results_to_add.append(web_result)
                         top_result_ids.add((web_result.doc_id, web_result.chunk_id))
-                
+
                 # Add top KG results if not already included
                 for kg_result in kg_results[:3]:  # Add up to 3 KG results
                     if (kg_result.doc_id, kg_result.chunk_id) not in top_result_ids:
                         results_to_add.append(kg_result)
                         top_result_ids.add((kg_result.doc_id, kg_result.chunk_id))
-                
+
                 # Add web/KG results to top_results, then re-sort
                 # This ensures they're included but maintains score-based ordering
                 top_results.extend(results_to_add)
-                
+
                 # Re-sort to maintain score order, but keep all results (don't truncate yet)
                 top_results = sorted(top_results, key=lambda x: x.score, reverse=True)
-                
+
                 # Now take TOPN, but ensure we have at least some web/KG if they were requested
                 # If we added web/KG results, make sure at least one of each type is in the final list
                 if results_to_add:
                     # Separate by origin_tool
                     web_in_top = [r for r in top_results[:TOPN] if r.origin_tool == "web_search"]
                     kg_in_top = [r for r in top_results[:TOPN] if r.origin_tool == "knowledge_graph"]
-                    
+
                     # If web was requested but not in top, add at least one
                     if req.web_search_enabled and len(web_in_top) == 0 and len(web_results) > 0:
                         # Find a web result not in top_results
@@ -398,7 +413,7 @@ async def rag_query(req: RagQuery):
                             if (web_result.doc_id, web_result.chunk_id) not in {(r.doc_id, r.chunk_id) for r in top_results[:TOPN]}:
                                 top_results.insert(TOPN - 1, web_result)  # Insert near the end
                                 break
-                    
+
                     # If KG was requested but not in top, add at least one
                     if req.use_graph and len(kg_in_top) == 0 and len(kg_results) > 0:
                         # Find a KG result not in top_results
@@ -406,7 +421,7 @@ async def rag_query(req: RagQuery):
                             if (kg_result.doc_id, kg_result.chunk_id) not in {(r.doc_id, r.chunk_id) for r in top_results[:TOPN]}:
                                 top_results.insert(TOPN - 1, kg_result)  # Insert near the end
                                 break
-                
+
                 # Final truncation to TOPN
                 top_results = top_results[:TOPN]
 
@@ -416,12 +431,21 @@ async def rag_query(req: RagQuery):
             # STAGE 5: Synthesis (LLM)
             # ===================================================================
             t_llm_start = time.perf_counter()
-            
+
             # Log what's in top_results for debugging
             origin_tools_in_prompt = [r.origin_tool for r in top_results]
             logger.info(f"Top results for LLM prompt: {len(top_results)} results, origin_tools: {origin_tools_in_prompt}")
             
-            messages = build_prompt_messages(req.query, top_results)
+            # Check if we need to require web/KG citations
+            has_web_in_prompt = any(r.origin_tool == "web_search" for r in top_results)
+            has_kg_in_prompt = any(r.origin_tool == "knowledge_graph" for r in top_results)
+            
+            messages = build_prompt_messages(
+                req.query, 
+                top_results,
+                require_web_citation=req.web_search_enabled and has_web_in_prompt,
+                require_kg_citation=req.use_graph and has_kg_in_prompt
+            )
 
             with tracer.start_as_current_span("synthesis_v1") as synth_span:
                 llm_response = await llm.generate(
@@ -452,6 +476,48 @@ async def rag_query(req: RagQuery):
 
             # Extract citations
             citations = extract_citations(llm_response.text, top_results)
+            
+            # If web/KG were enabled but not cited, add at least one to citations
+            # This ensures they appear in the response even if LLM didn't cite them
+            cited_origin_tools = {c.get("origin_tool") for c in citations}
+            
+            if req.web_search_enabled and "web_search" not in cited_origin_tools:
+                # Find first web result in top_results and add it to citations
+                for result in top_results:
+                    if result.origin_tool == "web_search":
+                        # Find its index in top_results
+                        idx = top_results.index(result)
+                        citations.append({
+                            "doc_id": result.doc_id,
+                            "version": result.metadata.get("version", "1.0"),
+                            "chunk_id": result.chunk_id,
+                            "char_range": [0, len(result.content)],
+                            "content": result.content,
+                            "source_uri": result.metadata.get("source_uri", ""),
+                            "origin_tool": result.origin_tool,
+                            "score": getattr(result, 'score', 0.95),
+                            "auto_added": True  # Mark as auto-added
+                        })
+                        logger.info(f"Auto-added web result to citations: {result.doc_id}")
+                        break
+            
+            if req.use_graph and "knowledge_graph" not in cited_origin_tools:
+                # Find first KG result in top_results and add it to citations
+                for result in top_results:
+                    if result.origin_tool == "knowledge_graph":
+                        citations.append({
+                            "doc_id": result.doc_id,
+                            "version": result.metadata.get("version", "1.0"),
+                            "chunk_id": result.chunk_id,
+                            "char_range": [0, len(result.content)],
+                            "content": result.content,
+                            "source_uri": result.metadata.get("source_uri", ""),
+                            "origin_tool": result.origin_tool,
+                            "score": getattr(result, 'score', 0.95),
+                            "auto_added": True  # Mark as auto-added
+                        })
+                        logger.info(f"Auto-added KG result to citations: {result.doc_id}")
+                        break
 
             span.set_attribute("rag.citations.count", len(citations))
             span.set_attribute("rag.citations.unique_documents", len(set(c["doc_id"] for c in citations)))
