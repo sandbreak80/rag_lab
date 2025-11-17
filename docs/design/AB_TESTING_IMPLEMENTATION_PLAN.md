@@ -1,6 +1,6 @@
 # A/B Testing Page - Implementation Plan
 
-**Last Updated:** November 17, 2025  
+**Last Updated:** November 17, 2025
 **Status:** Design Complete - Ready for Implementation
 
 ---
@@ -163,13 +163,13 @@ async def grade_ab_responses(
 ) -> dict:
     """
     Grade two responses using LLM-as-judge
-    
+
     Returns structured grading results
     """
     grading_prompt = build_grading_prompt(
         prompt, response_a, response_b, sources_a, sources_b
     )
-    
+
     # Use local LLM for grading
     result = await llm_client.generate(
         model="llama3.2:3b",  # Fast enough for grading
@@ -177,7 +177,7 @@ async def grade_ab_responses(
         temperature=0.1,  # Low temperature for consistency
         response_format="json"
     )
-    
+
     return parse_grading_result(result)
 ```
 
@@ -193,7 +193,7 @@ interface ABTestingStore {
   testResults: ABTestResult | null;
   testHistory: ABTestResult[];
   isRunning: boolean;
-  
+
   setPrompt: (prompt: PromptLibraryItem) => void;
   setConfigA: (config: RAGConfig) => void;
   setConfigB: (config: RAGConfig) => void;
@@ -284,15 +284,15 @@ interface ABTestingStore {
 ## 🚨 Potential Challenges & Solutions
 
 ### **Challenge 1: Auto-Grader Consistency**
-**Problem:** LLM grading may be inconsistent  
-**Solution:** 
+**Problem:** LLM grading may be inconsistent
+**Solution:**
 - Use low temperature (0.1)
 - Structured output (JSON mode)
 - Fallback to heuristic scoring
 - Cache results for same inputs
 
 ### **Challenge 2: Parallel Execution**
-**Problem:** Running two queries simultaneously may overload system  
+**Problem:** Running two queries simultaneously may overload system
 **Solution:**
 - Queue system for parallel requests
 - Rate limiting
@@ -300,7 +300,7 @@ interface ABTestingStore {
 - Progress indicators
 
 ### **Challenge 3: Large Response Comparison**
-**Problem:** Long responses hard to compare  
+**Problem:** Long responses hard to compare
 **Solution:**
 - Collapsible sections
 - Diff highlighting
@@ -308,7 +308,7 @@ interface ABTestingStore {
 - Summary view option
 
 ### **Challenge 4: Test History Storage**
-**Problem:** Storing many test results  
+**Problem:** Storing many test results
 **Solution:**
 - Local storage for recent (last 10)
 - Backend storage for persistent

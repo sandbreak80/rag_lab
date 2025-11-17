@@ -314,7 +314,7 @@ export function getPromptsByDifficulty(difficulty: PromptLibraryItem['difficulty
 
 export function searchPrompts(query: string): PromptLibraryItem[] {
   const lowerQuery = query.toLowerCase();
-  return PROMPT_LIBRARY.filter(p => 
+  return PROMPT_LIBRARY.filter(p =>
     p.title.toLowerCase().includes(lowerQuery) ||
     p.prompt.toLowerCase().includes(lowerQuery) ||
     p.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
