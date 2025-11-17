@@ -8,9 +8,9 @@ test('Debug Grafana endpoint', async ({ page, baseURL }) => {
     testUrl = 'http://frontend:80';
     console.log(`\n🐳 Running in Docker - using internal service URL: ${testUrl}`);
   }
-  
+
   const grafanaUrl = `${testUrl}/graf/`;
-  
+
   console.log(`\n🔍 Testing Grafana URL: ${grafanaUrl}`);
 
   // Track all network requests
