@@ -144,7 +144,7 @@ def get_scraper(source):
 def fetch_from_source(source_id: int, manual: bool = False, days_back: int = 7):
     """
     Fetch new content from a specific source
-    
+
     Args:
         source_id: ID of the source to fetch from
         manual: Whether this is a manual fetch (vs scheduled)
@@ -486,16 +486,16 @@ def trigger_fetch_custom():
             errors = []
             items_count = 0
             batch_size = 5  # Process 5 sources at a time
-            
+
             logger.info(f"Processing {len(sources_to_fetch)} sources in batches of {batch_size}")
-            
+
             for i in range(0, len(sources_to_fetch), batch_size):
                 batch = sources_to_fetch[i:i + batch_size]
                 batch_num = (i // batch_size) + 1
                 total_batches = (len(sources_to_fetch) + batch_size - 1) // batch_size
-                
+
                 logger.info(f"Processing batch {batch_num}/{total_batches} ({len(batch)} sources)")
-                
+
                 for source in batch:
                     try:
                         # Pass days_back parameter to fetch_from_source
@@ -506,7 +506,7 @@ def trigger_fetch_custom():
                         error_msg = f"Error fetching {source['name']}: {e}"
                         logger.error(error_msg)
                         errors.append(error_msg)
-                
+
                 # Brief pause between batches to prevent overload
                 if i + batch_size < len(sources_to_fetch):
                     logger.info(f"Batch {batch_num} complete, pausing 2 seconds before next batch...")
@@ -629,6 +629,32 @@ def get_items():
 
     items = db.get_items(status=status, limit=limit, offset=offset)
     return jsonify({'items': items, 'count': len(items)})
+
+@app.route('/reset', methods=['POST'])
+def reset_research_agent():
+    """Reset research agent database - clear all items and history"""
+    try:
+        # Clear all items from database
+        conn = db.get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute('DELETE FROM items')
+        cursor.execute('DELETE FROM fetch_history')
+        # Keep sources - just clear ingested items
+
+        conn.commit()
+        conn.close()
+
+        logger.info("✅ Research agent database reset - all items and history cleared")
+
+        return jsonify({
+            'success': True,
+            'message': 'Research agent database reset - all items and history cleared',
+            'note': 'Sources are preserved. Vector DB must be reset separately to clear ingested content.'
+        })
+    except Exception as e:
+        logger.error(f"Error resetting research agent: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/', methods=['GET'])
 def root():
