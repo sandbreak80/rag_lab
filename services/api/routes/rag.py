@@ -211,10 +211,14 @@ async def rag_query(req: RagQuery):
                 logger.info("Web search disabled in settings")
             else:
                 # Evaluate early-stop: skip web if vector has strong hits
-                # BUT: Only apply early-stop if explicitly enabled via env var
-                # If web_search_enabled=True, respect user's choice to enable web search
-                RAG_EARLYSTOP_ENABLED = os.getenv("RAG_EARLYSTOP_ENABLED", "true").lower() == "true"
+                # BUT: If web_search_enabled=True, user explicitly wants web search
+                # Only apply early-stop if enabled via env var AND user hasn't explicitly enabled web search
+                # Actually, if user sets web_search_enabled=True, we should respect that and NOT skip
+                # Early-stop should only apply when web_search_enabled is not explicitly set to True
+                # For now, we'll make early-stop optional via env var, defaulting to False when web_search_enabled=True
+                RAG_EARLYSTOP_ENABLED = os.getenv("RAG_EARLYSTOP_ENABLED", "false").lower() == "true"
                 
+                # Only apply early-stop if explicitly enabled AND vector results are strong
                 if RAG_EARLYSTOP_ENABLED and len(vector_results) >= RAG_EARLYSTOP_MIN_HITS:
                     # Check if median score is above threshold
                     scores = [r.score for r in vector_results if hasattr(r, 'score')]
