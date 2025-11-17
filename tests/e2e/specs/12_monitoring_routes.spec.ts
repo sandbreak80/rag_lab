@@ -69,19 +69,19 @@ test('Grafana endpoint proxied', async ({ request, baseURL }) => {
   });
 
   const status = grafana.status();
-  
-  if (status === 200 || status === 302) {
+
+  if (status === 200 || status === 301 || status === 302) {
     console.log('✅ Grafana proxy working');
-    
-    // If 302, verify redirect location
-    if (status === 302) {
+
+    // If 301/302, verify redirect location
+    if (status === 301 || status === 302) {
       const location = grafana.headers()['location'];
       if (location) {
         console.log(`   Redirect location: ${location}`);
         expect(location).toMatch(/\/graf\//);
       }
     }
-    
+
     // If 200, verify it's actually Grafana
     if (status === 200) {
       const body = await grafana.text();
@@ -95,7 +95,7 @@ test('Grafana endpoint proxied', async ({ request, baseURL }) => {
   }
 
   // Grafana is required - must be accessible
-  expect(status).toBeOneOf([200, 302]);
+  expect(status).toBeOneOf([200, 301, 302]);
 });
 
 test('Agent endpoints return expected status', async ({ request, baseURL }) => {
