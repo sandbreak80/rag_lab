@@ -443,8 +443,8 @@ async def rag_query(req: RagQuery):
                 if results_to_add:
                     logger.info(f"Added {len(results_to_add)} web/KG results to top_results before truncation")
                     # Separate by origin_tool (check both variants for compatibility)
-                    web_in_top = [r for r in top_results[:TOPN] if r.origin_tool in ["web_search", "web"]]
-                    kg_in_top = [r for r in top_results[:TOPN] if r.origin_tool in ["knowledge_graph", "kg"]]
+                    web_in_top = [r for r in top_results[:req.top_k] if r.origin_tool in ["web_search", "web"]]
+                    kg_in_top = [r for r in top_results[:req.top_k] if r.origin_tool in ["knowledge_graph", "kg"]]
                     logger.info(f"After re-sort, web_in_top: {len(web_in_top)}, kg_in_top: {len(kg_in_top)}")
 
                     # If web was requested but not in top, add at least one
