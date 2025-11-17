@@ -30,6 +30,7 @@ export function ChatInterface() {
   const temperature = useConfigStore((state) => state.temperature);
   const topK = useConfigStore((state) => state.topK);
   const contextWindow = useConfigStore((state) => state.contextWindow);
+  const maxTokens = useConfigStore((state) => state.maxTokens);
   const useQueryExpansion = useConfigStore((state) => state.useQueryExpansion);
   const useBM25 = useConfigStore((state) => state.useBM25);
   const useHybrid = useConfigStore((state) => state.useHybrid);
@@ -55,6 +56,7 @@ export function ChatInterface() {
     temperature,
     topK,
     contextWindow,
+    maxTokens,
     useQueryExpansion,
     useBM25,
     useHybrid,
@@ -77,6 +79,7 @@ export function ChatInterface() {
     temperature,
     topK,
     contextWindow,
+    maxTokens,
     useQueryExpansion,
     useBM25,
     useHybrid,
