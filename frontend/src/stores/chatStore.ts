@@ -25,8 +25,31 @@ export const useChatStore = create<ChatStore>((set, get) => {
   const savedFilters = loadFromLocalStorage<MetadataFilters>('metadata_filters', {});
   const savedPendingRequests = loadFromLocalStorage<string[]>('pending_request_ids', []);
 
-  // Use saved messages directly - polling will handle responses
-  const filteredMessages = savedMessages;
+  // Filter out old error/timeout messages - we use Redis/polling now
+  const filteredMessages = savedMessages.filter((msg) => {
+    if (msg.content && typeof msg.content === 'string') {
+      const contentLower = msg.content.toLowerCase();
+      // Remove old error messages that are no longer needed with Redis/polling
+      const isOldErrorMessage = 
+        contentLower.includes('request interrupted') ||
+        contentLower.includes('request timed out') ||
+        contentLower.includes('page was refreshed before the response completed') ||
+        contentLower.includes('please resend your question') ||
+        contentLower.includes('maximum preset exceeded');
+      
+      if (isOldErrorMessage) {
+        console.log('🧹 Cleaned up old error message from localStorage');
+        return false;
+      }
+    }
+    return true;
+  });
+
+  // Save cleaned messages back to localStorage
+  if (filteredMessages.length !== savedMessages.length) {
+    saveToLocalStorage('chat_messages', filteredMessages);
+    console.log(`🧹 Removed ${savedMessages.length - filteredMessages.length} old error message(s)`);
+  }
 
   // Clean up pending requests that already have responses
   const messagesWithRequestIds = new Set(
