@@ -688,9 +688,15 @@ async def rag_query(req: RagQuery):
 
             with tracer.start_as_current_span("synthesis_v1") as synth_span:
                 # Use model and temperature from request if provided, otherwise use defaults
-                llm_model = getattr(req, 'model', None) or "llama3.1:8b"
-                llm_temperature = getattr(req, 'temperature', None) or 0.7
-
+                # Check if model/temperature are set (not None) before using defaults
+                req_model = getattr(req, 'model', None)
+                req_temperature = getattr(req, 'temperature', None)
+                
+                llm_model = req_model if req_model is not None else "llama3.1:8b"
+                llm_temperature = req_temperature if req_temperature is not None else 0.7
+                
+                logger.info(f"🔍 LLM call: req.model={req_model}, req.temperature={req_temperature}, using model={llm_model}, temperature={llm_temperature}, max_tokens={req.max_tokens}, context_window={req.context_window}")
+                
                 llm_response = await llm.generate(
                     messages=messages,
                     model=llm_model,  # Use model from request (from preset config)

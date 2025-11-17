@@ -77,6 +77,24 @@ export function ABTestRunner({
     setTestId(null);
 
     try {
+      // Debug: Log what we're sending
+      console.log('🔍 A/B Test Config A:', {
+        model: configA?.model,
+        temperature: configA?.temperature,
+        maxTokens: configA?.maxTokens,
+        contextWindow: configA?.contextWindow,
+        topK: configA?.topK,
+        useWebSearch: configA?.useWebSearch
+      });
+      console.log('🔍 A/B Test Config B:', {
+        model: configB?.model,
+        temperature: configB?.temperature,
+        maxTokens: configB?.maxTokens,
+        contextWindow: configB?.contextWindow,
+        topK: configB?.topK,
+        useWebSearch: configB?.useWebSearch
+      });
+
       const startResponse = await api.runABTest({
         prompt: prompt.prompt,
         config_a: configA,
