@@ -35,7 +35,8 @@ test.describe('Chat Page', () => {
 
     // Verify response structure
     expect(responseData).toHaveProperty('answer');
-    expect(responseData).toHaveProperty('sources');
+    // API v1 returns 'citations' not 'sources'
+    expect(responseData).toHaveProperty('citations');
     expect(responseData).toHaveProperty('artifacts');  // API returns artifacts not metadata
 
     // Wait for answer to appear in UI
