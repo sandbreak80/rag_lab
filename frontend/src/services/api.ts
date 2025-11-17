@@ -152,15 +152,16 @@ class ApiClient {
     // Transform new API response to match old format
     return {
       answer: response.data.answer,
-      sources: (response.data.citations || []).map((c: any, idx: number) => ({
-        file_name: c.doc_id || `Document ${idx + 1}`,
-        chunk_text: c.content || `Citation from ${c.doc_id || c.source_uri || 'unknown source'}`,
-        score: c.score || 0.95, // Mock score if not provided
-        source: c.origin_tool as 'rag' | 'web_search' || 'rag',
+      // Use sources instead of citations - sources contains ALL retrieved results
+      sources: (response.data.sources || []).map((s: any, idx: number) => ({
+        file_name: s.doc_id || `Document ${idx + 1}`,
+        chunk_text: s.content || s.snippet || `Source from ${s.doc_id || s.url || 'unknown source'}`,
+        score: s.score || 0.95,
+        source: s.origin_tool as 'rag' | 'web_search' || 'rag',
         metadata: {
-          tags: c.tags || [],
-          url: c.source_uri,
-          title: c.doc_id,
+          tags: s.tags || [],
+          url: s.url || s.source_uri,
+          title: s.title || s.doc_id,
         },
       })),
       metrics: {
