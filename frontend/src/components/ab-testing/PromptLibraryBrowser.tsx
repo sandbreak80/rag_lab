@@ -26,11 +26,11 @@ export function PromptLibraryBrowser({
   const difficulties = ['all', ...Array.from(new Set(prompts.map(p => p.difficulty)))];
 
   const filteredPrompts = prompts.filter(p => {
-    const matchesSearch = 
+    const matchesSearch =
       p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.prompt.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    
+
     const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
     const matchesComplexity = complexityFilter === 'all' || p.complexity === complexityFilter;
     const matchesDifficulty = difficultyFilter === 'all' || p.difficulty === difficultyFilter;
@@ -51,7 +51,7 @@ export function PromptLibraryBrowser({
             className="pl-10"
           />
         </div>
-        
+
         <div className="flex flex-wrap gap-2">
           <select
             value={categoryFilter}
@@ -64,7 +64,7 @@ export function PromptLibraryBrowser({
               </option>
             ))}
           </select>
-          
+
           <select
             value={complexityFilter}
             onChange={(e) => setComplexityFilter(e.target.value)}
@@ -76,7 +76,7 @@ export function PromptLibraryBrowser({
               </option>
             ))}
           </select>
-          
+
           <select
             value={difficultyFilter}
             onChange={(e) => setDifficultyFilter(e.target.value)}
