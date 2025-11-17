@@ -72,14 +72,35 @@ test('Grafana endpoint accessible via proxy', async ({ request, baseURL }) => {
     maxRedirects: 0
   });
 
-  console.log(`Grafana /graf/ status: ${grafana.status()}`);
+  const status = grafana.status();
+  console.log(`Grafana /graf/ status: ${status}`);
 
-  if (grafana.status() === 404) {
-    console.log('⚠️  Grafana proxy not configured');
-    console.log('   Add to nginx.conf: location /graf/ { proxy_pass http://grafana:3000/; }');
+  // Grafana is required - must return 200 or 302 (redirect to login)
+  if (status === 200 || status === 302) {
+    console.log('✅ Grafana proxy working');
+    
+    // If 302, follow redirect to verify it's actually Grafana
+    if (status === 302) {
+      const location = grafana.headers()['location'];
+      if (location) {
+        console.log(`   Redirect location: ${location}`);
+        expect(location).toMatch(/\/graf\//);
+      }
+    }
+    
+    // Verify response body contains Grafana indicators
+    if (status === 200) {
+      const body = await grafana.text();
+      expect(body.toLowerCase()).toMatch(/grafana/);
+    }
+  } else {
+    console.error(`❌ Grafana not accessible (status: ${status})`);
+    console.error('   Expected: 200 or 302');
+    console.error('   Check: docker compose ps grafana');
+    console.error('   Check: nginx.conf has location /graf/ configured');
   }
 
-  // Should either work (200/302) or not be configured yet (404)
-  expect([200, 302, 404, 502]).toContain(grafana.status());
+  // Grafana is required - must be accessible
+  expect(status).toBeOneOf([200, 302]);
 });
 
