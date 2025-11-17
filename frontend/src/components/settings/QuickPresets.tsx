@@ -19,8 +19,8 @@ export function QuickPresets() {
   useEffect(() => {
     if (!isLoading && presets && !currentPreset) {
       // Find balanced preset - check both lowercase key and display name
-      const balancedPreset = presets.find((p: any) => 
-        p.name?.toLowerCase() === 'balanced' || 
+      const balancedPreset = presets.find((p: any) =>
+        p.name?.toLowerCase() === 'balanced' ||
         p.name === 'Balanced (Recommended)' ||
         p.name === 'balanced'
       );
