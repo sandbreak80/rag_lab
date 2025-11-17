@@ -204,8 +204,8 @@ class ApiClient {
   }
 
   // Document endpoints
-  async getDocuments(page: number = 1, pageSize: number = 20): Promise<{ 
-    documents: string[]; 
+  async getDocuments(page: number = 1, pageSize: number = 20): Promise<{
+    documents: string[];
     count: number;
     total: number;
     page: number;

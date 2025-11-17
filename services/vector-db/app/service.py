@@ -368,7 +368,7 @@ def list_documents():
         # Parse pagination parameters
         page = int(request.args.get('page', 1))
         page_size = int(request.args.get('page_size', 20))
-        
+
         # Validate pagination params
         page = max(1, page)  # Ensure page >= 1
         page_size = max(1, min(100, page_size))  # Clamp between 1 and 100
