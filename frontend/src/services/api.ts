@@ -142,6 +142,8 @@ class ApiClient {
       enable_research: backendConfig.use_research_agent,
       max_tokens: config.maxTokens || 512,  // Send max_tokens from config (from preset)
       context_window: config.contextWindow || 4096,  // Send context_window from config (from preset)
+      model: config.model,  // CRITICAL: Send model from config (from preset, e.g., 'llama3.2:1b' vs 'gemma2:9b')
+      temperature: config.temperature,  // CRITICAL: Send temperature from config (from preset)
     };
 
     // If request_id provided, use it (for response caching after refresh)
