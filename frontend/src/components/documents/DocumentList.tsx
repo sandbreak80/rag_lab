@@ -57,6 +57,8 @@ export function DocumentList() {
     queryKey: ['documents'],
     queryFn: () => api.getDocuments(),
     refetchInterval: 10000, // Refetch every 10 seconds
+    retry: 1,
+    staleTime: 5000, // Consider data fresh for 5 seconds
   });
 
   const resetMutation = useMutation({
@@ -92,11 +94,15 @@ export function DocumentList() {
   }
 
   // Extract documents array from response
-  const documents = response?.documents || [];
+  const documents = Array.isArray(response?.documents) ? response.documents : [];
 
   // Filter out only test/debug documents (show everything else including lab docs)
   const userDocuments = useMemo(() => {
+    if (!Array.isArray(documents) || documents.length === 0) {
+      return [];
+    }
     return documents.filter((doc: string) => {
+      if (!doc || typeof doc !== 'string') return false;
       const lower = doc.toLowerCase();
       // Only exclude test/debug files
       return !(
@@ -123,9 +129,9 @@ export function DocumentList() {
   }
 
   // Calculate pagination (only when we have documents)
-  const totalPages = Math.ceil(userDocuments.length / DOCUMENTS_PER_PAGE);
-  const startIndex = (currentPage - 1) * DOCUMENTS_PER_PAGE;
-  const endIndex = startIndex + DOCUMENTS_PER_PAGE;
+  const totalPages = Math.max(1, Math.ceil(userDocuments.length / DOCUMENTS_PER_PAGE));
+  const startIndex = Math.max(0, (currentPage - 1) * DOCUMENTS_PER_PAGE);
+  const endIndex = Math.min(startIndex + DOCUMENTS_PER_PAGE, userDocuments.length);
   const paginatedDocuments = userDocuments.slice(startIndex, endIndex);
 
   // Reset to page 1 if current page is out of bounds
@@ -229,18 +235,18 @@ export function DocumentList() {
               </Button>
 
               <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                {totalPages > 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
                   // Show first page, last page, current page, and pages around current
                   const showPage =
                     page === 1 ||
                     page === totalPages ||
-                    (page >= currentPage - 1 && page <= currentPage + 1);
+                    (page >= Math.max(1, currentPage - 1) && page <= Math.min(totalPages, currentPage + 1));
 
                   if (!showPage) {
                     // Show ellipsis
-                    if (page === currentPage - 2 || page === currentPage + 2) {
+                    if (page === Math.max(1, currentPage - 2) || page === Math.min(totalPages, currentPage + 2)) {
                       return (
-                        <span key={page} className="px-2 text-muted-foreground">
+                        <span key={`ellipsis-${page}`} className="px-2 text-muted-foreground">
                           ...
                         </span>
                       );

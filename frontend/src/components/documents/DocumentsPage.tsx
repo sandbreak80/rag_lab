@@ -3,6 +3,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { DocumentUpload } from './DocumentUpload';
 import { DocumentList } from './DocumentList';
+import { ErrorBoundary } from '../ErrorBoundary';
 import { api } from '../../services/api';
 import { Network, RefreshCw, GitBranch } from 'lucide-react';
 import { useToast } from '../ui/toast';
@@ -218,7 +219,9 @@ export function DocumentsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <DocumentList />
+          <ErrorBoundary>
+            <DocumentList />
+          </ErrorBoundary>
         </CardContent>
       </Card>
     </div>
