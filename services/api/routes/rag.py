@@ -749,7 +749,7 @@ async def rag_query(req: RagQuery):
                     "cited": was_cited,  # Mark which ones LLM actually used
                     "rank": idx + 1
                 })
-            
+
             # Log for debugging
             logger.info(f"Built {len(sources)} sources from {len(top_results)} top_results, {len(citations)} citations")
 
