@@ -678,7 +678,7 @@ async def rag_query(req: RagQuery):
                 require_web_citation=req.web_search_enabled and has_web_in_prompt,
                 require_kg_citation=req.use_graph and has_kg_in_prompt
             )
-            
+
             # Estimate prompt token count (rough: ~4 chars per token)
             total_prompt_chars = sum(len(m.get("content", "")) for m in messages)
             estimated_prompt_tokens = total_prompt_chars // 4
@@ -687,10 +687,14 @@ async def rag_query(req: RagQuery):
                 logger.warning(f"⚠️  Prompt is ~{estimated_prompt_tokens} tokens, which is >80% of context_window={req.context_window}. Response may be truncated!")
 
             with tracer.start_as_current_span("synthesis_v1") as synth_span:
+                # Use model and temperature from request if provided, otherwise use defaults
+                llm_model = getattr(req, 'model', None) or "llama3.1:8b"
+                llm_temperature = getattr(req, 'temperature', None) or 0.7
+                
                 llm_response = await llm.generate(
                     messages=messages,
-                    model="llama3.1:8b",
-                    temperature=0.7,
+                    model=llm_model,  # Use model from request (from preset config)
+                    temperature=llm_temperature,  # Use temperature from request (from preset config)
                     max_tokens=req.max_tokens,  # Use max_tokens from request (from preset config)
                     context_window=req.context_window,  # Use context_window from request (from preset config)
                     use_mock=USE_MOCK_LLM

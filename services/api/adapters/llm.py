@@ -100,7 +100,7 @@ async def generate_real(
             "num_ctx": context_window   # Total context window (input prompt + output response)
         }
         logger.info(f"Ollama API call: model={model}, num_ctx={context_window}, num_predict={max_tokens}, temperature={temperature}")
-        
+
         async with httpx.AsyncClient(timeout=30.0) as cx:
             response = await cx.post(
                 f"{ollama_url}/api/chat",

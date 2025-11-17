@@ -23,6 +23,7 @@ function presetToRAGConfig(preset: any, currentConfig: RAGConfig): RAGConfig {
     model: llmConfig.model || currentConfig.model,
     temperature: llmConfig.temperature !== undefined ? llmConfig.temperature : currentConfig.temperature,
     contextWindow: llmConfig.context_window || currentConfig.contextWindow,
+    maxTokens: llmConfig.max_tokens || currentConfig.maxTokens,  // CRITICAL: Map max_tokens from preset
     // Map RAG config (snake_case to camelCase)
     useQueryExpansion: config.use_query_expansion !== undefined ? config.use_query_expansion : currentConfig.useQueryExpansion,
     useBM25: config.use_bm25 !== undefined ? config.use_bm25 : currentConfig.useBM25,
