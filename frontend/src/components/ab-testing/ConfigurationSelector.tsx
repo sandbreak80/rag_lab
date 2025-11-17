@@ -229,7 +229,7 @@ export function ConfigurationSelector({
               <div><strong>Top-K:</strong> {value.topK}</div>
               <div><strong>Rerank Top-K:</strong> {value.rerankTopK}</div>
               <div><strong>Context Window:</strong> {value.contextWindow}</div>
-              <div><strong>Max Tokens:</strong> {value.contextWindow}</div>
+              <div><strong>Max Tokens:</strong> {value.maxTokens}</div>
               <div><strong>Web Search:</strong> {value.useWebSearch ? 'Yes' : 'No'}</div>
               {value.useWebSearch && (
                 <>
