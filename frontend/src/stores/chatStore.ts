@@ -20,6 +20,16 @@ interface ChatStore {
 }
 
 export const useChatStore = create<ChatStore>((set, get) => {
+  // CLEAR any old localStorage data (one-time cleanup)
+  try {
+    localStorage.removeItem('chat_messages');
+    localStorage.removeItem('pending_request_ids');
+    localStorage.removeItem('metadata_filters');
+    console.log('🧹 Cleared old localStorage (Redis is now source of truth)');
+  } catch (e) {
+    // Ignore errors - localStorage might not be available
+  }
+  
   // NO localStorage - messages are in-memory only
   // Redis on backend is the source of truth
   // Polling retrieves responses when ready
