@@ -7,6 +7,7 @@ const DEFAULT_CONFIG: RAGConfig = {
   temperature: 0.7,
   topK: 5,
   contextWindow: 4096,
+  maxTokens: 512,  // Default max tokens for LLM response
   useQueryExpansion: false,
   useBM25: false,
   useHybrid: false,
@@ -40,6 +41,7 @@ interface ConfigStore extends RAGConfig {
   setTemperature: (temperature: number) => void;
   setTopK: (topK: number) => void;
   setContextWindow: (contextWindow: number) => void;
+  setMaxTokens: (maxTokens: number) => void;
   toggleFeature: (feature: keyof RAGConfig) => void;
   setWebSearchDocs: (docs: number) => void;
   setWebSearchPages: (pages: number) => void;
@@ -111,6 +113,11 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
       saveToLocalStorage('rag_config', { ...get().getConfig(), currentPreset: undefined });
     },
 
+    setMaxTokens: (maxTokens) => {
+      set({ maxTokens, currentPreset: undefined }); // Clear preset when manually changed
+      saveToLocalStorage('rag_config', { ...get().getConfig(), currentPreset: undefined });
+    },
+
     toggleFeature: (feature) => {
       console.log('🔍 toggleFeature called for:', feature);
       set((state) => {
@@ -162,6 +169,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
         model: llmConfig.model || get().model,
         temperature: llmConfig.temperature || get().temperature,
         contextWindow: llmConfig.context_window || get().contextWindow,
+        maxTokens: llmConfig.max_tokens || get().maxTokens,  // Load max_tokens from preset
         // Map snake_case to camelCase
         useQueryExpansion: config.use_query_expansion !== undefined ? config.use_query_expansion : get().useQueryExpansion,
         useBM25: config.use_bm25 !== undefined ? config.use_bm25 : get().useBM25,

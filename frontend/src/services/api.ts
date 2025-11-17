@@ -140,6 +140,7 @@ class ApiClient {
       web_search_enabled: backendConfig.use_web_search,
       use_graph: backendConfig.use_graph,
       enable_research: backendConfig.use_research_agent,
+      max_tokens: config.maxTokens || 512,  // Send max_tokens from config (from preset)
     };
 
     // If request_id provided, use it (for response caching after refresh)

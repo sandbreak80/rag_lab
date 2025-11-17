@@ -176,6 +176,7 @@ async def _run_ab_test_async(test_id: str, req: ABTestRequest):
                 use_query_expansion=config.get("useQueryExpansion") if "useQueryExpansion" in config else config.get("use_query_expansion", False),
                 use_bm25=config.get("useBM25") if "useBM25" in config else config.get("use_bm25", False),
                 use_hybrid=config.get("useHybrid") if "useHybrid" in config else config.get("use_hybrid", False),
+                max_tokens=config.get("maxTokens") or config.get("max_tokens", 512),  # Pass max_tokens from config
             )
 
         request_id_a = f"{test_id}_a"

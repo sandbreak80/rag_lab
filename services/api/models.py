@@ -25,6 +25,7 @@ class RagQuery(BaseModel):
     use_query_expansion: bool = Field(False, description="Enable query expansion")
     use_bm25: bool = Field(False, description="Enable BM25 keyword search")
     use_hybrid: bool = Field(False, description="Enable hybrid search (vector + BM25 fusion)")
+    max_tokens: int = Field(512, ge=100, le=32768, description="Maximum tokens for LLM response generation")
 
     class Config:
         schema_extra = {
