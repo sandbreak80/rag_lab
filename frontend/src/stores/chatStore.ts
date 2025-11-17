@@ -20,25 +20,37 @@ interface ChatStore {
 }
 
 export const useChatStore = create<ChatStore>((set, get) => {
-  // CLEAR any old localStorage data (one-time cleanup)
+  // CLEAR old localStorage chat data (one-time cleanup)
   try {
     localStorage.removeItem('chat_messages');
-    localStorage.removeItem('pending_request_ids');
     localStorage.removeItem('metadata_filters');
-    console.log('🧹 Cleared old localStorage (Redis is now source of truth)');
+    console.log('🧹 Cleared old localStorage chat data');
   } catch (e) {
-    // Ignore errors - localStorage might not be available
+    // Ignore errors
   }
   
-  // NO localStorage - messages are in-memory only
+  // Load pending requests from sessionStorage (survives page refresh)
+  // sessionStorage is cleared when tab closes, perfect for this use case
+  let savedPendingRequests: string[] = [];
+  try {
+    const saved = sessionStorage.getItem('pending_request_ids');
+    if (saved) {
+      savedPendingRequests = JSON.parse(saved);
+      console.log(`🔄 Restored ${savedPendingRequests.length} pending request(s) from sessionStorage`);
+    }
+  } catch (e) {
+    console.warn('Failed to load pending requests from sessionStorage:', e);
+  }
+  
+  // Messages are in-memory only (cleared on refresh)
+  // Pending requests persist in sessionStorage (polling retrieves responses)
   // Redis on backend is the source of truth
-  // Polling retrieves responses when ready
   
   return {
     messages: [], // Start fresh - no localStorage
     isLoading: false,
     metadataFilters: {},
-    pendingRequestIds: [], // Track in-memory only
+    pendingRequestIds: savedPendingRequests, // Restore from sessionStorage
 
     addMessage: (message) => {
       const messages = [...get().messages, message];
@@ -67,7 +79,12 @@ export const useChatStore = create<ChatStore>((set, get) => {
       if (!current.includes(requestId)) {
         const updated = [...current, requestId];
         set({ pendingRequestIds: updated });
-        // NO localStorage - in-memory only
+        // Save to sessionStorage so polling works after page refresh
+        try {
+          sessionStorage.setItem('pending_request_ids', JSON.stringify(updated));
+        } catch (e) {
+          console.warn('Failed to save pending requests to sessionStorage:', e);
+        }
       }
     },
 
@@ -76,7 +93,12 @@ export const useChatStore = create<ChatStore>((set, get) => {
       const updated = current.filter(id => id !== requestId);
       if (updated.length !== current.length) {
         set({ pendingRequestIds: updated });
-        // NO localStorage - in-memory only
+        // Update sessionStorage
+        try {
+          sessionStorage.setItem('pending_request_ids', JSON.stringify(updated));
+        } catch (e) {
+          console.warn('Failed to update pending requests in sessionStorage:', e);
+        }
       }
     },
 
