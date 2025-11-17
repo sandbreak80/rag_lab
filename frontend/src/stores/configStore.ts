@@ -15,8 +15,8 @@ const DEFAULT_CONFIG: RAGConfig = {
   useWebSearch: false,
   useAgenticChunking: false,
   useSecurity: true, // Security enabled by default
-  webSearchDocs: 5,
-  webSearchPages: 1,
+  webSearchDocs: 20,  // Increased from 5 to 20
+  webSearchPages: 5,  // Increased from 1 to 5
   rerankTopK: 10,
 
   // New intelligence features (Nov 5, 2025) - All optional, off by default for now
