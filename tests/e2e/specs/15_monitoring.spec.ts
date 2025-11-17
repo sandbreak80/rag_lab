@@ -137,20 +137,20 @@ test.describe('Monitoring Page', () => {
     expect(href).toBeTruthy();
     // Should use proxied path /graf/ (through nginx) or direct port 3001
     expect(href).toMatch(/\/graf\/|3001/);
-    
+
     // Verify link is clickable and opens in new tab
     const [newPage] = await Promise.all([
       context.waitForEvent('page'),
       grafanaLink.click()
     ]);
-    
+
     // Wait for new page to load
     await newPage.waitForLoadState('networkidle');
-    
+
     // Verify it's actually Grafana (check for Grafana indicators in URL or content)
     const url = newPage.url();
     expect(url).toMatch(/\/graf\/|3001/);
-    
+
     // Close the new page
     await newPage.close();
   });
