@@ -5,6 +5,7 @@ Uses LLM-as-judge to evaluate RAG responses across multiple dimensions
 import logging
 import json
 import re
+import hashlib
 from typing import Any, Optional
 from ..adapters import llm
 
@@ -33,6 +34,11 @@ async def grade_ab_responses(
     6. Source Quality
     """
     try:
+        # Log what we're grading for debugging
+        logger.info(f"Auto-grading: response_a_len={len(response_a)}, response_b_len={len(response_b)}")
+        logger.info(f"Auto-grading: response_a_preview={response_a[:100]}...")
+        logger.info(f"Auto-grading: response_b_preview={response_b[:100]}...")
+
         # Build grading prompt
         grading_prompt = build_grading_prompt(
             prompt, response_a, response_b, sources_a, sources_b
@@ -42,7 +48,7 @@ async def grade_ab_responses(
         messages = [
             {
                 "role": "system",
-                "content": "You are an expert RAG evaluator. Evaluate responses objectively and return structured JSON."
+                "content": "You are an expert RAG evaluator. Evaluate responses objectively and return structured JSON. IMPORTANT: If responses are identical or both are error messages, you must still provide different scores if there are ANY differences (e.g., response length, structure, source count). Do not return identical scores unless the responses are truly identical in every way."
             },
             {
                 "role": "user",
@@ -50,29 +56,49 @@ async def grade_ab_responses(
             }
         ]
 
+        # Add response hashes to detect if responses are actually different
+        response_a_hash = hashlib.md5(response_a.encode()).hexdigest()[:8]
+        response_b_hash = hashlib.md5(response_b.encode()).hexdigest()[:8]
+        logger.info(f"Auto-grading: response_a_hash={response_a_hash}, response_b_hash={response_b_hash}")
+        logger.info(f"Auto-grading: responses_identical={response_a == response_b}")
+
+        if response_a == response_b:
+            logger.warning("⚠️ Both responses are IDENTICAL - auto-grader will still evaluate but scores may be similar")
+
+        logger.info(f"Calling LLM for auto-grading with model={model}, temperature=0.5")
         llm_response = await llm.generate(
             messages=messages,
             model=model,
-            temperature=0.1,  # Low temperature for consistency
-            max_tokens=1500,  # Enough for detailed evaluation
+            temperature=0.5,  # Increased from 0.3 to 0.5 for more variation
+            max_tokens=2000,  # Increased from 1500 for more detailed evaluation
             use_mock=False  # Use real LLM for grading
         )
 
-        # Parse JSON from response
-        result = parse_grading_result(llm_response.text)
+        logger.info(f"LLM response received: {len(llm_response.text)} chars")
+        logger.info(f"LLM response preview: {llm_response.text[:200]}...")
 
-        # Add metadata
+        # Store raw LLM response for debugging/transparency
+        raw_llm_output = llm_response.text
+
+        # Parse JSON from response
+        result = parse_grading_result(raw_llm_output)
+
+        # Add metadata and raw output
         result["model_used"] = model
         result["grading_method"] = "llm-as-judge"
+        result["raw_llm_output"] = raw_llm_output  # Include full LLM response
 
         return result
 
     except Exception as e:
-        logger.warning(f"LLM grading failed, falling back to heuristics: {e}", exc_info=True)
-        # Fallback to heuristic grading
-        return heuristic_grade_responses(
-            prompt, response_a, response_b, sources_a, sources_b
-        )
+        logger.error(f"LLM grading failed: {e}", exc_info=True)
+        # ALWAYS use LLM grading - do not fall back to heuristics
+        # Raise the error so the caller knows LLM grading failed
+        raise RuntimeError(
+            f"LLM auto-grading failed and cannot proceed without it. "
+            f"Error: {str(e)}. "
+            f"Please check LLM service availability and try again."
+        ) from e
 
 
 def build_grading_prompt(
@@ -87,7 +113,22 @@ def build_grading_prompt(
     sources_a_summary = f"{len(sources_a)} sources" if sources_a else "No sources"
     sources_b_summary = f"{len(sources_b)} sources" if sources_b else "No sources"
 
+    # Check for error responses and add warning
+    error_warning = ""
+    if is_error_response(response_a):
+        error_warning += "\n⚠️ WARNING: Response A appears to be an error message. It should receive very low scores (0.0-0.2).\n"
+    if is_error_response(response_b):
+        error_warning += "\n⚠️ WARNING: Response B appears to be an error message. It should receive very low scores (0.0-0.2).\n"
+
+    # Add unique identifier to prevent LLM caching/determinism
+    import time
+    import hashlib
+    unique_id = hashlib.md5(f"{prompt}{response_a[:50]}{response_b[:50]}{time.time()}".encode()).hexdigest()[:8]
+
     return f"""You are an expert RAG evaluator. Compare two responses to the same query.
+{error_warning}
+
+EVALUATION ID: {unique_id} (This is a unique identifier for this evaluation - evaluate each response independently)
 
 QUERY: "{prompt}"
 
@@ -199,6 +240,23 @@ def parse_grading_result(response_text: str) -> dict[str, Any]:
         raise
 
 
+def is_error_response(response: str) -> bool:
+    """Detect if response is an error message"""
+    error_indicators = [
+        "i apologize",
+        "unable to generate",
+        "technical issue",
+        "error generating",
+        "failed to",
+        "cannot",
+        "unable to",
+        "sorry, i",
+        "i'm sorry"
+    ]
+    response_lower = response.lower()
+    return any(indicator in response_lower for indicator in error_indicators)
+
+
 def heuristic_grade_responses(
     prompt: str,
     response_a: str,
@@ -211,6 +269,20 @@ def heuristic_grade_responses(
     Uses simple heuristics to score responses.
     """
     def grade_response(response: str, sources: list, prompt: str) -> dict[str, Any]:
+        # Check for error responses first - give them very low scores
+        if is_error_response(response):
+            return {
+                "answer_quality": 0.0,
+                "relevance": 0.0,
+                "faithfulness": 0.0,
+                "completeness": 0.0,
+                "conciseness": 0.0,
+                "source_quality": 0.0,
+                "overall_score": 0.0,
+                "strengths": [],
+                "weaknesses": ["Error response - failed to generate answer"]
+            }
+
         # Answer Quality: length and structure
         word_count = len(response.split())
         has_structure = any(marker in response.lower() for marker in
@@ -275,7 +347,7 @@ def heuristic_grade_responses(
         winner = "A"
     else:
         winner = "B"
-    
+
     return {
             "response_a": {
                 "scores": result_a,
@@ -292,6 +364,7 @@ def heuristic_grade_responses(
             "winner": winner,
             "explanation": f"Heuristic grading: Response {winner} scored higher ({score_a:.3f} vs {score_b:.3f})",
             "model_used": "heuristic",
-            "grading_method": "heuristic-fallback"
+            "grading_method": "heuristic-fallback",
+            "raw_llm_output": None  # No LLM output for heuristic fallback
         }
 

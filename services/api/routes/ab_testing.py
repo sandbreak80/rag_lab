@@ -1,16 +1,19 @@
 """
 A/B Testing API Routes
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel, Field
 from typing import Any, Optional
 import logging
 import asyncio
 import json
+import os
+import time
 from uuid import uuid4
+import redis
 
 from ..models import RagQuery, RagResponse
-from ..routes.rag import rag_query
+from ..routes.rag import rag_query, get_redis_client
 from ..pipeline.auto_grader import grade_ab_responses
 
 logger = logging.getLogger(__name__)
@@ -90,7 +93,7 @@ class ABTestRequest(BaseModel):
     prompt: str = Field(..., description="Test prompt")
     config_a: dict[str, Any] = Field(..., description="Configuration A (RAGConfig)")
     config_b: dict[str, Any] = Field(..., description="Configuration B (RAGConfig)")
-    run_parallel: bool = Field(True, description="Run queries in parallel")
+    run_parallel: bool = Field(False, description="Run queries in parallel (default: False to avoid VRAM issues)")
     auto_grade: bool = Field(True, description="Automatically grade responses")
     user_id: str = Field("ab_test_user", description="User ID for queries")
     groups: list[str] = Field(default_factory=list, description="User groups")
@@ -150,29 +153,217 @@ async def get_prompt(prompt_id: str):
     raise HTTPException(status_code=404, detail=f"Prompt {prompt_id} not found")
 
 
-@router.post("/run", response_model=ABTestResult)
-async def run_ab_test(req: ABTestRequest):
-    """
-    Run an A/B test with two configurations.
+# Redis configuration for A/B test results
+AB_TEST_CACHE_TTL = 30 * 60  # 30 minutes
 
-    Executes the same prompt with two different configurations and returns
-    both results for comparison.
+async def _run_ab_test_async(test_id: str, req: ABTestRequest):
+    """Background task to run A/B test and store results in Redis"""
+    try:
+        logger.info(f"A/B test background task started: test_id={test_id}, parallel={req.run_parallel}")
+
+        # Convert configs to RagQuery objects
+        def config_to_rag_query(config: dict[str, Any], request_id: str) -> RagQuery:
+            return RagQuery(
+                query=req.prompt,
+                user_id=req.user_id,
+                groups=req.groups,
+                request_id=request_id,
+                top_k=config.get("topK") or config.get("top_k", 10),
+                web_search_enabled=config.get("useWebSearch") if "useWebSearch" in config else config.get("web_search_enabled", True),
+                web_search_docs=config.get("webSearchDocs") or config.get("web_search_docs", 20),
+                use_graph=config.get("useGraph") if "useGraph" in config else config.get("use_graph", False),
+                enable_research=config.get("useResearchAgent") if "useResearchAgent" in config else config.get("enable_research", False),
+                use_query_expansion=config.get("useQueryExpansion") if "useQueryExpansion" in config else config.get("use_query_expansion", False),
+                use_bm25=config.get("useBM25") if "useBM25" in config else config.get("use_bm25", False),
+                use_hybrid=config.get("useHybrid") if "useHybrid" in config else config.get("use_hybrid", False),
+            )
+
+        request_id_a = f"{test_id}_a"
+        request_id_b = f"{test_id}_b"
+
+        query_a = config_to_rag_query(req.config_a, request_id_a)
+        query_b = config_to_rag_query(req.config_b, request_id_b)
+
+        # Run queries
+        if req.run_parallel:
+            result_a, result_b = await asyncio.gather(
+                rag_query(query_a),
+                rag_query(query_b),
+                return_exceptions=True
+            )
+        else:
+            try:
+                logger.info(f"Executing query A: request_id={request_id_a}, top_k={query_a.top_k}")
+                result_a = await rag_query(query_a)
+                logger.info(f"Query A completed: answer_len={len(result_a.answer) if hasattr(result_a, 'answer') else 0}")
+            except Exception as e:
+                logger.error(f"Query A exception: {e}", exc_info=True)
+                result_a = e
+            try:
+                logger.info(f"Executing query B: request_id={request_id_b}, top_k={query_b.top_k}")
+                result_b = await rag_query(query_b)
+                logger.info(f"Query B completed: answer_len={len(result_b.answer) if hasattr(result_b, 'answer') else 0}")
+            except Exception as e:
+                logger.error(f"Query B exception: {e}", exc_info=True)
+                result_b = e
+
+        # Handle errors
+        if isinstance(result_a, Exception):
+            raise HTTPException(status_code=500, detail=f"Query A failed: {str(result_a)}")
+        if isinstance(result_b, Exception):
+            raise HTTPException(status_code=500, detail=f"Query B failed: {str(result_b)}")
+
+        # Extract metrics
+        metrics_a = result_a.metrics if hasattr(result_a, 'metrics') else {}
+        metrics_b = result_b.metrics if hasattr(result_b, 'metrics') else {}
+
+        # Auto-grade if requested
+        grader_result = None
+        winner = None
+
+        if req.auto_grade:
+            logger.info(f"Starting LLM auto-grading for test_id={test_id}")
+            grader_result = await grade_ab_responses(
+                prompt=req.prompt,
+                response_a=result_a.answer,
+                response_b=result_b.answer,
+                sources_a=result_a.sources or [],
+                sources_b=result_b.sources or [],
+                config_a=req.config_a,
+                config_b=req.config_b
+            )
+
+            # Determine winner
+            if grader_result:
+                score_a = grader_result.get("response_a", {}).get("overall_score", 0)
+                score_b = grader_result.get("response_b", {}).get("overall_score", 0)
+                if abs(score_a - score_b) < 0.05:
+                    winner = "tie"
+                elif score_a > score_b:
+                    winner = "A"
+                else:
+                    winner = "B"
+            logger.info(f"LLM auto-grading completed: winner={winner}")
+
+        # Build result
+        result = ABTestResult(
+            test_id=test_id,
+            prompt=req.prompt,
+            result_a=result_a,
+            result_b=result_b,
+            metrics_a=metrics_a,
+            metrics_b=metrics_b,
+            grader_result=grader_result,
+            winner=winner
+        )
+
+        # Store in Redis
+        redis_client = get_redis_client()
+        if redis_client:
+            result_dict = result.model_dump(mode='json')
+            result_json = json.dumps(result_dict)
+            redis_client.setex(
+                f"ab_test:result:{test_id}",
+                AB_TEST_CACHE_TTL,
+                result_json
+            )
+            logger.info(f"✅ Stored A/B test result in Redis: test_id={test_id}, TTL={AB_TEST_CACHE_TTL}s")
+        else:
+            logger.warning(f"⚠️  Redis unavailable, cannot store A/B test result: test_id={test_id}")
+
+    except Exception as e:
+        logger.error(f"A/B test background task failed: {e}", exc_info=True)
+        # Store error in Redis
+        redis_client = get_redis_client()
+        if redis_client:
+            error_result = {
+                "test_id": test_id,
+                "error": str(e),
+                "status": "error"
+            }
+            redis_client.setex(
+                f"ab_test:result:{test_id}",
+                AB_TEST_CACHE_TTL,
+                json.dumps(error_result)
+            )
+
+
+@router.post("/run")
+async def run_ab_test(req: ABTestRequest, background_tasks: BackgroundTasks):
+    """
+    Start an A/B test asynchronously.
+
+    Returns immediately with test_id. Frontend should poll /result/{test_id} for results.
+    Tests can take 5+ minutes, so we use async execution with Redis storage.
     """
     test_id = uuid4().hex
-    logger.info(f"A/B test started: test_id={test_id}, parallel={req.run_parallel}")
+    logger.info(f"A/B test initiated: test_id={test_id}, parallel={req.run_parallel}, auto_grade={req.auto_grade}")
+
+    # Start background task
+    background_tasks.add_task(_run_ab_test_async, test_id, req)
+
+    # Return immediately with test_id
+    return {
+        "test_id": test_id,
+        "status": "running",
+        "message": "A/B test started. Poll /result/{test_id} for results."
+    }
+
+
+@router.get("/result/{test_id}")
+async def get_ab_test_result(test_id: str):
+    """
+    Get A/B test result by test_id.
+
+    Returns the result if available, or {"status": "running"} if still processing.
+    """
+    redis_client = get_redis_client()
+    if redis_client:
+        try:
+            result_json = redis_client.get(f"ab_test:result:{test_id}")
+            if result_json:
+                result_dict = json.loads(result_json)
+                if "error" in result_dict:
+                    raise HTTPException(status_code=500, detail=result_dict["error"])
+                return result_dict
+        except Exception as e:
+            logger.error(f"Error retrieving A/B test result: {e}", exc_info=True)
+
+    # Not found in Redis - still running or expired
+    return {
+        "test_id": test_id,
+        "status": "running",
+        "message": "Test is still running or result expired. Please wait."
+    }
+
+
+@router.post("/run-sync", response_model=ABTestResult)
+async def run_ab_test_sync(req: ABTestRequest):
+    """
+    Run an A/B test synchronously (for backwards compatibility).
+
+    WARNING: This will block for 5+ minutes. Use /run endpoint instead.
+    """
+    test_id = uuid4().hex
+    logger.info(f"A/B test started (sync): test_id={test_id}, parallel={req.run_parallel}")
 
     # Convert configs to RagQuery objects
     def config_to_rag_query(config: dict[str, Any], request_id: str) -> RagQuery:
+        # Map frontend config keys to backend RagQuery fields
+        # Frontend uses camelCase, backend uses snake_case
         return RagQuery(
             query=req.prompt,
             user_id=req.user_id,
             groups=req.groups,
             request_id=request_id,
-            top_k=config.get("top_k", 8),
-            web_search_enabled=config.get("web_search_enabled", True),
-            web_search_docs=config.get("web_search_docs", 20),
-            use_graph=config.get("use_graph", False),
-            enable_research=config.get("enable_research", False),
+            top_k=config.get("topK") or config.get("top_k", 10),
+            web_search_enabled=config.get("useWebSearch") if "useWebSearch" in config else config.get("web_search_enabled", True),
+            web_search_docs=config.get("webSearchDocs") or config.get("web_search_docs", 20),
+            use_graph=config.get("useGraph") if "useGraph" in config else config.get("use_graph", False),
+            enable_research=config.get("useResearchAgent") if "useResearchAgent" in config else config.get("enable_research", False),
+            use_query_expansion=config.get("useQueryExpansion") if "useQueryExpansion" in config else config.get("use_query_expansion", False),
+            use_bm25=config.get("useBM25") if "useBM25" in config else config.get("use_bm25", False),
+            use_hybrid=config.get("useHybrid") if "useHybrid" in config else config.get("use_hybrid", False),
         )
 
     request_id_a = f"{test_id}_a"
@@ -191,8 +382,20 @@ async def run_ab_test(req: ABTestRequest):
             )
         else:
             # Run sequentially
-            result_a = await rag_query(query_a)
-            result_b = await rag_query(query_b)
+            try:
+                logger.info(f"Executing query A: request_id={request_id_a}, top_k={query_a.top_k}")
+                result_a = await rag_query(query_a)
+                logger.info(f"Query A completed: answer_len={len(result_a.answer) if hasattr(result_a, 'answer') else 0}")
+            except Exception as e:
+                logger.error(f"Query A exception: {e}", exc_info=True)
+                result_a = e
+            try:
+                logger.info(f"Executing query B: request_id={request_id_b}, top_k={query_b.top_k}")
+                result_b = await rag_query(query_b)
+                logger.info(f"Query B completed: answer_len={len(result_b.answer) if hasattr(result_b, 'answer') else 0}")
+            except Exception as e:
+                logger.error(f"Query B exception: {e}", exc_info=True)
+                result_b = e
 
         # Handle errors
         if isinstance(result_a, Exception):
@@ -211,30 +414,28 @@ async def run_ab_test(req: ABTestRequest):
         winner = None
 
         if req.auto_grade:
-            try:
-                grader_result = await grade_ab_responses(
-                    prompt=req.prompt,
-                    response_a=result_a.answer,
-                    response_b=result_b.answer,
-                    sources_a=result_a.sources or [],
-                    sources_b=result_b.sources or [],
-                    config_a=req.config_a,
-                    config_b=req.config_b
-                )
+            logger.info(f"Starting LLM auto-grading for test_id={test_id} (sync)")
+            grader_result = await grade_ab_responses(
+                prompt=req.prompt,
+                response_a=result_a.answer,
+                response_b=result_b.answer,
+                sources_a=result_a.sources or [],
+                sources_b=result_b.sources or [],
+                config_a=req.config_a,
+                config_b=req.config_b
+            )
 
-                # Determine winner
-                if grader_result:
-                    score_a = grader_result.get("response_a", {}).get("overall_score", 0)
-                    score_b = grader_result.get("response_b", {}).get("overall_score", 0)
-                    if abs(score_a - score_b) < 0.05:  # Within 5% = tie
-                        winner = "tie"
-                    elif score_a > score_b:
-                        winner = "A"
-                    else:
-                        winner = "B"
-            except Exception as e:
-                logger.warning(f"Auto-grading failed: {e}", exc_info=True)
-                # Continue without grading
+            # Determine winner
+            if grader_result:
+                score_a = grader_result.get("response_a", {}).get("overall_score", 0)
+                score_b = grader_result.get("response_b", {}).get("overall_score", 0)
+                if abs(score_a - score_b) < 0.05:  # Within 5% = tie
+                    winner = "tie"
+                elif score_a > score_b:
+                    winner = "A"
+                else:
+                    winner = "B"
+            logger.info(f"LLM auto-grading completed: winner={winner}")
 
         return ABTestResult(
             test_id=test_id,

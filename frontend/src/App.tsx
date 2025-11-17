@@ -14,6 +14,7 @@ import { PromptLoggingPage } from './components/logging/PromptLoggingPage';
 import { ResearchAgentPage } from './components/research/ResearchAgentPage';
 import { PromptsPage } from './pages/PromptsPage';
 import { ABTestingPage } from './pages/ABTestingPage';
+import { GPUMonitoringPage } from './pages/GPUMonitoringPage';
 import { VersionFooter } from './components/layout/VersionFooter';
 import { ToastProvider } from './components/ui/toast';
 import { AuthProvider } from './contexts/AuthContext';
@@ -60,6 +61,7 @@ function App() {
                 <Route path="research" element={<ResearchAgentPage />} />
                 <Route path="prompts" element={<PromptsPage />} />
                 <Route path="ab-testing" element={<ABTestingPage />} />
+                <Route path="gpu" element={<GPUMonitoringPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="metrics" element={<MetricsPage />} />
                 <Route path="monitoring" element={<MonitoringPage />} />

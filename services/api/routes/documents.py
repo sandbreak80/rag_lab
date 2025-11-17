@@ -279,17 +279,24 @@ async def upload_documents(
         upload_span.set_attribute("rag.upload.chunks_indexed", total_chunks)
         upload_span.set_attribute("rag.upload.files_processed", processed_files)
 
-    if processed_files == 0:
-        error_detail = "No files could be processed. "
-        if failed_files:
-            reasons = [f"{f['filename']}: {f['reason']}" for f in failed_files]
-            error_detail += f"Errors: {'; '.join(reasons)}"
-        else:
-            error_detail += "All files were skipped (empty or invalid)."
-        raise HTTPException(
-            status_code=400,
-            detail=error_detail
-        )
+        if processed_files == 0:
+            error_detail = "No files could be processed. "
+            if failed_files:
+                reasons = [f"{f['filename']}: {f['reason']}" for f in failed_files]
+                error_detail += f"Errors: {'; '.join(reasons)}"
+            else:
+                error_detail += "All files were skipped (empty or invalid)."
+
+            # Add helpful message about pypdf if it's missing
+            try:
+                from pypdf import PdfReader
+            except ImportError:
+                error_detail += " Note: pypdf is not installed. PDF parsing requires pypdf. Please rebuild the container."
+
+            raise HTTPException(
+                status_code=400,
+                detail=error_detail
+            )
 
     return IngestResponse(
         files=processed_files,

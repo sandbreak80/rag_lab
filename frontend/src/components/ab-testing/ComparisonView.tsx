@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { RAGConfig } from '../../../types/config';
+import { RAGConfig } from '@/types/config';
 import { MetricsComparisonTable } from './MetricsComparisonTable';
 import { AutoGraderResults } from './AutoGraderResults';
 

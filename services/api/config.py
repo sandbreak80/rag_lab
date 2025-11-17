@@ -34,6 +34,8 @@ EMBEDDING_URL = os.getenv("EMBEDDING_URL", "http://embedding-service:8006")
 EMBED_URL = os.getenv("EMBED_URL", "http://embedding-service:8006/embed")
 SEARXNG_URL = os.getenv("SEARXNG_URL", "http://searxng:8080")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
+SEARCH_SERVICE_URL = os.getenv("SEARCH_SERVICE_URL", "http://search-service:8002")
+KNOWLEDGE_GRAPH_URL = os.getenv("KNOWLEDGE_GRAPH_URL", "http://knowledge-graph:8007")
 
 # LLM Configuration
 LLM_MODEL = os.getenv("RAG_LLM_MODEL", "llama3.2:3b")

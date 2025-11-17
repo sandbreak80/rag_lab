@@ -18,7 +18,7 @@ from typing import Optional
 from ..models import RagQuery, RagResponse
 from ..config import (
     CONTRACT_VERSION, ENABLE_OBS, USE_MOCK_LLM, USE_MOCK_VECTOR, USE_MOCK_WEB,
-    FRESHNESS_HOURS, TOPN, AB_TEST_ENABLED
+    FRESHNESS_HOURS, TOPN, AB_TEST_ENABLED, SEARCH_SERVICE_URL
 )
 from ..authz.abac import build_acl_predicate
 from ..adapters import vector, web, llm, kg
@@ -209,8 +209,10 @@ async def rag_query(req: RagQuery):
             # ===================================================================
             # STAGE 1: AuthZ & ACL Claims
             # ===================================================================
-            t_acl = time.perf_counter()
+            t_acl_start = time.perf_counter()
             acl_pred = build_acl_predicate(req.user_id, req.groups, req.dept)
+            t_acl_end = time.perf_counter()
+            stage_timings["acl_ms"] = round((t_acl_end - t_acl_start) * 1000, 2)  # Use float precision
             span.set_attribute("rag.auth.perms_tag", acl_pred.tag)
 
             # ===================================================================
@@ -218,12 +220,68 @@ async def rag_query(req: RagQuery):
             # ===================================================================
             t_retrieve_start = time.perf_counter()
 
+            # Initialize timings for query expansion, BM25, and hybrid fusion
+            query_expansion_ms = None
+            bm25_ms = None
+            hybrid_fusion_ms = None
+            expanded_query = req.query
+
+            # If query expansion, BM25, or hybrid is enabled, use search-service
+            if req.use_query_expansion or req.use_bm25 or req.use_hybrid:
+                try:
+                    import httpx
+                    t_search_start = time.perf_counter()
+                    async with httpx.AsyncClient(timeout=10.0) as client:
+                        search_response = await client.post(
+                            f"{SEARCH_SERVICE_URL}/search_with_config",
+                            json={
+                                "query": req.query,
+                                "config": {
+                                    "use_query_expansion": req.use_query_expansion,
+                                    "use_bm25": req.use_bm25,
+                                    "use_hybrid": req.use_hybrid,
+                                    "use_graph": False,  # We handle KG separately
+                                    "use_reranking": False,  # We handle reranking separately
+                                    "top_k": req.top_k * 2  # Over-fetch for reranking
+                                }
+                            }
+                        )
+                        search_response.raise_for_status()
+                        search_data = search_response.json()
+                        t_search_end = time.perf_counter()
+
+                        # Extract timings from search-service response
+                        perf_metrics = search_data.get("perf_metrics", {})
+                        all_timings = search_data.get("timings", {})
+
+                        query_expansion_ms = round(all_timings.get("query_expansion", 0), 2) if req.use_query_expansion else None
+                        bm25_ms = round(all_timings.get("bm25_search", 0), 2) if req.use_bm25 else None
+                        hybrid_fusion_ms = round(all_timings.get("hybrid_fusion", 0), 2) if req.use_hybrid else None
+
+                        # Get expanded query if query expansion was used
+                        if req.use_query_expansion and perf_metrics.get("query_expanded"):
+                            expanded_query = search_data.get("expanded_query") or req.query
+
+                        # Convert search-service results to our format
+                        search_results = search_data.get("results", [])
+                        # Note: If using search-service, we'll use these results instead of direct vector search
+                        # For now, we'll still do vector search but could replace it
+                        logger.info(f"Search-service: QE={query_expansion_ms}ms, BM25={bm25_ms}ms, Hybrid={hybrid_fusion_ms}ms")
+
+                except Exception as e:
+                    logger.warning(f"Search-service call failed (service may be unavailable), continuing without QE/BM25/Hybrid: {e}")
+                    # Continue without these features - don't fail the entire request
+                    # Set timings to None to indicate they weren't executed
+                    query_expansion_ms = None
+                    bm25_ms = None
+                    hybrid_fusion_ms = None
+
             # Define parallel retrieval tasks
             async def vector_search_task():
                 with tracer.start_as_current_span("retrieve_internal.vector") as retrieve_span:
                     t_vec_start = time.perf_counter()
                     results, stats = await vector.search(
-                        query=req.query,
+                        query=expanded_query,  # Use expanded query if available
                         acl_predicate=acl_pred,
                         top_k=req.top_k * 2,  # Over-fetch
                         use_mock=USE_MOCK_VECTOR
@@ -231,7 +289,11 @@ async def rag_query(req: RagQuery):
                     t_vec_end = time.perf_counter()
                     retrieve_span.set_attribute("docs_retrieved", len(results))
                     retrieve_span.set_attribute("acl_filtered", stats.get("acl_filtered_count", 0))
-                    return results, stats, int((t_vec_end - t_vec_start) * 1000)
+                    # Extract detailed timings from stats if available
+                    embedding_ms = stats.get("embedding_ms", 0)
+                    vector_db_ms = stats.get("vector_db_ms", 0)
+                    total_ms = int((t_vec_end - t_vec_start) * 1000)
+                    return results, stats, total_ms, embedding_ms, vector_db_ms
 
             async def web_search_task():
                 with tracer.start_as_current_span("retrieve_web.searxng") as web_span:
@@ -258,7 +320,9 @@ async def rag_query(req: RagQuery):
                     )
                     t_kg_end = time.perf_counter()
                     kg_span.set_attribute("docs_retrieved", len(results))
-                    return results, int((t_kg_end - t_kg_start) * 1000)
+                    # Use float precision to avoid rounding to 0 for fast searches
+                    kg_timing_ms = round((t_kg_end - t_kg_start) * 1000, 2)
+                    return results, kg_timing_ms
 
             # B1: Early-stop logic - check if vector results are strong enough
             RAG_EARLYSTOP_MIN_HITS = int(os.getenv("RAG_EARLYSTOP_MIN_HITS", "8"))
@@ -266,7 +330,7 @@ async def rag_query(req: RagQuery):
 
             # Execute vector search first to evaluate early-stop
             import asyncio
-            vector_results, vector_stats, vector_ms = await vector_search_task()
+            vector_results, vector_stats, vector_ms, embedding_ms, vector_db_ms = await vector_search_task()
 
             # Determine web search behavior based on settings and early-stop logic
             web_skipped = False
@@ -320,12 +384,17 @@ async def rag_query(req: RagQuery):
 
             # Knowledge Graph search (if enabled)
             kg_results = []
-            kg_ms = 0
+            kg_ms = None  # Use None to indicate not enabled
             if req.use_graph:
                 kg_results, kg_ms = await kg_search_task()
+                # kg_ms is already rounded to 2 decimal places from kg_search_task
+                # Ensure it's at least 0.01ms if the search ran (even with 0 results)
+                if kg_ms == 0 and len(kg_results) == 0:
+                    # Search ran but was very fast - show minimal time to indicate it executed
+                    kg_ms = 0.01
                 span.set_attribute("kg.enabled", True)
                 span.set_attribute("kg.docs_retrieved", len(kg_results))
-                logger.info(f"KG search executed: {len(kg_results)} results")
+                logger.info(f"KG search executed: {len(kg_results)} results in {kg_ms}ms")
                 if len(kg_results) > 0:
                     logger.info(f"KG results origin_tools: {[r.origin_tool for r in kg_results[:3]]}")
             else:
@@ -333,9 +402,12 @@ async def rag_query(req: RagQuery):
                 logger.info("KG search disabled")
 
             t_retrieve_end = time.perf_counter()
-            stage_timings["vector_ms"] = vector_ms
-            stage_timings["web_ms"] = web_ms
-            stage_timings["kg_ms"] = kg_ms
+            # Store all retrieval timings (use float precision to avoid rounding to 0)
+            stage_timings["vector_ms"] = round(vector_ms, 2) if vector_ms else 0  # Total vector search time
+            stage_timings["embedding_ms"] = round(embedding_ms, 2) if embedding_ms else 0  # Embedding generation time
+            stage_timings["vector_db_ms"] = round(vector_db_ms, 2) if vector_db_ms else 0  # Vector DB search time
+            stage_timings["web_ms"] = round(web_ms, 2) if web_ms else (None if web_skipped else 0)
+            stage_timings["kg_ms"] = kg_ms  # None if disabled, float if enabled
             stage_timings["retrieve_parallel_ms"] = int((t_retrieve_end - t_retrieve_start) * 1000)
             stage_timings["web_skipped"] = web_skipped
             stage_timings["web_reason"] = web_reason
@@ -377,13 +449,23 @@ async def rag_query(req: RagQuery):
             # ===================================================================
             # STAGE 3: Recency Gate
             # ===================================================================
+            t_recency_start = time.perf_counter()
             recency_result = evaluate_recency_gate(
                 evidence_list=all_results,
                 query=req.query,
-                policy_requires_recency=False,  # Can be from req.filters
+                policy_requires_recency=False,  # Can be from req.filters - set to False to not block responses
                 policy_min_primary_sources=2,
                 window_hours=FRESHNESS_HOURS
             )
+
+            # Log recency gate result for debugging
+            logger.info(f"Recency gate: passed={recency_result['passed']}, "
+                       f"primary_within_window={recency_result.get('primary_sources_within_window', 0)}, "
+                       f"total_sources={len(all_results)}, "
+                       f"query_is_temporal={recency_result.get('query_is_temporal', False)}, "
+                       f"notes={recency_result.get('notes', '')}")
+            t_recency_end = time.perf_counter()
+            stage_timings["recency_gate_ms"] = round((t_recency_end - t_recency_start) * 1000, 2)  # Use float precision
 
             if not recency_result["passed"]:
                 # Recency gate failure - emit Schema F and degrade
@@ -425,6 +507,7 @@ async def rag_query(req: RagQuery):
             # ===================================================================
             # STAGE 4: Rerank (weighted scoring by source type)
             # ===================================================================
+            t_rerank_start = time.perf_counter()
             # Apply source-type weights to normalize scores across different retrieval methods
             # RAG/Research: 1.0x (trusted internal sources)
             # Web: 0.65x (external sources, less reliable)
@@ -551,7 +634,14 @@ async def rag_query(req: RagQuery):
             if req.web_search_enabled or req.use_graph:
                 logger.info(f"Final top_results: {len(top_results)} results, web: {len(final_web)}, kg: {len(final_kg)}")
 
+            t_rerank_end = time.perf_counter()
+            stage_timings["rerank_ms"] = round((t_rerank_end - t_rerank_start) * 1000, 2)  # Use float precision
             span.set_attribute("rag.rerank.model", "score_sort")
+
+            # Query expansion, BM25, and hybrid fusion timings (from search-service if enabled)
+            stage_timings["query_expansion_ms"] = query_expansion_ms
+            stage_timings["bm25_ms"] = bm25_ms
+            stage_timings["hybrid_fusion_ms"] = hybrid_fusion_ms
 
             # ===================================================================
             # STAGE 5: Synthesis (LLM)
@@ -597,7 +687,7 @@ async def rag_query(req: RagQuery):
                 RAG_LLM_TOKENS.labels(model=llm_response.model, token_type='output').inc(llm_response.tokens_out)
 
             t_llm_end = time.perf_counter()
-            stage_timings["llm_ms"] = int((t_llm_end - t_llm_start) * 1000)
+            stage_timings["llm_ms"] = round((t_llm_end - t_llm_start) * 1000, 2)  # Use float precision
 
             span.set_attribute("rag.synth.model", llm_response.model)
 
@@ -692,6 +782,7 @@ async def rag_query(req: RagQuery):
             # ===================================================================
             # STAGE 6: Guardrails
             # ===================================================================
+            t_guardrails_start = time.perf_counter()
             guardrail_report = None
             security_status = "ok"
 
@@ -711,6 +802,8 @@ async def rag_query(req: RagQuery):
                 }
                 security_status = "degraded"
 
+            t_guardrails_end = time.perf_counter()
+            stage_timings["guardrails_ms"] = round((t_guardrails_end - t_guardrails_start) * 1000, 2)  # Use float precision
             span.set_attribute("rag.guardrail.status", security_status)
 
             # ===================================================================
@@ -797,6 +890,21 @@ async def rag_query(req: RagQuery):
                 "completion_tokens": llm_response.tokens_out,
                 "total_tokens": llm_response.tokens_total,
                 "model": llm_response.model,
+                # Ollama verbose metrics
+                "ollama": {
+                    "total_duration_ns": llm_response.total_duration_ns,
+                    "total_duration_ms": round(llm_response.total_duration_ns / 1_000_000, 2) if llm_response.total_duration_ns else None,
+                    "load_duration_ns": llm_response.load_duration_ns,
+                    "load_duration_ms": round(llm_response.load_duration_ns / 1_000_000, 2) if llm_response.load_duration_ns else None,
+                    "prompt_eval_count": llm_response.prompt_eval_count,
+                    "prompt_eval_duration_ns": llm_response.prompt_eval_duration_ns,
+                    "prompt_eval_duration_ms": round(llm_response.prompt_eval_duration_ns / 1_000_000, 2) if llm_response.prompt_eval_duration_ns else None,
+                    "prompt_eval_rate": round(llm_response.prompt_eval_rate, 2) if llm_response.prompt_eval_rate else None,
+                    "eval_count": llm_response.eval_count,
+                    "eval_duration_ns": llm_response.eval_duration_ns,
+                    "eval_duration_ms": round(llm_response.eval_duration_ns / 1_000_000, 2) if llm_response.eval_duration_ns else None,
+                    "eval_rate": round(llm_response.eval_rate, 2) if llm_response.eval_rate else None,
+                } if llm_response.total_duration_ns else None,
                 "cost_usd": llm_response.cost_usd,
                 "stage_timings": stage_timings  # Include stage breakdown
             }

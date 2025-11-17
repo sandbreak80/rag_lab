@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { RAGConfig } from '../../../types/config';
+import { RAGConfig } from '@/types/config';
 
 interface MetricsComparisonTableProps {
   metricsA: any;
@@ -18,11 +18,26 @@ export function MetricsComparisonTable({
   if (!metricsA || !metricsB) return null;
 
   const getMetricValue = (metrics: any, key: string): number | string => {
+    // Handle nested keys like 'ollama.total_duration_ms'
+    if (key.includes('.')) {
+      const parts = key.split('.');
+      let value = metrics;
+      for (const part of parts) {
+        if (value && typeof value === 'object') {
+          value = value[part];
+        } else {
+          return 'N/A';
+        }
+      }
+      return value ?? 'N/A';
+    }
     return metrics[key] ?? metrics[key.replace(/_/g, '.')] ?? 'N/A';
   };
 
   const formatValue = (value: any): string => {
+    if (value === null || value === undefined) return 'N/A';
     if (typeof value === 'number') {
+      if (value === 0) return '0.00';  // Show 0.00 instead of just 0
       if (value > 1000) return `${(value / 1000).toFixed(1)}k`;
       return value.toFixed(2);
     }
@@ -41,6 +56,27 @@ export function MetricsComparisonTable({
     { key: 'tokens_in', label: 'Tokens In', higherIsBetter: false },
     { key: 'tokens_out', label: 'Tokens Out', higherIsBetter: false },
     { key: 'total_tokens', label: 'Total Tokens', higherIsBetter: false },
+    // Service timings
+    { key: 'stage_timings.acl_ms', label: 'ACL/Authorization (ms)', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.embedding_ms', label: 'Embedding Generation (ms)', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.vector_db_ms', label: 'Vector DB Search (ms)', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.vector_ms', label: 'Vector Search Total (ms)', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.web_ms', label: 'Web Search (ms)', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.kg_ms', label: 'Knowledge Graph (ms)', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.query_expansion_ms', label: 'Query Expansion (ms)', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.bm25_ms', label: 'BM25 Search (ms)', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.hybrid_fusion_ms', label: 'Hybrid Fusion (ms)', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.recency_gate_ms', label: 'Recency Gate (ms)', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.rerank_ms', label: 'Reranking (ms)', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.llm_ms', label: 'LLM Generation (ms)', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.guardrails_ms', label: 'Security Guardrails (ms)', higherIsBetter: false, nested: true },
+    // Ollama verbose metrics
+    { key: 'ollama.total_duration_ms', label: 'Ollama: Total Duration (ms)', higherIsBetter: false, nested: true },
+    { key: 'ollama.load_duration_ms', label: 'Ollama: Load Duration (ms)', higherIsBetter: false, nested: true },
+    { key: 'ollama.prompt_eval_duration_ms', label: 'Ollama: Prompt Eval Duration (ms)', higherIsBetter: false, nested: true },
+    { key: 'ollama.prompt_eval_rate', label: 'Ollama: Prompt Eval Rate (tok/s)', higherIsBetter: true, nested: true },
+    { key: 'ollama.eval_duration_ms', label: 'Ollama: Eval Duration (ms)', higherIsBetter: false, nested: true },
+    { key: 'ollama.eval_rate', label: 'Ollama: Eval Rate (tok/s)', higherIsBetter: true, nested: true },
   ];
 
   return (

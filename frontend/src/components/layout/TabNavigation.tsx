@@ -14,6 +14,7 @@ import {
   RefreshCw,
   FileCode,
   GitCompare,
+  Cpu,
 } from 'lucide-react';
 
 const tabs = [
@@ -22,6 +23,7 @@ const tabs = [
   { id: 'research', label: 'Research Agent', icon: RefreshCw, path: '/research' },
   { id: 'prompts', label: 'Prompts', icon: FileCode, path: '/prompts' },
   { id: 'ab-testing', label: 'A/B Testing', icon: GitCompare, path: '/ab-testing' },
+  { id: 'gpu', label: 'GPU Monitor', icon: Cpu, path: '/gpu' },
   { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
   { id: 'metrics', label: 'Metrics', icon: BarChart3, path: '/metrics' },
   { id: 'monitoring', label: 'Monitoring', icon: Activity, path: '/monitoring' },

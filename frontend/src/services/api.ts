@@ -312,6 +312,26 @@ class ApiClient {
     await this.client.post('/metrics', metric);
   }
 
+  // GPU metrics endpoint
+  async getGPUMetrics(): Promise<{
+    success: boolean;
+    timestamp: number;
+    gpus: Array<{
+      name: string;
+      index: string;
+      utilization?: number;
+      memory_percent?: number;
+      memory_used_bytes?: number;
+      memory_total_bytes?: number;
+      power_watts?: number;
+      temperature?: number;
+    }>;
+    error?: string;
+  }> {
+    const response = await this.client.get('/api/gpu_metrics');
+    return response.data;
+  }
+
   async clearMetrics(): Promise<void> {
     await this.client.delete('/metrics');
   }
@@ -394,12 +414,17 @@ class ApiClient {
     config_b: RAGConfig;
     run_parallel?: boolean;
     auto_grade?: boolean;
-  }): Promise<any> {
+  }): Promise<{ test_id: string; status: string; message: string }> {
     const response = await this.client.post('/v1/ab-testing/run', {
       ...request,
       user_id: 'ab_test_user',
       groups: []
     });
+    return response.data;
+  }
+
+  async getABTestResult(testId: string): Promise<any> {
+    const response = await this.client.get(`/v1/ab-testing/result/${testId}`);
     return response.data;
   }
 
