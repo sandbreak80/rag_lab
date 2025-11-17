@@ -20,31 +20,11 @@ export const useChatStore = create<ChatStore>((set, get) => {
   const savedMessages = loadFromLocalStorage<ChatMessage[]>('chat_messages', []);
   const savedFilters = loadFromLocalStorage<MetadataFilters>('metadata_filters', {});
 
-  // FIX: Detect if last message was a user question without a response (orphaned by page refresh)
-  let initialMessages = savedMessages;
-  if (savedMessages.length > 0) {
-    const lastMessage = savedMessages[savedMessages.length - 1];
-
-    // If last message is from user and was sent recently (< 2 minutes ago)
-    const twoMinutesAgo = Date.now() - (2 * 60 * 1000);
-    const messageTime = new Date(lastMessage.timestamp).getTime();
-
-    if (lastMessage.role === 'user' && messageTime > twoMinutesAgo) {
-      // Add a system message explaining what happened
-      const systemMessage: ChatMessage = {
-        id: `system-${Date.now()}`,
-        role: 'assistant',
-        content: '⚠️ **Request Interrupted**\n\nThe page was refreshed before the response completed. Please resend your question.',
-        timestamp: new Date(),
-      };
-      initialMessages = [...savedMessages, systemMessage];
-      // Save the updated messages
-      setTimeout(() => saveToLocalStorage('chat_messages', initialMessages), 0);
-    }
-  }
+  // Check for orphaned requests (user message without response) - will be handled by polling
+  // No longer showing "Request Interrupted" message - will poll for response instead
 
   return {
-    messages: initialMessages,
+    messages: savedMessages, // Use savedMessages directly (polling will add responses)
     isLoading: false,  // Always start with isLoading=false on page load
     metadataFilters: savedFilters,
 

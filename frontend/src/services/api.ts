@@ -18,7 +18,60 @@ class ApiClient {
   }
 
   // Chat endpoints
-  async sendMessage(query: string, config: RAGConfig, signal?: AbortSignal): Promise<{
+  async getResponse(requestId: string): Promise<{
+    answer: string;
+    sources: Source[];
+    metrics: any;
+    security?: {
+      violations: any[];
+      cleaned_query_used: boolean;
+    };
+    decomposition?: {
+      needs_decomposition: boolean;
+      complexity: 'simple' | 'moderate' | 'complex';
+      sub_queries: string[];
+      original_query: string;
+    };
+    trace_id?: string;
+    request_id?: string;
+    tokens_in?: number;
+    tokens_out?: number;
+    cost_usd?: number;
+    stage_timings?: any;
+  }> {
+    const response = await this.client.get(`/v1/rag/response/${requestId}`);
+    // Transform API response to match expected format
+    return {
+      answer: response.data.answer,
+      sources: (response.data.citations || []).map((c: any, idx: number) => ({
+        file_name: c.doc_id || `Document ${idx + 1}`,
+        chunk_text: c.content || `Citation from ${c.doc_id || c.source_uri || 'unknown source'}`,
+        score: c.score || 0.95,
+        source: c.origin_tool as 'rag' | 'web_search' || 'rag',
+        metadata: {
+          tags: c.tags || [],
+          url: c.source_uri,
+          title: c.doc_id,
+        },
+      })),
+      metrics: {
+        total_latency_ms: response.data.metrics?.latency_ms || 0,
+        llm_tokens_generated: response.data.metrics?.tokens_out || 0,
+        llm_tokens_prompt: response.data.metrics?.tokens_in || 0,
+        vector_search_ms: response.data.artifacts?.retrieval_log?.timing_ms || 0,
+        reranking_ms: response.data.artifacts?.reranking_ms || 0,
+        llm_generation_ms: response.data.metrics?.latency_ms || 0,
+      },
+      trace_id: response.data.trace_id,
+      request_id: response.data.request_id,
+      tokens_in: response.data.metrics?.tokens_in,
+      tokens_out: response.data.metrics?.tokens_out,
+      cost_usd: response.data.metrics?.cost_usd,
+      stage_timings: response.data.artifacts?.stage_timings,
+    };
+  }
+
+  async sendMessage(query: string, config: RAGConfig, signal?: AbortSignal, requestId?: string): Promise<{
     answer: string;
     sources: Source[];
     metrics: any;
@@ -79,11 +132,18 @@ class ApiClient {
     });
 
     // Use NEW RAG API v1 (with observability) instead of OLD broken pipeline
-    const response = await this.client.post('/v1/rag/query', {
+    const payload: any = {
       query,
       user_id: 'demo', // TODO: Get from auth
       groups: [], // TODO: Get from auth
-    }, { signal });
+    };
+    
+    // If request_id provided, use it (for response caching after refresh)
+    if (requestId) {
+      payload.request_id = requestId;
+    }
+    
+    const response = await this.client.post('/v1/rag/query', payload, { signal });
 
     // Transform new API response to match old format
     return {

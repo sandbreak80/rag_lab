@@ -1,7 +1,7 @@
 """
 RAG v1 API Routes - Complete observability contract implementation
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode
 import time
@@ -26,6 +26,12 @@ from ..pipeline.guardrail_client import check_guardrails, get_security_status
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
 router = APIRouter(prefix="/v1/rag", tags=["rag-v1"])
+
+# In-memory cache for responses (to allow retrieval after page refresh)
+# Key: request_id, Value: (response, timestamp)
+# TTL: 5 minutes
+_response_cache: dict[str, tuple[RagResponse, float]] = {}
+CACHE_TTL = 5 * 60  # 5 minutes
 
 # B1: Prometheus metrics for early-stop
 RAG_RETRIEVAL_WEB_SKIPPED = Counter(
@@ -740,7 +746,7 @@ async def rag_query(req: RagQuery):
                     "rank": 1
                 })
 
-            return RagResponse(
+            response = RagResponse(
                 answer=llm_response.text,
                 citations=citations,
                 sources=sources,  # Add sources field for E2E test compatibility
@@ -751,6 +757,20 @@ async def rag_query(req: RagQuery):
                 trace_id=str(trace_id),
                 contract_version=CONTRACT_VERSION
             )
+            
+            # Store response in cache for retrieval after page refresh
+            _response_cache[request_id] = (response, time.time())
+            logger.info(f"Stored response in cache: request_id={request_id}")
+            
+            # Clean up old cache entries (older than TTL)
+            now = time.time()
+            expired_keys = [k for k, (_, ts) in _response_cache.items() if now - ts > CACHE_TTL]
+            for k in expired_keys:
+                del _response_cache[k]
+            if expired_keys:
+                logger.info(f"Cleaned up {len(expired_keys)} expired cache entries")
+            
+            return response
 
         except Exception as e:
             logger.error(f"RAG query error: {e}", exc_info=True)
