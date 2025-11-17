@@ -11,8 +11,8 @@ from datetime import datetime, timedelta, timezone
 logger = logging.getLogger(__name__)
 
 # B3 Web Guardrails Configuration
-RAG_WEB_TIMEOUT_MS = int(os.getenv("RAG_WEB_TIMEOUT_MS", "1000"))  # 1s default
-RAG_WEB_RESULTS = int(os.getenv("RAG_WEB_RESULTS", "5"))  # Limit to 5 results
+RAG_WEB_TIMEOUT_MS = int(os.getenv("RAG_WEB_TIMEOUT_MS", "30000"))  # 30s default (SearXNG needs time!)
+RAG_WEB_RESULTS = int(os.getenv("RAG_WEB_RESULTS", "20"))  # Limit to 20 results (matching frontend default)
 RAG_WEB_TIMEOUT_SEC = RAG_WEB_TIMEOUT_MS / 1000.0
 
 

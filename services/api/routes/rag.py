@@ -90,7 +90,10 @@ def infer_query_intent(query: str) -> str:
 
 
 def build_prompt_messages(query: str, results: list, require_web_citation: bool = False, require_kg_citation: bool = False) -> list[dict]:
-    """Build extractive-first prompt with citations"""
+    """Build extractive-first prompt with citations - now uses dynamic prompts from storage"""
+    # Import here to avoid circular dependency
+    from .prompts import get_prompt_template
+    
     context_parts = []
     web_indices = []
     kg_indices = []
@@ -112,10 +115,28 @@ def build_prompt_messages(query: str, results: list, require_web_citation: bool 
     if require_kg_citation and kg_indices:
         citation_instruction += f" IMPORTANT: You must cite at least one knowledge graph source from [{', '.join(map(str, kg_indices))}]."
 
+    # Count research sources to inform the system prompt
+    research_count = sum(1 for r in results if hasattr(r, 'doc_id') and r.doc_id.startswith('research_'))
+    web_count = len(web_indices)
+    
+    # Build context-aware system prompt
+    source_context = ""
+    if research_count > 0:
+        source_context = f" The context includes {research_count} research article(s) from recent AI publications and news sources."
+    if web_count > 0:
+        source_context += f" It also includes {web_count} live web search result(s) with current information."
+    
+    # Load system prompt template from storage (editable via API!)
+    system_prompt_template = get_prompt_template("rag_synthesis")
+    system_prompt = system_prompt_template.format(
+        source_context=source_context,
+        citation_instruction=citation_instruction
+    )
+    
     return [
         {
             "role": "system",
-            "content": f"You are a helpful assistant. Answer the question based ONLY on the provided context. {citation_instruction} If the context doesn't contain enough information, say so."
+            "content": system_prompt
         },
         {
             "role": "user",
@@ -217,11 +238,12 @@ async def rag_query(req: RagQuery):
                     t_web_start = time.perf_counter()
                     results = await web.search(
                         query=req.query,
-                        top_k=5,
+                        top_k=req.web_search_docs,  # Use value from request (default 20)
                         use_mock=USE_MOCK_WEB
                     )
                     t_web_end = time.perf_counter()
                     web_span.set_attribute("docs_retrieved", len(results))
+                    web_span.set_attribute("web.top_k_requested", req.web_search_docs)
                     return results, int((t_web_end - t_web_start) * 1000)
 
             async def kg_search_task():

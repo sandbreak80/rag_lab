@@ -20,6 +20,7 @@ class RagQuery(BaseModel):
     contract_version: str | None = Field(None, description="Expected contract version")
     enable_research: bool = Field(False, description="Enable research agent sources (UI-004)")
     web_search_enabled: bool = Field(True, description="Enable web search (Issue #4)")
+    web_search_docs: int = Field(20, ge=1, le=50, description="Number of web search results to retrieve")
     use_graph: bool = Field(False, description="Enable knowledge graph search")
 
     class Config:
