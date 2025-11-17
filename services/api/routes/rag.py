@@ -786,3 +786,32 @@ async def rag_query(req: RagQuery):
                 }
             )
 
+
+@router.get("/response/{request_id}", response_model=RagResponse)
+async def get_response(request_id: str):
+    """
+    Retrieve a cached response by request_id.
+    Allows frontend to retrieve responses after page refresh.
+    """
+    now = time.time()
+    
+    # Check cache
+    if request_id in _response_cache:
+        response, timestamp = _response_cache[request_id]
+        
+        # Check if expired
+        if now - timestamp > CACHE_TTL:
+            del _response_cache[request_id]
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Response for request_id {request_id} has expired (TTL: {CACHE_TTL}s)"
+            )
+        
+        logger.info(f"Retrieved cached response: request_id={request_id}, age={now - timestamp:.1f}s")
+        return response
+    
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"Response for request_id {request_id} not found or expired"
+    )
+
