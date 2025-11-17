@@ -5,17 +5,17 @@ test('Load Grafana login page', async ({ page, baseURL }) => {
   // Use the external IP from environment or default to the known instance IP
   const baseHost = process.env.EXTERNAL_HOST || '16.146.36.90';
   const grafanaUrl = `http://${baseHost}:3001`;
-  
+
   console.log(`\n🌐 Testing Grafana on direct port: ${grafanaUrl}`);
 
   // Track all network requests
   const requests: string[] = [];
   const responses: Array<{ url: string; status: number }> = [];
-  
+
   page.on('request', request => {
     requests.push(`${request.method()} ${request.url()}`);
   });
-  
+
   page.on('response', response => {
     responses.push({ url: response.url(), status: response.status() });
     if (response.status() >= 400) {
@@ -24,7 +24,7 @@ test('Load Grafana login page', async ({ page, baseURL }) => {
       console.log(`  ✅ Response: ${response.status()} ${response.url()}`);
     }
   });
-  
+
   // Navigate to Grafana
   console.log(`\n📥 Navigating to ${grafanaUrl}...`);
   const response = await page.goto(grafanaUrl, {
