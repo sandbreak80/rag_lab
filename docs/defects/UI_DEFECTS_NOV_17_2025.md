@@ -1,6 +1,6 @@
 # UI Defects and Backend Test Requirements
-**Date:** November 17, 2025  
-**Environment:** http://16.146.36.90:3000/  
+**Date:** November 17, 2025
+**Environment:** http://16.146.36.90:3000/
 **Branch:** otel
 
 ## Overview
@@ -11,7 +11,7 @@ This document tracks UI defects and corresponding backend test requirements to v
 ## 🔴 Chat Page Defects
 
 ### 1. Chat Response Lost on Navigation/Refresh
-**Severity:** High  
+**Severity:** High
 **Description:** When user submits a chat query and then navigates away or refreshes the page, the response never makes it to the UI.
 
 **Backend Test Required:**
@@ -28,7 +28,7 @@ This document tracks UI defects and corresponding backend test requirements to v
 ---
 
 ### 2. Performance Breakdown Missing Full End-to-End Performance
-**Severity:** Medium  
+**Severity:** Medium
 **Description:** The performance breakdown section doesn't show complete end-to-end performance metrics.
 
 **Backend Test Required:**
@@ -45,7 +45,7 @@ This document tracks UI defects and corresponding backend test requirements to v
 ---
 
 ### 3. Sources Missing Expected Types
-**Severity:** High  
+**Severity:** High
 **Description:** Expected to see sources from RAG, Web Search, Knowledge Graph, and Research Agent documents. Currently not showing all expected source types.
 
 **Backend Test Required:**
@@ -65,7 +65,7 @@ This document tracks UI defects and corresponding backend test requirements to v
 ---
 
 ### 4. View Trace in Grafana Link Broken
-**Severity:** Medium  
+**Severity:** Medium
 **Description:** The "View Trace in Grafana" link is broken.
 
 **Backend Test Required:**
@@ -84,7 +84,7 @@ This document tracks UI defects and corresponding backend test requirements to v
 ## 🔴 Documents Page Defects
 
 ### 1. Empty Document List
-**Severity:** High  
+**Severity:** High
 **Description:** "Your Documents" section shows empty list even when documents are uploaded.
 
 **Backend Test Required:**
@@ -102,7 +102,7 @@ This document tracks UI defects and corresponding backend test requirements to v
 ---
 
 ### 2. Missing Pagination
-**Severity:** Medium  
+**Severity:** Medium
 **Description:** Document list needs pagination for large document sets.
 
 **Backend Test Required:**
@@ -118,7 +118,7 @@ This document tracks UI defects and corresponding backend test requirements to v
 ---
 
 ### 3. Document Names Not Truncated
-**Severity:** Low  
+**Severity:** Low
 **Description:** Long document names bleed outside page margins.
 
 **Backend Test Required:**
@@ -134,7 +134,7 @@ This document tracks UI defects and corresponding backend test requirements to v
 ## 🔴 Settings Page Defects
 
 ### 1. Quick Presets Selection Not Persisted
-**Severity:** High  
+**Severity:** High
 **Description:** Quick Presets selection doesn't show which preset is selected and doesn't persist across navigation/refresh.
 
 **Backend Test Required:**
