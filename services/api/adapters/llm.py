@@ -167,7 +167,11 @@ async def generate_real(
         )
 
     except Exception as e:
-        logger.error(f"LLM generation failed: {e}, falling back to error response")
+        import traceback
+        error_traceback = traceback.format_exc()
+        error_msg = str(e) if str(e) else repr(e)
+        logger.error(f"LLM generation failed: {error_msg}, falling back to error response")
+        logger.error(f"Full traceback: {error_traceback}")
         # Fallback to error response
         return LLMResponse(
             text="I apologize, but I'm unable to generate a response at this time due to a technical issue.",
