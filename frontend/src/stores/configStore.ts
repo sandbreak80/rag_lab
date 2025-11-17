@@ -64,12 +64,17 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
 
   // Load initial config from localStorage (including currentPreset)
   const savedConfig = loadFromLocalStorage<RAGConfig & { currentPreset?: string }>('rag_config', DEFAULT_CONFIG);
-
+  
+  // Check if this is a first-time visit (no saved config or no preset selected)
+  const isFirstVisit = !savedConfig || savedConfig === DEFAULT_CONFIG || !savedConfig.currentPreset;
+  
   // CRITICAL: Merge with DEFAULT_CONFIG to ensure new properties exist
   // This handles when localStorage has old config without new intelligence features
   const mergedConfig = {
     ...DEFAULT_CONFIG,
     ...savedConfig,
+    // On first visit, mark that we should load the "balanced" preset
+    _shouldLoadDefaultPreset: isFirstVisit,
   };
 
   // DEBUG: Log what config is being loaded

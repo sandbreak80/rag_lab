@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { useConfigStore } from '../../stores/configStore';
@@ -14,6 +14,17 @@ export function QuickPresets() {
     queryKey: ['presets'],
     queryFn: () => api.getPresets(),
   });
+
+  // Auto-load "balanced" preset on first visit (when no preset is selected)
+  useEffect(() => {
+    if (!isLoading && presets && !currentPreset) {
+      const balancedPreset = presets.find((p: any) => p.name === 'balanced' || p.name === 'Balanced (Recommended)');
+      if (balancedPreset) {
+        console.log('🎯 Auto-loading Balanced preset on first visit');
+        loadPreset(balancedPreset);
+      }
+    }
+  }, [isLoading, presets, currentPreset, loadPreset]);
 
   if (isLoading || !presets) {
     return null;
