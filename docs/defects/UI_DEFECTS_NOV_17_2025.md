@@ -71,6 +71,29 @@ This document tracks UI defects and corresponding backend test requirements to v
 
 ---
 
+### 3a. Chat Only Shows 4 Sources (Limited Display)
+**Severity:** Medium
+**Description:** Chat interface only displays 4 sources, but needs to show all used resources in a collapsed/expandable list.
+
+**Backend Test Required:**
+- [ ] Verify backend returns all sources (not limited to 4)
+- [ ] Test with queries that return 10+ sources
+- [ ] Validate all source types are included in response
+- [ ] Check if there's a backend limit on citations/sources
+
+**Frontend Fix Required:**
+- [ ] Remove any hardcoded limit of 4 sources
+- [ ] Implement collapsed/expandable list for sources
+- [ ] Show "Show all X sources" / "Collapse" toggle
+- [ ] Display first 4-5 sources by default, allow expansion
+
+**Files to Check:**
+- `frontend/src/components/chat/MessageItem.tsx`
+- `frontend/src/components/chat/SourceCard.tsx`
+- `services/api/routes/rag.py` (check for source limits)
+
+---
+
 ### 4. View Trace in Grafana Link Broken
 **Severity:** Medium
 **Description:** The "View Trace in Grafana" link is broken.
