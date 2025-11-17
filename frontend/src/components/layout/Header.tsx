@@ -47,7 +47,7 @@ export function Header() {
 
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">Documents:</span>
-                  <span className="font-medium">{(stats as any).documents?.length || 0}</span>
+                  <span className="font-medium">{(stats as any).document_count || (stats as any).documents?.length || 0}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
