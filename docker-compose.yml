@@ -533,8 +533,9 @@ services:
     container_name: rag-redis
     networks:
       - rag-network
-    ports:
-      - "6379:6379"
+    # Port mapping removed - internal-only access (no external access needed)
+    # External port 6379 is used by billing-service-redis
+    # Services access via redis:6379 on internal network
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
@@ -737,8 +738,9 @@ services:
     container_name: rag-api-gateway
     networks:
       - rag-network
-    ports:
-      - "8000:8000"
+    # Port mapping removed - access via nginx on port 3000
+    # External port 8000 is used by portainer
+    # Services access via api-gateway:8000 on internal network
     volumes:
       - ./services/api-gateway/app:/app
       - ./services/api-gateway/requirements.txt:/workspace/services/api-gateway/requirements.txt:ro
