@@ -327,7 +327,8 @@ async def get_ab_test_result(test_id: str):
                     raise HTTPException(status_code=500, detail=result_dict["error"])
                 return result_dict
         except Exception as e:
-            logger.error(f"Error retrieving A/B test result: {e}", exc_info=True)
+            error_msg = str(e) if e else "Unknown error"
+            logger.error(f"Error retrieving A/B test result: {error_msg}", exc_info=True)
 
     # Not found in Redis - still running or expired
     return {
