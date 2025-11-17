@@ -91,14 +91,32 @@ def evaluate_recency_gate(
     passed = True
     notes = "Recency requirements met"
 
-    if policy_requires_recency or query_is_temporal:
+    # Only enforce recency gate if policy explicitly requires it
+    # Don't block responses just because query has temporal keywords
+    # This allows the system to still provide answers even with older sources
+    if policy_requires_recency:
         if primary_within_window < policy_min_primary_sources:
             passed = False
             notes = (
                 f"RECENCY_FAIL: Required {policy_min_primary_sources} primary sources "
                 f"≤{window_hours}h, found {primary_within_window}. "
-                f"Query appears temporal (requires fresh sources)."
+                f"Policy requires recent sources."
             )
+    elif query_is_temporal and len(evidence_list) == 0:
+        # Only fail if query is temporal AND we have NO sources at all
+        # If we have sources (even old ones), allow the response
+        passed = False
+        notes = (
+            f"RECENCY_WARNING: Query appears temporal but no sources retrieved. "
+            f"Found {primary_within_window} primary sources within {window_hours}h window."
+        )
+    elif query_is_temporal:
+        # Query is temporal but we have sources - just warn, don't block
+        notes = (
+            f"Recency note: Query appears temporal. "
+            f"Found {primary_within_window} primary sources within {window_hours}h window, "
+            f"{len(evidence_list)} total sources available."
+        )
 
     return {
         "window_hours": window_hours,

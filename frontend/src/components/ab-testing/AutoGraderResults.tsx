@@ -13,7 +13,7 @@ export function AutoGraderResults({
 }: AutoGraderResultsProps) {
   if (!graderResult) return null;
 
-  const { response_a, response_b, explanation } = graderResult;
+  const { response_a, response_b, explanation, raw_llm_output, model_used, grading_method } = graderResult;
 
   const dimensions = [
     'answer_quality',
@@ -111,11 +111,41 @@ export function AutoGraderResults({
             </div>
           </div>
 
-          {/* Explanation */}
+          {/* Raw LLM Output - Always show this field */}
+          <div className="pt-4 border-t">
+            <h4 className="font-semibold mb-2 flex items-center gap-2">
+              <span>LLM Auto-Grader Output</span>
+              <span className="text-xs font-normal text-muted-foreground">
+                (Model: {model_used || 'unknown'}, Method: {grading_method || 'unknown'})
+              </span>
+            </h4>
+            {raw_llm_output ? (
+              <>
+                <div className="bg-slate-900 text-green-400 p-4 rounded-md font-mono text-xs overflow-x-auto max-h-96 overflow-y-auto">
+                  <pre className="whitespace-pre-wrap break-words">{raw_llm_output}</pre>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  This is the raw output from the LLM auto-grader before JSON parsing.
+                  It shows the actual reasoning and evaluation process.
+                </p>
+              </>
+            ) : (
+              <div className="bg-muted p-4 rounded-md">
+                <p className="text-sm text-muted-foreground">
+                  ⚠️ No LLM output available. The auto-grader used heuristic fallback instead of LLM grading.
+                  This may happen if the LLM call failed or returned invalid JSON.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Explanation (parsed from JSON) */}
           {explanation && (
             <div className="pt-4 border-t">
-              <h4 className="font-semibold mb-2">Explanation</h4>
-              <p className="text-sm text-muted-foreground">{explanation}</p>
+              <h4 className="font-semibold mb-2">Summary Explanation</h4>
+              <div className="bg-muted p-3 rounded-md">
+                <p className="text-sm whitespace-pre-wrap">{explanation}</p>
+              </div>
             </div>
           )}
 

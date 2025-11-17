@@ -455,7 +455,7 @@ def vector_search_internal(query: str, limit: int, metadata_filters: Optional[Di
                 chunk_id=results['ids'][0][i],
                 title=metadata.get('title') or metadata.get('file_name', 'Unknown'),
                 score=1.0 - results['distances'][0][i],  # Convert distance to similarity
-                metadata=metadata,
+                _metadata=metadata,  # Use _metadata (private field) not metadata
             )
             evidence_list.append(evidence)
 
@@ -498,7 +498,7 @@ def bm25_search_internal(query: str, limit: int, metadata_filters: Optional[Dict
             doc_id=metadata.get('doc_id'),
             title=metadata.get('title') or metadata.get('file_name', 'Unknown'),
             score=float(score),
-            metadata=metadata,
+            _metadata=metadata,  # Use _metadata (private field) not metadata
         )
         evidence_list.append(evidence)
 
@@ -1142,6 +1142,7 @@ def search_with_config():
                         url = web_result.get('url', '')
 
                         # Create Evidence object with WEB_SEARCH origin
+                        # Note: Evidence uses _metadata (private field), not metadata
                         evidence = Evidence(
                             id=f"web-{hash(url)}",  # Unique ID based on URL
                             content=web_result.get('content', web_result.get('snippet', '')),
@@ -1152,7 +1153,7 @@ def search_with_config():
                             published_at=parse_published_date(web_result.get('published')),
                             is_primary=is_primary_source(url),
                             score=web_score,
-                            metadata={
+                            _metadata={
                                 'engine': web_result.get('engine', 'searxng'),
                                 'original_score': web_result.get('score', 0.0),
                             }

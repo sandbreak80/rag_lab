@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { RAGConfig } from '../types/config';
-import { PROMPT_LIBRARY, PromptLibraryItem } from '../data/promptLibrary';
-import { useConfigStore } from '../stores/configStore';
-import { PromptLibraryBrowser } from '../components/ab-testing/PromptLibraryBrowser';
-import { ConfigurationSelector } from '../components/ab-testing/ConfigurationSelector';
-import { ABTestRunner } from '../components/ab-testing/ABTestRunner';
-import { ComparisonView } from '../components/ab-testing/ComparisonView';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { RAGConfig } from '@/types/config';
+import { PROMPT_LIBRARY, PromptLibraryItem } from '@/data/promptLibrary';
+import { useConfigStore } from '@/stores/configStore';
+import { PromptLibraryBrowser } from '@/components/ab-testing/PromptLibraryBrowser';
+import { ConfigurationSelector } from '@/components/ab-testing/ConfigurationSelector';
+import { ABTestRunner } from '@/components/ab-testing/ABTestRunner';
+import { ComparisonView } from '@/components/ab-testing/ComparisonView';
 
 export function ABTestingPage() {
   const [selectedPrompt, setSelectedPrompt] = useState<PromptLibraryItem | null>(null);
@@ -16,7 +16,7 @@ export function ABTestingPage() {
   const [testResults, setTestResults] = useState<any>(null);
   const [isRunning, setIsRunning] = useState(false);
 
-  const { config: defaultConfig } = useConfigStore();
+  const defaultConfig = useConfigStore((state) => state);
 
   // Initialize with default config if not set
   React.useEffect(() => {

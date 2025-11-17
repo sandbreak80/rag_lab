@@ -91,6 +91,7 @@ async def search_vector_real(
         t0 = time.perf_counter()
         async with httpx.AsyncClient(timeout=8.0) as cx:
             # Step 1: Get query embedding
+            t_embed_start = time.perf_counter()
             embed_response = await cx.post(
                 f"{embedding_url}/embed",
                 json={"text": query}  # Note: singular 'text', not 'texts'
@@ -99,8 +100,11 @@ async def search_vector_real(
             embedding_data = embed_response.json()
             # Wrap single embedding in a list for ChromaDB query format
             embeddings = [embedding_data["embedding"]]
+            t_embed_end = time.perf_counter()
+            embedding_ms = int((t_embed_end - t_embed_start) * 1000)
 
             # Step 2: Search vector database with ACL prefilter
+            t_vdb_start = time.perf_counter()
             search_payload = {
                 "query_embeddings": embeddings,
                 "n_results": top_k * 2,  # Over-fetch for ACL filtering
@@ -133,6 +137,8 @@ async def search_vector_real(
             )
             search_response.raise_for_status()
             raw_results = search_response.json()
+            t_vdb_end = time.perf_counter()
+            vector_db_ms = int((t_vdb_end - t_vdb_start) * 1000)
 
             logger.info(f"Vector search raw results: ids={len(raw_results.get('ids', [[]])[0])}, distances={raw_results.get('distances', [[]])[0][:3] if raw_results.get('distances') else []}")
 
@@ -170,7 +176,9 @@ async def search_vector_real(
             "candidates_before_acl": candidates_before_acl,
             "candidates_after_acl": len(results),
             "acl_filtered_count": candidates_before_acl - len(results),
-            "latency_ms": latency_ms
+            "latency_ms": latency_ms,
+            "embedding_ms": embedding_ms,
+            "vector_db_ms": vector_db_ms
         }
 
         logger.info(f"Real vector search: retrieved {len(results)} results (filtered {stats['acl_filtered_count']}) in {latency_ms:.0f}ms")

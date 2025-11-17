@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { PromptLibraryItem } from '../../../data/promptLibrary';
+import { PromptLibraryItem } from '@/data/promptLibrary';
 import { Search, Filter } from 'lucide-react';
 
 interface PromptLibraryBrowserProps {
@@ -56,7 +56,7 @@ export function PromptLibraryBrowser({
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-1 border rounded-md text-sm"
+            className="px-3 py-1 border rounded-md text-sm bg-background text-foreground"
           >
             {categories.map(cat => (
               <option key={cat} value={cat}>
@@ -68,7 +68,7 @@ export function PromptLibraryBrowser({
           <select
             value={complexityFilter}
             onChange={(e) => setComplexityFilter(e.target.value)}
-            className="px-3 py-1 border rounded-md text-sm"
+            className="px-3 py-1 border rounded-md text-sm bg-background text-foreground"
           >
             {complexities.map(comp => (
               <option key={comp} value={comp}>
@@ -80,7 +80,7 @@ export function PromptLibraryBrowser({
           <select
             value={difficultyFilter}
             onChange={(e) => setDifficultyFilter(e.target.value)}
-            className="px-3 py-1 border rounded-md text-sm"
+            className="px-3 py-1 border rounded-md text-sm bg-background text-foreground"
           >
             {difficulties.map(diff => (
               <option key={diff} value={diff}>

@@ -1,8 +1,8 @@
 import React from 'react';
 import { Button } from '../ui/button';
-import { PromptLibraryItem } from '../../../data/promptLibrary';
-import { RAGConfig } from '../../../types/config';
-import { api } from '../../../services/api';
+import { PromptLibraryItem } from '@/data/promptLibrary';
+import { RAGConfig } from '@/types/config';
+import { api } from '@/services/api';
 import { Loader2, Play } from 'lucide-react';
 
 interface ABTestRunnerProps {
@@ -22,8 +22,40 @@ export function ABTestRunner({
   isRunning,
   setIsRunning
 }: ABTestRunnerProps) {
-  const [runParallel, setRunParallel] = React.useState(true);
+  const [runParallel, setRunParallel] = React.useState(false); // Default to sequential to avoid VRAM issues
   const [autoGrade, setAutoGrade] = React.useState(true);
+  const [testId, setTestId] = React.useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = React.useState<string>('');
+
+  // Poll for results when test is running
+  React.useEffect(() => {
+    if (!testId || !isRunning) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const result = await api.getABTestResult(testId);
+        if (result.status === 'running') {
+          setStatusMessage(result.message || 'Test is running...');
+          return;
+        }
+
+        // Test completed
+        clearInterval(pollInterval);
+        setIsRunning(false);
+        onResults(result);
+      } catch (error: any) {
+        console.error('Error polling for results:', error);
+        const errorMessage = error?.response?.data?.detail || error?.message || 'Unknown error';
+        if (errorMessage.includes('error') || error?.response?.status === 500) {
+          clearInterval(pollInterval);
+          setIsRunning(false);
+          alert(`Test failed: ${errorMessage}`);
+        }
+      }
+    }, 2000); // Poll every 2 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [testId, isRunning, onResults]);
 
   const handleRun = async () => {
     if (!prompt || !configA || !configB) {
@@ -32,20 +64,31 @@ export function ABTestRunner({
     }
 
     setIsRunning(true);
+    setStatusMessage('Starting test...');
+    setTestId(null);
+
     try {
-      const results = await api.runABTest({
+      const startResponse = await api.runABTest({
         prompt: prompt.prompt,
         config_a: configA,
         config_b: configB,
         run_parallel: runParallel,
         auto_grade: autoGrade
       });
-      onResults(results);
+
+      setTestId(startResponse.test_id);
+      setStatusMessage(startResponse.message || 'Test started. Waiting for results...');
     } catch (error: any) {
-      console.error('A/B test failed:', error);
-      alert(`Test failed: ${error.message || 'Unknown error'}`);
-    } finally {
+      console.error('A/B test failed to start:', error);
+      const errorMessage = error?.response?.data?.detail || error?.message || error?.toString() || 'Unknown error';
+      console.error('Full error details:', {
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status,
+        code: error?.code
+      });
       setIsRunning(false);
+      alert(`Test failed to start: ${errorMessage}`);
     }
   };
 
@@ -61,7 +104,7 @@ export function ABTestRunner({
             onChange={(e) => setRunParallel(e.target.checked)}
             disabled={isRunning}
           />
-          <span className="text-sm">Run in parallel (faster)</span>
+          <span className="text-sm">Run in parallel (faster, but may cause VRAM issues)</span>
         </label>
 
         <label className="flex items-center gap-2">
@@ -95,9 +138,16 @@ export function ABTestRunner({
       </Button>
 
       {isRunning && (
-        <div className="text-sm text-muted-foreground text-center">
-          Executing both queries{runParallel ? ' in parallel' : ' sequentially'}...
-          {autoGrade && ' Auto-grading will run after queries complete.'}
+        <div className="text-sm text-muted-foreground text-center space-y-2">
+          <div className="flex items-center justify-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>{statusMessage || 'Running test...'}</span>
+          </div>
+          <div className="text-xs">
+            Executing both queries{runParallel ? ' in parallel' : ' sequentially'}...
+            {autoGrade && ' Auto-grading will run after queries complete.'}
+            {testId && ` (Test ID: ${testId.substring(0, 8)}...)`}
+          </div>
         </div>
       )}
     </div>

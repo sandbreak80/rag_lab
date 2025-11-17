@@ -952,6 +952,98 @@ def get_gpu_status():
             'recommendation': 'Unable to detect GPU status'
         }), 500
 
+@app.route('/api/gpu_metrics', methods=['GET'])
+def get_gpu_metrics():
+    """Get current GPU metrics from nvidia-exporter (Prometheus format)"""
+    try:
+        import os
+        import time
+
+        # Try to get metrics directly from nvidia-exporter
+        nvidia_exporter_url = os.getenv('NVIDIA_EXPORTER_URL', 'http://nvidia-exporter:9401')
+
+        try:
+            response = requests.get(f"{nvidia_exporter_url}/metrics", timeout=5)
+            if response.status_code == 200:
+                metrics_text = response.text
+
+                # Parse Prometheus metrics format
+                gpu_metrics = {}
+                current_gpu = None
+
+                for line in metrics_text.split('\n'):
+                    if line.startswith('#') or not line.strip():
+                        continue
+
+                    # Parse metric lines like: nvidia_gpu_utilization_percent{gpu="0",name="NVIDIA GeForce RTX 4090"} 45.0
+                    if 'nvidia_gpu' in line:
+                        # Extract metric name, labels, and value
+                        if '{' in line:
+                            metric_name = line.split('{')[0]
+                            labels_part = line.split('{')[1].split('}')[0]
+                            value_part = line.split('}')[1].strip()
+
+                            # Parse labels
+                            labels = {}
+                            for label_pair in labels_part.split(','):
+                                if '=' in label_pair:
+                                    key, val = label_pair.split('=', 1)
+                                    labels[key.strip()] = val.strip('"')
+
+                            # Parse value
+                            try:
+                                value = float(value_part)
+                                gpu_idx = labels.get('gpu', '0')
+                                gpu_name = labels.get('name', 'Unknown')
+
+                                if gpu_idx not in gpu_metrics:
+                                    gpu_metrics[gpu_idx] = {
+                                        'name': gpu_name,
+                                        'index': gpu_idx
+                                    }
+
+                                # Store metric values
+                                if 'utilization_percent' in metric_name:
+                                    gpu_metrics[gpu_idx]['utilization'] = value
+                                elif 'memory_used_bytes' in metric_name:
+                                    gpu_metrics[gpu_idx]['memory_used_bytes'] = value
+                                elif 'memory_total_bytes' in metric_name:
+                                    gpu_metrics[gpu_idx]['memory_total_bytes'] = value
+                                elif 'power_draw_watts' in metric_name:
+                                    gpu_metrics[gpu_idx]['power_watts'] = value
+                                elif 'temperature_celsius' in metric_name:
+                                    gpu_metrics[gpu_idx]['temperature'] = value
+
+                            except ValueError:
+                                continue
+
+                # Calculate memory percentage
+                for gpu_idx in gpu_metrics:
+                    if 'memory_used_bytes' in gpu_metrics[gpu_idx] and 'memory_total_bytes' in gpu_metrics[gpu_idx]:
+                        used = gpu_metrics[gpu_idx]['memory_used_bytes']
+                        total = gpu_metrics[gpu_idx]['memory_total_bytes']
+                        if total > 0:
+                            gpu_metrics[gpu_idx]['memory_percent'] = (used / total) * 100
+
+                return jsonify({
+                    'success': True,
+                    'timestamp': int(time.time() * 1000),  # milliseconds
+                    'gpus': list(gpu_metrics.values())
+                })
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': f'Failed to fetch from nvidia-exporter: {str(e)}',
+                'gpus': []
+            }), 503
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'gpus': []
+        }), 500
+
 # === Root ===
 
 # ============================================================

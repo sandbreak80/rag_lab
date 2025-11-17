@@ -22,6 +22,9 @@ class RagQuery(BaseModel):
     web_search_enabled: bool = Field(True, description="Enable web search (Issue #4)")
     web_search_docs: int = Field(20, ge=1, le=50, description="Number of web search results to retrieve")
     use_graph: bool = Field(False, description="Enable knowledge graph search")
+    use_query_expansion: bool = Field(False, description="Enable query expansion")
+    use_bm25: bool = Field(False, description="Enable BM25 keyword search")
+    use_hybrid: bool = Field(False, description="Enable hybrid search (vector + BM25 fusion)")
 
     class Config:
         schema_extra = {
