@@ -132,7 +132,7 @@ export function ConfigurationSelector({
         {!showCustom ? (
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
-              {presets?.slice(0, 6).map((preset: any) => {
+              {presets?.map((preset: any) => {
                 const enabledFeatures = [];
                 if (preset.config?.use_reranking) enabledFeatures.push('Rerank');
                 if (preset.config?.use_web_search) enabledFeatures.push('Web');
