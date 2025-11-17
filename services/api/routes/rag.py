@@ -406,28 +406,39 @@ async def rag_query(req: RagQuery):
                 # Now take TOPN, but ensure we have at least some web/KG if they were requested
                 # If we added web/KG results, make sure at least one of each type is in the final list
                 if results_to_add:
+                    logger.info(f"Added {len(results_to_add)} web/KG results to top_results before truncation")
                     # Separate by origin_tool (check both variants for compatibility)
                     web_in_top = [r for r in top_results[:TOPN] if r.origin_tool in ["web_search", "web"]]
                     kg_in_top = [r for r in top_results[:TOPN] if r.origin_tool in ["knowledge_graph", "kg"]]
+                    logger.info(f"After re-sort, web_in_top: {len(web_in_top)}, kg_in_top: {len(kg_in_top)}")
 
                     # If web was requested but not in top, add at least one
                     if req.web_search_enabled and len(web_in_top) == 0 and len(web_results) > 0:
+                        logger.info(f"Web requested but not in top_results[:TOPN], forcing one in")
                         # Find a web result not in top_results
                         for web_result in web_results:
                             if (web_result.doc_id, web_result.chunk_id) not in {(r.doc_id, r.chunk_id) for r in top_results[:TOPN]}:
                                 top_results.insert(TOPN - 1, web_result)  # Insert near the end
+                                logger.info(f"Forced web result into top_results: {web_result.doc_id}, origin_tool={web_result.origin_tool}")
                                 break
 
                     # If KG was requested but not in top, add at least one
                     if req.use_graph and len(kg_in_top) == 0 and len(kg_results) > 0:
+                        logger.info(f"KG requested but not in top_results[:TOPN], forcing one in")
                         # Find a KG result not in top_results
                         for kg_result in kg_results:
                             if (kg_result.doc_id, kg_result.chunk_id) not in {(r.doc_id, r.chunk_id) for r in top_results[:TOPN]}:
                                 top_results.insert(TOPN - 1, kg_result)  # Insert near the end
+                                logger.info(f"Forced KG result into top_results: {kg_result.doc_id}, origin_tool={kg_result.origin_tool}")
                                 break
 
                 # Final truncation to TOPN
                 top_results = top_results[:TOPN]
+                # Log final state
+                final_web = [r for r in top_results if r.origin_tool in ["web_search", "web"]]
+                final_kg = [r for r in top_results if r.origin_tool in ["knowledge_graph", "kg"]]
+                if req.web_search_enabled or req.use_graph:
+                    logger.info(f"Final top_results: {len(top_results)} results, web: {len(final_web)}, kg: {len(final_kg)}")
 
             span.set_attribute("rag.rerank.model", "score_sort")
 
@@ -485,13 +496,16 @@ async def rag_query(req: RagQuery):
             # If web/KG were enabled but not cited, add at least one to citations
             # This ensures they appear in the response even if LLM didn't cite them
             cited_origin_tools = {c.get("origin_tool") for c in citations}
+            logger.info(f"Cited origin_tools: {cited_origin_tools}")
 
             # Check if web/KG results exist in top_results or original arrays
             # Web results can have origin_tool="web" or "web_search" (check both for compatibility)
             web_in_top = any(r.origin_tool in ["web_search", "web"] for r in top_results)
             kg_in_top = any(r.origin_tool in ["knowledge_graph", "kg"] for r in top_results)
+            logger.info(f"After LLM: web_in_top={web_in_top}, kg_in_top={kg_in_top}, web_enabled={req.web_search_enabled}, kg_enabled={req.use_graph}")
 
             if req.web_search_enabled and "web_search" not in cited_origin_tools and "web" not in cited_origin_tools:
+                logger.info(f"Web search enabled but not cited, attempting to auto-add")
                 # Try to find web result in top_results first
                 web_result_to_add = None
                 for result in top_results:
@@ -502,7 +516,7 @@ async def rag_query(req: RagQuery):
                 # If not in top_results, get from web_results array
                 if not web_result_to_add and len(web_results) > 0:
                     web_result_to_add = web_results[0]
-                    logger.info(f"Web result not in top_results, using from web_results array")
+                    logger.info(f"Web result not in top_results, using from web_results array: {web_result_to_add.doc_id}, origin_tool={web_result_to_add.origin_tool}")
 
                 if web_result_to_add:
                     citations.append({
@@ -516,22 +530,24 @@ async def rag_query(req: RagQuery):
                         "score": getattr(web_result_to_add, 'score', 0.95),
                         "auto_added": True  # Mark as auto-added
                     })
-                    logger.info(f"Auto-added web result to citations: {web_result_to_add.doc_id}")
+                    logger.info(f"Auto-added web result to citations: {web_result_to_add.doc_id}, origin_tool={web_result_to_add.origin_tool}")
                 else:
-                    logger.warning(f"Web search enabled but no web results available to add to citations")
+                    logger.warning(f"Web search enabled but no web results available to add to citations (web_results={len(web_results)}, top_results has web={web_in_top})")
 
             if req.use_graph and "knowledge_graph" not in cited_origin_tools and "kg" not in cited_origin_tools:
+                logger.info(f"KG search enabled but not cited, attempting to auto-add")
                 # Try to find KG result in top_results first
                 kg_result_to_add = None
                 for result in top_results:
                     if result.origin_tool in ["knowledge_graph", "kg"]:
                         kg_result_to_add = result
+                        logger.info(f"Found KG result in top_results: {result.doc_id}, origin_tool={result.origin_tool}")
                         break
 
                 # If not in top_results, get from kg_results array
                 if not kg_result_to_add and len(kg_results) > 0:
                     kg_result_to_add = kg_results[0]
-                    logger.info(f"KG result not in top_results, using from kg_results array")
+                    logger.info(f"KG result not in top_results, using from kg_results array: {kg_result_to_add.doc_id}, origin_tool={kg_result_to_add.origin_tool}")
 
                 if kg_result_to_add:
                     citations.append({
@@ -545,9 +561,9 @@ async def rag_query(req: RagQuery):
                         "score": getattr(kg_result_to_add, 'score', 0.95),
                         "auto_added": True  # Mark as auto-added
                     })
-                    logger.info(f"Auto-added KG result to citations: {kg_result_to_add.doc_id}")
+                    logger.info(f"Auto-added KG result to citations: {kg_result_to_add.doc_id}, origin_tool={kg_result_to_add.origin_tool}")
                 else:
-                    logger.warning(f"KG search enabled but no KG results available to add to citations")
+                    logger.warning(f"KG search enabled but no KG results available to add to citations (kg_results={len(kg_results)}, top_results has KG={kg_in_top})")
 
             span.set_attribute("rag.citations.count", len(citations))
             span.set_attribute("rag.citations.unique_documents", len(set(c["doc_id"] for c in citations)))
