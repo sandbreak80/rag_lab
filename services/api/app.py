@@ -17,7 +17,7 @@ import time
 import os
 
 from .config import CONTRACT_VERSION, ENABLE_OBS, OTEL_COLLECTOR_URL
-from .routes import rag, documents, agent, health, settings, prompts
+from .routes import rag, documents, agent, health, settings, prompts, ab_testing
 from .version import get_version_info, __version__
 
 # ============================================================================
@@ -147,6 +147,7 @@ if ENABLE_OBS:
 app.include_router(rag.router)
 app.include_router(documents.router, tags=["documents"])
 app.include_router(agent.router, tags=["agent"])
+app.include_router(ab_testing.router)
 app.include_router(health.router, tags=["health"])
 app.include_router(settings.router, tags=["settings"])
 app.include_router(prompts.router, tags=["prompts"])
