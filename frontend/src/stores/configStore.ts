@@ -209,6 +209,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
         temperature: state.temperature,
         topK: state.topK,
         contextWindow: state.contextWindow,
+        maxTokens: state.maxTokens,  // CRITICAL: Include maxTokens in getConfig()
         useQueryExpansion: state.useQueryExpansion,
         useBM25: state.useBM25,
         useHybrid: state.useHybrid,
