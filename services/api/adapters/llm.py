@@ -91,6 +91,16 @@ async def generate_real(
     try:
         t0 = time.perf_counter()
         # Format for Ollama chat API
+        # CRITICAL: num_ctx sets the total context window (input + output)
+        # This must be large enough for: system prompt + retrieved documents + user query + response
+        # The API parameter should override the default, but we also set OLLAMA_CONTEXT_LENGTH env var as fallback
+        ollama_options = {
+            "temperature": temperature,
+            "num_predict": max_tokens,  # Maximum tokens to generate (output length)
+            "num_ctx": context_window   # Total context window (input prompt + output response)
+        }
+        logger.info(f"Ollama API call: model={model}, num_ctx={context_window}, num_predict={max_tokens}, temperature={temperature}")
+        
         async with httpx.AsyncClient(timeout=30.0) as cx:
             response = await cx.post(
                 f"{ollama_url}/api/chat",
@@ -98,11 +108,7 @@ async def generate_real(
                     "model": model,
                     "messages": messages,
                     "stream": False,
-                    "options": {
-                        "temperature": temperature,
-                        "num_predict": max_tokens,  # Maximum tokens to generate (output length)
-                        "num_ctx": context_window   # Total context window (input prompt + output response)
-                    }
+                    "options": ollama_options
                 }
             )
             response.raise_for_status()
