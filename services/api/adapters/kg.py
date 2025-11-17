@@ -184,6 +184,7 @@ async def search(
         List of KG search results
     """
     # If no vector results, use mock (vector DB might be empty)
+    # This is for testing when vector DB is completely empty
     if not vector_results or len(vector_results) == 0:
         logger.info("No vector results available, using mock KG search")
         return await search_kg_mock(query, top_k)
@@ -191,10 +192,8 @@ async def search(
     if use_mock:
         return await search_kg_mock(query, top_k)
     else:
-        # Try real KG search, but fall back to mock if it returns 0 results
-        real_results = await search_kg_real(query, vector_results, top_k)
-        if len(real_results) == 0:
-            logger.info("Real KG search returned 0 results, falling back to mock")
-            return await search_kg_mock(query, top_k)
-        return real_results
+        # Use real KG search - return empty list if no results (don't fallback to mock)
+        # This allows UI to work correctly: if KG graph isn't built, return empty (expected)
+        # Mock fallback only happens when vector DB is empty (testing scenario)
+        return await search_kg_real(query, vector_results, top_k)
 
