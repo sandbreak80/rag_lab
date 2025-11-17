@@ -4,6 +4,7 @@ export interface RAGConfig {
   temperature: number;
   topK: number;
   contextWindow: number;
+  maxTokens: number;  // Maximum tokens for LLM response generation
   useQueryExpansion: boolean;
   useBM25: boolean;
   useHybrid: boolean;
