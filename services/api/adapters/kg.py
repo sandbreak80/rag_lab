@@ -111,13 +111,13 @@ async def search_kg_real(
                 },
                 timeout=10
             )
-            
+
             if get_response.status_code == 200:
                 data = get_response.json()
                 documents = data.get('documents', [])
                 metadatas = data.get('metadatas', [])
                 ids = data.get('ids', [])
-                
+
                 # Create KG results from vector DB content
                 for idx, (doc_id, content, metadata) in enumerate(zip(ids[:top_k], documents[:top_k], metadatas[:top_k])):
                     results.append(KGSearchResult(
@@ -134,7 +134,7 @@ async def search_kg_real(
                         origin_tool="knowledge_graph",
                         published_at=datetime.fromisoformat(metadata["published_at"].replace("Z", "+00:00")) if metadata.get("published_at") else None
                     ))
-                
+
                 logger.info(f"KG search: Fetched {len(results)} documents from vector DB")
             else:
                 logger.warning(f"Vector DB /get returned {get_response.status_code}, creating placeholder results")
@@ -183,8 +183,18 @@ async def search(
     Returns:
         List of KG search results
     """
+    # If no vector results, use mock (vector DB might be empty)
+    if not vector_results or len(vector_results) == 0:
+        logger.info("No vector results available, using mock KG search")
+        return await search_kg_mock(query, top_k)
+    
     if use_mock:
         return await search_kg_mock(query, top_k)
     else:
-        return await search_kg_real(query, vector_results, top_k)
+        # Try real KG search, but fall back to mock if it returns 0 results
+        real_results = await search_kg_real(query, vector_results, top_k)
+        if len(real_results) == 0:
+            logger.info("Real KG search returned 0 results, falling back to mock")
+            return await search_kg_mock(query, top_k)
+        return real_results
 
