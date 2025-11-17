@@ -34,8 +34,14 @@ export function MetricsComparisonTable({
     return metrics[key] ?? metrics[key.replace(/_/g, '.')] ?? 'N/A';
   };
 
-  const formatValue = (value: any): string => {
-    if (value === null || value === undefined) return 'N/A';
+  const formatValue = (value: any, metricKey?: string): string => {
+    if (value === null || value === undefined) {
+      // For timing metrics, show "Disabled" instead of "N/A" to indicate feature was off
+      if (metricKey && (metricKey.includes('_ms') || metricKey.includes('Timing'))) {
+        return 'Disabled';
+      }
+      return 'N/A';
+    }
     if (typeof value === 'number') {
       if (value === 0) return '0.00';  // Show 0.00 instead of just 0
       if (value > 1000) return `${(value / 1000).toFixed(1)}k`;
@@ -106,8 +112,8 @@ export function MetricsComparisonTable({
                 return (
                   <tr key={metric.key} className="border-b">
                     <td className="p-2">{metric.label}</td>
-                    <td className="text-right p-2">{formatValue(valA)}</td>
-                    <td className="text-right p-2">{formatValue(valB)}</td>
+                    <td className="text-right p-2">{formatValue(valA, metric.key)}</td>
+                    <td className="text-right p-2">{formatValue(valB, metric.key)}</td>
                     <td className="text-center p-2">
                       {winner && (
                         <span className={`px-2 py-1 rounded text-xs ${
