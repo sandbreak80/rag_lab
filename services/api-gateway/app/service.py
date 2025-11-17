@@ -310,20 +310,30 @@ def get_stats():
 
         # Get document list - Use /list endpoint for consistent counting
         # This matches what the documents page uses and includes research documents
+        # Fetch first page to get both documents array and total count
+        document_count = 0
+        documents = []
         try:
-            docs_response = requests.get(f"{VECTOR_DB_URL}/list?page=1&page_size=10000", timeout=30)
+            # Request first page with reasonable size to get total count
+            docs_response = requests.get(f"{VECTOR_DB_URL}/list?page=1&page_size=100", timeout=30)
             if docs_response.status_code == 200:
                 data = docs_response.json()
                 documents = data.get('documents', [])
+                document_count = data.get('total', len(documents))  # Get total from pagination metadata
+                print(f"✅ Stats: Retrieved {len(documents)} documents (total: {document_count}) from /list endpoint")
             else:
-                documents = []
-        except:
-            documents = []
+                print(f"⚠️ Stats: /list endpoint returned {docs_response.status_code}")
+        except Exception as e:
+            print(f"❌ Stats: Error fetching documents from /list: {e}")
+            import traceback
+            traceback.print_exc()
 
         # Transform to UI format
+        # Frontend uses document_count if available, otherwise falls back to documents.length
         return jsonify({
             'chunks': db_stats.get('total_chunks', 0),
-            'documents': documents,
+            'documents': documents,  # Keep for backward compatibility
+            'document_count': document_count,  # Explicit total count (frontend prefers this)
             'knowledge_graph_nodes': kg_stats.get('nodes', 0),  # KG service returns 'nodes', not 'total_nodes'
             'knowledge_graph_edges': kg_stats.get('edges', 0),
             'chat_model': CHAT_MODEL,
