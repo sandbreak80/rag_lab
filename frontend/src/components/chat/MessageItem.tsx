@@ -242,12 +242,23 @@ export function MessageItem({ message }: MessageItemProps) {
               Sources ({message.sources.length})
             </h4>
             <div className="grid gap-2">
-              {message.sources.map((source, index) => (
+              {(showAllSources ? message.sources : message.sources.slice(0, INITIAL_SOURCES_SHOWN)).map((source, index) => (
                 <div key={index} data-testid={TID.Chat.SourceItem(index + 1)}>
                   <SourceCard source={source} index={index + 1} />
                 </div>
               ))}
             </div>
+            {message.sources.length > INITIAL_SOURCES_SHOWN && (
+              <button
+                onClick={() => setShowAllSources(!showAllSources)}
+                className="text-sm text-primary hover:text-primary/80 hover:underline transition-colors mt-2"
+              >
+                {showAllSources 
+                  ? `Show less` 
+                  : `Show ${message.sources.length - INITIAL_SOURCES_SHOWN} more source${message.sources.length - INITIAL_SOURCES_SHOWN > 1 ? 's' : ''}`
+                }
+              </button>
+            )}
           </div>
         )}
 
