@@ -1,15 +1,12 @@
 import { test, expect } from '@playwright/test';
 
 test('Load Grafana login page', async ({ page, baseURL }) => {
-  // When running in Docker, use internal service name instead of localhost
-  let testUrl = baseURL || 'http://localhost:3000';
-  if (testUrl.includes('localhost:3000') || testUrl.includes('127.0.0.1:3000')) {
-    // Running in Docker - use internal service name
-    testUrl = 'http://frontend:80';
-    console.log(`\n🐳 Running in Docker - using internal service URL: ${testUrl}`);
-  }
-
-  const grafanaLoginUrl = `${testUrl}/graf/login`;
+  // Test the external URL directly - Grafana redirects use external IP
+  // Use the external IP from environment or default to the known instance IP
+  const externalUrl = process.env.EXTERNAL_URL || 'http://16.146.36.90:3000';
+  const grafanaLoginUrl = `${externalUrl}/graf/login`;
+  
+  console.log(`\n🌐 Testing external Grafana URL: ${grafanaLoginUrl}`);
 
   console.log(`\n🔍 Testing Grafana Login URL: ${grafanaLoginUrl}`);
 
