@@ -256,6 +256,8 @@ async def rag_query(req: RagQuery):
                 span.set_attribute("web.skipped", False)
                 web_reason = "ok"
                 logger.info(f"Web search executed: {len(web_results)} results")
+                if len(web_results) > 0:
+                    logger.info(f"Web results origin_tools: {[r.origin_tool for r in web_results[:3]]}")
             else:
                 logger.info(f"Web search skipped: {web_reason}")
 
@@ -267,6 +269,8 @@ async def rag_query(req: RagQuery):
                 span.set_attribute("kg.enabled", True)
                 span.set_attribute("kg.docs_retrieved", len(kg_results))
                 logger.info(f"KG search executed: {len(kg_results)} results")
+                if len(kg_results) > 0:
+                    logger.info(f"KG results origin_tools: {[r.origin_tool for r in kg_results[:3]]}")
             else:
                 span.set_attribute("kg.enabled", False)
                 logger.info("KG search disabled")
@@ -435,6 +439,7 @@ async def rag_query(req: RagQuery):
             # Log what's in top_results for debugging
             origin_tools_in_prompt = [r.origin_tool for r in top_results]
             logger.info(f"Top results for LLM prompt: {len(top_results)} results, origin_tools: {origin_tools_in_prompt}")
+            logger.info(f"Web results available: {len(web_results)}, KG results available: {len(kg_results)}")
 
             # Check if we need to require web/KG citations (check both variants for compatibility)
             has_web_in_prompt = any(r.origin_tool in ["web_search", "web"] for r in top_results)
