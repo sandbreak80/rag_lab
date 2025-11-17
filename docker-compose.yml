@@ -2,7 +2,6 @@
 # Production Docker Compose Configuration
 # Version: 3.0 - Consolidated & Cleaned
 
-version: '3.8'
 
 networks:
   rag-network:
