@@ -28,7 +28,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
   } catch (e) {
     // Ignore errors
   }
-  
+
   // Load messages from sessionStorage (survives page refresh, cleared when tab closes)
   let savedMessages: ChatMessage[] = [];
   try {
@@ -39,7 +39,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
       savedMessages = savedMessages.filter((msg) => {
         if (msg.content && typeof msg.content === 'string') {
           const contentLower = msg.content.toLowerCase();
-          const isErrorMessage = 
+          const isErrorMessage =
             contentLower.includes('request interrupted') ||
             contentLower.includes('request timed out') ||
             contentLower.includes('error occurred') ||
@@ -54,7 +54,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
   } catch (e) {
     console.warn('Failed to load messages from sessionStorage:', e);
   }
-  
+
   // Load pending requests from sessionStorage
   let savedPendingRequests: string[] = [];
   try {
@@ -66,11 +66,11 @@ export const useChatStore = create<ChatStore>((set, get) => {
   } catch (e) {
     console.warn('Failed to load pending requests from sessionStorage:', e);
   }
-  
+
   // Use sessionStorage for messages and pending requests
   // Persists during session, cleared when tab closes
   // Redis on backend is the source of truth
-  
+
   return {
     messages: savedMessages, // Restore from sessionStorage
     isLoading: false,
