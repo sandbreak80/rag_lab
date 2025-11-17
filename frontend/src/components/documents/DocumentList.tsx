@@ -75,28 +75,11 @@ export function DocumentList() {
     },
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <p className="text-destructive">Failed to load documents</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   // Extract documents array from response
   const documents = Array.isArray(response?.documents) ? response.documents : [];
 
   // Filter out only test/debug documents (show everything else including lab docs)
+  // MUST be called before any conditional returns (Rules of Hooks)
   const userDocuments = useMemo(() => {
     if (!Array.isArray(documents) || documents.length === 0) {
       return [];
@@ -114,6 +97,7 @@ export function DocumentList() {
   }, [documents]);
 
   // Calculate pagination (always calculate, even if empty)
+  // MUST be called before any conditional returns (Rules of Hooks)
   const totalPages = Math.max(1, Math.ceil(userDocuments.length / DOCUMENTS_PER_PAGE));
   const startIndex = Math.max(0, (currentPage - 1) * DOCUMENTS_PER_PAGE);
   const endIndex = Math.min(startIndex + DOCUMENTS_PER_PAGE, userDocuments.length);
@@ -126,6 +110,25 @@ export function DocumentList() {
       setCurrentPage(1);
     }
   }, [currentPage, totalPages]);
+
+  // NOW we can do conditional returns (all hooks have been called)
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <p className="text-destructive">Failed to load documents</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Early return for empty documents (AFTER all hooks)
   if (userDocuments.length === 0) {
