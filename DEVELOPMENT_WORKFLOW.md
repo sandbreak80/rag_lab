@@ -132,7 +132,7 @@ git push origin security
 
 ```bash
 # SSH to AWS
-ssh -i /Users/bmstoner/SynologyDrive/vcode_projects/bootcamp.pem ubuntu@54.190.74.93
+ssh -i /Users/bmstoner/SynologyDrive/vcode_projects/your-key.pem ubuntu@54.190.74.93
 
 # Check service status
 cd /home/ubuntu/rag_lab

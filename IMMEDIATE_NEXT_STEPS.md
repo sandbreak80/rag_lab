@@ -77,7 +77,7 @@ You should see your commit at the top!
 
 ```bash
 # This makes AWS pull from GitHub to verify sync
-ssh -i /Users/bmstoner/Downloads/bootcamp.pem ubuntu@54.190.74.93 \
+ssh -i /Users/bmstoner/Downloads/your-key.pem ubuntu@54.190.74.93 \
   "cd rag_lab && git pull origin security"
 ```
 
@@ -161,7 +161,7 @@ You now have:
 ```bash
 # On local machine
 LOCAL=$(git rev-parse HEAD)
-AWS=$(ssh -i /Users/bmstoner/Downloads/bootcamp.pem ubuntu@54.190.74.93 "cd rag_lab && git rev-parse HEAD")
+AWS=$(ssh -i /Users/bmstoner/Downloads/your-key.pem ubuntu@54.190.74.93 "cd rag_lab && git rev-parse HEAD")
 
 if [ "$LOCAL" = "$AWS" ]; then
     echo "✅ IN SYNC!"

@@ -5,7 +5,7 @@
 set -e
 
 INSTANCE_IP="16.146.148.184"
-SSH_KEY="${SSH_KEY:-bootcamp.pem}"
+SSH_KEY="${SSH_KEY:-your-key.pem}"
 
 echo "=== Deploying Nginx Routing Updates to $INSTANCE_IP ==="
 echo ""

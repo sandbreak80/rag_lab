@@ -26,7 +26,7 @@ cd /path/to/rag_lab
 
 Or manually:
 ```bash
-ssh -i bootcamp.pem ubuntu@16.146.148.184
+ssh -i your-key.pem ubuntu@16.146.148.184
 cd /home/ubuntu/rag_lab
 git pull origin otel
 docker compose up -d --build rag-api-v1 frontend

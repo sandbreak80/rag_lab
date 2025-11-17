@@ -79,7 +79,7 @@
 ### Immediate (Do Now)
 1. ✅ **SSH into instance:**
    ```bash
-   ssh -i /Users/bmstoner/SynologyDrive/vcode_projects/bootcamp.pem ubuntu@16.146.148.184
+   ssh -i /Users/bmstoner/SynologyDrive/vcode_projects/your-key.pem ubuntu@16.146.148.184
    ```
 
 2. ✅ **Check all services healthy:**
@@ -239,7 +239,7 @@
 - Region: us-west-2
 - Type: g4dn.2xlarge
 - Public IP: 16.146.148.184
-- SSH: `ssh -i bootcamp.pem ubuntu@16.146.148.184`
+- SSH: `ssh -i your-key.pem ubuntu@16.146.148.184`
 
 **Stop Instance (save costs):**
 ```bash

@@ -185,10 +185,10 @@ curl -X POST http://54.190.74.93:8000/api/research-agent/trigger/custom \
   -d '{"source_limit": 2, "days_back": 1, "rebuild_kg": true}' | jq .
 
 # 3. Check logs
-ssh -i bootcamp.pem ubuntu@54.190.74.93 "docker logs rag-research-agent --tail 50"
+ssh -i your-key.pem ubuntu@54.190.74.93 "docker logs rag-research-agent --tail 50"
 
 # 4. Monitor knowledge graph rebuild
-ssh -i bootcamp.pem ubuntu@54.190.74.93 "curl -s http://localhost:8007/stats | jq ."
+ssh -i your-key.pem ubuntu@54.190.74.93 "curl -s http://localhost:8007/stats | jq ."
 ```
 
 ---

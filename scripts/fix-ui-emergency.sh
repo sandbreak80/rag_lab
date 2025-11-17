@@ -5,7 +5,7 @@
 set -e
 
 INSTANCE="16.146.148.184"
-SSH_KEY="${SSH_KEY:-bootcamp.pem}"
+SSH_KEY="${SSH_KEY:-your-key.pem}"
 
 echo "=================================================="
 echo "🚨 EMERGENCY UI FIX - Deploying Updated Frontend"

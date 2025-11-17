@@ -5,7 +5,7 @@
 set -e
 
 INSTANCE_IP="54.190.74.93"
-SSH_KEY="/Users/bmstoner/Downloads/bootcamp.pem"
+SSH_KEY="/path/to/your-key.pem"
 REMOTE_USER="ubuntu"
 REMOTE_DIR="rag_lab"
 

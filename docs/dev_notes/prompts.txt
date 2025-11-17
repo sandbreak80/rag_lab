@@ -186,7 +186,7 @@ https://docs.docker.com/engine/install/linux-postinstall/
 reboot
 docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
 
-scp -i bootcamp.pem  rag_lab-main.zip ubuntu@ec2-16-146-37-221.us-west-2.compute.amazonaws.com:/home/ubuntu
+scp -i your-key.pem  rag_lab-main.zip ubuntu@ec2-16-146-37-221.us-west-2.compute.amazonaws.com:/home/ubuntu
 rag_lab-main.zip
 
 install zip and unzip

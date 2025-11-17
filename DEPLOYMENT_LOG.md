@@ -221,7 +221,7 @@ curl -X POST http://localhost:8009/search_agentic \
 
 ### SSH Access
 ```bash
-ssh -i "/Users/bmstoner/SynologyDrive/vcode_projects/bootcamp.pem" ubuntu@54.190.74.93
+ssh -i "/Users/bmstoner/SynologyDrive/vcode_projects/your-key.pem" ubuntu@54.190.74.93
 ```
 
 ---

@@ -149,7 +149,7 @@ git log -1 --oneline
 **Option B: Manual Sync** (Recommended this time)
 ```bash
 # SSH to AWS
-ssh -i /Users/bmstoner/Downloads/bootcamp.pem ubuntu@54.190.74.93
+ssh -i /Users/bmstoner/Downloads/your-key.pem ubuntu@54.190.74.93
 
 # Navigate to repo
 cd ~/rag_lab
@@ -179,7 +179,7 @@ LOCAL_HASH=$(git rev-parse HEAD)
 echo "Local: $LOCAL_HASH"
 
 # Get AWS commit hash
-AWS_HASH=$(ssh -i /Users/bmstoner/Downloads/bootcamp.pem ubuntu@54.190.74.93 "cd rag_lab && git rev-parse HEAD")
+AWS_HASH=$(ssh -i /Users/bmstoner/Downloads/your-key.pem ubuntu@54.190.74.93 "cd rag_lab && git rev-parse HEAD")
 echo "AWS: $AWS_HASH"
 
 # Compare

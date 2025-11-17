@@ -106,7 +106,7 @@ Stage 2 (systemd service - runs after reboot):
 ### Option A: Complete Current Instance (Manual)
 ```bash
 # SSH into instance
-ssh -i bootcamp.pem ubuntu@16.144.40.150
+ssh -i your-key.pem ubuntu@16.144.40.150
 
 # Start Ollama
 docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 \
@@ -135,7 +135,7 @@ cd /Users/bmstoner/code_projects/rag_lab/aws
 ./scripts/aws-launch-rag-lab.sh
 
 # 3. Monitor stage 2 after reboot
-ssh -i bootcamp.pem ubuntu@NEW_IP \
+ssh -i your-key.pem ubuntu@NEW_IP \
   "tail -f /var/log/rag-lab-setup-stage2.log"
 ```
 
@@ -187,7 +187,7 @@ Once deployment completes, verify:
 ### Instance Access
 ```bash
 # SSH
-ssh -i /Users/bmstoner/SynologyDrive/vcode_projects/bootcamp.pem ubuntu@16.144.40.150
+ssh -i /Users/bmstoner/SynologyDrive/vcode_projects/your-key.pem ubuntu@16.144.40.150
 
 # Check GPU
 nvidia-smi
@@ -290,7 +290,7 @@ The deployment will be considered successful when:
 **Branch:** security
 **AWS Region:** us-west-2
 **Instance Type:** g4dn.2xlarge
-**SSH Key:** bootcamp.pem
+**SSH Key:** your-key.pem
 
 **Created:** November 7, 2025
 **Last Updated:** November 7, 2025

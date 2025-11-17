@@ -83,7 +83,7 @@ This script will:
 SSH to the AWS instance and run:
 
 ```bash
-ssh -i bootcamp.pem ubuntu@16.146.148.184
+ssh -i your-key.pem ubuntu@16.146.148.184
 
 # Pull latest code
 cd /home/ubuntu/rag_lab

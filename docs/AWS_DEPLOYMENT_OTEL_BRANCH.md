@@ -33,7 +33,7 @@ If you already have a RAG Lab instance running:
 ```bash
 # Set your AWS instance details
 export AWS_HOST="ubuntu@YOUR_PUBLIC_IP"
-export AWS_KEY="/path/to/bootcamp.pem"
+export AWS_KEY="/path/to/your-key.pem"
 
 # Deploy otel branch
 ./scripts/deploy-to-aws.sh otel all
@@ -141,7 +141,7 @@ REMOTE=$(git rev-parse origin/otel)
 
 ```bash
 # SSH into instance
-ssh -i bootcamp.pem ubuntu@YOUR_PUBLIC_IP
+ssh -i your-key.pem ubuntu@YOUR_PUBLIC_IP
 
 # 1. Verify all services are running
 docker compose ps
@@ -391,7 +391,7 @@ docker compose up -d frontend
 ### For Existing AWS Instance:
 ```bash
 export AWS_HOST="ubuntu@YOUR_PUBLIC_IP"
-export AWS_KEY="/path/to/bootcamp.pem"
+export AWS_KEY="/path/to/your-key.pem"
 ./scripts/deploy-to-aws.sh otel all
 ```
 
