@@ -21,7 +21,8 @@ export function QuickPresets() {
       const balancedPreset = presets.find((p: any) => p.name === 'balanced' || p.name === 'Balanced (Recommended)');
       if (balancedPreset) {
         console.log('🎯 Auto-loading Balanced preset on first visit');
-        loadPreset(balancedPreset);
+        // loadPreset expects the full preset object from API (with config, llm_config, etc.)
+        loadPreset(balancedPreset as any);
       }
     }
   }, [isLoading, presets, currentPreset, loadPreset]);
