@@ -15,9 +15,23 @@ export function ComparisonView({
   configA,
   configB
 }: ComparisonViewProps) {
-  if (!testResults) return null;
+  console.log('🔍 ComparisonView: testResults:', testResults);
+  
+  if (!testResults) {
+    console.log('⚠️ ComparisonView: testResults is null/undefined');
+    return <div className="text-muted-foreground">No results to display</div>;
+  }
 
   const { result_a, result_b, metrics_a, metrics_b, grader_result, winner } = testResults;
+  
+  console.log('🔍 ComparisonView: Extracted values:', {
+    has_result_a: !!result_a,
+    has_result_b: !!result_b,
+    has_metrics_a: !!metrics_a,
+    has_metrics_b: !!metrics_b,
+    has_grader_result: !!grader_result,
+    winner
+  });
 
   return (
     <div className="space-y-6">

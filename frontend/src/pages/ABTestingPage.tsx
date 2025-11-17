@@ -16,6 +16,11 @@ export function ABTestingPage() {
   const [testResults, setTestResults] = useState<any>(null);
   const [isRunning, setIsRunning] = useState(false);
 
+  // Debug: Log when testResults changes
+  React.useEffect(() => {
+    console.log('🔍 ABTestingPage: testResults changed:', testResults);
+  }, [testResults]);
+
   const defaultConfig = useConfigStore((state) => state);
 
   // Initialize with default config if not set
@@ -137,7 +142,7 @@ export function ABTestingPage() {
       </Card>
 
       {/* Step 4: Results */}
-      {testResults && (
+      {testResults ? (
         <Card>
           <CardHeader>
             <CardTitle>Results: Side-by-Side Comparison</CardTitle>
@@ -151,6 +156,12 @@ export function ABTestingPage() {
               configA={configA}
               configB={configB}
             />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            {isRunning ? 'Test is running...' : 'No test results yet. Run a test to see results here.'}
           </CardContent>
         </Card>
       )}

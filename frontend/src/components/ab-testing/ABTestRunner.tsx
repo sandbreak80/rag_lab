@@ -51,7 +51,10 @@ export function ABTestRunner({
                     // Test completed successfully
                     clearInterval(pollInterval);
                     setIsRunning(false);
+                    console.log('✅ A/B Test completed! Result:', result);
+                    console.log('✅ Calling onResults with:', result);
                     onResults(result);
+                    console.log('✅ onResults called');
                   } catch (error: any) {
                     console.error('Error polling for results:', error);
                     const errorMessage = error?.response?.data?.detail || error?.response?.data?.error || error?.message || 'Unknown error';
