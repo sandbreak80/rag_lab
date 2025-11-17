@@ -18,11 +18,18 @@ export function QuickPresets() {
   // Auto-load "balanced" preset on first visit (when no preset is selected)
   useEffect(() => {
     if (!isLoading && presets && !currentPreset) {
-      const balancedPreset = presets.find((p: any) => p.name === 'balanced' || p.name === 'Balanced (Recommended)');
+      // Find balanced preset - check both lowercase key and display name
+      const balancedPreset = presets.find((p: any) => 
+        p.name?.toLowerCase() === 'balanced' || 
+        p.name === 'Balanced (Recommended)' ||
+        p.name === 'balanced'
+      );
       if (balancedPreset) {
-        console.log('🎯 Auto-loading Balanced preset on first visit');
+        console.log('🎯 Auto-loading Balanced preset on first visit', balancedPreset);
         // loadPreset expects the full preset object from API (with config, llm_config, etc.)
         loadPreset(balancedPreset as any);
+      } else {
+        console.warn('⚠️ Balanced preset not found. Available presets:', presets.map((p: any) => p.name));
       }
     }
   }, [isLoading, presets, currentPreset, loadPreset]);
