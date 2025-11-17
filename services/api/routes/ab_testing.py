@@ -287,14 +287,19 @@ async def _run_ab_test_async(test_id: str, req: ABTestRequest):
             logger.warning(f"⚠️  Redis unavailable, cannot store A/B test result: test_id={test_id}")
 
     except Exception as e:
-        logger.error(f"A/B test background task failed: {e}", exc_info=True)
+        import traceback
+        error_msg = str(e) if str(e) else repr(e)
+        error_traceback = traceback.format_exc()
+        logger.error(f"A/B test background task failed: {error_msg}", exc_info=True)
+        logger.error(f"Full traceback: {error_traceback}")
         # Store error in Redis
         redis_client = get_redis_client()
         if redis_client:
             error_result = {
                 "test_id": test_id,
-                "error": str(e),
-                "status": "error"
+                "error": error_msg or "Unknown error occurred",
+                "status": "error",
+                "traceback": error_traceback  # Include full traceback for debugging
             }
             redis_client.setex(
                 f"ab_test:result:{test_id}",
