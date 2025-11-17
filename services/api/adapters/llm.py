@@ -169,11 +169,25 @@ async def generate_real(
             eval_rate=eval_rate
         )
 
+    except httpx.TimeoutException as e:
+        logger.error(f"LLM generation timed out after {timeout_seconds}s: {e}", exc_info=True)
+        # Return a more informative error message for timeouts
+        return LLMResponse(
+            text=f"I apologize, but the response generation timed out after {timeout_seconds} seconds. This may happen with large models or complex queries. Please try again or use a smaller model.",
+            model=model,
+            provider="ollama",
+            tokens_in=0,
+            tokens_out=0,
+            tokens_total=0,
+            cost_usd=0.0,
+            temperature=temperature
+        )
     except Exception as e:
         import traceback
         error_traceback = traceback.format_exc()
         error_msg = str(e) if str(e) else repr(e)
-        logger.error(f"LLM generation failed: {error_msg}, falling back to error response")
+        error_type = type(e).__name__
+        logger.error(f"LLM generation failed ({error_type}): {error_msg}, falling back to error response")
         logger.error(f"Full traceback: {error_traceback}")
         # Fallback to error response
         return LLMResponse(
