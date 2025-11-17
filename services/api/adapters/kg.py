@@ -169,31 +169,22 @@ async def search(
     query: str,
     vector_results: list,
     top_k: int = 5,
-    use_mock: bool = True
+    use_mock: bool = False  # Always use real service - no mocks
 ) -> list[KGSearchResult]:
     """
     Knowledge graph search entry point.
+    
+    ALWAYS uses real KG service - no mock fallback.
 
     Args:
         query: Search query
         vector_results: Top vector search results to find relationships for
         top_k: Maximum number of KG results to return
-        use_mock: Use mock implementation
+        use_mock: Ignored - always uses real service
 
     Returns:
-        List of KG search results
+        List of KG search results (empty list if graph not built or no results)
     """
-    # If no vector results, use mock (vector DB might be empty)
-    # This is for testing when vector DB is completely empty
-    if not vector_results or len(vector_results) == 0:
-        logger.info("No vector results available, using mock KG search")
-        return await search_kg_mock(query, top_k)
-    
-    if use_mock:
-        return await search_kg_mock(query, top_k)
-    else:
-        # Use real KG search - return empty list if no results (don't fallback to mock)
-        # This allows UI to work correctly: if KG graph isn't built, return empty (expected)
-        # Mock fallback only happens when vector DB is empty (testing scenario)
-        return await search_kg_real(query, vector_results, top_k)
+    # Always use real KG service - return empty list if no results (expected when graph not built)
+    return await search_kg_real(query, vector_results, top_k)
 

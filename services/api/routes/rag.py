@@ -193,12 +193,12 @@ async def rag_query(req: RagQuery):
                 async def kg_search_task():
                     with tracer.start_as_current_span("retrieve_kg.relationships") as kg_span:
                         t_kg_start = time.perf_counter()
-                        # Use real KG service - it will handle service unavailability gracefully
+                        # Always use real KG service - no mocks
                         results = await kg.search(
                             query=req.query,
                             vector_results=vector_results,
                             top_k=5,
-                            use_mock=USE_MOCK_VECTOR  # Use same mock setting as vector
+                            use_mock=False  # Always real - no mocks
                         )
                     t_kg_end = time.perf_counter()
                     kg_span.set_attribute("docs_retrieved", len(results))
