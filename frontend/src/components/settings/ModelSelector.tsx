@@ -21,7 +21,7 @@ export function ModelSelector() {
     if (models.length > 0 && model) {
       const modelExists = models.some((m: any) => m.name === model);
       if (!modelExists) {
-        console.warn(`⚠️  Model '${model}' not found in Ollama. Auto-switching to '${models[0].name}'`);
+        // console.warn(`⚠️  Model '${model}' not found in Ollama. Auto-switching to '${models[0].name}'`);
         setModel(models[0].name);
       }
     }

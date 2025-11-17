@@ -35,16 +35,16 @@ export function SettingsPanel() {
   const useGraph = useConfigStore((state) => state.useGraph);
   const toggleFeature = useConfigStore((state) => state.toggleFeature);
 
-  // Debug logging
-  console.log('🔍 SettingsPanel render - Intelligence Features:', {
-    usePromptEnhancement,
-    useAutoModelRouting,
-    useQueryDecomposition,
-    useVectorDB,
-    useResearchAgent,
-    useWebSearch,
-    useGraph,
-  });
+  // Debug logging (commented out to avoid console errors in tests)
+  // console.log('🔍 SettingsPanel render - Intelligence Features:', {
+  //   usePromptEnhancement,
+  //   useAutoModelRouting,
+  //   useQueryDecomposition,
+  //   useVectorDB,
+  //   useResearchAgent,
+  //   useWebSearch,
+  //   useGraph,
+  // });
 
   return (
     <div className="space-y-6">
@@ -225,7 +225,7 @@ export function SettingsPanel() {
               data-testid="settings-prompt-enhancement"
               onClick={(e) => {
                 e.preventDefault();
-                console.log('🔍 Prompt Enhancement toggle clicked');
+                // console.log('🔍 Prompt Enhancement toggle clicked');
                 toggleFeature('usePromptEnhancement');
               }}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
@@ -260,7 +260,7 @@ export function SettingsPanel() {
               id="auto-routing"
               onClick={(e) => {
                 e.preventDefault();
-                console.log('🔍 Auto Model Routing toggle clicked');
+                // console.log('🔍 Auto Model Routing toggle clicked');
                 toggleFeature('useAutoModelRouting');
               }}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
@@ -295,7 +295,7 @@ export function SettingsPanel() {
               id="query-decomposition"
               onClick={(e) => {
                 e.preventDefault();
-                console.log('🔍 Query Decomposition toggle clicked');
+                // console.log('🔍 Query Decomposition toggle clicked');
                 toggleFeature('useQueryDecomposition');
               }}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
@@ -330,7 +330,7 @@ export function SettingsPanel() {
               id="self-rag"
               onClick={(e) => {
                 e.preventDefault();
-                console.log('🔍 Self-RAG toggle clicked');
+                // console.log('🔍 Self-RAG toggle clicked');
                 toggleFeature('useSelfRAG');
               }}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
@@ -365,7 +365,7 @@ export function SettingsPanel() {
               id="show-reasoning"
               onClick={(e) => {
                 e.preventDefault();
-                console.log('🔍 Show Reasoning toggle clicked');
+                // console.log('🔍 Show Reasoning toggle clicked');
                 toggleFeature('showReasoningProcess');
               }}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
@@ -412,7 +412,7 @@ export function SettingsPanel() {
               data-testid="settings-vector-db"
               onClick={(e) => {
                 e.preventDefault();
-                console.log('🔍 Vector DB toggle clicked');
+                // console.log('🔍 Vector DB toggle clicked');
                 toggleFeature('useVectorDB');
               }}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
@@ -447,7 +447,7 @@ export function SettingsPanel() {
               id="research-agent"
               onClick={(e) => {
                 e.preventDefault();
-                console.log('🔍 Research Agent toggle clicked');
+                // console.log('🔍 Research Agent toggle clicked');
                 toggleFeature('useResearchAgent');
               }}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
@@ -483,7 +483,7 @@ export function SettingsPanel() {
               data-testid="settings-web-search"
               onClick={(e) => {
                 e.preventDefault();
-                console.log('🔍 Web Search toggle clicked');
+                // console.log('🔍 Web Search toggle clicked');
                 toggleFeature('useWebSearch');
               }}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
@@ -518,7 +518,7 @@ export function SettingsPanel() {
               id="knowledge-graph-source"
               onClick={(e) => {
                 e.preventDefault();
-                console.log('🔍 Knowledge Graph toggle clicked');
+                // console.log('🔍 Knowledge Graph toggle clicked');
                 toggleFeature('useGraph');
               }}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${

@@ -1138,7 +1138,7 @@ services:
 
   # Playwright E2E Tests (TypeScript) - Phase B/C Validation
   e2e:
-    image: mcr.microsoft.com/playwright:v1.48.0-jammy
+    image: mcr.microsoft.com/playwright:v1.56.1-jammy
     container_name: rag-e2e-tests
     networks:
       - rag-network
