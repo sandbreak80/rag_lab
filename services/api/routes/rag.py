@@ -515,11 +515,11 @@ async def rag_query(req: RagQuery):
                 else:
                     logger.warning(f"Web search enabled but no web results available to add to citations")
 
-            if req.use_graph and "knowledge_graph" not in cited_origin_tools:
+            if req.use_graph and "knowledge_graph" not in cited_origin_tools and "kg" not in cited_origin_tools:
                 # Try to find KG result in top_results first
                 kg_result_to_add = None
                 for result in top_results:
-                    if result.origin_tool == "knowledge_graph":
+                    if result.origin_tool in ["knowledge_graph", "kg"]:
                         kg_result_to_add = result
                         break
 

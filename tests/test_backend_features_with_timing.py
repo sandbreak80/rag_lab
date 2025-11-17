@@ -52,7 +52,7 @@ class FeatureTester:
                     expected_sources: Optional[List[str]] = None) -> TestResult:
         """
         Test a specific feature with given configuration - FUNCTIONALITY ONLY
-        
+
         Args:
             feature_name: Name of the feature (e.g., "A. Security Guardrails")
             config: Feature configuration dict
@@ -357,7 +357,7 @@ class FeatureTester:
         # Note: Timing data is optional (enhancement)
         timing_coverage = sum(1 for r in self.results if r.stage_timings)
         trace_coverage = sum(1 for r in self.results if r.trace_id)
-        
+
         print("\n" + "="*60)
         print("OBSERVABILITY DATA (Optional - Enhancement)")
         print("="*60)
