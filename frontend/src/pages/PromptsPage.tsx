@@ -65,7 +65,7 @@ export function PromptsPage() {
     mutationFn: (promptId: string) => {
       // Use current template if editing, otherwise use saved template
       const templateToRender = isEditing ? editedTemplate : selectedPrompt?.template || '';
-      
+
       // For preview, we need to call the render endpoint with the template
       // But the API expects to render the saved template, so we'll use the saved one
       return api.renderPrompt(promptId, {
@@ -78,7 +78,7 @@ export function PromptsPage() {
       setPreviewResult(data);
     },
     onError: (error: any) => {
-      setPreviewResult({ 
+      setPreviewResult({
         error: error.message || 'Failed to render preview',
         variables: {},
         rendered: ''
@@ -204,9 +204,9 @@ export function PromptsPage() {
                       <Button onClick={handleCancel} variant="outline" size="sm">
                         Cancel
                       </Button>
-                      <Button 
-                        onClick={handleValidate} 
-                        variant="outline" 
+                      <Button
+                        onClick={handleValidate}
+                        variant="outline"
                         size="sm"
                         disabled={validateMutation.isPending}
                       >
@@ -217,8 +217,8 @@ export function PromptsPage() {
                         )}
                         Validate
                       </Button>
-                      <Button 
-                        onClick={handleSave} 
+                      <Button
+                        onClick={handleSave}
                         size="sm"
                         disabled={updateMutation.isPending}
                       >

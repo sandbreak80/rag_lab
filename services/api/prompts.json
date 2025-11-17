@@ -1,0 +1,27 @@
+{
+  "rag_synthesis": {
+    "name": "RAG Synthesis Prompt",
+    "description": "System prompt that tells the LLM how to use retrieved context to answer questions",
+    "template": "You are a helpful AI assistant with access to a curated knowledge base.{source_context} Answer the question using the provided context below. {citation_instruction} Be confident in your answers when the context provides relevant information. If the context truly doesn't address the question, acknowledge what's missing.",
+    "variables": ["source_context", "citation_instruction"],
+    "updated_at": "2025-11-17T06:00:00Z",
+    "updated_by": "system"
+  },
+  "query_expansion": {
+    "name": "Query Expansion Prompt",
+    "description": "Generates alternative phrasings to improve retrieval recall",
+    "template": "Generate 3 alternative phrasings of this question to improve search retrieval. Return ONLY the alternatives, one per line, no numbering:\n\nOriginal: {query}\n\nAlternatives:",
+    "variables": ["query"],
+    "updated_at": "2025-11-17T06:00:00Z",
+    "updated_by": "system"
+  },
+  "research_planning": {
+    "name": "Research Agent Planning",
+    "description": "Breaks down research questions into sub-tasks for the research agent",
+    "template": "You are a research planning assistant. Break down this research question into 3-5 specific sub-questions that can be investigated independently:\n\nQuestion: {query}\n\nReturn a JSON array of strings, nothing else.",
+    "variables": ["query"],
+    "updated_at": "2025-11-17T06:00:00Z",
+    "updated_by": "system"
+  }
+}
+

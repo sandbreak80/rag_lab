@@ -12,6 +12,7 @@ import { LearningHubPage } from './components/learning/LearningHubPage';
 import { FeedbackPage } from './components/feedback/FeedbackPage';
 import { PromptLoggingPage } from './components/logging/PromptLoggingPage';
 import { ResearchAgentPage } from './components/research/ResearchAgentPage';
+import { PromptsPage } from './pages/PromptsPage';
 import { VersionFooter } from './components/layout/VersionFooter';
 import { ToastProvider } from './components/ui/toast';
 import { AuthProvider } from './contexts/AuthContext';
@@ -56,6 +57,7 @@ function App() {
                 <Route index element={<ChatPage />} />
                 <Route path="documents" element={<DocumentsPage />} />
                 <Route path="research" element={<ResearchAgentPage />} />
+                <Route path="prompts" element={<PromptsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="metrics" element={<MetricsPage />} />
                 <Route path="monitoring" element={<MonitoringPage />} />
