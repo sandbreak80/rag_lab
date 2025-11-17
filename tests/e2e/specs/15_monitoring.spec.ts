@@ -42,13 +42,15 @@ test.describe('Monitoring Page', () => {
     await page.goto(`${BASE_URL}/monitoring`);
     await page.waitForLoadState('networkidle');
 
-    // Look for Grafana link
-    const grafanaLink = page.locator('a[href*="3001"]').first();
+    // Look for Grafana link - now uses proxied path /graf/ through nginx
+    const grafanaLink = page.getByTestId('grafana-link');
 
-    if (await grafanaLink.isVisible()) {
-      // Verify link has correct href
+    if (await grafanaLink.isVisible().catch(() => false)) {
+      // Verify link has correct href (should contain /graf/)
       const href = await grafanaLink.getAttribute('href');
-      expect(href).toContain('3001');
+      expect(href).toBeTruthy();
+      // Should use proxied path /graf/ or direct port 3001
+      expect(href).toMatch(/\/graf\/|3001/);
     } else {
       // Alternative: look for any external link
       const externalLinks = page.locator('a[target="_blank"]');
@@ -133,7 +135,24 @@ test.describe('Monitoring Page', () => {
     // Verify link has href attribute pointing to Grafana
     const href = await grafanaLink.getAttribute('href');
     expect(href).toBeTruthy();
-    expect(href).toContain('3001'); // Grafana port
+    // Should use proxied path /graf/ (through nginx) or direct port 3001
+    expect(href).toMatch(/\/graf\/|3001/);
+    
+    // Verify link is clickable and opens in new tab
+    const [newPage] = await Promise.all([
+      context.waitForEvent('page'),
+      grafanaLink.click()
+    ]);
+    
+    // Wait for new page to load
+    await newPage.waitForLoadState('networkidle');
+    
+    // Verify it's actually Grafana (check for Grafana indicators in URL or content)
+    const url = newPage.url();
+    expect(url).toMatch(/\/graf\/|3001/);
+    
+    // Close the new page
+    await newPage.close();
   });
 });
 
