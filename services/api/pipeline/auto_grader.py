@@ -23,7 +23,7 @@ async def grade_ab_responses(
 ) -> dict[str, Any]:
     """
     Grade two responses using LLM-as-judge.
-    
+
     Returns structured grading results with scores across 6 dimensions:
     1. Answer Quality
     2. Relevance
@@ -37,7 +37,7 @@ async def grade_ab_responses(
         grading_prompt = build_grading_prompt(
             prompt, response_a, response_b, sources_a, sources_b
         )
-        
+
         # Use LLM for grading
         messages = [
             {
@@ -49,7 +49,7 @@ async def grade_ab_responses(
                 "content": grading_prompt
             }
         ]
-        
+
         llm_response = await llm.generate(
             messages=messages,
             model=model,
@@ -57,16 +57,16 @@ async def grade_ab_responses(
             max_tokens=1500,  # Enough for detailed evaluation
             use_mock=False  # Use real LLM for grading
         )
-        
+
         # Parse JSON from response
         result = parse_grading_result(llm_response.text)
-        
+
         # Add metadata
         result["model_used"] = model
         result["grading_method"] = "llm-as-judge"
-        
+
         return result
-        
+
     except Exception as e:
         logger.warning(f"LLM grading failed, falling back to heuristics: {e}", exc_info=True)
         # Fallback to heuristic grading
@@ -83,10 +83,10 @@ def build_grading_prompt(
     sources_b: list[dict[str, Any]]
 ) -> str:
     """Build the grading prompt for LLM"""
-    
+
     sources_a_summary = f"{len(sources_a)} sources" if sources_a else "No sources"
     sources_b_summary = f"{len(sources_b)} sources" if sources_b else "No sources"
-    
+
     return f"""You are an expert RAG evaluator. Compare two responses to the same query.
 
 QUERY: "{prompt}"
@@ -147,15 +147,30 @@ def parse_grading_result(response_text: str) -> dict[str, Any]:
             result = json.loads(json_match.group(0))
         else:
             result = json.loads(response_text)
-        
+
         # Validate structure
         if "response_a" not in result or "response_b" not in result:
             raise ValueError("Missing response_a or response_b in result")
         
+        # Normalize structure - ensure scores are nested
+        for key in ["response_a", "response_b"]:
+            if "scores" not in result[key]:
+                # If scores are at top level, nest them
+                if "answer_quality" in result[key]:
+                    scores = {k: v for k, v in result[key].items() 
+                             if k in ["answer_quality", "relevance", "faithfulness", 
+                                     "completeness", "conciseness", "source_quality"]}
+                    result[key] = {
+                        "scores": scores,
+                        "overall_score": result[key].get("overall_score", 0),
+                        "strengths": result[key].get("strengths", []),
+                        "weaknesses": result[key].get("weaknesses", [])
+                    }
+        
         # Calculate overall scores if not present
         for key in ["response_a", "response_b"]:
-            if "overall_score" not in result[key]:
-                scores = result[key]
+            if "overall_score" not in result[key] or result[key]["overall_score"] == 0:
+                scores = result[key].get("scores", {})
                 overall = (
                     scores.get("answer_quality", 0) * 0.25 +
                     scores.get("relevance", 0) * 0.20 +
@@ -165,7 +180,7 @@ def parse_grading_result(response_text: str) -> dict[str, Any]:
                     scores.get("source_quality", 0) * 0.05
                 )
                 result[key]["overall_score"] = round(overall, 3)
-        
+
         # Determine winner if not present
         if "winner" not in result:
             score_a = result["response_a"]["overall_score"]
@@ -176,9 +191,9 @@ def parse_grading_result(response_text: str) -> dict[str, Any]:
                 result["winner"] = "A"
             else:
                 result["winner"] = "B"
-        
+
         return result
-        
+
     except Exception as e:
         logger.error(f"Failed to parse grading result: {e}")
         raise
@@ -198,24 +213,24 @@ def heuristic_grade_responses(
     def grade_response(response: str, sources: list, prompt: str) -> dict[str, Any]:
         # Answer Quality: length and structure
         word_count = len(response.split())
-        has_structure = any(marker in response.lower() for marker in 
+        has_structure = any(marker in response.lower() for marker in
                           ['because', 'however', 'therefore', 'first', 'second', 'third'])
         answer_quality = min(1.0, (word_count / 200.0) * 0.5 + (0.5 if has_structure else 0))
-        
+
         # Relevance: keyword overlap with prompt
         prompt_words = set(prompt.lower().split())
         response_words = set(response.lower().split())
         overlap = len(prompt_words & response_words) / len(prompt_words) if prompt_words else 0
         relevance = min(1.0, overlap * 1.5)
-        
+
         # Faithfulness: citation count
         citations = len(re.findall(r'\[\d+\]', response))
         faithfulness = min(1.0, citations / 5.0)
-        
+
         # Completeness: length relative to prompt complexity
         prompt_complexity = len(prompt.split()) / 20.0
         completeness = min(1.0, word_count / (prompt_complexity * 100))
-        
+
         # Conciseness: appropriate length (50-300 words ideal)
         if 50 <= word_count <= 300:
             conciseness = 1.0
@@ -223,10 +238,10 @@ def heuristic_grade_responses(
             conciseness = word_count / 50.0
         else:
             conciseness = max(0.5, 1.0 - (word_count - 300) / 500.0)
-        
+
         # Source Quality: number and diversity
         source_quality = min(1.0, len(sources) / 10.0)
-        
+
         overall_score = (
             answer_quality * 0.25 +
             relevance * 0.20 +
@@ -235,7 +250,7 @@ def heuristic_grade_responses(
             conciseness * 0.10 +
             source_quality * 0.05
         )
-        
+
         return {
             "answer_quality": round(answer_quality, 3),
             "relevance": round(relevance, 3),
@@ -247,26 +262,36 @@ def heuristic_grade_responses(
             "strengths": [],
             "weaknesses": []
         }
-    
+
     result_a = grade_response(response_a, sources_a, prompt)
     result_b = grade_response(response_b, sources_b, prompt)
-    
+
     score_a = result_a["overall_score"]
     score_b = result_b["overall_score"]
-    
+
     if abs(score_a - score_b) < 0.05:
         winner = "tie"
     elif score_a > score_b:
         winner = "A"
     else:
         winner = "B"
-    
-    return {
-        "response_a": result_a,
-        "response_b": result_b,
-        "winner": winner,
-        "explanation": f"Heuristic grading: Response {winner} scored higher ({score_a:.3f} vs {score_b:.3f})",
-        "model_used": "heuristic",
-        "grading_method": "heuristic-fallback"
-    }
+
+        return {
+            "response_a": {
+                "scores": result_a,
+                "overall_score": result_a["overall_score"],
+                "strengths": result_a.get("strengths", []),
+                "weaknesses": result_a.get("weaknesses", [])
+            },
+            "response_b": {
+                "scores": result_b,
+                "overall_score": result_b["overall_score"],
+                "strengths": result_b.get("strengths", []),
+                "weaknesses": result_b.get("weaknesses", [])
+            },
+            "winner": winner,
+            "explanation": f"Heuristic grading: Response {winner} scored higher ({score_a:.3f} vs {score_b:.3f})",
+            "model_used": "heuristic",
+            "grading_method": "heuristic-fallback"
+        }
 

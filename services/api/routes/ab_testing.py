@@ -130,14 +130,14 @@ async def get_prompts(
 ):
     """Get all prompts from the library with optional filtering"""
     prompts = [PromptLibraryItem(**p) for p in PROMPT_LIBRARY]
-    
+
     if category:
         prompts = [p for p in prompts if p.category == category]
     if complexity:
         prompts = [p for p in prompts if p.complexity == complexity]
     if difficulty:
         prompts = [p for p in prompts if p.difficulty == difficulty]
-    
+
     return prompts
 
 
@@ -154,13 +154,13 @@ async def get_prompt(prompt_id: str):
 async def run_ab_test(req: ABTestRequest):
     """
     Run an A/B test with two configurations.
-    
+
     Executes the same prompt with two different configurations and returns
     both results for comparison.
     """
     test_id = uuid4().hex
     logger.info(f"A/B test started: test_id={test_id}, parallel={req.run_parallel}")
-    
+
     # Convert configs to RagQuery objects
     def config_to_rag_query(config: dict[str, Any], request_id: str) -> RagQuery:
         return RagQuery(
@@ -174,13 +174,13 @@ async def run_ab_test(req: ABTestRequest):
             use_graph=config.get("use_graph", False),
             enable_research=config.get("enable_research", False),
         )
-    
+
     request_id_a = f"{test_id}_a"
     request_id_b = f"{test_id}_b"
-    
+
     query_a = config_to_rag_query(req.config_a, request_id_a)
     query_b = config_to_rag_query(req.config_b, request_id_b)
-    
+
     try:
         if req.run_parallel:
             # Run both queries in parallel
@@ -193,7 +193,7 @@ async def run_ab_test(req: ABTestRequest):
             # Run sequentially
             result_a = await rag_query(query_a)
             result_b = await rag_query(query_b)
-        
+
         # Handle errors
         if isinstance(result_a, Exception):
             logger.error(f"Query A failed: {result_a}")
@@ -201,15 +201,15 @@ async def run_ab_test(req: ABTestRequest):
         if isinstance(result_b, Exception):
             logger.error(f"Query B failed: {result_b}")
             raise HTTPException(status_code=500, detail=f"Query B failed: {str(result_b)}")
-        
+
         # Extract metrics
         metrics_a = result_a.metrics if hasattr(result_a, 'metrics') else {}
         metrics_b = result_b.metrics if hasattr(result_b, 'metrics') else {}
-        
+
         # Auto-grade if requested
         grader_result = None
         winner = None
-        
+
         if req.auto_grade:
             try:
                 grader_result = await grade_ab_responses(
@@ -221,7 +221,7 @@ async def run_ab_test(req: ABTestRequest):
                     config_a=req.config_a,
                     config_b=req.config_b
                 )
-                
+
                 # Determine winner
                 if grader_result:
                     score_a = grader_result.get("response_a", {}).get("overall_score", 0)
@@ -235,7 +235,7 @@ async def run_ab_test(req: ABTestRequest):
             except Exception as e:
                 logger.warning(f"Auto-grading failed: {e}", exc_info=True)
                 # Continue without grading
-        
+
         return ABTestResult(
             test_id=test_id,
             prompt=req.prompt,
@@ -246,7 +246,7 @@ async def run_ab_test(req: ABTestRequest):
             grader_result=grader_result,
             winner=winner
         )
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -258,7 +258,7 @@ async def run_ab_test(req: ABTestRequest):
 async def grade_responses(req: GradeRequest):
     """
     Grade two responses using LLM-based evaluation.
-    
+
     Returns detailed scores across multiple dimensions.
     """
     try:
