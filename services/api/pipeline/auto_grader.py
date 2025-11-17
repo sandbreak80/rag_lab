@@ -65,9 +65,9 @@ async def grade_ab_responses(
         if response_a == response_b:
             logger.warning("⚠️ Both responses are IDENTICAL - auto-grader will still evaluate but scores may be similar")
 
-        # Use normal temperature for consistent grading
+        # Use slightly higher temperature to prevent copying, but not too high
         import random
-        grading_temperature = 0.3  # Normal temperature for consistent evaluation
+        grading_temperature = 0.5  # Balanced temperature to prevent copying while maintaining consistency
         random_seed = random.randint(1000, 9999)
 
         logger.info(f"Calling LLM for auto-grading with model={model}, temperature={grading_temperature}, seed={random_seed}")
@@ -78,7 +78,7 @@ async def grade_ab_responses(
         llm_response = await llm.generate(
             messages=messages,
             model=model,
-            temperature=grading_temperature,  # 0.3 for consistent evaluation
+            temperature=grading_temperature,  # 0.5 to prevent copying while maintaining consistency
             max_tokens=2000,  # Increased from 1500 for more detailed evaluation
             use_mock=False  # Use real LLM for grading
         )
@@ -138,72 +138,66 @@ def build_grading_prompt(
     random_val = random.random()
     unique_id = hashlib.md5(f"{prompt}{response_a[:50]}{response_b[:50]}{timestamp}{random_val}".encode()).hexdigest()[:8]
 
-    return f"""You are an expert RAG evaluator. Compare two responses to the same query.
+    # Completely different prompt structure - no template that can be copied
+    return f"""Evaluate two RAG responses. ID: {unique_id} Time: {timestamp}
+
+QUERY: {prompt}
+
+=== RESPONSE A ===
+Length: {len(response_a)} characters
+Sources: {sources_a_summary}
+Content:
+{response_a[:10000]}
+
+=== RESPONSE B ===
+Length: {len(response_b)} characters
+Sources: {sources_b_summary}
+Content:
+{response_b[:10000]}
+
 {error_warning}
 
-EVALUATION ID: {unique_id} (This is a unique identifier for this evaluation - evaluate each response independently)
-TIMESTAMP: {timestamp} (Evaluate each response independently - do not use cached scores)
+TASK: Rate each response on 6 dimensions (0.0 to 1.0):
+1. answer_quality - How complete, accurate, clear, and well-structured is it?
+2. relevance - How well does it answer the query?
+3. faithfulness - Is it grounded in sources? Any hallucinations?
+4. completeness - Does it cover all aspects of the query?
+5. conciseness - Is the length appropriate? Any redundancy?
+6. source_quality - Are sources relevant and diverse?
 
-QUERY: "{prompt}"
+Calculate overall_score as weighted average: answer_quality*0.25 + relevance*0.20 + faithfulness*0.25 + completeness*0.15 + conciseness*0.10 + source_quality*0.05
 
-RESPONSE A (Length: {len(response_a)} chars):
-{response_a[:10000]}  # First 10,000 chars (full response may be longer)
-Sources: {sources_a_summary}
+List 2-3 specific strengths and 1-2 specific weaknesses for each response.
 
-RESPONSE B (Length: {len(response_b)} chars):
-{response_b[:10000]}  # First 10,000 chars (full response may be longer)
-Sources: {sources_b_summary}
+Determine which response is better (A, B, or tie) and explain why.
 
-NOTE: Response lengths may differ significantly. Evaluate the FULL content provided, not just length.
-
-Evaluate each response on these dimensions (0.0-1.0 scale):
-1. answer_quality: Completeness, accuracy, clarity, structure
-2. relevance: How well it addresses the query
-3. faithfulness: Grounded in sources, proper citations, no hallucinations
-4. completeness: All aspects of query covered
-5. conciseness: Appropriate length, no redundancy
-6. source_quality: Relevance and diversity of sources
-
-CRITICAL: You must ACTUALLY EVALUATE the responses above. Do NOT copy example values.
-Analyze the actual content, quality, and characteristics of Response A and Response B.
-Assign scores based on YOUR evaluation, not on any template or example.
-
-Return ONLY valid JSON in this exact format (replace the placeholder values with YOUR actual evaluation):
+Output JSON only:
 {{
   "response_a": {{
-    "answer_quality": <YOUR_SCORE_0.0_to_1.0>,
-    "relevance": <YOUR_SCORE_0.0_to_1.0>,
-    "faithfulness": <YOUR_SCORE_0.0_to_1.0>,
-    "completeness": <YOUR_SCORE_0.0_to_1.0>,
-    "conciseness": <YOUR_SCORE_0.0_to_1.0>,
-    "source_quality": <YOUR_SCORE_0.0_to_1.0>,
-    "overall_score": <CALCULATED_WEIGHTED_AVERAGE>,
-    "strengths": ["<specific strength 1>", "<specific strength 2>"],
-    "weaknesses": ["<specific weakness 1>", "<specific weakness 2>"]
+    "answer_quality": <number>,
+    "relevance": <number>,
+    "faithfulness": <number>,
+    "completeness": <number>,
+    "conciseness": <number>,
+    "source_quality": <number>,
+    "overall_score": <number>,
+    "strengths": [<array of strings>],
+    "weaknesses": [<array of strings>]
   }},
   "response_b": {{
-    "answer_quality": <YOUR_SCORE_0.0_to_1.0>,
-    "relevance": <YOUR_SCORE_0.0_to_1.0>,
-    "faithfulness": <YOUR_SCORE_0.0_to_1.0>,
-    "completeness": <YOUR_SCORE_0.0_to_1.0>,
-    "conciseness": <YOUR_SCORE_0.0_to_1.0>,
-    "source_quality": <YOUR_SCORE_0.0_to_1.0>,
-    "overall_score": <CALCULATED_WEIGHTED_AVERAGE>,
-    "strengths": ["<specific strength 1>", "<specific strength 2>"],
-    "weaknesses": ["<specific weakness 1>", "<specific weakness 2>"]
+    "answer_quality": <number>,
+    "relevance": <number>,
+    "faithfulness": <number>,
+    "completeness": <number>,
+    "conciseness": <number>,
+    "source_quality": <number>,
+    "overall_score": <number>,
+    "strengths": [<array of strings>],
+    "weaknesses": [<array of strings>]
   }},
   "winner": "<A or B or tie>",
-  "explanation": "<YOUR detailed explanation of why one response is better, or why they tie>"
-}}
-
-IMPORTANT:
-- Replace ALL <YOUR_SCORE_0.0_to_1.0> placeholders with actual numeric scores from YOUR evaluation
-- Replace ALL <specific strength/weakness> placeholders with actual observations from the responses
-- Replace <CALCULATED_WEIGHTED_AVERAGE> with the calculated weighted average
-- Replace <A or B or tie> with the actual winner
-- Replace <YOUR detailed explanation> with your actual reasoning
-
-Return ONLY the JSON with real values, no other text."""
+  "explanation": "<string>"
+}}"""
 
 
 def parse_grading_result(response_text: str) -> dict[str, Any]:
