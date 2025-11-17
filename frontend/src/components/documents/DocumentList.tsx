@@ -221,61 +221,73 @@ export function DocumentList() {
         </div>
 
         {/* Pagination Controls */}
-        {totalPages > 1 && (
+        {totalPages > 1 && totalPages > 0 && (
           <div className="flex items-center justify-between pt-4 border-t">
             <div className="text-sm text-muted-foreground">
-              Showing {startIndex + 1} to {Math.min(endIndex, userDocuments.length)} of {userDocuments.length} documents
+              Showing {Math.max(1, startIndex + 1)} to {Math.min(endIndex, userDocuments.length)} of {userDocuments.length} documents
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
+                disabled={currentPage <= 1}
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 Previous
               </Button>
-
+              
               <div className="flex items-center gap-1">
-                {totalPages > 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                  // Show first page, last page, current page, and pages around current
-                  const showPage =
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= Math.max(1, currentPage - 1) && page <= Math.min(totalPages, currentPage + 1));
-
-                  if (!showPage) {
-                    // Show ellipsis
-                    if (page === Math.max(1, currentPage - 2) || page === Math.min(totalPages, currentPage + 2)) {
-                      return (
-                        <span key={`ellipsis-${page}`} className="px-2 text-muted-foreground">
-                          ...
-                        </span>
-                      );
+                {(() => {
+                  try {
+                    const pages: number[] = [];
+                    for (let i = 1; i <= totalPages; i++) {
+                      pages.push(i);
                     }
+                    
+                    return pages.map((page) => {
+                      // Show first page, last page, current page, and pages around current
+                      const showPage =
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= Math.max(1, currentPage - 1) && page <= Math.min(totalPages, currentPage + 1));
+
+                      if (!showPage) {
+                        // Show ellipsis
+                        if (page === Math.max(1, currentPage - 2) || page === Math.min(totalPages, currentPage + 2)) {
+                          return (
+                            <span key={`ellipsis-${page}`} className="px-2 text-muted-foreground">
+                              ...
+                            </span>
+                          );
+                        }
+                        return null;
+                      }
+
+                      return (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(page)}
+                          className="min-w-[2.5rem]"
+                        >
+                          {page}
+                        </Button>
+                      );
+                    });
+                  } catch (error) {
+                    console.error('Error rendering pagination:', error);
                     return null;
                   }
-
-                  return (
-                    <Button
-                      key={page}
-                      variant={currentPage === page ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setCurrentPage(page)}
-                      className="min-w-[2.5rem]"
-                    >
-                      {page}
-                    </Button>
-                  );
-                })}
+                })()}
               </div>
 
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
+                disabled={currentPage >= totalPages}
               >
                 Next
                 <ChevronRight className="h-4 w-4 ml-1" />
