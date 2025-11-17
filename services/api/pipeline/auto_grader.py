@@ -151,14 +151,14 @@ def parse_grading_result(response_text: str) -> dict[str, Any]:
         # Validate structure
         if "response_a" not in result or "response_b" not in result:
             raise ValueError("Missing response_a or response_b in result")
-        
+
         # Normalize structure - ensure scores are nested
         for key in ["response_a", "response_b"]:
             if "scores" not in result[key]:
                 # If scores are at top level, nest them
                 if "answer_quality" in result[key]:
-                    scores = {k: v for k, v in result[key].items() 
-                             if k in ["answer_quality", "relevance", "faithfulness", 
+                    scores = {k: v for k, v in result[key].items()
+                             if k in ["answer_quality", "relevance", "faithfulness",
                                      "completeness", "conciseness", "source_quality"]}
                     result[key] = {
                         "scores": scores,
@@ -166,7 +166,7 @@ def parse_grading_result(response_text: str) -> dict[str, Any]:
                         "strengths": result[key].get("strengths", []),
                         "weaknesses": result[key].get("weaknesses", [])
                     }
-        
+
         # Calculate overall scores if not present
         for key in ["response_a", "response_b"]:
             if "overall_score" not in result[key] or result[key]["overall_score"] == 0:
@@ -275,8 +275,8 @@ def heuristic_grade_responses(
         winner = "A"
     else:
         winner = "B"
-
-        return {
+    
+    return {
             "response_a": {
                 "scores": result_a,
                 "overall_score": result_a["overall_score"],

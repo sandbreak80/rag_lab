@@ -15,7 +15,7 @@ export function ABTestingPage() {
   const [configB, setConfigB] = useState<RAGConfig | null>(null);
   const [testResults, setTestResults] = useState<any>(null);
   const [isRunning, setIsRunning] = useState(false);
-  
+
   const { config: defaultConfig } = useConfigStore();
 
   // Initialize with default config if not set

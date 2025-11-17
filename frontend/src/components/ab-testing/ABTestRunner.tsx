@@ -63,7 +63,7 @@ export function ABTestRunner({
           />
           <span className="text-sm">Run in parallel (faster)</span>
         </label>
-        
+
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
