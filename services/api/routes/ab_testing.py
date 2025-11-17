@@ -324,7 +324,14 @@ async def get_ab_test_result(test_id: str):
             if result_json:
                 result_dict = json.loads(result_json)
                 if "error" in result_dict:
-                    raise HTTPException(status_code=500, detail=result_dict["error"])
+                    # Return error in response instead of raising exception
+                    # This allows frontend to display the error properly
+                    return {
+                        "test_id": test_id,
+                        "status": "error",
+                        "error": result_dict["error"],
+                        "message": f"Test failed: {result_dict['error']}"
+                    }
                 return result_dict
         except Exception as e:
             error_msg = str(e) if e else "Unknown error"
