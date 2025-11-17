@@ -20,7 +20,7 @@ async def grade_ab_responses(
     sources_b: list[dict[str, Any]],
     config_a: dict[str, Any],
     config_b: dict[str, Any],
-    model: str = "llama3.2:3b"
+    model: str = "mistral:7b"  # Use larger model for better evaluation quality
 ) -> dict[str, Any]:
     """
     Grade two responses using LLM-as-judge.
