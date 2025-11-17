@@ -22,12 +22,16 @@ test('Document upload succeeds and indexes', async ({ page }) => {
     }
   }
 
-  await expect(fileInput).toBeVisible({ timeout: 5000 });
+  // File input might be hidden (sr-only) but still functional
+  // Check if it exists, even if not visible
+  const fileInputExists = await fileInput.count() > 0;
+  expect(fileInputExists, 'File input should exist').toBeTruthy();
 
   // Create a small file in memory
   const content = '# Test Document\n\nThis is a small markdown file for testing RAG Lab upload.';
   const fileName = 'test_doc.md';
 
+  // Set input files - this works even if the input is hidden
   await fileInput.setInputFiles({
     name: fileName,
     mimeType: 'text/markdown',

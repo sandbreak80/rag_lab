@@ -21,15 +21,15 @@ test('Performance section shows stage timings', async ({ page, baseURL }) => {
   // First check if the performance block container exists
   const perfBlock = page.locator('[data-testid="chat-perf"]');
   const perfBlockCount = await perfBlock.count();
-  
+
   if (perfBlockCount > 0) {
     // Performance block exists - check if it's visible and expanded
     await expect(perfBlock).toBeVisible({ timeout: 5000 });
-    
+
     // Check if the breakdown content is visible (inside the expanded section)
     const perfBreakdown = page.locator('[data-testid="perf-breakdown"]');
     const perfCount = await perfBreakdown.count();
-    
+
     if (perfCount > 0 && await perfBreakdown.first().isVisible().catch(() => false)) {
       console.log('✅ Performance breakdown visible');
       // Check for at least one timing metric
@@ -52,7 +52,7 @@ test('Performance section shows stage timings', async ({ page, baseURL }) => {
     // Performance breakdown might not be rendered yet - check metrics row as fallback
     const metricsRow = page.locator('[data-testid="metrics-row"]');
     await expect(metricsRow).toBeVisible({ timeout: 5000 });
-    
+
     const latency = page.locator('[data-testid="metrics-latency"]');
     if (await latency.isVisible().catch(() => false)) {
       const latencyText = await latency.textContent();
