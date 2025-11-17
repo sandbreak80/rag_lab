@@ -137,12 +137,12 @@ class ApiClient {
       user_id: 'demo', // TODO: Get from auth
       groups: [], // TODO: Get from auth
     };
-    
+
     // If request_id provided, use it (for response caching after refresh)
     if (requestId) {
       payload.request_id = requestId;
     }
-    
+
     const response = await this.client.post('/v1/rag/query', payload, { signal });
 
     // Transform new API response to match old format

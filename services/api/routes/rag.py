@@ -7,9 +7,12 @@ from opentelemetry.trace import Status, StatusCode
 import time
 import logging
 import os
+import json
 from uuid import uuid4
 from datetime import datetime, timezone
 from prometheus_client import Counter
+import redis
+from typing import Optional
 
 # Local imports
 from ..models import RagQuery, RagResponse
@@ -27,11 +30,36 @@ logger = logging.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
 router = APIRouter(prefix="/v1/rag", tags=["rag-v1"])
 
-# In-memory cache for responses (to allow retrieval after page refresh)
-# Key: request_id, Value: (response, timestamp)
-# TTL: 5 minutes
-_response_cache: dict[str, tuple[RagResponse, float]] = {}
-CACHE_TTL = 5 * 60  # 5 minutes
+# Redis client for persistent response storage
+# TTL: 30 minutes (allows time for user to navigate away and come back)
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
+CACHE_TTL = 30 * 60  # 30 minutes
+
+_redis_client: Optional[redis.Redis] = None
+
+def get_redis_client() -> Optional[redis.Redis]:
+    """Get or create Redis client with connection pooling"""
+    global _redis_client
+    if _redis_client is None:
+        try:
+            _redis_client = redis.from_url(
+                REDIS_URL,
+                decode_responses=True,
+                socket_connect_timeout=2,
+                socket_timeout=2,
+                retry_on_timeout=True,
+                health_check_interval=30
+            )
+            # Test connection
+            _redis_client.ping()
+            logger.info(f"✅ Redis connected: {REDIS_URL}")
+        except Exception as e:
+            logger.warning(f"⚠️  Redis unavailable: {e}. Falling back to in-memory cache.")
+            _redis_client = None
+    return _redis_client
+
+# Fallback in-memory cache if Redis is unavailable
+_response_cache_fallback: dict[str, tuple[RagResponse, float]] = {}
 
 # B1: Prometheus metrics for early-stop
 RAG_RETRIEVAL_WEB_SKIPPED = Counter(
@@ -757,19 +785,31 @@ async def rag_query(req: RagQuery):
                 trace_id=str(trace_id),
                 contract_version=CONTRACT_VERSION
             )
-            
-            # Store response in cache for retrieval after page refresh
-            _response_cache[request_id] = (response, time.time())
-            logger.info(f"Stored response in cache: request_id={request_id}")
-            
-            # Clean up old cache entries (older than TTL)
-            now = time.time()
-            expired_keys = [k for k, (_, ts) in _response_cache.items() if now - ts > CACHE_TTL]
-            for k in expired_keys:
-                del _response_cache[k]
-            if expired_keys:
-                logger.info(f"Cleaned up {len(expired_keys)} expired cache entries")
-            
+
+            # Store response in Redis for persistent retrieval after page refresh
+            # This ensures responses are available even if user navigates away
+            try:
+                redis_client = get_redis_client()
+                if redis_client:
+                    # Serialize response to JSON
+                    response_dict = response.model_dump(mode='json')
+                    response_json = json.dumps(response_dict)
+                    # Store with TTL
+                    redis_client.setex(
+                        f"rag:response:{request_id}",
+                        CACHE_TTL,
+                        response_json
+                    )
+                    logger.info(f"✅ Stored response in Redis: request_id={request_id}, TTL={CACHE_TTL}s")
+                else:
+                    # Fallback to in-memory cache
+                    _response_cache_fallback[request_id] = (response, time.time())
+                    logger.info(f"⚠️  Stored response in memory (Redis unavailable): request_id={request_id}")
+            except Exception as e:
+                logger.error(f"Failed to store response in cache: {e}", exc_info=True)
+                # Fallback to in-memory cache
+                _response_cache_fallback[request_id] = (response, time.time())
+
             return response
 
         except Exception as e:
@@ -791,25 +831,41 @@ async def rag_query(req: RagQuery):
 async def get_response(request_id: str):
     """
     Retrieve a cached response by request_id.
-    Allows frontend to retrieve responses after page refresh.
+    Allows frontend to retrieve responses after page refresh or navigation.
+    Checks Redis first, then falls back to in-memory cache.
     """
-    now = time.time()
-    
-    # Check cache
-    if request_id in _response_cache:
-        response, timestamp = _response_cache[request_id]
-        
-        # Check if expired
-        if now - timestamp > CACHE_TTL:
-            del _response_cache[request_id]
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Response for request_id {request_id} has expired (TTL: {CACHE_TTL}s)"
-            )
-        
-        logger.info(f"Retrieved cached response: request_id={request_id}, age={now - timestamp:.1f}s")
-        return response
-    
+    try:
+        # Try Redis first
+        redis_client = get_redis_client()
+        if redis_client:
+            response_json = redis_client.get(f"rag:response:{request_id}")
+            if response_json:
+                response_dict = json.loads(response_json)
+                response = RagResponse(**response_dict)
+                ttl = redis_client.ttl(f"rag:response:{request_id}")
+                logger.info(f"✅ Retrieved response from Redis: request_id={request_id}, TTL={ttl}s")
+                return response
+
+        # Fallback to in-memory cache
+        if request_id in _response_cache_fallback:
+            response, timestamp = _response_cache_fallback[request_id]
+            now = time.time()
+            age = now - timestamp
+
+            # Check if expired
+            if age > CACHE_TTL:
+                del _response_cache_fallback[request_id]
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Response for request_id {request_id} has expired (TTL: {CACHE_TTL}s)"
+                )
+
+            logger.info(f"Retrieved response from memory: request_id={request_id}, age={age:.1f}s")
+            return response
+
+    except Exception as e:
+        logger.error(f"Error retrieving response: {e}", exc_info=True)
+
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
         detail=f"Response for request_id {request_id} not found or expired"
