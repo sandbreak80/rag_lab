@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { Card, CardContent } from '../ui/card';
@@ -114,7 +114,7 @@ export function DocumentList() {
   const paginatedDocuments = userDocuments.slice(startIndex, endIndex);
 
   // Reset to page 1 if current page is out of bounds
-  React.useEffect(() => {
+  useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(1);
     }
@@ -226,15 +226,15 @@ export function DocumentList() {
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 Previous
               </Button>
-              
+
               <div className="flex items-center gap-1">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
                   // Show first page, last page, current page, and pages around current
-                  const showPage = 
+                  const showPage =
                     page === 1 ||
                     page === totalPages ||
                     (page >= currentPage - 1 && page <= currentPage + 1);
-                  
+
                   if (!showPage) {
                     // Show ellipsis
                     if (page === currentPage - 2 || page === currentPage + 2) {
