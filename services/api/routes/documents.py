@@ -48,14 +48,96 @@ class DocumentListResponse(BaseModel):
 
 
 async def _read_file(file: UploadFile) -> str:
-    """Read uploaded file content"""
+    """Read uploaded file content with proper PDF/DOCX parsing"""
     data = await file.read()
-    # TODO: Add proper parser for PDF/DOCX (use pypdf, python-docx, etc.)
-    # For now, handle text files and attempt UTF-8 decode
+    filename = file.filename or "unknown"
+    content_type = file.content_type or ""
+
+    # Handle PDF files - use docling-service for better parsing
+    if content_type == "application/pdf" or filename.lower().endswith(".pdf"):
+        try:
+            # Use docling-service for high-quality PDF parsing
+            DOCLING_SERVICE_URL = os.getenv("DOCLING_SERVICE_URL", "http://docling-service:8004")
+
+            async with httpx.AsyncClient(timeout=600.0) as client:  # 10 min timeout for large PDFs
+                # Send file as multipart/form-data
+                files = {"file": (filename, data, "application/pdf")}
+
+                response = await client.post(
+                    f"{DOCLING_SERVICE_URL}/parse",
+                    files=files,
+                    timeout=600.0
+                )
+                response.raise_for_status()
+                result = response.json()
+
+                if result.get("success"):
+                    markdown = result.get("markdown", "")
+                    metadata = result.get("metadata", {})
+                    num_pages = metadata.get("num_pages", 0)
+                    parser = metadata.get("parser", "unknown")
+
+                    if markdown and len(markdown.strip()) > 50:
+                        logger.info(f"✅ Extracted {len(markdown)} chars from PDF {filename} using {parser} ({num_pages} pages)")
+                        return markdown
+                    else:
+                        logger.warning(f"⚠️  PDF {filename} extracted but text too short or empty")
+                        return ""
+                else:
+                    error = result.get("error", "Unknown error")
+                    logger.error(f"Docling service failed for {filename}: {error}")
+                    # Fallback to pypdf
+                    logger.info(f"Falling back to pypdf for {filename}")
+                    return await _read_file_pypdf_fallback(data, filename)
+
+        except httpx.TimeoutException:
+            logger.error(f"Docling service timeout for {filename}")
+            return await _read_file_pypdf_fallback(data, filename)
+        except httpx.HTTPError as e:
+            logger.warning(f"Docling service error for {filename}: {e}, falling back to pypdf")
+            return await _read_file_pypdf_fallback(data, filename)
+        except Exception as e:
+            logger.error(f"Failed to parse PDF {filename} with docling: {e}", exc_info=True)
+            return await _read_file_pypdf_fallback(data, filename)
+
+    # Handle text files (UTF-8 decode)
     try:
-        return data.decode("utf-8", errors="ignore")
+        text = data.decode("utf-8", errors="ignore")
+        if text and len(text.strip()) > 50:
+            return text
+        else:
+            logger.warning(f"⚠️  File {filename} decoded but text too short or empty")
+            return ""
     except Exception as e:
-        logger.warning(f"Failed to decode {file.filename}: {e}")
+        logger.warning(f"Failed to decode {filename}: {e}")
+        return ""
+
+
+async def _read_file_pypdf_fallback(data: bytes, filename: str) -> str:
+    """Fallback PDF parser using pypdf"""
+    try:
+        from pypdf import PdfReader
+        import io
+        pdf_reader = PdfReader(io.BytesIO(data))
+        text_parts = []
+        for page in pdf_reader.pages:
+            try:
+                text_parts.append(page.extract_text())
+            except Exception as e:
+                logger.warning(f"Failed to extract text from page in {filename}: {e}")
+                continue
+        text = "\n\n".join(text_parts)
+        if text and len(text.strip()) > 50:
+            logger.info(f"✅ Extracted {len(text)} chars from PDF {filename} using pypdf fallback ({len(pdf_reader.pages)} pages)")
+            return text
+        else:
+            logger.warning(f"⚠️  PDF {filename} extracted but text too short or empty")
+            return ""
+    except ImportError:
+        logger.error("pypdf not installed! Install with: pip install pypdf")
+        return ""
+    except Exception as e:
+        logger.error(f"Failed to parse PDF {filename} with pypdf: {e}", exc_info=True)
         return ""
 
 

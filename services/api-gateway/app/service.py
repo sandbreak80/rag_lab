@@ -849,6 +849,20 @@ def admin_reset_kg():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/admin/reset-research', methods=['POST'])
+def admin_reset_research():
+    """Reset the research agent database (admin only)"""
+    try:
+        # Forward to research agent service
+        response = requests.post(f"{RESEARCH_AGENT_URL}/reset", timeout=180)
+        response.raise_for_status()
+
+        metrics.increment('research_resets')
+
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/kg/algorithms', methods=['GET'])
 def get_kg_algorithms():
     """Get available KG construction algorithms"""
