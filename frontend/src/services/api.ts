@@ -372,6 +372,49 @@ class ApiClient {
     const response = await this.client.get('/gpu_status');
     return response.data;
   }
+
+  // A/B Testing endpoints
+  async getABPrompts(category?: string, complexity?: string, difficulty?: string): Promise<any[]> {
+    const params: any = {};
+    if (category) params.category = category;
+    if (complexity) params.complexity = complexity;
+    if (difficulty) params.difficulty = difficulty;
+    const response = await this.client.get('/v1/ab-testing/prompts', { params });
+    return response.data;
+  }
+
+  async getABPrompt(promptId: string): Promise<any> {
+    const response = await this.client.get(`/v1/ab-testing/prompts/${promptId}`);
+    return response.data;
+  }
+
+  async runABTest(request: {
+    prompt: string;
+    config_a: RAGConfig;
+    config_b: RAGConfig;
+    run_parallel?: boolean;
+    auto_grade?: boolean;
+  }): Promise<any> {
+    const response = await this.client.post('/v1/ab-testing/run', {
+      ...request,
+      user_id: 'ab_test_user',
+      groups: []
+    });
+    return response.data;
+  }
+
+  async gradeABResponses(request: {
+    prompt: string;
+    response_a: string;
+    response_b: string;
+    sources_a: any[];
+    sources_b: any[];
+    config_a: RAGConfig;
+    config_b: RAGConfig;
+  }): Promise<any> {
+    const response = await this.client.post('/v1/ab-testing/grade', request);
+    return response.data;
+  }
 }
 
 export const api = new ApiClient();
