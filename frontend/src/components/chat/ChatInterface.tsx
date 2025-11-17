@@ -25,6 +25,77 @@ export function ChatInterface() {
   // Track if component is mounted to prevent error messages on page refresh
   const isMountedRef = useRef(true);
 
+  // Select individual properties to avoid creating new objects
+  const model = useConfigStore((state) => state.model);
+  const temperature = useConfigStore((state) => state.temperature);
+  const topK = useConfigStore((state) => state.topK);
+  const contextWindow = useConfigStore((state) => state.contextWindow);
+  const useQueryExpansion = useConfigStore((state) => state.useQueryExpansion);
+  const useBM25 = useConfigStore((state) => state.useBM25);
+  const useHybrid = useConfigStore((state) => state.useHybrid);
+  const useGraph = useConfigStore((state) => state.useGraph);
+  const useReranking = useConfigStore((state) => state.useReranking);
+  const useWebSearch = useConfigStore((state) => state.useWebSearch);
+  const useAgenticChunking = useConfigStore((state) => state.useAgenticChunking);
+  const useSecurity = useConfigStore((state) => state.useSecurity);
+  const webSearchDocs = useConfigStore((state) => state.webSearchDocs);
+  const webSearchPages = useConfigStore((state) => state.webSearchPages);
+  const rerankTopK = useConfigStore((state) => state.rerankTopK);
+
+  // New intelligence features
+  const usePromptEnhancement = useConfigStore((state) => state.usePromptEnhancement);
+  const useAutoModelRouting = useConfigStore((state) => state.useAutoModelRouting);
+  const useQueryDecomposition = useConfigStore((state) => state.useQueryDecomposition);
+  const useVectorDB = useConfigStore((state) => state.useVectorDB);
+  const useResearchAgent = useConfigStore((state) => state.useResearchAgent);
+
+  // Memoize config object - only recreates when values actually change
+  const config = useMemo(() => ({
+    model,
+    temperature,
+    topK,
+    contextWindow,
+    useQueryExpansion,
+    useBM25,
+    useHybrid,
+    useGraph,
+    useReranking,
+    useWebSearch,
+    useAgenticChunking,
+    useSecurity,
+    webSearchDocs,
+    webSearchPages,
+    rerankTopK,
+    metadataFilters: metadataFilters, // Use filters from chatStore
+    usePromptEnhancement,
+    useAutoModelRouting,
+    useVectorDB,
+    useResearchAgent,
+    useQueryDecomposition,
+  }), [
+    model,
+    temperature,
+    topK,
+    contextWindow,
+    useQueryExpansion,
+    useBM25,
+    useHybrid,
+    useGraph,
+    useReranking,
+    useWebSearch,
+    useAgenticChunking,
+    useSecurity,
+    webSearchDocs,
+    webSearchPages,
+    rerankTopK,
+    metadataFilters, // Include chatStore filters in deps
+    usePromptEnhancement,
+    useAutoModelRouting,
+    useVectorDB,
+    useResearchAgent,
+    useQueryDecomposition,
+  ]);
+
   useEffect(() => {
     // Force loading state to false on mount (in case of page refresh during request)
     setLoading(false);
@@ -106,77 +177,6 @@ export function ChatInterface() {
       setLoading(false);
     };
   }, [setLoading, addMessage, config]);
-
-  // Select individual properties to avoid creating new objects
-  const model = useConfigStore((state) => state.model);
-  const temperature = useConfigStore((state) => state.temperature);
-  const topK = useConfigStore((state) => state.topK);
-  const contextWindow = useConfigStore((state) => state.contextWindow);
-  const useQueryExpansion = useConfigStore((state) => state.useQueryExpansion);
-  const useBM25 = useConfigStore((state) => state.useBM25);
-  const useHybrid = useConfigStore((state) => state.useHybrid);
-  const useGraph = useConfigStore((state) => state.useGraph);
-  const useReranking = useConfigStore((state) => state.useReranking);
-  const useWebSearch = useConfigStore((state) => state.useWebSearch);
-  const useAgenticChunking = useConfigStore((state) => state.useAgenticChunking);
-  const useSecurity = useConfigStore((state) => state.useSecurity);
-  const webSearchDocs = useConfigStore((state) => state.webSearchDocs);
-  const webSearchPages = useConfigStore((state) => state.webSearchPages);
-  const rerankTopK = useConfigStore((state) => state.rerankTopK);
-
-  // New intelligence features
-  const usePromptEnhancement = useConfigStore((state) => state.usePromptEnhancement);
-  const useAutoModelRouting = useConfigStore((state) => state.useAutoModelRouting);
-  const useQueryDecomposition = useConfigStore((state) => state.useQueryDecomposition);
-  const useVectorDB = useConfigStore((state) => state.useVectorDB);
-  const useResearchAgent = useConfigStore((state) => state.useResearchAgent);
-
-  // Memoize config object - only recreates when values actually change
-  const config = useMemo(() => ({
-    model,
-    temperature,
-    topK,
-    contextWindow,
-    useQueryExpansion,
-    useBM25,
-    useHybrid,
-    useGraph,
-    useReranking,
-    useWebSearch,
-    useAgenticChunking,
-    useSecurity,
-    webSearchDocs,
-    webSearchPages,
-    rerankTopK,
-    metadataFilters: metadataFilters, // Use filters from chatStore
-    usePromptEnhancement,
-    useAutoModelRouting,
-    useVectorDB,
-    useResearchAgent,
-    useQueryDecomposition,
-  }), [
-    model,
-    temperature,
-    topK,
-    contextWindow,
-    useQueryExpansion,
-    useBM25,
-    useHybrid,
-    useGraph,
-    useReranking,
-    useWebSearch,
-    useAgenticChunking,
-    useSecurity,
-    webSearchDocs,
-    webSearchPages,
-    rerankTopK,
-    metadataFilters, // Include chatStore filters in deps
-    usePromptEnhancement,
-    useAutoModelRouting,
-    useVectorDB,
-    useResearchAgent,
-    useQueryDecomposition,
-  ]);
 
   const addMetric = useMetricsStore((state) => state.addQuery);
 
