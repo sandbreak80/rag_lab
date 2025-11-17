@@ -340,15 +340,13 @@ export function ChatInterface() {
       }
 
       // Check if request timed out
+      // DON'T show error - backend is still processing and will store in Redis
+      // Polling will retrieve the response when ready
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-        const timeoutMessage: ChatMessage = {
-          id: generateId(),
-          role: 'assistant',
-          content: '⏱️ **Request Timed Out (30 minutes)**\n\nThe Maximum preset exceeded the 30-minute timeout. This can happen on slower hardware or when Ollama is heavily loaded.\n\n**What Maximum does:**\n- Query Expansion (~100ms)\n- Hybrid Search (~200ms)\n- Knowledge Graph (~100ms)\n- **Re-ranking with LLM** (~3-5 seconds per batch)\n- **Web Search** (10 docs × 5 pages = 50 requests, ~30-60s)\n- **LLM Generation with llama3.1:8b** (5-15 minutes for 1500 tokens with 20 context chunks)\n\n🎓 **Key Learning**: Maximum demonstrates the extreme end of the quality/latency spectrum. Start this preset during a break and return to see the high-quality results!\n\n💡 **Tip**: For interactive use, try Balanced (< 1s) or Production (< 5s) presets. Maximum is designed for quality benchmarking on your specific hardware.',
-          timestamp: new Date(),
-        };
-        addMessage(timeoutMessage);
+        console.log('⏱️ Frontend request timed out, but backend is still processing. Polling will retrieve response from Redis when ready.');
         setLoading(false);
+        // Keep request_id in pending list - polling will retrieve it
+        // Don't add error message - response will appear via polling
         return;
       }
 
