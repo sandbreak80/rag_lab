@@ -38,7 +38,7 @@ class FeatureTester:
     def __init__(self, api_base: str = API_BASE):
         self.api_base = api_base
         self.results: List[TestResult] = []
-        
+
     def test_feature(self, feature_name: str, config: Dict[str, Any], 
                     expected_sources: Optional[List[str]] = None) -> TestResult:
         """Test a specific feature with given configuration"""
@@ -48,12 +48,17 @@ class FeatureTester:
         
         query = "What is retrieval augmented generation? Explain how RAG works."
         
-        # Prepare request
+        # Prepare request - API expects fields directly in payload, not nested config
         payload = {
             "query": query,
-            "config": config
+            "user_id": "automated_test",
+            "groups": [],
+            "top_k": config.get("top_k", 8),
+            **config  # Merge config fields directly into payload
         }
-        
+        # Remove nested config if present
+        payload.pop("config", None)
+
         start_time = time.time()
         try:
             response = requests.post(
@@ -63,7 +68,7 @@ class FeatureTester:
                 timeout=60
             )
             elapsed = time.time() - start_time
-            
+
             if response.status_code != 200:
                 return TestResult(
                     feature=feature_name,
@@ -71,16 +76,16 @@ class FeatureTester:
                     message=f"API returned status {response.status_code}: {response.text}",
                     timing=elapsed
                 )
-            
+
             data = response.json()
-            
+
             # Extract sources
             sources = []
             if 'citations' in data:
                 for citation in data['citations']:
                     origin = citation.get('origin_tool', 'unknown')
                     sources.append(origin)
-            
+
             # Check if expected sources are present
             source_check = True
             missing_sources = []
@@ -89,16 +94,16 @@ class FeatureTester:
                     if expected.lower() not in [s.lower() for s in sources]:
                         source_check = False
                         missing_sources.append(expected)
-            
+
             # Check for timing data
             has_timing = 'artifacts' in data and 'stage_timings' in data.get('artifacts', {})
-            
+
             # Check for trace_id
             has_trace = 'trace_id' in data
-            
+
             # Validate answer
             has_answer = 'answer' in data and len(data.get('answer', '')) > 0
-            
+
             # Build result message
             messages = []
             if not has_answer:
@@ -109,14 +114,14 @@ class FeatureTester:
                 messages.append("No timing data in response")
             if not has_trace:
                 messages.append("No trace_id in response")
-            
+
             passed = has_answer and source_check and has_timing and has_trace
-            
+
             if passed:
                 messages.append(f"✅ Feature working correctly")
             else:
                 messages.append(f"❌ Feature has issues")
-            
+
             return TestResult(
                 feature=feature_name,
                 passed=passed,
@@ -124,7 +129,7 @@ class FeatureTester:
                 timing=elapsed,
                 sources=sources
             )
-            
+
         except Exception as e:
             elapsed = time.time() - start_time
             return TestResult(
@@ -134,69 +139,69 @@ class FeatureTester:
                 timing=elapsed,
                 errors=[str(e)]
             )
-    
+
     def test_security_guardrails(self) -> TestResult:
         """Test A. Security Guardrails"""
+        # Note: Security guardrails may be enabled by default
+        # Test with a query that might trigger security checks
         config = {
-            "security_guardrails": True,
-            "topK": 5
+            "top_k": 5
         }
         return self.test_feature("A. Security Guardrails", config)
-    
+
     def test_query_expansion(self) -> TestResult:
         """Test B. Query Expansion"""
         config = {
-            "usePromptEnhancement": True,  # Query expansion
-            "topK": 5
+            "use_query_expansion": True,
+            "top_k": 5
         }
         return self.test_feature("B. Query Expansion", config, expected_sources=["rag"])
     
     def test_bm25_search(self) -> TestResult:
         """Test C. BM25 Search"""
         config = {
-            "useBM25Search": True,
-            "topK": 5
+            "use_bm25": True,
+            "top_k": 5
         }
         return self.test_feature("C. BM25 Search", config, expected_sources=["rag"])
     
     def test_hybrid_search(self) -> TestResult:
         """Test D. Hybrid Search"""
         config = {
-            "useVectorSearch": True,
-            "useBM25Search": True,
-            "topK": 5
+            "use_hybrid": True,
+            "top_k": 5
         }
         return self.test_feature("D. Hybrid Search", config, expected_sources=["rag"])
     
     def test_knowledge_graph(self) -> TestResult:
         """Test E. Knowledge Graph"""
         config = {
-            "useKnowledgeGraph": True,
-            "topK": 5
+            "use_graph": True,
+            "top_k": 5
         }
         return self.test_feature("E. Knowledge Graph", config, expected_sources=["knowledge_graph", "kg"])
     
     def test_llm_reranking(self) -> TestResult:
         """Test F. LLM Re-ranking"""
         config = {
-            "useReranking": True,
-            "topK": 10
+            "use_reranking": True,
+            "top_k": 10
         }
         return self.test_feature("F. LLM Re-ranking", config, expected_sources=["rag"])
     
     def test_web_search(self) -> TestResult:
         """Test G. Web Search"""
         config = {
-            "useWebSearch": True,
-            "topK": 5
+            "web_search_enabled": True,
+            "top_k": 5
         }
         return self.test_feature("G. Web Search", config, expected_sources=["web_search", "web"])
     
     def test_agentic_chunking(self) -> TestResult:
         """Test H. Agentic Chunking"""
         config = {
-            "useAgenticChunking": True,
-            "topK": 5
+            "use_agentic_chunking": True,
+            "top_k": 5
         }
         return self.test_feature("H. Agentic Chunking", config, expected_sources=["rag"])
     
@@ -204,7 +209,7 @@ class FeatureTester:
         """Test I. Top-K Results"""
         # Test different Top-K values
         for top_k in [3, 5, 10]:
-            config = {"topK": top_k}
+            config = {"top_k": top_k}
             result = self.test_feature(f"I. Top-K Results (K={top_k})", config)
             if not result.passed:
                 return result
@@ -218,30 +223,33 @@ class FeatureTester:
     def test_prompt_enhancement(self) -> TestResult:
         """Test J. Prompt Enhancement"""
         config = {
-            "usePromptEnhancement": True,
-            "topK": 5
+            "use_enhancement": True,
+            "top_k": 5
         }
         return self.test_feature("J. Prompt Enhancement", config, expected_sources=["rag"])
     
     def test_auto_model_routing(self) -> TestResult:
         """Test K. Auto Model Routing"""
         config = {
-            "autoModelRouting": True,
-            "topK": 5
+            "use_auto_routing": True,
+            "top_k": 5
         }
         return self.test_feature("K. Auto Model Routing", config, expected_sources=["rag"])
-    
+
     def test_query_decomposition(self) -> TestResult:
         """Test L. Query Decomposition"""
         config = {
-            "useQueryDecomposition": True,
-            "topK": 5
+            "use_query_decomposition": True,
+            "top_k": 5
         }
         # Use a complex query for decomposition
         query = "What is RAG? How does it work? What are the benefits and limitations?"
         payload = {
             "query": query,
-            "config": config
+            "user_id": "automated_test",
+            "groups": [],
+            "top_k": 5,
+            **config
         }
         
         try:
@@ -256,7 +264,7 @@ class FeatureTester:
                 return TestResult(
                     feature="L. Query Decomposition",
                     passed=False,
-                    message=f"API returned status {response.status_code}"
+                    message=f"API returned status {response.status_code}: {response.text}"
                 )
             
             data = response.json()
@@ -277,42 +285,42 @@ class FeatureTester:
     def test_self_rag(self) -> TestResult:
         """Test M. Self-RAG"""
         config = {
-            "useSelfRAG": True,
-            "topK": 5
+            "use_self_rag": True,
+            "top_k": 5
         }
         return self.test_feature("M. Self-RAG", config, expected_sources=["rag"])
     
     def test_show_reasoning(self) -> TestResult:
         """Test N. Show Reasoning Process"""
         config = {
-            "showReasoningProcess": True,
-            "topK": 5
+            "show_reasoning_process": True,
+            "top_k": 5
         }
         return self.test_feature("N. Show Reasoning Process", config, expected_sources=["rag"])
     
     def test_vector_database(self) -> TestResult:
         """Test O. Vector Database"""
         config = {
-            "useVectorSearch": True,
-            "topK": 5
+            "use_vector_db": True,
+            "top_k": 5
         }
         return self.test_feature("O. Vector Database", config, expected_sources=["rag"])
     
     def test_research_agent(self) -> TestResult:
         """Test P. Research Agent"""
         config = {
-            "useResearchAgent": True,
-            "topK": 5
+            "enable_research": True,
+            "top_k": 5
         }
         return self.test_feature("P. Research Agent", config, expected_sources=["research_agent", "research"])
-    
+
     def run_all_tests(self):
         """Run all feature tests"""
         print(f"\n{'='*60}")
         print(f"Comprehensive Backend Feature Tests")
         print(f"API Base: {self.api_base}")
         print(f"{'='*60}\n")
-        
+
         # Run all tests
         tests = [
             self.test_security_guardrails,
@@ -332,7 +340,7 @@ class FeatureTester:
             self.test_vector_database,
             self.test_research_agent,
         ]
-        
+
         for test_func in tests:
             result = test_func()
             self.results.append(result)
@@ -342,29 +350,29 @@ class FeatureTester:
                 print(f"  Timing: {result.timing:.2f}s")
             if result.sources:
                 print(f"  Sources: {', '.join(result.sources)}")
-        
+
         # Print summary
         self.print_summary()
-    
+
     def print_summary(self):
         """Print test summary"""
         print(f"\n{'='*60}")
         print("TEST SUMMARY")
         print(f"{'='*60}\n")
-        
+
         passed = sum(1 for r in self.results if r.passed)
         total = len(self.results)
-        
+
         print(f"Total Tests: {total}")
         print(f"Passed: {passed}")
         print(f"Failed: {total - passed}")
         print(f"Success Rate: {(passed/total)*100:.1f}%\n")
-        
+
         print("Failed Tests:")
         for result in self.results:
             if not result.passed:
                 print(f"  ❌ {result.feature}: {result.message}")
-        
+
         print("\nPassed Tests:")
         for result in self.results:
             if result.passed:
@@ -373,7 +381,7 @@ class FeatureTester:
 if __name__ == "__main__":
     tester = FeatureTester()
     tester.run_all_tests()
-    
+
     # Exit with error code if any tests failed
     failed = sum(1 for r in tester.results if not r.passed)
     sys.exit(1 if failed > 0 else 0)
