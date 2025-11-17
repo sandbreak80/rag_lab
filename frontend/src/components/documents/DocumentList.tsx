@@ -190,12 +190,15 @@ export function DocumentList() {
       <div className="space-y-4">
         <div className="grid gap-3">
           {paginatedDocuments.map((filename: string, index: number) => {
+            if (!filename || typeof filename !== 'string') {
+              return null;
+            }
             const Icon = getFileIcon(filename);
             const colorClass = getFileColor(filename);
             const globalIndex = startIndex + index;
 
             return (
-              <Card key={globalIndex} data-testid="doc-row">
+              <Card key={`doc-${globalIndex}-${filename}`} data-testid="doc-row">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
                     <div className={`flex-shrink-0 ${colorClass}`}>
