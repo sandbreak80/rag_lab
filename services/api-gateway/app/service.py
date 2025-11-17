@@ -765,7 +765,8 @@ def get_models():
     """Get available Ollama models"""
     try:
         import os
-        ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://host.docker.internal:11434')
+        # Use service name 'ollama' (matches docker-compose service name, not container name)
+        ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://ollama:11434')
         response = requests.get(f"{ollama_url}/api/tags", timeout=180)
 
         if response.status_code == 200:
@@ -888,6 +889,7 @@ def get_gpu_status():
         import os
 
         # Try to detect GPU from Ollama container
+        # Use service name 'ollama' (matches docker-compose service name, not container name)
         ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://ollama:11434')
 
         # Check if Ollama is accessible
