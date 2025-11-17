@@ -245,15 +245,18 @@ This document tracks UI defects and corresponding backend test requirements to v
 - [ ] Verify web sources appear in citations
 - [ ] Test web search can be enabled/disabled
 - [ ] Test web search metrics in OTel
-- [x] **CRITICAL:** ✅ **FIXED** - Web sources now showing in chat results
+- [ ] **CRITICAL:** Currently not showing web sources in chat results
 
 **Known Issues (Nov 17, 2025):**
 - ✅ **Backend Test Results:** 87.5% pass rate (14/16 tests passing)
-- ✅ **Web Search Issue:** **FIXED** - Web sources now showing in chat
-  - Fixed early-stop logic to respect `web_search_enabled=True`
-  - Fixed web result tagging with `origin_tool='web_search'`
-  - Added auto-add logic to ensure web results appear in citations
-  - **Location:** `services/api/routes/rag.py` - fixed early-stop and result inclusion
+- ❌ **Web Search Issue:** Web search is being skipped due to early-stop logic when vector results are strong
+  - Early-stop skips web search if `vector_results >= 8` AND `median_score >= 0.60`
+  - Even when web search runs, results may not be properly tagged with `origin_tool='web_search'`
+  - **Location:** `services/api/routes/rag.py` lines 200-215
+  - **Fix Required:**
+    - Disable early-stop for testing, OR
+    - Force web search to run when `web_search_enabled=True`, OR
+    - Properly tag web results with `origin_tool='web_search'` in citations
 
 ---
 
@@ -410,7 +413,7 @@ This document tracks UI defects and corresponding backend test requirements to v
 
 ## 📝 Notes
 
-- ✅ **Web Search Critical Issue:** **FIXED** - Web sources now showing in chat results (Nov 17, 2025)
+- ✅ **Chat Sources Issue:** **FIXED** - Web and RAG sources now showing in chat (Nov 17, 2025)
 - ✅ **Documents List Issue:** **FIXED** - Documents list now displaying correctly (Nov 17, 2025)
 - **Timing Tracking:** All features must have timing data tracked and visible in OTel, Grafana, and UI.
 - **Feature Validation:** User suspects 50% of features may not be working. Comprehensive testing required.
@@ -421,13 +424,11 @@ This document tracks UI defects and corresponding backend test requirements to v
 
 - [x] All backend tests created (`tests/test_backend_features_comprehensive.py`)
 - [x] Backend tests running (87.5% pass rate - 14/16 passing)
-- [ ] All backend tests passing (1 failure: Knowledge Graph - needs implementation)
-- [x] Web Search sources now working ✅
-- [x] Documents list now working ✅
+- [ ] All backend tests passing (2 failures: Web Search, Knowledge Graph)
 - [ ] OTel integration verified
 - [ ] Grafana integration verified
 - [ ] Frontend timing display verified
-- [ ] All defects fixed (2/4 critical defects fixed)
+- [ ] All defects fixed (2 defects fixed: Chat sources, Documents list)
 
 ## 📊 Test Results Summary (Nov 17, 2025)
 
