@@ -13,7 +13,8 @@ export interface Source {
   chunk_text: string;
   score: number;
   source?: 'rag' | 'web_search' | 'research';  // Source type
-  origin_tool?: string;  // 'rag' | 'web' | 'research' - from API
+  origin_tool?: string;  // 'rag' | 'web_search' | 'kg' | 'research' - raw from API
+  source_type?: string;  // 'rag' | 'web' | 'research' - simplified display type from API
   title?: string;  // Title (for web/research sources)
   url?: string;  // URL (for web/research sources)
   metadata?: {

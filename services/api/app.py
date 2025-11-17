@@ -17,7 +17,8 @@ import time
 import os
 
 from .config import CONTRACT_VERSION, ENABLE_OBS, OTEL_COLLECTOR_URL
-from .routes import rag, documents, agent, health, settings
+from .routes import rag, documents, agent, health, settings, prompts
+from .version import get_version_info, __version__
 
 # ============================================================================
 # Import metrics module to register all metrics with Prometheus REGISTRY
@@ -148,6 +149,7 @@ app.include_router(documents.router, tags=["documents"])
 app.include_router(agent.router, tags=["agent"])
 app.include_router(health.router, tags=["health"])
 app.include_router(settings.router, tags=["settings"])
+app.include_router(prompts.router, tags=["prompts"])
 
 # ============================================================================
 # Middleware - Request Logging & Metrics
@@ -288,15 +290,24 @@ async def metrics():
     return Response(generate_latest(REGISTRY), media_type=CONTENT_TYPE_LATEST)
 
 
+@app.get("/version", tags=["info"])
+async def version():
+    """Service version endpoint - for deployment verification"""
+    return get_version_info()
+
+
 @app.get("/", tags=["info"])
 async def root():
     """API info endpoint"""
+    version_info = get_version_info()
     return {
         "service": "RAG Lab API v1",
-        "version": CONTRACT_VERSION,
+        "version": version_info["version"],
+        "build_date": version_info["build_date"],
         "contract_version": CONTRACT_VERSION,
         "observability_enabled": ENABLE_OBS,
         "endpoints": {
+            "version": "/version",
             "rag_query": "/v1/rag/query",
             "health": "/health",
             "liveness": "/live",

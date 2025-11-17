@@ -93,7 +93,7 @@ def build_prompt_messages(query: str, results: list, require_web_citation: bool 
     """Build extractive-first prompt with citations - now uses dynamic prompts from storage"""
     # Import here to avoid circular dependency
     from .prompts import get_prompt_template
-    
+
     context_parts = []
     web_indices = []
     kg_indices = []
@@ -118,21 +118,21 @@ def build_prompt_messages(query: str, results: list, require_web_citation: bool 
     # Count research sources to inform the system prompt
     research_count = sum(1 for r in results if hasattr(r, 'doc_id') and r.doc_id.startswith('research_'))
     web_count = len(web_indices)
-    
+
     # Build context-aware system prompt
     source_context = ""
     if research_count > 0:
         source_context = f" The context includes {research_count} research article(s) from recent AI publications and news sources."
     if web_count > 0:
         source_context += f" It also includes {web_count} live web search result(s) with current information."
-    
+
     # Load system prompt template from storage (editable via API!)
     system_prompt_template = get_prompt_template("rag_synthesis")
     system_prompt = system_prompt_template.format(
         source_context=source_context,
         citation_instruction=citation_instruction
     )
-    
+
     return [
         {
             "role": "system",
