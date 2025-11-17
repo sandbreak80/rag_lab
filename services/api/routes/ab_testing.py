@@ -374,6 +374,11 @@ async def run_ab_test_sync(req: ABTestRequest):
     def config_to_rag_query(config: dict[str, Any], request_id: str) -> RagQuery:
         # Map frontend config keys to backend RagQuery fields
         # Frontend uses camelCase, backend uses snake_case
+        model = config.get("model")
+        temperature = config.get("temperature")
+        max_tokens = config.get("maxTokens") or config.get("max_tokens", 512)
+        context_window = config.get("contextWindow") or config.get("context_window", 4096)
+        
         return RagQuery(
             query=req.prompt,
             user_id=req.user_id,
@@ -387,6 +392,10 @@ async def run_ab_test_sync(req: ABTestRequest):
             use_query_expansion=config.get("useQueryExpansion") if "useQueryExpansion" in config else config.get("use_query_expansion", False),
             use_bm25=config.get("useBM25") if "useBM25" in config else config.get("use_bm25", False),
             use_hybrid=config.get("useHybrid") if "useHybrid" in config else config.get("use_hybrid", False),
+            max_tokens=max_tokens,  # CRITICAL: Pass max_tokens from config
+            context_window=context_window,  # CRITICAL: Pass context_window from config
+            model=model,  # CRITICAL: Pass model from config
+            temperature=temperature,  # CRITICAL: Pass temperature from config
         )
 
     request_id_a = f"{test_id}_a"
