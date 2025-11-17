@@ -38,7 +38,7 @@ export function ABTestRunner({
                       setStatusMessage(result.message || 'Test is running...');
                       return;
                     }
-                    
+
                     // Check for error status
                     if (result.status === 'error') {
                       clearInterval(pollInterval);
@@ -47,7 +47,7 @@ export function ABTestRunner({
                       alert(`Test failed: ${errorMsg}`);
                       return;
                     }
-                    
+
                     // Test completed successfully
                     clearInterval(pollInterval);
                     setIsRunning(false);
