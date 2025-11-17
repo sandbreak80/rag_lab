@@ -63,10 +63,10 @@ def build_prompt_messages(query: str, results: list, require_web_citation: bool 
 
     for i, result in enumerate(results):
         context_parts.append(f"[{i+1}] {result.content}")
-        # Track which indices are web/KG results
-        if result.origin_tool == "web_search":
+        # Track which indices are web/KG results (check both variants for compatibility)
+        if result.origin_tool in ["web_search", "web"]:
             web_indices.append(i + 1)
-        elif result.origin_tool == "knowledge_graph":
+        elif result.origin_tool in ["knowledge_graph", "kg"]:
             kg_indices.append(i + 1)
 
     context = "\n\n".join(context_parts)
