@@ -1,6 +1,6 @@
 # Testing Gaps Analysis - Feature Timing & Observability
 
-**Date:** November 17, 2025  
+**Date:** November 17, 2025
 **Status:** In Progress
 
 ## Overview
@@ -147,15 +147,15 @@ Analysis of missing functionality in our testing suite, specifically around:
 ## UI Defects Related to Testing
 
 ### 1. Chat - Performance Breakdown Incomplete
-**Root Cause:** Missing per-feature timings in `stage_timings`  
+**Root Cause:** Missing per-feature timings in `stage_timings`
 **Fix:** Add timing tracking for all features (A-R)
 
 ### 2. Chat - View Trace in Grafana Broken Link
-**Root Cause:** Missing or invalid `trace_id` in response  
+**Root Cause:** Missing or invalid `trace_id` in response
 **Fix:** Ensure `trace_id` is always present and valid
 
 ### 3. Settings - Feature Toggles Not Validated
-**Root Cause:** No backend tests validate feature toggles work  
+**Root Cause:** No backend tests validate feature toggles work
 **Fix:** Enhanced test suite validates each toggle
 
 ---
