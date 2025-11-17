@@ -100,70 +100,88 @@ export function ChatInterface() {
     // Force loading state to false on mount (in case of page refresh during request)
     setLoading(false);
 
-    // Check for orphaned requests (user message without response) and poll for responses
-    const checkOrphanedRequests = async () => {
-      const currentMessages = useChatStore.getState().messages;
-      if (currentMessages.length === 0) return;
+    const { getPendingRequests, removePendingRequest } = useChatStore.getState();
 
-      // Find the last user message without a following assistant response
-      for (let i = currentMessages.length - 1; i >= 0; i--) {
-        const msg = currentMessages[i];
-        if (msg.role === 'user' && msg.metadata?.request_id) {
-          // Check if there's a response after this message
-          const hasResponse = i + 1 < currentMessages.length && currentMessages[i + 1].role === 'assistant';
+    // Poll for ALL pending requests (not just the last one)
+    // This ensures responses appear even if user navigated away
+    const pollPendingRequests = async () => {
+      const pendingRequestIds = getPendingRequests();
+      if (pendingRequestIds.length === 0) return;
+
+      console.log(`🔍 Polling for ${pendingRequestIds.length} pending request(s):`, pendingRequestIds);
+
+      // Poll all pending requests in parallel
+      const pollPromises = pendingRequestIds.map(async (requestId) => {
+        try {
+          const response = await api.getResponse(requestId);
           
-          if (!hasResponse) {
-            // Check if message was sent recently (< 5 minutes ago)
-            const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
-            const messageTime = new Date(msg.timestamp).getTime();
-            
-            if (messageTime > fiveMinutesAgo) {
-              // Poll for response
-              const requestId = msg.metadata.request_id;
-              console.log(`Polling for orphaned request: ${requestId}`);
-              
-              try {
-                const response = await api.getResponse(requestId);
-                // Response found! Add it to messages
-                const assistantMessage: ChatMessage = {
-                  id: generateId(),
-                  role: 'assistant',
-                  content: response.answer,
-                  timestamp: new Date(),
-                  sources: response.sources,
-                  metadata: {
-                    model: config.model,
-                    temperature: config.temperature,
-                    topK: config.topK,
-                    latency: response.metrics?.total_latency_ms,
-                    trace_id: response.trace_id,
-                    request_id: response.request_id,
-                    tokens_in: response.tokens_in,
-                    tokens_out: response.tokens_out,
-                    cost_usd: response.cost_usd,
-                    stage_timings: response.stage_timings,
-                  },
-                };
-                addMessage(assistantMessage);
-                console.log(`✅ Retrieved orphaned response for request: ${requestId}`);
-                return; // Found response, stop polling
-              } catch (error: any) {
-                // Response not found or expired - that's okay, continue polling
-                if (error.response?.status !== 404) {
-                  console.log(`Error polling for request: ${requestId}`, error.message);
-                }
-              }
-            }
-            break; // Only check the most recent orphaned request
+          // Check if we already have this response in messages
+          const currentMessages = useChatStore.getState().messages;
+          const alreadyExists = currentMessages.some(
+            msg => msg.metadata?.request_id === requestId && msg.role === 'assistant'
+          );
+
+          if (!alreadyExists) {
+            // Response found! Add it to messages
+            const assistantMessage: ChatMessage = {
+              id: generateId(),
+              role: 'assistant',
+              content: response.answer,
+              timestamp: new Date(),
+              sources: response.sources,
+              metadata: {
+                model: config.model,
+                temperature: config.temperature,
+                topK: config.topK,
+                latency: response.metrics?.total_latency_ms,
+                trace_id: response.trace_id,
+                request_id: response.request_id,
+                tokens_in: response.tokens_in,
+                tokens_out: response.tokens_out,
+                cost_usd: response.cost_usd,
+                stage_timings: response.stage_timings,
+              },
+            };
+            addMessage(assistantMessage);
+            removePendingRequest(requestId);
+            console.log(`✅ Retrieved response for request: ${requestId}`);
+            return true; // Success
+          } else {
+            // Already have response, remove from pending
+            removePendingRequest(requestId);
+            return true;
+          }
+        } catch (error: any) {
+          // 404 means not ready yet or expired - that's okay, continue polling
+          if (error.response?.status === 404) {
+            return false; // Not ready yet
+          } else {
+            console.error(`Error polling for request ${requestId}:`, error.message);
+            // For other errors, remove from pending to avoid infinite polling
+            removePendingRequest(requestId);
+            return false;
           }
         }
+      });
+
+      const results = await Promise.all(pollPromises);
+      const successCount = results.filter(r => r === true).length;
+      if (successCount > 0) {
+        console.log(`✅ Retrieved ${successCount} response(s) from pending requests`);
       }
     };
 
-    // Poll immediately, then every 2 seconds for up to 30 seconds
-    checkOrphanedRequests();
-    const pollInterval = setInterval(checkOrphanedRequests, 2000);
-    const timeout = setTimeout(() => clearInterval(pollInterval), 30000);
+    // Poll immediately on mount, then every 2 seconds
+    // Continue polling for up to 30 minutes (allows for long-running queries)
+    pollPendingRequests();
+    const pollInterval = setInterval(pollPendingRequests, 2000);
+    const timeout = setTimeout(() => {
+      clearInterval(pollInterval);
+      const remaining = getPendingRequests();
+      if (remaining.length > 0) {
+        console.warn(`⚠️  Stopped polling after 30 minutes. ${remaining.length} request(s) still pending:`, remaining);
+      }
+    }, 30 * 60 * 1000); // 30 minutes
 
     return () => {
       clearInterval(pollInterval);
@@ -196,7 +214,10 @@ export function ChatInterface() {
       return api.sendMessage(query, config, abortControllerRef.current.signal, requestId);
     },
     onSuccess: (data, variables) => {
+      const { removePendingRequest } = useChatStore.getState();
       const query = typeof variables === 'string' ? variables : variables.query;
+      const requestId = typeof variables === 'string' ? undefined : variables.requestId;
+      
       const assistantMessage: ChatMessage = {
         id: generateId(),
         role: 'assistant',
@@ -210,7 +231,7 @@ export function ChatInterface() {
           latency: data.metrics?.total_latency_ms,
           // RAG API v1 observability fields
           trace_id: data.trace_id,
-          request_id: data.request_id, // Store request_id for reference
+          request_id: data.request_id || requestId, // Store request_id for reference
           tokens_in: data.tokens_in,
           tokens_out: data.tokens_out,
           cost_usd: data.cost_usd,
@@ -366,6 +387,8 @@ export function ChatInterface() {
   const handleSendMessage = (query: string) => {
     if (!query.trim() || isLoading) return;
 
+    const { addPendingRequest } = useChatStore.getState();
+
     // Generate request_id for tracking
     const requestId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -381,6 +404,11 @@ export function ChatInterface() {
     };
 
     addMessage(userMessage);
+    
+    // Add to pending requests list (persisted in localStorage)
+    // This ensures we poll for it even after page refresh/navigation
+    addPendingRequest(requestId);
+    
     setLoading(true);
 
     // Send to API (request_id is passed in the request body)

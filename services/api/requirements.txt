@@ -13,3 +13,4 @@ opentelemetry-instrumentation-logging==0.43b0
 python-multipart==0.0.6
 httpx==0.25.2
 orjson==3.9.10
+redis==5.0.1
