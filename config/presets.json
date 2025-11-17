@@ -120,7 +120,7 @@
         "web_search_pages_per_doc": 5
       },
       "llm_config": {
-        "model": "gemma2:9b",
+        "model": "qwen2.5:14b",
         "temperature": 0.3,
         "max_tokens": 1000,
         "context_window": 24576
