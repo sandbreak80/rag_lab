@@ -765,8 +765,8 @@ def get_models():
     """Get available Ollama models"""
     try:
         import os
-        # Use service name 'ollama' (matches docker-compose service name, not container name)
-        ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://ollama:11434')
+        # Use container name 'rag-ollama' to match container naming convention
+        ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://rag-ollama:11434')
         response = requests.get(f"{ollama_url}/api/tags", timeout=180)
 
         if response.status_code == 200:
