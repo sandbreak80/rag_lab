@@ -60,6 +60,10 @@ def count_primary_sources_within_window(results: list, window_hours: int) -> int
             freshness = compute_freshness_hours(result.published_at)
             if freshness is not None and freshness <= window_hours:
                 count += 1
+        # ALSO count research sources (from research agent) as fresh
+        # They're auto-discovered from recent AI news/papers
+        elif hasattr(result, 'doc_id') and result.doc_id.startswith('research_'):
+            count += 1
     return count
 
 

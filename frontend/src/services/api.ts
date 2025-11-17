@@ -157,7 +157,9 @@ class ApiClient {
         file_name: s.doc_id || `Document ${idx + 1}`,
         chunk_text: s.content || s.snippet || `Source from ${s.doc_id || s.url || 'unknown source'}`,
         score: s.score || 0.95,
-        source: s.origin_tool as 'rag' | 'web_search' || 'rag',
+        source: s.origin_tool as 'rag' | 'web_search' | 'research' || 'rag',
+        origin_tool: s.origin_tool,  // Preserve origin_tool for SourceCard
+        source_type: s.source_type,   // Preserve source_type for display logic
         metadata: {
           tags: s.tags || [],
           url: s.url || s.source_uri,
@@ -243,6 +245,40 @@ class ApiClient {
 
   async getVersions(): Promise<any> {
     const response = await this.client.get('/version');
+    return response.data;
+  }
+
+  // Prompts API
+  async getPrompts(): Promise<any> {
+    const response = await this.client.get('/v1/prompts');
+    return response.data;
+  }
+
+  async getPrompt(promptId: string): Promise<any> {
+    const response = await this.client.get(`/v1/prompts/${promptId}`);
+    return response.data;
+  }
+
+  async updatePrompt(promptId: string, template: string, updatedBy: string = 'user'): Promise<any> {
+    const response = await this.client.put(`/v1/prompts/${promptId}`, {
+      template,
+      updated_by: updatedBy,
+    });
+    return response.data;
+  }
+
+  async validatePrompt(promptId: string, template: string, updatedBy: string = 'user'): Promise<any> {
+    const response = await this.client.post(`/v1/prompts/${promptId}/validate`, {
+      template,
+      updated_by: updatedBy,
+    });
+    return response.data;
+  }
+
+  async renderPrompt(promptId: string, variables: Record<string, string> = {}): Promise<any> {
+    const response = await this.client.get(`/v1/prompts/${promptId}/render`, {
+      params: variables
+    });
     return response.data;
   }
 

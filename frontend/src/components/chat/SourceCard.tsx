@@ -9,8 +9,10 @@ interface SourceCardProps {
 }
 
 export function SourceCard({ source, index }: SourceCardProps) {
-  const isWebSource = source.source === 'web_search';
-  const isResearchSource = source.source === 'research' || source.origin_tool === 'research';
+  // Use source_type if available (backend's simplified display type), otherwise check origin_tool
+  const sourceTypeRaw = source.source_type || source.source;
+  const isWebSource = sourceTypeRaw === 'web' || source.origin_tool === 'web_search' || source.origin_tool === 'web';
+  const isResearchSource = sourceTypeRaw === 'research' || source.origin_tool === 'research';
   const url = source.metadata?.url || source.url;
   const title = source.metadata?.title || source.title || source.file_name;
   const engine = source.metadata?.engine;

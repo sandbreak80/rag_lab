@@ -6,6 +6,131 @@
 
 ---
 
+## ⭐ NEW: System Prompt Editor UI
+
+**Added:** November 17, 2025
+**Priority:** 🔥 High
+**Requested by:** User
+
+### Overview
+A UI interface to view, edit, and manage system prompts used throughout the RAG pipeline without requiring code changes.
+
+### Features
+- **Prompt Library:** View all system prompts used by different components
+  - RAG synthesis prompt (how LLM uses sources)
+  - Query expansion prompts
+  - Research agent task planning
+  - Web search query generation
+  - Guardrail system prompts
+  - Reranking instructions
+
+- **Live Editor:**
+  - Syntax highlighting for prompt templates
+  - Variable placeholder validation (`{query}`, `{context}`, etc.)
+  - Token counter (prevent exceeding limits)
+  - Preview rendered prompt with sample data
+
+- **Version Control:**
+  - Git-like history of prompt changes
+  - Author, timestamp, description for each version
+  - One-click rollback to previous versions
+  - Compare diffs between versions
+
+- **A/B Testing:**
+  - Run experiments with different prompts
+  - Track metrics per prompt version (quality, latency, tokens)
+  - Statistical significance testing
+  - Automatic promotion of winning variants
+
+- **Performance Metrics:**
+  - Average response quality per prompt
+  - Token usage and cost per prompt
+  - Latency impact
+  - Citation rate / grounding metrics
+  - User satisfaction scores
+
+- **Template Library:**
+  - Best practice prompts for common scenarios
+  - Industry-specific templates (medical, legal, technical)
+  - Import/export prompts as JSON/YAML
+  - Community-contributed prompts
+
+- **Security & Validation:**
+  - Prompt injection detection before save
+  - Role-based access control (who can edit)
+  - Audit log of all changes
+  - Sandbox testing before deployment
+
+### Technical Implementation
+```python
+# Backend API endpoints
+POST   /api/prompts              # Create new prompt
+GET    /api/prompts              # List all prompts
+GET    /api/prompts/{id}         # Get specific prompt
+PUT    /api/prompts/{id}         # Update prompt
+DELETE /api/prompts/{id}         # Delete prompt
+GET    /api/prompts/{id}/history # Get version history
+POST   /api/prompts/{id}/rollback/{version} # Rollback
+POST   /api/prompts/{id}/test    # Test prompt with sample input
+
+# Storage
+- Database table: prompts (id, name, template, variables, stage, version)
+- Include metadata: created_at, updated_by, performance_metrics
+- Version history in separate table
+
+# Frontend
+- New tab in main navigation: "Prompts"
+- Similar to Settings page but for prompt management
+- Monaco editor or CodeMirror for syntax highlighting
+- Real-time token counting
+- Preview pane showing rendered prompt
+```
+
+### Benefits
+1. **Rapid Iteration:** Tune RAG quality without deployments
+2. **A/B Testing:** Data-driven prompt optimization
+3. **Educational:** Students understand what drives LLM behavior
+4. **Customization:** Domain-specific prompt tuning
+5. **Transparency:** See exactly what instructions the LLM receives
+6. **Collaboration:** Team can contribute prompt improvements
+7. **Cost Control:** Optimize token usage through prompt engineering
+
+### Integration Points
+- Ties into existing version tracking (just implemented!)
+- Leverages Settings UI patterns
+- Integrates with metrics/observability system
+- Could feed into A/B testing framework
+
+### Examples of Prompts to Expose
+```python
+# 1. RAG Synthesis Prompt
+synthesis_prompt = """
+You are a helpful AI assistant. Answer the user's question using ONLY
+the provided context. If the context doesn't contain the answer, say so.
+
+Question: {query}
+
+Context:
+{context}
+
+Answer:
+"""
+
+# 2. Query Expansion
+expansion_prompt = """
+Generate 3 alternative phrasings of this question to improve retrieval:
+Question: {query}
+"""
+
+# 3. Research Agent Planning
+research_prompt = """
+Break down this research question into 3-5 sub-questions:
+Question: {query}
+"""
+```
+
+---
+
 ## 📊 Phase 1: Intelligent Prompt Enhancement & Routing
 
 ### 1.1 Advanced Prompt Enhancement Service
