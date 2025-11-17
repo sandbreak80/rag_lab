@@ -3,9 +3,11 @@ import { ExternalLink, Activity, Database, Cpu, Gauge } from 'lucide-react';
 import { TID } from '../../testids';
 
 export function MonitoringPage() {
-  // Direct links to Grafana and Prometheus (avoid iframe subpath issues)
-  const grafanaUrl = import.meta.env.VITE_GRAFANA_URL || 'http://16.146.148.184:3001/graf/dashboards/f/af3iptnjdc8owe/?orgId=1';
-  const prometheusUrl = import.meta.env.VITE_PROMETHEUS_URL || 'http://16.146.148.184:9090';
+  // Use proxied paths through nginx (port 3000) for Grafana and Prometheus
+  // Grafana is configured with GF_SERVER_SERVE_FROM_SUB_PATH=true and GF_SERVER_ROOT_URL=http://...:3000/graf
+  const baseUrl = window.location.origin; // Use current origin (works in dev and prod)
+  const grafanaUrl = import.meta.env.VITE_GRAFANA_URL || `${baseUrl}/graf/`;
+  const prometheusUrl = import.meta.env.VITE_PROMETHEUS_URL || `${baseUrl}/prom/`;
 
   return (
     <div className="flex flex-col w-full">
