@@ -207,7 +207,7 @@ This document tracks UI defects and corresponding backend test requirements to v
   - RAG API v1 only implements vector search and web search
   - Knowledge Graph exists in other services (`services/search/app/service.py`) but not in RAG API v1
   - **Location:** `services/api/routes/rag.py` - no KG implementation found
-  - **Fix Required:** 
+  - **Fix Required:**
     - Implement knowledge graph search in RAG API v1
     - Add KG results to retrieval pipeline
     - Tag KG results with `origin_tool='knowledge_graph'` or `'kg'`
@@ -240,7 +240,7 @@ This document tracks UI defects and corresponding backend test requirements to v
   - Early-stop skips web search if `vector_results >= 8` AND `median_score >= 0.60`
   - Even when web search runs, results may not be properly tagged with `origin_tool='web_search'`
   - **Location:** `services/api/routes/rag.py` lines 200-215
-  - **Fix Required:** 
+  - **Fix Required:**
     - Disable early-stop for testing, OR
     - Force web search to run when `web_search_enabled=True`, OR
     - Properly tag web results with `origin_tool='web_search'` in citations
