@@ -963,11 +963,11 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
-      # Use dynamic IP from instance metadata or environment variable
-      # Note: Must match the nginx proxy path /graf/
-      # Use relative path to avoid redirect issues when accessed through proxy
-      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-%(protocol)s://%(domain)s:%(http_port)s/graf/}
-      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      # Configure Grafana to work both directly (port 3001) and through proxy (/graf/)
+      # When accessed directly on port 3001, serve from root
+      # When accessed through proxy, the proxy handles the /graf/ path
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://16.146.36.90:3001}
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
       # Disable redirect to login page - serve content directly
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
