@@ -378,7 +378,7 @@ async def run_ab_test_sync(req: ABTestRequest):
         temperature = config.get("temperature")
         max_tokens = config.get("maxTokens") or config.get("max_tokens", 512)
         context_window = config.get("contextWindow") or config.get("context_window", 4096)
-        
+
         return RagQuery(
             query=req.prompt,
             user_id=req.user_id,
