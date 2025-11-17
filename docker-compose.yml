@@ -32,7 +32,9 @@ services:
     image: ollama/ollama:latest
     container_name: rag-ollama
     networks:
-      - rag-network
+      rag-network:
+        aliases:
+          - rag-ollama  # Explicit alias for DNS resolution to match container name
     ports:
       - "11434:11434"
     volumes:
