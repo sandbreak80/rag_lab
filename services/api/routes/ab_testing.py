@@ -163,6 +163,17 @@ async def _run_ab_test_async(test_id: str, req: ABTestRequest):
 
         # Convert configs to RagQuery objects
         def config_to_rag_query(config: dict[str, Any], request_id: str) -> RagQuery:
+            # Log config keys and critical values for debugging
+            logger.info(f"🔍 config_to_rag_query: request_id={request_id}, config_keys={list(config.keys())}")
+            logger.info(f"🔍 config values: model={config.get('model')}, temperature={config.get('temperature')}, maxTokens={config.get('maxTokens')}, contextWindow={config.get('contextWindow')}")
+            
+            model = config.get("model")
+            temperature = config.get("temperature")
+            max_tokens = config.get("maxTokens") or config.get("max_tokens", 512)
+            context_window = config.get("contextWindow") or config.get("context_window", 4096)
+            
+            logger.info(f"🔍 Final values for {request_id}: model={model}, temperature={temperature}, max_tokens={max_tokens}, context_window={context_window}")
+            
             return RagQuery(
                 query=req.prompt,
                 user_id=req.user_id,
@@ -176,10 +187,10 @@ async def _run_ab_test_async(test_id: str, req: ABTestRequest):
                 use_query_expansion=config.get("useQueryExpansion") if "useQueryExpansion" in config else config.get("use_query_expansion", False),
                 use_bm25=config.get("useBM25") if "useBM25" in config else config.get("use_bm25", False),
                 use_hybrid=config.get("useHybrid") if "useHybrid" in config else config.get("use_hybrid", False),
-                max_tokens=config.get("maxTokens") or config.get("max_tokens", 512),  # Pass max_tokens from config
-                context_window=config.get("contextWindow") or config.get("context_window", 4096),  # Pass context_window from config
-                model=config.get("model"),  # CRITICAL: Pass model from config (e.g., 'llama3.2:1b' vs 'gemma2:9b')
-                temperature=config.get("temperature"),  # CRITICAL: Pass temperature from config (e.g., 0.3 vs 0.3)
+                max_tokens=max_tokens,  # Pass max_tokens from config
+                context_window=context_window,  # Pass context_window from config
+                model=model,  # CRITICAL: Pass model from config (e.g., 'llama3.2:1b' vs 'gemma2:9b')
+                temperature=temperature,  # CRITICAL: Pass temperature from config (e.g., 0.3 vs 0.3)
             )
 
         request_id_a = f"{test_id}_a"
