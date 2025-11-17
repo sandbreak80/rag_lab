@@ -727,36 +727,28 @@ async def rag_query(req: RagQuery):
 
             logger.info(f"RAG query completed: request_id={request_id}, latency_ms={latency_ms:.0f}, citations={len(citations)}")
 
-            # Build sources array for backward compatibility with E2E tests
-            # Include both citations (from LLM extraction) AND raw web results
+            # Build sources array - Show ALL retrieved results for transparency
+            # Users want to see all top_k results, not just what LLM cited
             sources = []
-
-            # Add citations (RAG + any web results that were cited)
-            for c in citations:
-                sources.append({
-                    "doc_id": c["doc_id"],
-                    "chunk_id": c["chunk_id"],
-                    "score": c["score"],
-                    "origin_tool": c["origin_tool"],
-                    "source_type": "rag" if c["origin_tool"] == "rag" else ("web" if c["origin_tool"] in ["web_search", "web"] else c["origin_tool"]),
-                    "content": c["content"][:200] + "..." if len(c["content"]) > 200 else c["content"]
-                })
-
-            # Add web results that weren't cited (for transparency)
+            
+            # Add ALL top_results that went to the LLM (not just citations)
             cited_doc_ids = {c["doc_id"] for c in citations}
-            for idx, web_result in enumerate(web_results):
-                if web_result.doc_id not in cited_doc_ids:
-                    sources.append({
-                        "doc_id": web_result.doc_id,
-                        "chunk_id": getattr(web_result, 'chunk_id', f"web_{idx}"),
-                        "score": web_result.score,
-                        "origin_tool": "web_search",  # Use consistent naming
-                        "source_type": "web",
-                        "title": getattr(web_result, 'title', ''),
-                        "url": getattr(web_result, 'source_uri', ''),
-                        "snippet": web_result.content[:200] + "..." if len(web_result.content) > 200 else web_result.content,
-                        "rank": idx + 1
-                    })
+            for idx, result in enumerate(top_results):
+                # Mark if this was cited by the LLM
+                was_cited = result.doc_id in cited_doc_ids
+                
+                sources.append({
+                    "doc_id": result.doc_id,
+                    "chunk_id": getattr(result, 'chunk_id', f"{result.origin_tool}_{idx}"),
+                    "score": result.score,
+                    "origin_tool": result.origin_tool,
+                    "source_type": "rag" if result.origin_tool == "rag" else ("web" if result.origin_tool in ["web_search", "web"] else result.origin_tool),
+                    "content": result.content[:200] + "..." if len(result.content) > 200 else result.content,
+                    "title": getattr(result, 'title', ''),
+                    "url": getattr(result, 'source_uri', ''),
+                    "cited": was_cited,  # Mark which ones LLM actually used
+                    "rank": idx + 1
+                })
 
             # Add mock research sources if enabled (for UI-004 demonstration)
             # In production, this would come from actual research agent
