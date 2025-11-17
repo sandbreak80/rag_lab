@@ -889,8 +889,8 @@ def get_gpu_status():
         import os
 
         # Try to detect GPU from Ollama container
-        # Use service name 'ollama' (matches docker-compose service name, not container name)
-        ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://ollama:11434')
+        # Use container name 'rag-ollama' to match container naming convention
+        ollama_url = os.getenv('OLLAMA_BASE_URL', 'http://rag-ollama:11434')
 
         # Check if Ollama is accessible
         try:
