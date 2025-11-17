@@ -449,26 +449,26 @@ async def rag_query(req: RagQuery):
 
                     # If web was requested but not in top, add at least one
                     if req.web_search_enabled and len(web_in_top) == 0 and len(web_results) > 0:
-                        logger.info(f"Web requested but not in top_results[:TOPN], forcing one in")
+                        logger.info(f"Web requested but not in top_results[:top_k], forcing one in")
                         # Find a web result not in top_results
                         for web_result in web_results:
-                            if (web_result.doc_id, web_result.chunk_id) not in {(r.doc_id, r.chunk_id) for r in top_results[:TOPN]}:
-                                top_results.insert(TOPN - 1, web_result)  # Insert near the end
+                            if (web_result.doc_id, web_result.chunk_id) not in {(r.doc_id, r.chunk_id) for r in top_results[:req.top_k]}:
+                                top_results.insert(req.top_k - 1, web_result)  # Insert near the end
                                 logger.info(f"Forced web result into top_results: {web_result.doc_id}, origin_tool={web_result.origin_tool}")
                                 break
 
                     # If KG was requested but not in top, add at least one
                     if req.use_graph and len(kg_in_top) == 0 and len(kg_results) > 0:
-                        logger.info(f"KG requested but not in top_results[:TOPN], forcing one in")
+                        logger.info(f"KG requested but not in top_results[:top_k], forcing one in")
                         # Find a KG result not in top_results
                         for kg_result in kg_results:
-                            if (kg_result.doc_id, kg_result.chunk_id) not in {(r.doc_id, r.chunk_id) for r in top_results[:TOPN]}:
-                                top_results.insert(TOPN - 1, kg_result)  # Insert near the end
+                            if (kg_result.doc_id, kg_result.chunk_id) not in {(r.doc_id, r.chunk_id) for r in top_results[:req.top_k]}:
+                                top_results.insert(req.top_k - 1, kg_result)  # Insert near the end
                                 logger.info(f"Forced KG result into top_results: {kg_result.doc_id}, origin_tool={kg_result.origin_tool}")
                                 break
 
-                # Final truncation to TOPN
-                top_results = top_results[:TOPN]
+                # Final truncation to top_k
+                top_results = top_results[:req.top_k]
                 # Log final state
                 final_web = [r for r in top_results if r.origin_tool in ["web_search", "web"]]
                 final_kg = [r for r in top_results if r.origin_tool in ["knowledge_graph", "kg"]]
