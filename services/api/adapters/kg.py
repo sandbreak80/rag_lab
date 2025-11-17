@@ -173,7 +173,7 @@ async def search(
 ) -> list[KGSearchResult]:
     """
     Knowledge graph search entry point.
-    
+
     ALWAYS uses real KG service - no mock fallback.
 
     Args:
