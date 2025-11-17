@@ -27,6 +27,8 @@ export function MessageItem({ message }: MessageItemProps) {
   );
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [copiedMessage, setCopiedMessage] = useState(false);
+  const [showAllSources, setShowAllSources] = useState(false);
+  const INITIAL_SOURCES_SHOWN = 3;
 
   const hasPerformanceData = !isUser && message.metadata?.performance;
   const hasStageTimings = !isUser && message.metadata?.stage_timings;
