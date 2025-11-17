@@ -64,7 +64,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
 
   // Load initial config from localStorage (including currentPreset)
   const savedConfig = loadFromLocalStorage<RAGConfig & { currentPreset?: string }>('rag_config', DEFAULT_CONFIG);
-  
+
   // CRITICAL: Merge with DEFAULT_CONFIG to ensure new properties exist
   // This handles when localStorage has old config without new intelligence features
   const mergedConfig = {
@@ -171,6 +171,12 @@ export const useConfigStore = create<ConfigStore>((set, get) => {
         useWebSearch: config.use_web_search !== undefined ? config.use_web_search : get().useWebSearch,
         useAgenticChunking: config.use_agentic_chunking !== undefined ? config.use_agentic_chunking : get().useAgenticChunking,
         useSecurity: config.use_security !== undefined ? config.use_security : get().useSecurity,
+        // Intelligence features
+        usePromptEnhancement: config.use_prompt_enhancement !== undefined ? config.use_prompt_enhancement : get().usePromptEnhancement,
+        useAutoModelRouting: config.use_auto_model_routing !== undefined ? config.use_auto_model_routing : get().useAutoModelRouting,
+        useQueryDecomposition: config.use_query_decomposition !== undefined ? config.use_query_decomposition : get().useQueryDecomposition,
+        useSelfRAG: config.use_self_rag !== undefined ? config.use_self_rag : get().useSelfRAG,
+        showReasoningProcess: config.show_reasoning_process !== undefined ? config.show_reasoning_process : get().showReasoningProcess,
         topK: config.top_k || get().topK,
         rerankTopK: config.rerank_top_k || get().rerankTopK,
         webSearchDocs: config.web_search_docs || get().webSearchDocs,
