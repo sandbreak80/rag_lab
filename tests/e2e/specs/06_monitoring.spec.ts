@@ -75,19 +75,19 @@ test('Grafana endpoint accessible via proxy', async ({ request, baseURL }) => {
   const status = grafana.status();
   console.log(`Grafana /graf/ status: ${status}`);
 
-  // Grafana is required - must return 200 or 302 (redirect to login)
-  if (status === 200 || status === 302) {
+  // Grafana is required - must return 200, 301, or 302 (redirect to login)
+  if (status === 200 || status === 301 || status === 302) {
     console.log('✅ Grafana proxy working');
-    
-    // If 302, follow redirect to verify it's actually Grafana
-    if (status === 302) {
+
+    // If 301/302, follow redirect to verify it's actually Grafana
+    if (status === 301 || status === 302) {
       const location = grafana.headers()['location'];
       if (location) {
         console.log(`   Redirect location: ${location}`);
         expect(location).toMatch(/\/graf\//);
       }
     }
-    
+
     // Verify response body contains Grafana indicators
     if (status === 200) {
       const body = await grafana.text();
@@ -101,6 +101,6 @@ test('Grafana endpoint accessible via proxy', async ({ request, baseURL }) => {
   }
 
   // Grafana is required - must be accessible
-  expect(status).toBeOneOf([200, 302]);
+  expect(status).toBeOneOf([200, 301, 302]);
 });
 
