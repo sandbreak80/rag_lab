@@ -1,6 +1,6 @@
 # RAG Lab - Chat Flow Architecture
 
-**Last Updated:** November 17, 2025  
+**Last Updated:** November 17, 2025
 **Version:** 1.0
 
 ---
@@ -236,7 +236,7 @@ useEffect(() => {
         }
       }
     }, 2000); // Poll every 2 seconds
-    
+
     return () => clearInterval(interval);
   }
 }, [pendingRequestIds]);
