@@ -749,6 +749,9 @@ async def rag_query(req: RagQuery):
                     "cited": was_cited,  # Mark which ones LLM actually used
                     "rank": idx + 1
                 })
+            
+            # Log for debugging
+            logger.info(f"Built {len(sources)} sources from {len(top_results)} top_results, {len(citations)} citations")
 
             # Add mock research sources if enabled (for UI-004 demonstration)
             # In production, this would come from actual research agent
