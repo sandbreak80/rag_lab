@@ -69,13 +69,19 @@ tests/__pycache__/
 test_results.log
 toggle_validation_output.txt
 
-# Security - Private keys
+# Security - Private keys and certificates
 *.pem
 *.key
 *.p12
 *.pfx
 *.crt
 *.cer
+*.p8
+*.p7b
 id_rsa
 id_ed25519
+id_ecdsa
 *.pub
+*.ppk
+**/bootcamp.pem
+**/*.pem
