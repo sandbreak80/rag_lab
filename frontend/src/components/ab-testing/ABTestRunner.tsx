@@ -32,26 +32,35 @@ export function ABTestRunner({
     if (!testId || !isRunning) return;
 
     const pollInterval = setInterval(async () => {
-      try {
-        const result = await api.getABTestResult(testId);
-        if (result.status === 'running') {
-          setStatusMessage(result.message || 'Test is running...');
-          return;
-        }
-
-        // Test completed
-        clearInterval(pollInterval);
-        setIsRunning(false);
-        onResults(result);
-      } catch (error: any) {
-        console.error('Error polling for results:', error);
-        const errorMessage = error?.response?.data?.detail || error?.message || 'Unknown error';
-        if (errorMessage.includes('error') || error?.response?.status === 500) {
-          clearInterval(pollInterval);
-          setIsRunning(false);
-          alert(`Test failed: ${errorMessage}`);
-        }
-      }
+                  try {
+                    const result = await api.getABTestResult(testId);
+                    if (result.status === 'running') {
+                      setStatusMessage(result.message || 'Test is running...');
+                      return;
+                    }
+                    
+                    // Check for error status
+                    if (result.status === 'error') {
+                      clearInterval(pollInterval);
+                      setIsRunning(false);
+                      const errorMsg = result.error || result.message || 'Test failed with unknown error';
+                      alert(`Test failed: ${errorMsg}`);
+                      return;
+                    }
+                    
+                    // Test completed successfully
+                    clearInterval(pollInterval);
+                    setIsRunning(false);
+                    onResults(result);
+                  } catch (error: any) {
+                    console.error('Error polling for results:', error);
+                    const errorMessage = error?.response?.data?.detail || error?.response?.data?.error || error?.message || 'Unknown error';
+                    if (errorMessage.includes('error') || error?.response?.status === 500) {
+                      clearInterval(pollInterval);
+                      setIsRunning(false);
+                      alert(`Test failed: ${errorMessage}`);
+                    }
+                  }
     }, 2000); // Poll every 2 seconds
 
     return () => clearInterval(pollInterval);
