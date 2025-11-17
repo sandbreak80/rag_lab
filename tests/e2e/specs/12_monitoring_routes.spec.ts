@@ -43,10 +43,10 @@ test('Metrics endpoint accessible', async ({ request, baseURL }) => {
 
     // Should contain Prometheus-format metrics
     const hasPrometheusFormat = body.match(/^[a-z_]+{.*}|^# HELP|^# TYPE/m);
-    
+
     // Should have our custom metrics (check for any rag_ metric) OR be valid Prometheus format
     const hasRagMetrics = body.match(/rag_/);
-    
+
     if (hasPrometheusFormat || hasRagMetrics) {
       console.log('✅ Metrics endpoint working');
     } else {
@@ -56,7 +56,7 @@ test('Metrics endpoint accessible', async ({ request, baseURL }) => {
     console.log(`⚠️  Metrics endpoint not accessible (status: ${metrics.status()})`);
     console.log('   This is optional - Prometheus might not be configured');
   }
-  
+
   // Test passes if endpoint exists (200) or doesn't exist (404) - both are valid
   expect([200, 404, 502, 503]).toContain(metrics.status());
 });
