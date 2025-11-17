@@ -41,6 +41,9 @@ services:
       - ollama-models:/root/.ollama
     environment:
       - OLLAMA_HOST=0.0.0.0
+      # Set default context window to 32K (maximum for most models)
+      # This is a fallback - individual API calls can override with num_ctx parameter
+      - OLLAMA_CONTEXT_LENGTH=32768
     restart: unless-stopped
     # GPU support - ENABLED by default for Ubuntu/NVIDIA. COMMENT OUT for Mac/CPU-only
     deploy:
