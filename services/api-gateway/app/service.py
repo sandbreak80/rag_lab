@@ -925,7 +925,7 @@ def get_gpu_status():
                 text=True,
                 timeout=5
             )
-            if result.returncode == 0 and result.stdout:
+            if result.returncode == 0 and result.stdout and result.stdout.strip():
                 gpu_available = True
                 gpu_info = result.stdout.strip()
         except:
