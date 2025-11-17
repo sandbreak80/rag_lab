@@ -16,14 +16,14 @@ export function ComparisonView({
   configB
 }: ComparisonViewProps) {
   console.log('🔍 ComparisonView: testResults:', testResults);
-  
+
   if (!testResults) {
     console.log('⚠️ ComparisonView: testResults is null/undefined');
     return <div className="text-muted-foreground">No results to display</div>;
   }
 
   const { result_a, result_b, metrics_a, metrics_b, grader_result, winner } = testResults;
-  
+
   console.log('🔍 ComparisonView: Extracted values:', {
     has_result_a: !!result_a,
     has_result_b: !!result_b,
