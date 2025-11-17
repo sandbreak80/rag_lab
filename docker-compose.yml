@@ -150,7 +150,7 @@ services:
     environment:
       - SERVICE_NAME=embedding-service
       - SERVICE_PORT=8006
-      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_BASE_URL=http://rag-ollama:11434
       - PYTHONPATH=/workspace
       - PYTHONUNBUFFERED=1
     command: bash -c "pip install -q flask flask-cors requests && python -u service.py"
@@ -219,7 +219,7 @@ services:
       - SERVICE_NAME=chat-service
       - SERVICE_PORT=8003
       - SEARCH_SERVICE_URL=http://search-service:8002
-      - LLM_SERVICE_URL=http://ollama:11434
+      - LLM_SERVICE_URL=http://rag-ollama:11434
       - CHAT_MODEL=llama3.1:8b
       - PYTHONPATH=/workspace
     command: bash -c "pip install -q flask flask-cors requests && python -u service.py"
@@ -357,7 +357,7 @@ services:
     environment:
       - SERVICE_NAME=reranker-service
       - SERVICE_PORT=8008
-      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_BASE_URL=http://rag-ollama:11434
       - CHAT_MODEL=llama3.1:8b
       - PYTHONPATH=/workspace
     command: bash -c "pip install -q flask flask-cors requests && python -u service.py"
@@ -513,7 +513,7 @@ services:
     environment:
       - SERVICE_NAME=prompt-enhancement
       - SERVICE_PORT=8012
-      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_BASE_URL=http://rag-ollama:11434
       - PROMPT_CLASSIFIER_URL=http://prompt-classifier:8017
       - PYTHONPATH=/workspace
     command: bash -c "apt-get update -qq && apt-get install -y -qq curl && pip install -q -r /requirements.txt && python -u service.py"
@@ -655,7 +655,7 @@ services:
     environment:
       - SERVICE_NAME=model-router
       - SERVICE_PORT=8018
-      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_URL=http://rag-ollama:11434
       - PROMPT_CLASSIFIER_URL=http://prompt-classifier:8017
       - PYTHONPATH=/workspace
     command: bash -c "apt-get update -qq && apt-get install -y -qq curl && pip install -q -r /requirements.txt && python -u service.py"
@@ -686,7 +686,7 @@ services:
     environment:
       - SERVICE_NAME=query-decomposer
       - SERVICE_PORT=8019
-      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_BASE_URL=http://rag-ollama:11434
       - DECOMPOSER_MODEL=llama3.1:8b
       - PYTHONPATH=/workspace
     depends_on:
@@ -715,7 +715,7 @@ services:
     environment:
       - SERVICE_NAME=self-rag
       - SERVICE_PORT=8020
-      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_URL=http://rag-ollama:11434
       - SEARCH_SERVICE_URL=http://search-service:8003
       - PYTHONPATH=/workspace
     depends_on:
@@ -754,7 +754,7 @@ services:
     environment:
       - SERVICE_NAME=api-gateway
       - SERVICE_PORT=8000
-      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_BASE_URL=http://rag-ollama:11434
       - SEARCH_SERVICE_URL=http://search-service:8002
       - CHAT_SERVICE_URL=http://chat-service:8003
       - VECTOR_DB_URL=http://vector-db:8005
@@ -828,7 +828,7 @@ services:
       EMBED_URL: "http://embedding-service:8006/embed"
       EMBEDDING_URL: "http://embedding-service:8006"
       SEARXNG_URL: "http://searxng:8080"
-      OLLAMA_URL: "http://ollama:11434"
+      OLLAMA_URL: "http://rag-ollama:11434"
       RAG_LLM_MODEL: "llama3.2:3b"
       RAG_LLM_MAX_TOKENS: "300"
 
