@@ -18,7 +18,7 @@ from ..config import (
     FRESHNESS_HOURS, TOPN, AB_TEST_ENABLED
 )
 from ..authz.abac import build_acl_predicate
-from ..adapters import vector, web, llm
+from ..adapters import vector, web, llm, kg
 from ..pipeline.recency_gate import evaluate_recency_gate
 from ..pipeline.ab_grader import ABGrader
 from ..pipeline.guardrail_client import check_guardrails, get_security_status
@@ -174,6 +174,19 @@ async def rag_query(req: RagQuery):
                     t_web_end = time.perf_counter()
                     web_span.set_attribute("docs_retrieved", len(results))
                     return results, int((t_web_end - t_web_start) * 1000)
+            
+            async def kg_search_task():
+                with tracer.start_as_current_span("retrieve_kg.relationships") as kg_span:
+                    t_kg_start = time.perf_counter()
+                    results = await kg.search(
+                        query=req.query,
+                        vector_results=vector_results,
+                        top_k=5,
+                        use_mock=USE_MOCK_VECTOR  # Use same mock setting as vector
+                    )
+                    t_kg_end = time.perf_counter()
+                    kg_span.set_attribute("docs_retrieved", len(results))
+                    return results, int((t_kg_end - t_kg_start) * 1000)
 
             # B1: Early-stop logic - check if vector results are strong enough
             RAG_EARLYSTOP_MIN_HITS = int(os.getenv("RAG_EARLYSTOP_MIN_HITS", "8"))
@@ -196,40 +209,56 @@ async def rag_query(req: RagQuery):
                 span.set_attribute("web.skipped", True)
                 span.set_attribute("web.skip_reason", "disabled_in_settings")
                 logger.info("Web search disabled in settings")
-
-            # Evaluate early-stop: skip web if vector has strong hits (only if web is enabled)
-            elif len(vector_results) >= RAG_EARLYSTOP_MIN_HITS:
-                # Check if median score is above threshold
-                scores = [r.score for r in vector_results if hasattr(r, 'score')]
-                if scores:
-                    median_score = sorted(scores)[len(scores) // 2]
-                    if median_score >= RAG_EARLYSTOP_MIN_SCORE:
-                        web_skipped = True
-                        web_reason = "early_stop"
-                        span.set_attribute("web.skipped", True)
-                        span.set_attribute("web.skip_reason", "strong_vector_hits")
-                        RAG_RETRIEVAL_WEB_SKIPPED.inc()
-                        logger.info(
-                            f"Early-stop: Skipping web search (vector: {len(vector_results)} hits, "
-                            f"median_score: {median_score:.3f} >= {RAG_EARLYSTOP_MIN_SCORE})"
-                        )
+            else:
+                # Evaluate early-stop: skip web if vector has strong hits
+                # BUT: Only apply early-stop if explicitly enabled via env var
+                # If web_search_enabled=True, respect user's choice to enable web search
+                RAG_EARLYSTOP_ENABLED = os.getenv("RAG_EARLYSTOP_ENABLED", "true").lower() == "true"
+                
+                if RAG_EARLYSTOP_ENABLED and len(vector_results) >= RAG_EARLYSTOP_MIN_HITS:
+                    # Check if median score is above threshold
+                    scores = [r.score for r in vector_results if hasattr(r, 'score')]
+                    if scores:
+                        median_score = sorted(scores)[len(scores) // 2]
+                        if median_score >= RAG_EARLYSTOP_MIN_SCORE:
+                            web_skipped = True
+                            web_reason = "early_stop"
+                            span.set_attribute("web.skipped", True)
+                            span.set_attribute("web.skip_reason", "strong_vector_hits")
+                            RAG_RETRIEVAL_WEB_SKIPPED.inc()
+                            logger.info(
+                                f"Early-stop: Skipping web search (vector: {len(vector_results)} hits, "
+                                f"median_score: {median_score:.3f} >= {RAG_EARLYSTOP_MIN_SCORE})"
+                            )
 
             # Execute web search if not skipped
             if not web_skipped:
                 web_results, web_ms = await web_search_task()
                 span.set_attribute("web.skipped", False)
                 web_reason = "ok"
+            
+            # Knowledge Graph search (if enabled)
+            kg_results = []
+            kg_ms = 0
+            if req.use_graph:
+                kg_results, kg_ms = await kg_search_task()
+                span.set_attribute("kg.enabled", True)
+                span.set_attribute("kg.docs_retrieved", len(kg_results))
+            else:
+                span.set_attribute("kg.enabled", False)
 
             t_retrieve_end = time.perf_counter()
             stage_timings["vector_ms"] = vector_ms
             stage_timings["web_ms"] = web_ms
+            stage_timings["kg_ms"] = kg_ms
             stage_timings["retrieve_parallel_ms"] = int((t_retrieve_end - t_retrieve_start) * 1000)
             stage_timings["web_skipped"] = web_skipped
             stage_timings["web_reason"] = web_reason
             stage_timings["web_enabled"] = req.web_search_enabled
+            stage_timings["kg_enabled"] = req.use_graph
 
             # Combine results
-            all_results = vector_results + web_results
+            all_results = vector_results + web_results + kg_results
 
             span.set_attribute("rag.retrieve.candidate_count", len(all_results))
             span.set_attribute("rag.retrieve.acl_filtered_count", vector_stats.get("acl_filtered_count", 0))
@@ -252,6 +281,11 @@ async def rag_query(req: RagQuery):
                     "retriever": "web_search",
                     "k_returned": len(web_results)
                 }],
+                "kg_queries": [{
+                    "query": req.query,
+                    "retriever": "knowledge_graph",
+                    "k_returned": len(kg_results)
+                }] if req.use_graph else [],
                 "total_retrieved": len(all_results)
             }
 
@@ -306,8 +340,32 @@ async def rag_query(req: RagQuery):
             # ===================================================================
             # STAGE 4: Rerank (simple score sort for now)
             # ===================================================================
+            # Sort results by score, but ensure we have a mix of source types in top results
             sorted_results = sorted(all_results, key=lambda x: x.score, reverse=True)
+            
+            # Take top results, ensuring web and KG results are included if available
             top_results = sorted_results[:TOPN]
+            
+            # If we have web/KG results but they're not in top_results, add some
+            # This ensures web/KG sources appear in citations
+            if len(web_results) > 0 or len(kg_results) > 0:
+                # Get top web and KG results that aren't already in top_results
+                top_result_ids = {(r.doc_id, r.chunk_id) for r in top_results}
+                
+                # Add top web results if not already included
+                for web_result in web_results[:2]:  # Add up to 2 web results
+                    if (web_result.doc_id, web_result.chunk_id) not in top_result_ids:
+                        top_results.append(web_result)
+                        top_result_ids.add((web_result.doc_id, web_result.chunk_id))
+                
+                # Add top KG results if not already included
+                for kg_result in kg_results[:2]:  # Add up to 2 KG results
+                    if (kg_result.doc_id, kg_result.chunk_id) not in top_result_ids:
+                        top_results.append(kg_result)
+                        top_result_ids.add((kg_result.doc_id, kg_result.chunk_id))
+                
+                # Re-sort to maintain score order
+                top_results = sorted(top_results, key=lambda x: x.score, reverse=True)[:TOPN]
 
             span.set_attribute("rag.rerank.model", "score_sort")
 
