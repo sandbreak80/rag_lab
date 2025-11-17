@@ -101,7 +101,10 @@ async def generate_real(
         }
         logger.info(f"Ollama API call: model={model}, num_ctx={context_window}, num_predict={max_tokens}, temperature={temperature}")
 
-        async with httpx.AsyncClient(timeout=30.0) as cx:
+        # Larger models (14B+) may need more time to load and generate
+        # Increase timeout for larger models
+        timeout_seconds = 300.0 if "14b" in model.lower() or "9b" in model.lower() else 30.0
+        async with httpx.AsyncClient(timeout=timeout_seconds) as cx:
             response = await cx.post(
                 f"{ollama_url}/api/chat",
                 json={
