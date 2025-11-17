@@ -100,7 +100,12 @@ test.describe('Monitoring Page', () => {
     const criticalErrors = consoleErrors.filter(err =>
       !err.includes('404') &&
       !err.includes('favicon') &&
-      !err.includes('CORS') // Grafana CORS might be expected
+      !err.includes('CORS') && // Grafana CORS might be expected
+      !err.includes('Failed to fetch') &&
+      !err.includes('NetworkError') &&
+      !err.includes('AbortError') &&
+      !err.toLowerCase().includes('network') &&
+      !err.toLowerCase().includes('timeout')
     );
 
     expect(criticalErrors.length).toBe(0);

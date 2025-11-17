@@ -106,7 +106,7 @@ test.describe('ACL Security', () => {
       console.log('⚠️  No private content markers found in citations - test data might not be uploaded');
       console.log(`   Found ${data.citations.length} citations, but none match private content patterns`);
     }
-    
+
     // Test passes if we have citations (ACL is working, even if test data isn't present)
     expect(data.citations.length).toBeGreaterThan(0);
   });

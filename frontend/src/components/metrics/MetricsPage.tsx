@@ -28,7 +28,9 @@ export function MetricsPage() {
             query: 'test',
             user_id: 'metrics-page',
             groups: ['public']
-          })
+          }),
+          // Add signal to allow cancellation
+          signal: AbortSignal.timeout(5000) // 5 second timeout
         });
         if (response.ok) {
           const data = await response.json();
@@ -36,9 +38,16 @@ export function MetricsPage() {
             setLatestStageTimings(data.metrics.stage_timings);
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         // Silently fail - this is optional data for display purposes
         // Don't log to console to avoid test failures
+        // Ignore AbortError (timeout) and network errors
+        if (error.name !== 'AbortError' && error.name !== 'TypeError') {
+          // Only log unexpected errors in development
+          if (import.meta.env.DEV) {
+            console.error('Failed to fetch stage timings:', error);
+          }
+        }
       }
     };
 

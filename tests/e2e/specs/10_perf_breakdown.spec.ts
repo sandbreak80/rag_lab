@@ -45,6 +45,23 @@ test('Performance section shows stage timings', async ({ page, baseURL }) => {
         if (await perfBreakdownAfter.first().isVisible().catch(() => false)) {
           const hasTimings = await page.locator('[data-testid*="perf-"], [data-testid*="-ms"]').count();
           expect(hasTimings).toBeGreaterThan(0);
+        } else {
+          // Performance breakdown might not have data - check metrics row as fallback
+          const latency = page.locator('[data-testid="metrics-latency"]');
+          if (await latency.isVisible().catch(() => false)) {
+            const latencyText = await latency.textContent();
+            expect(latencyText).toMatch(/\d+/); // Should contain numbers
+            console.log('✅ Latency shown in metrics row (performance breakdown not available)');
+          }
+        }
+      } else {
+        // No expand button - performance breakdown might not have data
+        // Check metrics row as fallback
+        const latency = page.locator('[data-testid="metrics-latency"]');
+        if (await latency.isVisible().catch(() => false)) {
+          const latencyText = await latency.textContent();
+          expect(latencyText).toMatch(/\d+/); // Should contain numbers
+          console.log('✅ Latency shown in metrics row (performance breakdown not available)');
         }
       }
     }
