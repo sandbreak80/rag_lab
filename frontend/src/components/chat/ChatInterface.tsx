@@ -272,6 +272,13 @@ export function ChatInterface() {
       };
 
       addMessage(assistantMessage);
+      
+      // Remove from pending requests since we got the response
+      const finalRequestId = data.request_id || requestId;
+      if (finalRequestId) {
+        removePendingRequest(finalRequestId);
+      }
+      
       setLoading(false);
 
       // Log metric
