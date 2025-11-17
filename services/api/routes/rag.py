@@ -174,7 +174,7 @@ async def rag_query(req: RagQuery):
                     t_web_end = time.perf_counter()
                     web_span.set_attribute("docs_retrieved", len(results))
                     return results, int((t_web_end - t_web_start) * 1000)
-            
+
             async def kg_search_task():
                 with tracer.start_as_current_span("retrieve_kg.relationships") as kg_span:
                     t_kg_start = time.perf_counter()
@@ -217,7 +217,7 @@ async def rag_query(req: RagQuery):
                 # Early-stop should only apply when web_search_enabled is not explicitly set to True
                 # For now, we'll make early-stop optional via env var, defaulting to False when web_search_enabled=True
                 RAG_EARLYSTOP_ENABLED = os.getenv("RAG_EARLYSTOP_ENABLED", "false").lower() == "true"
-                
+
                 # Only apply early-stop if explicitly enabled AND vector results are strong
                 if RAG_EARLYSTOP_ENABLED and len(vector_results) >= RAG_EARLYSTOP_MIN_HITS:
                     # Check if median score is above threshold
@@ -240,7 +240,10 @@ async def rag_query(req: RagQuery):
                 web_results, web_ms = await web_search_task()
                 span.set_attribute("web.skipped", False)
                 web_reason = "ok"
-            
+                logger.info(f"Web search executed: {len(web_results)} results")
+            else:
+                logger.info(f"Web search skipped: {web_reason}")
+
             # Knowledge Graph search (if enabled)
             kg_results = []
             kg_ms = 0
@@ -248,8 +251,10 @@ async def rag_query(req: RagQuery):
                 kg_results, kg_ms = await kg_search_task()
                 span.set_attribute("kg.enabled", True)
                 span.set_attribute("kg.docs_retrieved", len(kg_results))
+                logger.info(f"KG search executed: {len(kg_results)} results")
             else:
                 span.set_attribute("kg.enabled", False)
+                logger.info("KG search disabled")
 
             t_retrieve_end = time.perf_counter()
             stage_timings["vector_ms"] = vector_ms
@@ -350,26 +355,60 @@ async def rag_query(req: RagQuery):
             # Take top results, ensuring web and KG results are included if available
             top_results = sorted_results[:TOPN]
             
-            # If we have web/KG results but they're not in top_results, add some
+            # If we have web/KG results but they're not in top_results, add them
             # This ensures web/KG sources appear in citations
+            # We'll prioritize them by inserting them at the beginning or ensuring they're included
             if len(web_results) > 0 or len(kg_results) > 0:
                 # Get top web and KG results that aren't already in top_results
                 top_result_ids = {(r.doc_id, r.chunk_id) for r in top_results}
                 
+                # Collect web and KG results to add
+                results_to_add = []
+                
                 # Add top web results if not already included
-                for web_result in web_results[:2]:  # Add up to 2 web results
+                for web_result in web_results[:3]:  # Add up to 3 web results
                     if (web_result.doc_id, web_result.chunk_id) not in top_result_ids:
-                        top_results.append(web_result)
+                        results_to_add.append(web_result)
                         top_result_ids.add((web_result.doc_id, web_result.chunk_id))
                 
                 # Add top KG results if not already included
-                for kg_result in kg_results[:2]:  # Add up to 2 KG results
+                for kg_result in kg_results[:3]:  # Add up to 3 KG results
                     if (kg_result.doc_id, kg_result.chunk_id) not in top_result_ids:
-                        top_results.append(kg_result)
+                        results_to_add.append(kg_result)
                         top_result_ids.add((kg_result.doc_id, kg_result.chunk_id))
                 
-                # Re-sort to maintain score order
-                top_results = sorted(top_results, key=lambda x: x.score, reverse=True)[:TOPN]
+                # Add web/KG results to top_results, then re-sort
+                # This ensures they're included but maintains score-based ordering
+                top_results.extend(results_to_add)
+                
+                # Re-sort to maintain score order, but keep all results (don't truncate yet)
+                top_results = sorted(top_results, key=lambda x: x.score, reverse=True)
+                
+                # Now take TOPN, but ensure we have at least some web/KG if they were requested
+                # If we added web/KG results, make sure at least one of each type is in the final list
+                if results_to_add:
+                    # Separate by origin_tool
+                    web_in_top = [r for r in top_results[:TOPN] if r.origin_tool == "web_search"]
+                    kg_in_top = [r for r in top_results[:TOPN] if r.origin_tool == "knowledge_graph"]
+                    
+                    # If web was requested but not in top, add at least one
+                    if req.web_search_enabled and len(web_in_top) == 0 and len(web_results) > 0:
+                        # Find a web result not in top_results
+                        for web_result in web_results:
+                            if (web_result.doc_id, web_result.chunk_id) not in {(r.doc_id, r.chunk_id) for r in top_results[:TOPN]}:
+                                top_results.insert(TOPN - 1, web_result)  # Insert near the end
+                                break
+                    
+                    # If KG was requested but not in top, add at least one
+                    if req.use_graph and len(kg_in_top) == 0 and len(kg_results) > 0:
+                        # Find a KG result not in top_results
+                        for kg_result in kg_results:
+                            if (kg_result.doc_id, kg_result.chunk_id) not in {(r.doc_id, r.chunk_id) for r in top_results[:TOPN]}:
+                                top_results.insert(TOPN - 1, kg_result)  # Insert near the end
+                                break
+                
+                # Final truncation to TOPN
+                top_results = top_results[:TOPN]
 
             span.set_attribute("rag.rerank.model", "score_sort")
 
@@ -377,6 +416,11 @@ async def rag_query(req: RagQuery):
             # STAGE 5: Synthesis (LLM)
             # ===================================================================
             t_llm_start = time.perf_counter()
+            
+            # Log what's in top_results for debugging
+            origin_tools_in_prompt = [r.origin_tool for r in top_results]
+            logger.info(f"Top results for LLM prompt: {len(top_results)} results, origin_tools: {origin_tools_in_prompt}")
+            
             messages = build_prompt_messages(req.query, top_results)
 
             with tracer.start_as_current_span("synthesis_v1") as synth_span:
