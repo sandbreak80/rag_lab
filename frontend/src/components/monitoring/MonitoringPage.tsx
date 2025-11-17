@@ -5,8 +5,9 @@ import { TID } from '../../testids';
 export function MonitoringPage() {
   // Use proxied paths through nginx (port 3000) for Grafana and Prometheus
   // Grafana is configured with GF_SERVER_SERVE_FROM_SUB_PATH=true and GF_SERVER_ROOT_URL=http://...:3000/graf
+  // Access /graf/login directly to avoid redirect loop from /graf/ to /graf/login
   const baseUrl = window.location.origin; // Use current origin (works in dev and prod)
-  const grafanaUrl = import.meta.env.VITE_GRAFANA_URL || `${baseUrl}/graf/`;
+  const grafanaUrl = import.meta.env.VITE_GRAFANA_URL || `${baseUrl}/graf/login`;
   const prometheusUrl = import.meta.env.VITE_PROMETHEUS_URL || `${baseUrl}/prom/`;
 
   return (
