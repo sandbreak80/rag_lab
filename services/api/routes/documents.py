@@ -183,6 +183,7 @@ async def upload_documents(
 
     total_chunks = 0
     processed_files = 0
+    failed_files = []  # Track failed files with reasons
 
     with span("document_upload", attributes={
         "rag.upload.num_files": len(files),
@@ -194,7 +195,9 @@ async def upload_documents(
                     # 1. Read file
                     text = await _read_file(f)
                     if not text or len(text.strip()) < 50:
-                        logger.warning(f"Skipping {f.filename}: empty or too short")
+                        reason = f"File extraction failed or text too short ({len(text.strip()) if text else 0} chars)"
+                        logger.warning(f"Skipping {f.filename}: {reason}")
+                        failed_files.append({"filename": f.filename, "reason": reason})
                         continue
 
                     # 2. Agentic chunking with overlap
@@ -267,7 +270,9 @@ async def upload_documents(
                         detail=f"Failed to process {f.filename}: {str(e)}"
                     )
                 except Exception as e:
-                    logger.error(f"Error processing {f.filename}: {e}")
+                    error_msg = str(e)
+                    logger.error(f"Error processing {f.filename}: {e}", exc_info=True)
+                    failed_files.append({"filename": f.filename, "reason": error_msg})
                     # Continue with other files instead of failing entire batch
                     continue
 
@@ -275,9 +280,15 @@ async def upload_documents(
         upload_span.set_attribute("rag.upload.files_processed", processed_files)
 
     if processed_files == 0:
+        error_detail = "No files could be processed. "
+        if failed_files:
+            reasons = [f"{f['filename']}: {f['reason']}" for f in failed_files]
+            error_detail += f"Errors: {'; '.join(reasons)}"
+        else:
+            error_detail += "All files were skipped (empty or invalid)."
         raise HTTPException(
             status_code=400,
-            detail="No files could be processed"
+            detail=error_detail
         )
 
     return IngestResponse(
