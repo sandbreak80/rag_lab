@@ -113,7 +113,21 @@ export function DocumentList() {
     });
   }, [documents]);
 
-  // Early return for empty documents
+  // Calculate pagination (always calculate, even if empty)
+  const totalPages = Math.max(1, Math.ceil(userDocuments.length / DOCUMENTS_PER_PAGE));
+  const startIndex = Math.max(0, (currentPage - 1) * DOCUMENTS_PER_PAGE);
+  const endIndex = Math.min(startIndex + DOCUMENTS_PER_PAGE, userDocuments.length);
+  const paginatedDocuments = userDocuments.slice(startIndex, endIndex);
+
+  // Reset to page 1 if current page is out of bounds
+  // MUST be called before any conditional returns (Rules of Hooks)
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
+
+  // Early return for empty documents (AFTER all hooks)
   if (userDocuments.length === 0) {
     return (
       <Card>
@@ -127,19 +141,6 @@ export function DocumentList() {
       </Card>
     );
   }
-
-  // Calculate pagination (only when we have documents)
-  const totalPages = Math.max(1, Math.ceil(userDocuments.length / DOCUMENTS_PER_PAGE));
-  const startIndex = Math.max(0, (currentPage - 1) * DOCUMENTS_PER_PAGE);
-  const endIndex = Math.min(startIndex + DOCUMENTS_PER_PAGE, userDocuments.length);
-  const paginatedDocuments = userDocuments.slice(startIndex, endIndex);
-
-  // Reset to page 1 if current page is out of bounds
-  useEffect(() => {
-    if (totalPages > 0 && currentPage > totalPages) {
-      setCurrentPage(1);
-    }
-  }, [currentPage, totalPages]);
 
   return (
     <div className="space-y-4">
@@ -236,7 +237,7 @@ export function DocumentList() {
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 Previous
               </Button>
-              
+
               <div className="flex items-center gap-1">
                 {(() => {
                   try {
@@ -244,7 +245,7 @@ export function DocumentList() {
                     for (let i = 1; i <= totalPages; i++) {
                       pages.push(i);
                     }
-                    
+
                     return pages.map((page) => {
                       // Show first page, last page, current page, and pages around current
                       const showPage =
