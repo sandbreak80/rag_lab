@@ -22,10 +22,12 @@ export const useChatStore = create<ChatStore>((set, get) => {
 
   // Filter out old "Request Interrupted" messages - we now use polling instead
   const filteredMessages = savedMessages.filter((msg) => {
-    // Remove any messages containing "Request Interrupted" text
+    // Remove any messages containing "Request Interrupted" text (case-insensitive)
     if (msg.content && typeof msg.content === 'string') {
-      return !msg.content.includes('Request Interrupted') && 
-             !msg.content.includes('page was refreshed before the response completed');
+      const contentLower = msg.content.toLowerCase();
+      return !contentLower.includes('request interrupted') && 
+             !contentLower.includes('page was refreshed before the response completed') &&
+             !contentLower.includes('please resend your question');
     }
     return true;
   });
