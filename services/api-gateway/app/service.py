@@ -308,21 +308,13 @@ def get_stats():
         except:
             kg_stats = {}
 
-        # Get document list
+        # Get document list - Use /list endpoint for consistent counting
+        # This matches what the documents page uses and includes research documents
         try:
-            docs_response = requests.post(f"{VECTOR_DB_URL}/get_all", json={}, timeout=180)
+            docs_response = requests.get(f"{VECTOR_DB_URL}/list?page=1&page_size=10000", timeout=30)
             if docs_response.status_code == 200:
                 data = docs_response.json()
-                metadatas = data.get('metadatas', [])
-
-                # Extract unique filenames
-                filenames = set()
-                for metadata in metadatas:
-                    filename = metadata.get('filename') or metadata.get('file_name')
-                    if filename:
-                        filenames.add(filename)
-
-                documents = sorted(list(filenames))
+                documents = data.get('documents', [])
             else:
                 documents = []
         except:
