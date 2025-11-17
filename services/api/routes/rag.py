@@ -224,16 +224,16 @@ async def rag_query(req: RagQuery):
                     web_span.set_attribute("docs_retrieved", len(results))
                     return results, int((t_web_end - t_web_start) * 1000)
 
-                async def kg_search_task():
-                    with tracer.start_as_current_span("retrieve_kg.relationships") as kg_span:
-                        t_kg_start = time.perf_counter()
-                        # Always use real KG service - no mocks
-                        results = await kg.search(
-                            query=req.query,
-                            vector_results=vector_results,
-                            top_k=5,
-                            use_mock=False  # Always real - no mocks
-                        )
+            async def kg_search_task():
+                with tracer.start_as_current_span("retrieve_kg.relationships") as kg_span:
+                    t_kg_start = time.perf_counter()
+                    # Always use real KG service - no mocks
+                    results = await kg.search(
+                        query=req.query,
+                        vector_results=vector_results,
+                        top_k=5,
+                        use_mock=False  # Always real - no mocks
+                    )
                     t_kg_end = time.perf_counter()
                     kg_span.set_attribute("docs_retrieved", len(results))
                     return results, int((t_kg_end - t_kg_start) * 1000)
@@ -730,13 +730,13 @@ async def rag_query(req: RagQuery):
             # Build sources array - Show ALL retrieved results for transparency
             # Users want to see all top_k results, not just what LLM cited
             sources = []
-            
+
             # Add ALL top_results that went to the LLM (not just citations)
             cited_doc_ids = {c["doc_id"] for c in citations}
             for idx, result in enumerate(top_results):
                 # Mark if this was cited by the LLM
                 was_cited = result.doc_id in cited_doc_ids
-                
+
                 sources.append({
                     "doc_id": result.doc_id,
                     "chunk_id": getattr(result, 'chunk_id', f"{result.origin_tool}_{idx}"),
