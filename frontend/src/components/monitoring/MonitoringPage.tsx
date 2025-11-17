@@ -3,11 +3,11 @@ import { ExternalLink, Activity, Database, Cpu, Gauge } from 'lucide-react';
 import { TID } from '../../testids';
 
 export function MonitoringPage() {
-  // Use proxied paths through nginx (port 3000) for Grafana and Prometheus
-  // Grafana is configured with GF_SERVER_SERVE_FROM_SUB_PATH=true and GF_SERVER_ROOT_URL=http://...:3000/graf
-  // Access /graf/login directly to avoid redirect loop from /graf/ to /graf/login
+  // Use direct access to Grafana on port 3001 to avoid proxy redirect loop
+  // Grafana proxy through /graf/ has redirect loop issues, so use direct port access
   const baseUrl = window.location.origin; // Use current origin (works in dev and prod)
-  const grafanaUrl = import.meta.env.VITE_GRAFANA_URL || `${baseUrl}/graf/login`;
+  const baseHost = window.location.hostname; // Get hostname without port
+  const grafanaUrl = import.meta.env.VITE_GRAFANA_URL || `http://${baseHost}:3001`;
   const prometheusUrl = import.meta.env.VITE_PROMETHEUS_URL || `${baseUrl}/prom/`;
 
   return (
