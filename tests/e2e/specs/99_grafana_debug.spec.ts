@@ -116,12 +116,12 @@ test('Debug Grafana endpoint', async ({ page, baseURL }) => {
   // Basic check - page should load (even if it's a login page or redirect)
   const status = response?.status() || 0;
   expect([200, 301, 302]).toContain(status);
-  
+
   // If we got redirected, the final URL should still be a Grafana URL
   if (page.url() !== grafanaUrl) {
     expect(page.url()).toMatch(/\/graf/);
   }
-  
+
   // Page should have loaded successfully
   expect(status).toBe(200);
 });
