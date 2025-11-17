@@ -41,7 +41,6 @@ class TestResult:
     errors: Optional[List[str]] = None
     stage_timings: Optional[Dict[str, Any]] = None
     trace_id: Optional[str] = None
-    missing_timings: Optional[List[str]] = None
 
 class FeatureTester:
     def __init__(self, api_base: str = API_BASE):
