@@ -423,10 +423,46 @@ async def rag_query(req: RagQuery):
                 )
 
             # ===================================================================
-            # STAGE 4: Rerank (simple score sort for now)
+            # STAGE 4: Rerank (weighted scoring by source type)
             # ===================================================================
-            # Sort results by score, but ensure we have a mix of source types in top results
-            sorted_results = sorted(all_results, key=lambda x: x.score, reverse=True)
+            # Apply source-type weights to normalize scores across different retrieval methods
+            # RAG/Research: 1.0x (trusted internal sources)
+            # Web: 0.65x (external sources, less reliable)
+            # KG: 0.9x (graph relationships, good but secondary)
+            def get_weighted_score(result):
+                base_score = result.score
+                origin = result.origin_tool
+
+                # Research sources (from research agent) - highest priority
+                if origin == "research" or (hasattr(result, 'doc_id') and str(result.doc_id).startswith('research_')):
+                    return base_score * 1.0
+                # RAG sources (vector DB) - highest priority
+                elif origin == "rag":
+                    return base_score * 1.0
+                # Knowledge Graph - high priority but secondary to RAG
+                elif origin in ["knowledge_graph", "kg"]:
+                    return base_score * 0.9
+                # Web search - lower priority (external, less reliable)
+                elif origin in ["web_search", "web"]:
+                    return base_score * 0.65
+                # Default - unknown sources get neutral weight
+                else:
+                    return base_score * 0.8
+
+            # Sort by weighted score, then by original score as tiebreaker
+            sorted_results = sorted(
+                all_results,
+                key=lambda x: (get_weighted_score(x), x.score),
+                reverse=True
+            )
+
+            logger.info(f"Reranking: {len(all_results)} results with weighted scoring (RAG/Research: 1.0x, KG: 0.9x, Web: 0.65x)")
+
+            # Log score distribution for debugging
+            if sorted_results:
+                top_5_origins = [r.origin_tool for r in sorted_results[:5]]
+                top_5_scores = [f"{r.score:.3f}→{get_weighted_score(r):.3f}" for r in sorted_results[:5]]
+                logger.info(f"Top 5 after weighting: {top_5_origins} | Scores: {top_5_scores}")
 
             # Take top results, ensuring web and KG results are included if available
             top_results = sorted_results[:req.top_k]
@@ -454,11 +490,11 @@ async def rag_query(req: RagQuery):
                         top_result_ids.add((kg_result.doc_id, kg_result.chunk_id))
 
                 # Add web/KG results to top_results, then re-sort
-                # This ensures they're included but maintains score-based ordering
+                # This ensures they're included but maintains weighted score-based ordering
                 top_results.extend(results_to_add)
 
-                # Re-sort to maintain score order, but keep all results (don't truncate yet)
-                top_results = sorted(top_results, key=lambda x: x.score, reverse=True)
+                # Re-sort using weighted scores to maintain proper ordering
+                top_results = sorted(top_results, key=lambda x: (get_weighted_score(x), x.score), reverse=True)
 
                 # Now take TOPN, but ensure we have at least some web/KG if they were requested
                 # If we added web/KG results, make sure at least one of each type is in the final list
@@ -491,11 +527,29 @@ async def rag_query(req: RagQuery):
 
                 # Final truncation to top_k
                 top_results = top_results[:req.top_k]
-                # Log final state
-                final_web = [r for r in top_results if r.origin_tool in ["web_search", "web"]]
-                final_kg = [r for r in top_results if r.origin_tool in ["knowledge_graph", "kg"]]
-                if req.web_search_enabled or req.use_graph:
-                    logger.info(f"Final top_results: {len(top_results)} results, web: {len(final_web)}, kg: {len(final_kg)}")
+
+            # Log final source type distribution
+            source_counts = {}
+            for r in top_results:
+                origin = r.origin_tool
+                if origin == "research" or (hasattr(r, 'doc_id') and str(r.doc_id).startswith('research_')):
+                    source_counts['research'] = source_counts.get('research', 0) + 1
+                elif origin == "rag":
+                    source_counts['rag'] = source_counts.get('rag', 0) + 1
+                elif origin in ["knowledge_graph", "kg"]:
+                    source_counts['kg'] = source_counts.get('kg', 0) + 1
+                elif origin in ["web_search", "web"]:
+                    source_counts['web'] = source_counts.get('web', 0) + 1
+                else:
+                    source_counts['unknown'] = source_counts.get('unknown', 0) + 1
+
+            logger.info(f"Final top_{req.top_k} source distribution: {source_counts}")
+
+            # Log final state
+            final_web = [r for r in top_results if r.origin_tool in ["web_search", "web"]]
+            final_kg = [r for r in top_results if r.origin_tool in ["knowledge_graph", "kg"]]
+            if req.web_search_enabled or req.use_graph:
+                logger.info(f"Final top_results: {len(top_results)} results, web: {len(final_web)}, kg: {len(final_kg)}")
 
             span.set_attribute("rag.rerank.model", "score_sort")
 
