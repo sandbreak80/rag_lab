@@ -407,7 +407,7 @@ async def rag_query(req: RagQuery):
             sorted_results = sorted(all_results, key=lambda x: x.score, reverse=True)
 
             # Take top results, ensuring web and KG results are included if available
-            top_results = sorted_results[:TOPN]
+            top_results = sorted_results[:req.top_k]
 
             # If we have web/KG results but they're not in top_results, add them
             # This ensures web/KG sources appear in citations
