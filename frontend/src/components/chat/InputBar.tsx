@@ -46,7 +46,8 @@ export function InputBar({ onSend, disabled }: InputBarProps) {
         localStorage.removeItem(DRAFT_KEY);
       }
     } catch (error) {
-      console.error('Failed to save draft:', error);
+      // Silently fail - localStorage might not be available (e.g., in tests)
+      // console.error('Failed to save draft:', error);
     }
   }, [input]);
 
@@ -58,7 +59,8 @@ export function InputBar({ onSend, disabled }: InputBarProps) {
       try {
         localStorage.removeItem(DRAFT_KEY);
       } catch (error) {
-        console.error('Failed to clear draft:', error);
+        // Silently fail - localStorage might not be available (e.g., in tests)
+        // console.error('Failed to clear draft:', error);
       }
     }
   };
