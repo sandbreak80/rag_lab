@@ -16,7 +16,7 @@
 
 The Educational RAG Lab is a **production-ready reference architecture** for LLM deployments, designed for hands-on learning and customer demonstrations. It features:
 
-- **14 Microservices** - Complete production-grade RAG architecture
+- **20+ Microservices** - Complete production-grade RAG architecture
 - **Modern React UI** - TypeScript, Tailwind CSS, real-time streaming
 - **Performance Waterfall Chart** - Visualize RAG pipeline latency breakdown
 - **Authentication System** - JWT-based user auth with security controls
@@ -25,6 +25,9 @@ The Educational RAG Lab is a **production-ready reference architecture** for LLM
 - **Configuration Toggles** - UI controls for all RAG features
 - **Security Guardrails** - PII detection, rate limiting, input sanitization
 - **Research Agent** - Autonomous AI paper discovery and ingestion
+- **Weighted Scoring** - Prioritizes RAG/Research sources over web results
+- **Prompt Editor** - View and edit system prompts via UI
+- **Response Caching** - Redis-based caching for page refresh resilience
 - **Comprehensive Documentation** - Architecture, deployment, testing guides
 
 **Unique Value:**
@@ -197,35 +200,80 @@ docker compose ps
 
 ## 🏗️ System Architecture
 
+The RAG Lab is built as a **microservices architecture** with **20+ specialized services**:
+
+### Core RAG Pipeline
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     WEB UI (Port 5555)                       │
-│  Settings Panel | Metrics Dashboard | Comparison | Lab Guide │
-└────────────────────────────┬────────────────────────────────┘
-                             │
-          ┌──────────────────┼──────────────────┐
-          │                  │                  │
-    ┌─────▼─────┐     ┌─────▼──────┐    ┌─────▼─────┐
-    │  Search   │     │   Ingest   │    │  Vector   │
-    │  Service  │     │  Service   │    │    DB     │
-    │  (8002)   │     │   (8001)   │    │  (8005)   │
-    └─────┬─────┘     └────────────┘    └───────────┘
-          │
-    ┌─────┴─────────────┐
-    │                   │
-┌───▼────┐  ┌──────▼──────┐  ┌────────▼────────┐
-│Knowledge│  │  Reranker   │  │   Web Search    │
-│  Graph  │  │   (8008)    │  │ (8009 + 8080)   │
-│ (8007)  │  └─────────────┘  └─────────────────┘
-└─────────┘           │
-              ┌───────▼────────┐
-              │  Ollama (LLM)  │
-              │    (11434)     │
-              └────────────────┘
+User Query → Frontend (React) → Nginx → RAG API v1
+                                         ↓
+                    ┌────────────────────┼────────────────────┐
+                    │                    │                    │
+            Vector Search          Web Search         Knowledge Graph
+            (Vector DB)          (SearXNG)            (NetworkX)
+                    │                    │                    │
+                    └────────────────────┼────────────────────┘
+                                         ↓
+                              Weighted Scoring
+                              (RAG: 1.0x, KG: 0.9x, Web: 0.65x)
+                                         ↓
+                              Re-ranking (optional)
+                                         ↓
+                              LLM Synthesis (Ollama)
+                                         ↓
+                              Response + Sources
 ```
 
-**10 Microservices** working together to provide a complete RAG experience.
+### Service Categories
 
+**Core RAG Services (4):**
+- Vector DB (8005) - ChromaDB embeddings storage
+- Embedding Service (8006) - Text-to-vector conversion
+- Search Service (8002) - Hybrid search orchestration
+- Chat Service (8003) - Conversational interface
+
+**Document Processing (2):**
+- Docling Service (8004) - PDF parsing
+- Ingest Service (8001) - Document ingestion pipeline
+
+**Advanced RAG (2):**
+- Knowledge Graph (8007) - Document relationships
+- Reranker (8008) - LLM-based result ranking
+
+**Web Search (2):**
+- SearXNG (8080) - Meta-search engine
+- Web Search Service (8009) - RAG integration
+
+**Intelligence Layer (6):**
+- Research Agent (8015) - Auto-discovery of AI papers
+- Prompt Classifier (8017) - Query categorization
+- Prompt Enhancement (8012) - Framework-based rewriting
+- Model Router (8018) - Intelligent model selection
+- Query Decomposer (8019) - Complex query breakdown
+- Self-RAG (8020) - Quality-aware retrieval
+
+**API & Frontend (2):**
+- RAG API v1 (8080) - Modern FastAPI with observability
+- Frontend (3000) - React + TypeScript UI
+
+**Security (2):**
+- Security Guardrails (8013) - PII/toxicity detection
+- Auth Service (8014) - JWT authentication
+
+**Observability Stack (8):**
+- OpenTelemetry Collector - Trace/metric collection
+- Prometheus (9090) - Metrics database
+- Grafana (3001) - Visualization
+- Tempo (3200) - Distributed tracing
+- Loki (3100) - Log aggregation
+- Promtail - Log shipper
+- cAdvisor (9080) - Container metrics
+- Node Exporter (9100) - System metrics
+
+**Supporting Services (2):**
+- Redis - Response caching & rate limiting
+- Metrics Store (8011) - Historical metrics
+
+📖 **Complete Services Reference**: [docs/INFRASTRUCTURE_SERVICES_REFERENCE.md](docs/INFRASTRUCTURE_SERVICES_REFERENCE.md)  
 📖 **Full Architecture Documentation**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ---
@@ -273,15 +321,34 @@ Complete system documentation:
 
 ## 🛠️ Technology Stack
 
-- **Backend**: Python, Flask
+### Backend
+- **API Framework**: FastAPI (RAG API v1), Flask (legacy services)
+- **Language**: Python 3.11
 - **Vector Database**: ChromaDB
-- **LLM**: Ollama (llama3.2)
-- **Search**: Hybrid (Vector + BM25)
+- **LLM**: Ollama (llama3.1:8b, llama3.2:3b, and more)
+- **Search**: Hybrid (Vector + BM25) with Reciprocal Rank Fusion
 - **Knowledge Graph**: NetworkX
-- **Web Search**: SearXNG
-- **Document Processing**: Docling
+- **Web Search**: SearXNG (meta-search engine)
+- **Document Processing**: Docling (PDF parsing), PyPDF (fallback)
+- **Caching**: Redis (response caching, rate limiting)
+- **Observability**: OpenTelemetry, Prometheus, Grafana, Tempo, Loki
+
+### Frontend
+- **Framework**: React 18 + TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **State Management**: Zustand
+- **HTTP Client**: Axios
+- **Routing**: React Router
+- **UI Components**: Radix UI, Lucide Icons
+- **Web Server**: Nginx (production build)
+
+### Infrastructure
 - **Containerization**: Docker & Docker Compose
-- **Frontend**: Vanilla JavaScript, CSS
+- **Orchestration**: Docker Compose (20+ services)
+- **Networking**: Docker bridge network
+- **Data Persistence**: Docker volumes (14 volumes)
+- **GPU Support**: NVIDIA GPU (CUDA) for Ollama
 
 ---
 
