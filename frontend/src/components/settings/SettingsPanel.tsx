@@ -155,7 +155,7 @@ export function SettingsPanel() {
               <Slider
                 id="web-docs"
                 min={1}
-                max={10}
+                max={50}
                 step={1}
                 value={webSearchDocs}
                 onValueChange={setWebSearchDocs}
@@ -170,7 +170,7 @@ export function SettingsPanel() {
               <Slider
                 id="web-pages"
                 min={1}
-                max={3}
+                max={10}
                 step={1}
                 value={webSearchPages}
                 onValueChange={setWebSearchPages}
