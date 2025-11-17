@@ -66,16 +66,20 @@ async def grade_ab_responses(
             logger.warning("⚠️ Both responses are IDENTICAL - auto-grader will still evaluate but scores may be similar")
 
         # Use higher temperature for more variation in grading
-        # Add random seed to prevent caching
+        # Small models like llama3.2:3b need higher temperature to avoid copying examples
         import random
-        grading_temperature = 0.8  # Increased from 0.5 to 0.8 for more variation
+        grading_temperature = 0.9  # Increased to 0.9 for small models to prevent example copying
         random_seed = random.randint(1000, 9999)
-
+        
         logger.info(f"Calling LLM for auto-grading with model={model}, temperature={grading_temperature}, seed={random_seed}")
+        logger.info(f"Response A length: {len(response_a)}, Response B length: {len(response_b)}")
+        logger.info(f"Response A preview: {response_a[:100]}...")
+        logger.info(f"Response B preview: {response_b[:100]}...")
+        
         llm_response = await llm.generate(
             messages=messages,
             model=model,
-            temperature=grading_temperature,  # Increased to 0.8 for more variation
+            temperature=grading_temperature,  # 0.9 for small models to prevent copying
             max_tokens=2000,  # Increased from 1500 for more detailed evaluation
             use_mock=False  # Use real LLM for grading
         )
@@ -159,35 +163,46 @@ Evaluate each response on these dimensions (0.0-1.0 scale):
 5. conciseness: Appropriate length, no redundancy
 6. source_quality: Relevance and diversity of sources
 
-Return ONLY valid JSON in this exact format:
+CRITICAL: You must ACTUALLY EVALUATE the responses above. Do NOT copy example values. 
+Analyze the actual content, quality, and characteristics of Response A and Response B.
+Assign scores based on YOUR evaluation, not on any template or example.
+
+Return ONLY valid JSON in this exact format (replace the placeholder values with YOUR actual evaluation):
 {{
   "response_a": {{
-    "answer_quality": 0.85,
-    "relevance": 0.90,
-    "faithfulness": 0.88,
-    "completeness": 0.82,
-    "conciseness": 0.90,
-    "source_quality": 0.85,
-    "overall_score": 0.87,
-    "strengths": ["Clear structure", "Good citations"],
-    "weaknesses": ["Missing some details"]
+    "answer_quality": <YOUR_SCORE_0.0_to_1.0>,
+    "relevance": <YOUR_SCORE_0.0_to_1.0>,
+    "faithfulness": <YOUR_SCORE_0.0_to_1.0>,
+    "completeness": <YOUR_SCORE_0.0_to_1.0>,
+    "conciseness": <YOUR_SCORE_0.0_to_1.0>,
+    "source_quality": <YOUR_SCORE_0.0_to_1.0>,
+    "overall_score": <CALCULATED_WEIGHTED_AVERAGE>,
+    "strengths": ["<specific strength 1>", "<specific strength 2>"],
+    "weaknesses": ["<specific weakness 1>", "<specific weakness 2>"]
   }},
   "response_b": {{
-    "answer_quality": 0.80,
-    "relevance": 0.85,
-    "faithfulness": 0.82,
-    "completeness": 0.78,
-    "conciseness": 0.88,
-    "source_quality": 0.80,
-    "overall_score": 0.82,
-    "strengths": ["Comprehensive", "Well-organized"],
-    "weaknesses": ["Some redundancy"]
+    "answer_quality": <YOUR_SCORE_0.0_to_1.0>,
+    "relevance": <YOUR_SCORE_0.0_to_1.0>,
+    "faithfulness": <YOUR_SCORE_0.0_to_1.0>,
+    "completeness": <YOUR_SCORE_0.0_to_1.0>,
+    "conciseness": <YOUR_SCORE_0.0_to_1.0>,
+    "source_quality": <YOUR_SCORE_0.0_to_1.0>,
+    "overall_score": <CALCULATED_WEIGHTED_AVERAGE>,
+    "strengths": ["<specific strength 1>", "<specific strength 2>"],
+    "weaknesses": ["<specific weakness 1>", "<specific weakness 2>"]
   }},
-  "winner": "A",
-  "explanation": "Response A wins because it has better faithfulness and relevance, with clearer citations and more accurate information."
+  "winner": "<A or B or tie>",
+  "explanation": "<YOUR detailed explanation of why one response is better, or why they tie>"
 }}
 
-Return ONLY the JSON, no other text."""
+IMPORTANT: 
+- Replace ALL <YOUR_SCORE_0.0_to_1.0> placeholders with actual numeric scores from YOUR evaluation
+- Replace ALL <specific strength/weakness> placeholders with actual observations from the responses
+- Replace <CALCULATED_WEIGHTED_AVERAGE> with the calculated weighted average
+- Replace <A or B or tie> with the actual winner
+- Replace <YOUR detailed explanation> with your actual reasoning
+
+Return ONLY the JSON with real values, no other text."""
 
 
 def parse_grading_result(response_text: str) -> dict[str, Any]:

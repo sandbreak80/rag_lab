@@ -1287,7 +1287,7 @@ if __name__ == '__main__':
 
     # Load BM25 index (or build if it doesn't exist)
     index_loaded = load_bm25_index()
-    
+
     # Auto-build index if it doesn't exist and we have documents
     if not index_loaded:
         print("⚠️  BM25 index not found. Attempting to build on startup...")
