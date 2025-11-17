@@ -77,6 +77,7 @@ async def generate_real(
     model: str = "llama3.2:3b",
     temperature: float = 0.7,
     max_tokens: int = 300,
+    context_window: int = 4096,  # Total context window (input + output)
     ollama_url: str = "http://ollama:11434"
 ) -> LLMResponse:
     """
@@ -99,7 +100,8 @@ async def generate_real(
                     "stream": False,
                     "options": {
                         "temperature": temperature,
-                        "num_predict": max_tokens
+                        "num_predict": max_tokens,  # Maximum tokens to generate (output length)
+                        "num_ctx": context_window   # Total context window (input prompt + output response)
                     }
                 }
             )
@@ -178,11 +180,12 @@ async def generate(
     model: str = "llama3.1:8b",
     temperature: float = 0.7,
     max_tokens: int = 512,
+    context_window: int = 4096,  # Total context window (input + output)
     use_mock: bool = True
 ) -> LLMResponse:
     """Main entry point for LLM generation"""
     if use_mock:
         return await generate_mock(messages, model, temperature, max_tokens)
     else:
-        return await generate_real(messages, model, temperature, max_tokens, ollama_url="http://ollama:11434")
+        return await generate_real(messages, model, temperature, max_tokens, context_window, ollama_url="http://ollama:11434")
 
