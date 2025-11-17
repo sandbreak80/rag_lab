@@ -53,9 +53,10 @@ export function DocumentList() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
+  // Server-side pagination: pass currentPage to API
   const { data: response, isLoading, error } = useQuery({
-    queryKey: ['documents'],
-    queryFn: () => api.getDocuments(),
+    queryKey: ['documents', currentPage],
+    queryFn: () => api.getDocuments(currentPage, DOCUMENTS_PER_PAGE),
     refetchInterval: 10000, // Refetch every 10 seconds
     retry: 1,
     staleTime: 5000, // Consider data fresh for 5 seconds
@@ -67,6 +68,7 @@ export function DocumentList() {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       queryClient.invalidateQueries({ queryKey: ['stats'] });
       setShowResetConfirm(false);
+      setCurrentPage(1); // Reset to page 1 after reset
       showToast('success', '✅ Database reset successfully! System docs will be re-ingested automatically.');
     },
     onError: (error) => {
@@ -75,7 +77,7 @@ export function DocumentList() {
     },
   });
 
-  // Extract documents array from response
+  // Extract documents array from response (already paginated by server)
   const documents = Array.isArray(response?.documents) ? response.documents : [];
 
   // Filter out only test/debug documents (show everything else including lab docs)
@@ -96,12 +98,12 @@ export function DocumentList() {
     });
   }, [documents]);
 
-  // Calculate pagination (always calculate, even if empty)
+  // Use server-side pagination metadata (fallback to client-side if not available)
   // MUST be called before any conditional returns (Rules of Hooks)
-  const totalPages = Math.max(1, Math.ceil(userDocuments.length / DOCUMENTS_PER_PAGE));
-  const startIndex = Math.max(0, (currentPage - 1) * DOCUMENTS_PER_PAGE);
-  const endIndex = Math.min(startIndex + DOCUMENTS_PER_PAGE, userDocuments.length);
-  const paginatedDocuments = userDocuments.slice(startIndex, endIndex);
+  const totalPages = response?.total_pages ?? Math.max(1, Math.ceil((response?.total ?? userDocuments.length) / DOCUMENTS_PER_PAGE));
+  const totalDocuments = response?.total ?? userDocuments.length;
+  const startIndex = response?.page ? (response.page - 1) * (response.page_size ?? DOCUMENTS_PER_PAGE) : 0;
+  const endIndex = startIndex + userDocuments.length;
 
   // Reset to page 1 if current page is out of bounds
   // MUST be called before any conditional returns (Rules of Hooks)
@@ -193,12 +195,13 @@ export function DocumentList() {
       {/* Document List */}
       <div className="space-y-4">
         <div className="grid gap-3">
-          {paginatedDocuments.map((filename: string, index: number) => {
+          {userDocuments.map((filename: string, index: number) => {
             if (!filename || typeof filename !== 'string') {
               return null;
             }
             const Icon = getFileIcon(filename);
             const colorClass = getFileColor(filename);
+            // Global index across all pages (for display numbering)
             const globalIndex = startIndex + index;
 
             return (
@@ -228,7 +231,7 @@ export function DocumentList() {
         {totalPages > 1 && totalPages > 0 && (
           <div className="flex items-center justify-between pt-4 border-t">
             <div className="text-sm text-muted-foreground">
-              Showing {Math.max(1, startIndex + 1)} to {Math.min(endIndex, userDocuments.length)} of {userDocuments.length} documents
+              Showing {Math.max(1, startIndex + 1)} to {Math.min(endIndex, totalDocuments)} of {totalDocuments} documents
             </div>
             <div className="flex items-center gap-2">
               <Button
