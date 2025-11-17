@@ -65,21 +65,20 @@ async def grade_ab_responses(
         if response_a == response_b:
             logger.warning("⚠️ Both responses are IDENTICAL - auto-grader will still evaluate but scores may be similar")
 
-        # Use higher temperature for more variation in grading
-        # Small models like llama3.2:3b need higher temperature to avoid copying examples
+        # Use normal temperature for consistent grading
         import random
-        grading_temperature = 0.9  # Increased to 0.9 for small models to prevent example copying
+        grading_temperature = 0.3  # Normal temperature for consistent evaluation
         random_seed = random.randint(1000, 9999)
-        
+
         logger.info(f"Calling LLM for auto-grading with model={model}, temperature={grading_temperature}, seed={random_seed}")
         logger.info(f"Response A length: {len(response_a)}, Response B length: {len(response_b)}")
         logger.info(f"Response A preview: {response_a[:100]}...")
         logger.info(f"Response B preview: {response_b[:100]}...")
-        
+
         llm_response = await llm.generate(
             messages=messages,
             model=model,
-            temperature=grading_temperature,  # 0.9 for small models to prevent copying
+            temperature=grading_temperature,  # 0.3 for consistent evaluation
             max_tokens=2000,  # Increased from 1500 for more detailed evaluation
             use_mock=False  # Use real LLM for grading
         )
@@ -147,13 +146,15 @@ TIMESTAMP: {timestamp} (Evaluate each response independently - do not use cached
 
 QUERY: "{prompt}"
 
-RESPONSE A:
-{response_a[:2000]}  # Truncate if too long
+RESPONSE A (Length: {len(response_a)} chars):
+{response_a[:10000]}  # First 10,000 chars (full response may be longer)
 Sources: {sources_a_summary}
 
-RESPONSE B:
-{response_b[:2000]}  # Truncate if too long
+RESPONSE B (Length: {len(response_b)} chars):
+{response_b[:10000]}  # First 10,000 chars (full response may be longer)
 Sources: {sources_b_summary}
+
+NOTE: Response lengths may differ significantly. Evaluate the FULL content provided, not just length.
 
 Evaluate each response on these dimensions (0.0-1.0 scale):
 1. answer_quality: Completeness, accuracy, clarity, structure
@@ -163,7 +164,7 @@ Evaluate each response on these dimensions (0.0-1.0 scale):
 5. conciseness: Appropriate length, no redundancy
 6. source_quality: Relevance and diversity of sources
 
-CRITICAL: You must ACTUALLY EVALUATE the responses above. Do NOT copy example values. 
+CRITICAL: You must ACTUALLY EVALUATE the responses above. Do NOT copy example values.
 Analyze the actual content, quality, and characteristics of Response A and Response B.
 Assign scores based on YOUR evaluation, not on any template or example.
 
@@ -195,7 +196,7 @@ Return ONLY valid JSON in this exact format (replace the placeholder values with
   "explanation": "<YOUR detailed explanation of why one response is better, or why they tie>"
 }}
 
-IMPORTANT: 
+IMPORTANT:
 - Replace ALL <YOUR_SCORE_0.0_to_1.0> placeholders with actual numeric scores from YOUR evaluation
 - Replace ALL <specific strength/weakness> placeholders with actual observations from the responses
 - Replace <CALCULATED_WEIGHTED_AVERAGE> with the calculated weighted average
