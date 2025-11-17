@@ -185,8 +185,7 @@ class FeatureTester:
                 timing=elapsed,
                 sources=sources,
                 stage_timings=stage_timings,
-                trace_id=trace_id,
-                missing_timings=missing_timings if missing_timings else None
+                trace_id=trace_id
             )
 
         except Exception as e:
