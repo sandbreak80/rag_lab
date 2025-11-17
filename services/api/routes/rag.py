@@ -690,7 +690,7 @@ async def rag_query(req: RagQuery):
                 # Use model and temperature from request if provided, otherwise use defaults
                 llm_model = getattr(req, 'model', None) or "llama3.1:8b"
                 llm_temperature = getattr(req, 'temperature', None) or 0.7
-                
+
                 llm_response = await llm.generate(
                     messages=messages,
                     model=llm_model,  # Use model from request (from preset config)
