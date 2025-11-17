@@ -99,27 +99,27 @@ class FeatureTester:
                 for citation in data['citations']:
                     origin = citation.get('origin_tool', 'unknown')
                     sources.append(origin)
-            
+
             # Also check sources field if present
             if 'sources' in data and data['sources']:
                 for source in data['sources']:
                     origin = source.get('origin_tool', source.get('source_type', 'unknown'))
                     if origin not in sources:
                         sources.append(origin)
-            
+
             # Check if expected sources are present
             # For features that should return specific source types, validate them
             # For general RAG features, any sources are acceptable
             source_check = True
             missing_sources = []
             messages = []
-            
+
             if expected_sources:
                 # Check if any of the expected sources are present
                 source_lower = [s.lower() for s in sources]
                 expected_lower = [e.lower() for e in expected_sources]
                 found_any = any(any(exp in src for exp in expected_lower) for src in source_lower)
-                
+
                 if not found_any:
                     # If we have sources but not the expected type, note it
                     if len(sources) > 0:
@@ -138,36 +138,36 @@ class FeatureTester:
             else:
                 # No expected sources and no sources - might be OK for some features
                 messages.append("⚠️  No sources returned")
-            
+
             # Check for timing data (optional - may be new feature)
             has_timing = 'artifacts' in data and 'stage_timings' in data.get('artifacts', {})
             # Also check metrics.stage_timings
             if not has_timing and 'metrics' in data:
                 has_timing = 'stage_timings' in data.get('metrics', {})
-            
+
             # Check for trace_id (optional - for observability)
             has_trace = 'trace_id' in data
-            
+
             # Validate answer (REQUIRED)
             has_answer = 'answer' in data and len(data.get('answer', '')) > 0
-            
+
             # Build result message
             if not has_answer:
                 messages.append("❌ No answer returned")
             else:
                 messages.append(f"✅ Answer returned ({len(data['answer'])} chars)")
-            
+
             # Timing and trace are optional - note if missing but don't fail
             if has_timing:
                 messages.append("✅ Timing data present")
             else:
                 messages.append("⚠️  No timing data (may be new feature)")
-            
+
             if has_trace:
                 messages.append("✅ Trace ID present")
             else:
                 messages.append("⚠️  No trace_id (observability may be disabled)")
-            
+
             # Pass if we have answer and expected sources (functionality works)
             # Timing and trace are nice-to-have but not required
             # For features without expected sources, just need an answer
@@ -228,7 +228,7 @@ class FeatureTester:
         }
         # Any sources are OK - BM25 is about search method, not source type
         return self.test_feature("C. BM25 Search", config, expected_sources=None)
-    
+
     def test_hybrid_search(self) -> TestResult:
         """Test D. Hybrid Search"""
         # Hybrid combines vector + BM25, returns RAG sources
@@ -299,7 +299,7 @@ class FeatureTester:
         }
         # Any sources are OK - enhancement is about prompt quality, not source type
         return self.test_feature("J. Prompt Enhancement", config, expected_sources=None)
-    
+
     def test_auto_model_routing(self) -> TestResult:
         """Test K. Auto Model Routing"""
         # Auto routing selects model, doesn't change source types
@@ -365,7 +365,7 @@ class FeatureTester:
         }
         # Any sources are OK - Self-RAG is about answer quality, not source type
         return self.test_feature("M. Self-RAG", config, expected_sources=None)
-    
+
     def test_show_reasoning(self) -> TestResult:
         """Test N. Show Reasoning Process"""
         # Show reasoning adds reasoning to answer, doesn't change source types
@@ -375,7 +375,7 @@ class FeatureTester:
         }
         # Any sources are OK - reasoning is about answer format, not source type
         return self.test_feature("N. Show Reasoning Process", config, expected_sources=None)
-    
+
     def test_vector_database(self) -> TestResult:
         """Test O. Vector Database"""
         # Vector DB is the default search method, returns RAG sources

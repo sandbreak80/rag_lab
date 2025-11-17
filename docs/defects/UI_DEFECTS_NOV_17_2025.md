@@ -201,6 +201,17 @@ This document tracks UI defects and corresponding backend test requirements to v
 - [ ] Test KG can be enabled/disabled
 - [ ] Test KG metrics in OTel
 
+**Known Issues (Nov 17, 2025):**
+- ✅ **Backend Test Results:** 87.5% pass rate (14/16 tests passing)
+- ❌ **Knowledge Graph Issue:** Knowledge Graph is NOT implemented in RAG API v1
+  - RAG API v1 only implements vector search and web search
+  - Knowledge Graph exists in other services (`services/search/app/service.py`) but not in RAG API v1
+  - **Location:** `services/api/routes/rag.py` - no KG implementation found
+  - **Fix Required:** 
+    - Implement knowledge graph search in RAG API v1
+    - Add KG results to retrieval pipeline
+    - Tag KG results with `origin_tool='knowledge_graph'` or `'kg'`
+
 ---
 
 ### F. LLM Re-ranking
@@ -222,6 +233,17 @@ This document tracks UI defects and corresponding backend test requirements to v
 - [ ] Test web search can be enabled/disabled
 - [ ] Test web search metrics in OTel
 - [ ] **CRITICAL:** Currently not showing web sources in chat results
+
+**Known Issues (Nov 17, 2025):**
+- ✅ **Backend Test Results:** 87.5% pass rate (14/16 tests passing)
+- ❌ **Web Search Issue:** Web search is being skipped due to early-stop logic when vector results are strong
+  - Early-stop skips web search if `vector_results >= 8` AND `median_score >= 0.60`
+  - Even when web search runs, results may not be properly tagged with `origin_tool='web_search'`
+  - **Location:** `services/api/routes/rag.py` lines 200-215
+  - **Fix Required:** 
+    - Disable early-stop for testing, OR
+    - Force web search to run when `web_search_enabled=True`, OR
+    - Properly tag web results with `origin_tool='web_search'` in citations
 
 ---
 
@@ -386,10 +408,40 @@ This document tracks UI defects and corresponding backend test requirements to v
 
 ## ✅ Test Status
 
-- [ ] All backend tests created
-- [ ] All backend tests passing
+- [x] All backend tests created (`tests/test_backend_features_comprehensive.py`)
+- [x] Backend tests running (87.5% pass rate - 14/16 passing)
+- [ ] All backend tests passing (2 failures: Web Search, Knowledge Graph)
 - [ ] OTel integration verified
 - [ ] Grafana integration verified
 - [ ] Frontend timing display verified
 - [ ] All defects fixed
+
+## 📊 Test Results Summary (Nov 17, 2025)
+
+**Overall:** 14/16 tests passing (87.5% success rate)
+
+**Passing Features:**
+- ✅ A. Security Guardrails
+- ✅ B. Query Expansion
+- ✅ C. BM25 Search
+- ✅ D. Hybrid Search
+- ✅ F. LLM Re-ranking
+- ✅ H. Agentic Chunking
+- ✅ I. Top-K Results
+- ✅ J. Prompt Enhancement
+- ✅ K. Auto Model Routing
+- ✅ L. Query Decomposition
+- ✅ M. Self-RAG
+- ✅ N. Show Reasoning Process
+- ✅ O. Vector Database
+- ✅ P. Research Agent
+
+**Failing Features:**
+- ❌ E. Knowledge Graph - **NOT IMPLEMENTED** in RAG API v1
+- ❌ G. Web Search - **Early-stop logic skipping web search** or results not properly tagged
+
+**Next Steps:**
+1. Implement Knowledge Graph in RAG API v1
+2. Fix Web Search early-stop logic or result tagging
+3. Re-run tests to verify fixes
 
