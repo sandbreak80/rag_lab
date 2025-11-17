@@ -25,32 +25,8 @@ export const useChatStore = create<ChatStore>((set, get) => {
   const savedFilters = loadFromLocalStorage<MetadataFilters>('metadata_filters', {});
   const savedPendingRequests = loadFromLocalStorage<string[]>('pending_request_ids', []);
 
-  // Filter out old "Request Interrupted" messages - we now use polling instead
-  // Also filter out any messages with the warning emoji that match the pattern
-  const filteredMessages = savedMessages.filter((msg) => {
-    // Remove any messages containing "Request Interrupted" text (case-insensitive)
-    if (msg.content && typeof msg.content === 'string') {
-      const contentLower = msg.content.toLowerCase();
-      // Check for various forms of the message
-      const isInterruptedMessage =
-        contentLower.includes('request interrupted') ||
-        contentLower.includes('page was refreshed before the response completed') ||
-        contentLower.includes('please resend your question') ||
-        (contentLower.includes('⚠️') && contentLower.includes('request') && contentLower.includes('interrupt')) ||
-        (contentLower.includes('⚠') && contentLower.includes('request') && contentLower.includes('interrupt'));
-
-      if (isInterruptedMessage) {
-        console.log('Filtered out "Request Interrupted" message from localStorage');
-        return false;
-      }
-    }
-    return true;
-  });
-
-  // If we filtered out messages, save the cleaned list back to localStorage
-  if (filteredMessages.length !== savedMessages.length) {
-    saveToLocalStorage('chat_messages', filteredMessages);
-  }
+  // Use saved messages directly - polling will handle responses
+  const filteredMessages = savedMessages;
 
   // Clean up pending requests that already have responses
   const messagesWithRequestIds = new Set(
@@ -72,17 +48,6 @@ export const useChatStore = create<ChatStore>((set, get) => {
     pendingRequestIds: activePendingRequests, // Track pending requests for polling
 
     addMessage: (message) => {
-      // NEVER add "Request Interrupted" messages - we use polling instead
-      if (message.content && typeof message.content === 'string') {
-        const contentLower = message.content.toLowerCase();
-        if (contentLower.includes('request interrupted') ||
-            contentLower.includes('page was refreshed before the response completed') ||
-            contentLower.includes('please resend your question')) {
-          console.warn('Blocked "Request Interrupted" message - using polling instead');
-          return; // Don't add this message
-        }
-      }
-
       const messages = [...get().messages, message];
       set({ messages });
       saveToLocalStorage('chat_messages', messages);
