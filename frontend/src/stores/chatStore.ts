@@ -32,13 +32,13 @@ export const useChatStore = create<ChatStore>((set, get) => {
     if (msg.content && typeof msg.content === 'string') {
       const contentLower = msg.content.toLowerCase();
       // Check for various forms of the message
-      const isInterruptedMessage = 
+      const isInterruptedMessage =
         contentLower.includes('request interrupted') ||
         contentLower.includes('page was refreshed before the response completed') ||
         contentLower.includes('please resend your question') ||
         (contentLower.includes('⚠️') && contentLower.includes('request') && contentLower.includes('interrupt')) ||
         (contentLower.includes('⚠') && contentLower.includes('request') && contentLower.includes('interrupt'));
-      
+
       if (isInterruptedMessage) {
         console.log('Filtered out "Request Interrupted" message from localStorage');
         return false;
@@ -82,7 +82,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
           return; // Don't add this message
         }
       }
-      
+
       const messages = [...get().messages, message];
       set({ messages });
       saveToLocalStorage('chat_messages', messages);

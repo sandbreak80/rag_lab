@@ -114,7 +114,7 @@ export function ChatInterface() {
       const pollPromises = pendingRequestIds.map(async (requestId) => {
         try {
           const response = await api.getResponse(requestId);
-          
+
           // Check if we already have this response in messages
           const currentMessages = useChatStore.getState().messages;
           const alreadyExists = currentMessages.some(
@@ -217,7 +217,7 @@ export function ChatInterface() {
       const { removePendingRequest } = useChatStore.getState();
       const query = typeof variables === 'string' ? variables : variables.query;
       const requestId = typeof variables === 'string' ? undefined : variables.requestId;
-      
+
       const assistantMessage: ChatMessage = {
         id: generateId(),
         role: 'assistant',
@@ -272,13 +272,13 @@ export function ChatInterface() {
       };
 
       addMessage(assistantMessage);
-      
+
       // Remove from pending requests since we got the response
       const finalRequestId = data.request_id || requestId;
       if (finalRequestId) {
         removePendingRequest(finalRequestId);
       }
-      
+
       setLoading(false);
 
       // Log metric
@@ -411,11 +411,11 @@ export function ChatInterface() {
     };
 
     addMessage(userMessage);
-    
+
     // Add to pending requests list (persisted in localStorage)
     // This ensures we poll for it even after page refresh/navigation
     addPendingRequest(requestId);
-    
+
     setLoading(true);
 
     // Send to API (request_id is passed in the request body)
