@@ -39,25 +39,39 @@ class FeatureTester:
         self.api_base = api_base
         self.results: List[TestResult] = []
 
-    def test_feature(self, feature_name: str, config: Dict[str, Any], 
+    def test_feature(self, feature_name: str, config: Dict[str, Any],
                     expected_sources: Optional[List[str]] = None) -> TestResult:
         """Test a specific feature with given configuration"""
         print(f"\n{'='*60}")
         print(f"Testing: {feature_name}")
         print(f"{'='*60}")
-        
+
         query = "What is retrieval augmented generation? Explain how RAG works."
-        
-        # Prepare request - API expects fields directly in payload, not nested config
+
+        # Prepare request - RAG API v1 only accepts specific fields
+        # Feature flags may need to be passed through filters dict
+        # For now, only use fields that are in the RagQuery model
         payload = {
             "query": query,
             "user_id": "automated_test",
             "groups": [],
             "top_k": config.get("top_k", 8),
-            **config  # Merge config fields directly into payload
         }
-        # Remove nested config if present
-        payload.pop("config", None)
+        
+        # Add fields that are in RagQuery model
+        if "web_search_enabled" in config:
+            payload["web_search_enabled"] = config["web_search_enabled"]
+        if "enable_research" in config:
+            payload["enable_research"] = config["enable_research"]
+        
+        # Pass other feature flags through filters dict
+        feature_flags = {}
+        for key, value in config.items():
+            if key not in ["top_k", "web_search_enabled", "enable_research"]:
+                feature_flags[key] = value
+        
+        if feature_flags:
+            payload["filters"] = feature_flags
 
         start_time = time.time()
         try:
@@ -156,7 +170,7 @@ class FeatureTester:
             "top_k": 5
         }
         return self.test_feature("B. Query Expansion", config, expected_sources=["rag"])
-    
+
     def test_bm25_search(self) -> TestResult:
         """Test C. BM25 Search"""
         config = {
@@ -164,7 +178,7 @@ class FeatureTester:
             "top_k": 5
         }
         return self.test_feature("C. BM25 Search", config, expected_sources=["rag"])
-    
+
     def test_hybrid_search(self) -> TestResult:
         """Test D. Hybrid Search"""
         config = {
@@ -172,7 +186,7 @@ class FeatureTester:
             "top_k": 5
         }
         return self.test_feature("D. Hybrid Search", config, expected_sources=["rag"])
-    
+
     def test_knowledge_graph(self) -> TestResult:
         """Test E. Knowledge Graph"""
         config = {
@@ -180,7 +194,7 @@ class FeatureTester:
             "top_k": 5
         }
         return self.test_feature("E. Knowledge Graph", config, expected_sources=["knowledge_graph", "kg"])
-    
+
     def test_llm_reranking(self) -> TestResult:
         """Test F. LLM Re-ranking"""
         config = {
@@ -188,7 +202,7 @@ class FeatureTester:
             "top_k": 10
         }
         return self.test_feature("F. LLM Re-ranking", config, expected_sources=["rag"])
-    
+
     def test_web_search(self) -> TestResult:
         """Test G. Web Search"""
         config = {
@@ -196,7 +210,7 @@ class FeatureTester:
             "top_k": 5
         }
         return self.test_feature("G. Web Search", config, expected_sources=["web_search", "web"])
-    
+
     def test_agentic_chunking(self) -> TestResult:
         """Test H. Agentic Chunking"""
         config = {
@@ -204,7 +218,7 @@ class FeatureTester:
             "top_k": 5
         }
         return self.test_feature("H. Agentic Chunking", config, expected_sources=["rag"])
-    
+
     def test_top_k(self) -> TestResult:
         """Test I. Top-K Results"""
         # Test different Top-K values
@@ -213,13 +227,13 @@ class FeatureTester:
             result = self.test_feature(f"I. Top-K Results (K={top_k})", config)
             if not result.passed:
                 return result
-        
+
         return TestResult(
             feature="I. Top-K Results",
             passed=True,
             message="All Top-K values work correctly"
         )
-    
+
     def test_prompt_enhancement(self) -> TestResult:
         """Test J. Prompt Enhancement"""
         config = {
@@ -227,7 +241,7 @@ class FeatureTester:
             "top_k": 5
         }
         return self.test_feature("J. Prompt Enhancement", config, expected_sources=["rag"])
-    
+
     def test_auto_model_routing(self) -> TestResult:
         """Test K. Auto Model Routing"""
         config = {
@@ -251,7 +265,7 @@ class FeatureTester:
             "top_k": 5,
             **config
         }
-        
+
         try:
             response = requests.post(
                 get_api_endpoint("/v1/rag/query"),
@@ -259,17 +273,17 @@ class FeatureTester:
                 headers={"Content-Type": "application/json"},
                 timeout=60
             )
-            
+
             if response.status_code != 200:
                 return TestResult(
                     feature="L. Query Decomposition",
                     passed=False,
                     message=f"API returned status {response.status_code}: {response.text}"
                 )
-            
+
             data = response.json()
             has_decomposition = 'decomposition' in data or 'artifacts' in data
-            
+
             return TestResult(
                 feature="L. Query Decomposition",
                 passed=has_decomposition,
@@ -281,7 +295,7 @@ class FeatureTester:
                 passed=False,
                 message=f"Exception: {str(e)}"
             )
-    
+
     def test_self_rag(self) -> TestResult:
         """Test M. Self-RAG"""
         config = {
@@ -289,7 +303,7 @@ class FeatureTester:
             "top_k": 5
         }
         return self.test_feature("M. Self-RAG", config, expected_sources=["rag"])
-    
+
     def test_show_reasoning(self) -> TestResult:
         """Test N. Show Reasoning Process"""
         config = {
@@ -297,7 +311,7 @@ class FeatureTester:
             "top_k": 5
         }
         return self.test_feature("N. Show Reasoning Process", config, expected_sources=["rag"])
-    
+
     def test_vector_database(self) -> TestResult:
         """Test O. Vector Database"""
         config = {
@@ -305,7 +319,7 @@ class FeatureTester:
             "top_k": 5
         }
         return self.test_feature("O. Vector Database", config, expected_sources=["rag"])
-    
+
     def test_research_agent(self) -> TestResult:
         """Test P. Research Agent"""
         config = {
