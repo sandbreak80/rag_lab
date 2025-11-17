@@ -685,6 +685,7 @@ async def rag_query(req: RagQuery):
                     model="llama3.1:8b",
                     temperature=0.7,
                     max_tokens=req.max_tokens,  # Use max_tokens from request (from preset config)
+                    context_window=req.context_window,  # Use context_window from request (from preset config)
                     use_mock=USE_MOCK_LLM
                 )
 
