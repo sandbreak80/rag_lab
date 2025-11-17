@@ -678,6 +678,13 @@ async def rag_query(req: RagQuery):
                 require_web_citation=req.web_search_enabled and has_web_in_prompt,
                 require_kg_citation=req.use_graph and has_kg_in_prompt
             )
+            
+            # Estimate prompt token count (rough: ~4 chars per token)
+            total_prompt_chars = sum(len(m.get("content", "")) for m in messages)
+            estimated_prompt_tokens = total_prompt_chars // 4
+            logger.info(f"Prompt size: ~{estimated_prompt_tokens} tokens (estimated from {total_prompt_chars} chars), context_window={req.context_window}, max_tokens={req.max_tokens}")
+            if estimated_prompt_tokens > req.context_window * 0.8:
+                logger.warning(f"⚠️  Prompt is ~{estimated_prompt_tokens} tokens, which is >80% of context_window={req.context_window}. Response may be truncated!")
 
             with tracer.start_as_current_span("synthesis_v1") as synth_span:
                 llm_response = await llm.generate(
