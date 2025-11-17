@@ -5,7 +5,7 @@
 set -e
 
 AWS_IP="54.190.74.93"
-SSH_KEY="/Users/bmstoner/Downloads/bootcamp.pem"
+SSH_KEY="/path/to/your-key.pem"
 
 echo "🚀 Deploying Enhanced Research Agent (31 Sources)"
 echo "=================================================="

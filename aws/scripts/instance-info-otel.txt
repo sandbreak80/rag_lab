@@ -26,29 +26,29 @@ Access URLs (available in 15-20 minutes):
   GQS Metrics: http://16.146.36.90:9309
 
 SSH Access:
-  ssh -i bootcamp.pem ubuntu@16.146.36.90
+  ssh -i your-key.pem ubuntu@16.146.36.90
 
 Phase 2 Testing Commands:
   # Check deployment status
-  ssh -i bootcamp.pem ubuntu@16.146.36.90 "cd rag_lab && docker compose ps"
+  ssh -i your-key.pem ubuntu@16.146.36.90 "cd rag_lab && docker compose ps"
 
   # Check OTel Collector
-  ssh -i bootcamp.pem ubuntu@16.146.36.90 "curl http://localhost:8889/metrics"
+  ssh -i your-key.pem ubuntu@16.146.36.90 "curl http://localhost:8889/metrics"
 
   # Verify GQS seed
-  ssh -i bootcamp.pem ubuntu@16.146.36.90 "wc -l rag_lab/evals/gqs_seed.csv"
+  ssh -i your-key.pem ubuntu@16.146.36.90 "wc -l rag_lab/evals/gqs_seed.csv"
 
   # Run evaluation sample
-  ssh -i bootcamp.pem ubuntu@16.146.36.90 "cd rag_lab && make seed"
+  ssh -i your-key.pem ubuntu@16.146.36.90 "cd rag_lab && make seed"
 
   # Start GQS metrics
-  ssh -i bootcamp.pem ubuntu@16.146.36.90 "cd rag_lab && make metrics &"
+  ssh -i your-key.pem ubuntu@16.146.36.90 "cd rag_lab && make metrics &"
 
   # Check cloud-init progress
-  ssh -i bootcamp.pem ubuntu@16.146.36.90 "tail -f /var/log/cloud-init-output.log"
+  ssh -i your-key.pem ubuntu@16.146.36.90 "tail -f /var/log/cloud-init-output.log"
 
   # Check GPU
-  ssh -i bootcamp.pem ubuntu@16.146.36.90 "nvidia-smi"
+  ssh -i your-key.pem ubuntu@16.146.36.90 "nvidia-smi"
 
 Instance Management:
   Stop Instance (to save costs):
@@ -74,10 +74,10 @@ The cloud-init script is installing:
   7. Required Ollama models (llama3.1:8b, nomic-embed-text)
 
 Monitor progress:
-  ssh -i bootcamp.pem ubuntu@16.146.36.90 "tail -f /var/log/cloud-init-output.log"
+  ssh -i your-key.pem ubuntu@16.146.36.90 "tail -f /var/log/cloud-init-output.log"
 
 Check if complete:
-  ssh -i bootcamp.pem ubuntu@16.146.36.90 "grep 'Cloud-init.*finished' /var/log/cloud-init-output.log"
+  ssh -i your-key.pem ubuntu@16.146.36.90 "grep 'Cloud-init.*finished' /var/log/cloud-init-output.log"
 
 Post-Deployment Testing:
   See: docs/AWS_DEPLOYMENT_OTEL_BRANCH.md

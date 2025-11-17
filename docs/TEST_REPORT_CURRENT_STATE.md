@@ -156,7 +156,7 @@ location /metrics {
 **Method 2: Manual Deployment**
 ```bash
 # SSH to AWS instance
-ssh -i bootcamp.pem ubuntu@16.146.148.184
+ssh -i your-key.pem ubuntu@16.146.148.184
 
 # Pull latest code
 cd /home/ubuntu/rag_lab
@@ -178,7 +178,7 @@ curl http://localhost:3000/live
 **Method 3: Quick Test (Without Full Deployment)**
 ```bash
 # Just test if rag-api-v1 is running directly
-ssh -i bootcamp.pem ubuntu@16.146.148.184
+ssh -i your-key.pem ubuntu@16.146.148.184
 curl http://localhost:8080/live
 # If this works, we know API is healthy, just nginx routing missing
 ```

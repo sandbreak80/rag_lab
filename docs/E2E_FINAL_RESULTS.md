@@ -286,7 +286,7 @@ cd /home/ubuntu/rag_lab
 python3 -m http.server -d tests/e2e/playwright-report 8888 &
 
 # From local machine:
-ssh -L 8888:localhost:8888 -i bootcamp.pem ubuntu@16.146.148.184
+ssh -L 8888:localhost:8888 -i your-key.pem ubuntu@16.146.148.184
 # Open: http://localhost:8888/
 ```
 

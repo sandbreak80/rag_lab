@@ -19,7 +19,7 @@ echo
 
 # AWS Configuration
 AWS_IP="${AWS_IP:-54.190.74.93}"
-AWS_KEY="${AWS_KEY:-/Users/bmstoner/SynologyDrive/vcode_projects/bootcamp.pem}"
+AWS_KEY="${AWS_KEY:-/path/to/your-key.pem}"
 AWS_USER="${AWS_USER:-ubuntu}"
 AWS_PATH="/home/ubuntu/rag_lab"
 

@@ -84,7 +84,7 @@ research-agent:
 ### Option 1: Update Existing Instance (Recommended)
 ```bash
 # SSH to instance
-ssh -i bootcamp.pem ubuntu@<instance-ip>
+ssh -i your-key.pem ubuntu@<instance-ip>
 
 # Pull latest changes
 cd ~/rag_lab

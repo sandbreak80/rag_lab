@@ -150,7 +150,7 @@ cd /home/ubuntu/rag_lab
 python3 -m http.server -d tests/e2e/playwright-report 8888 &
 
 # From local machine
-ssh -L 8888:localhost:8888 -i /path/to/bootcamp.pem ubuntu@16.146.148.184
+ssh -L 8888:localhost:8888 -i /path/to/your-key.pem ubuntu@16.146.148.184
 # Then open: http://localhost:8888/
 ```
 
@@ -168,7 +168,7 @@ ssh -L 8888:localhost:8888 -i /path/to/bootcamp.pem ubuntu@16.146.148.184
 
 **Next Command:**
 ```bash
-ssh -i /path/to/bootcamp.pem ubuntu@16.146.148.184 "cd /home/ubuntu/rag_lab && bash scripts/run_e2e_tests.sh"
+ssh -i /path/to/your-key.pem ubuntu@16.146.148.184 "cd /home/ubuntu/rag_lab && bash scripts/run_e2e_tests.sh"
 ```
 
 (After updating `run_e2e_tests.sh` to wait 120s or poll for readiness)

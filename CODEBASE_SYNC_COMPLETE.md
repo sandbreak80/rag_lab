@@ -158,7 +158,7 @@ git commit -m "Description of changes"
 git push origin security
 
 # On AWS Instance:
-ssh -i bootcamp.pem ubuntu@54.190.74.93
+ssh -i your-key.pem ubuntu@54.190.74.93
 cd rag_lab
 git pull origin security
 docker compose build [service-name]

@@ -6,7 +6,7 @@ set -e
 
 # Configuration
 AWS_HOST="${AWS_HOST:-ubuntu@54.190.74.93}"
-AWS_KEY="${AWS_KEY:-/Users/bmstoner/SynologyDrive/vcode_projects/bootcamp.pem}"
+AWS_KEY="${AWS_KEY:-/path/to/your-key.pem}"
 BRANCH="${1:-security}"
 SERVICE="${2:-all}"
 

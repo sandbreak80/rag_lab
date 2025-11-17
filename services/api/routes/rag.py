@@ -476,15 +476,15 @@ async def rag_query(req: RagQuery):
 
             # Extract citations
             citations = extract_citations(llm_response.text, top_results)
-            
+
             # If web/KG were enabled but not cited, add at least one to citations
             # This ensures they appear in the response even if LLM didn't cite them
             cited_origin_tools = {c.get("origin_tool") for c in citations}
-            
+
             # Check if web/KG results exist in top_results or original arrays
             web_in_top = any(r.origin_tool == "web_search" for r in top_results)
             kg_in_top = any(r.origin_tool == "knowledge_graph" for r in top_results)
-            
+
             if req.web_search_enabled and "web_search" not in cited_origin_tools:
                 # Try to find web result in top_results first
                 web_result_to_add = None
@@ -492,12 +492,12 @@ async def rag_query(req: RagQuery):
                     if result.origin_tool == "web_search":
                         web_result_to_add = result
                         break
-                
+
                 # If not in top_results, get from web_results array
                 if not web_result_to_add and len(web_results) > 0:
                     web_result_to_add = web_results[0]
                     logger.info(f"Web result not in top_results, using from web_results array")
-                
+
                 if web_result_to_add:
                     citations.append({
                         "doc_id": web_result_to_add.doc_id,
@@ -513,7 +513,7 @@ async def rag_query(req: RagQuery):
                     logger.info(f"Auto-added web result to citations: {web_result_to_add.doc_id}")
                 else:
                     logger.warning(f"Web search enabled but no web results available to add to citations")
-            
+
             if req.use_graph and "knowledge_graph" not in cited_origin_tools:
                 # Try to find KG result in top_results first
                 kg_result_to_add = None
@@ -521,12 +521,12 @@ async def rag_query(req: RagQuery):
                     if result.origin_tool == "knowledge_graph":
                         kg_result_to_add = result
                         break
-                
+
                 # If not in top_results, get from kg_results array
                 if not kg_result_to_add and len(kg_results) > 0:
                     kg_result_to_add = kg_results[0]
                     logger.info(f"KG result not in top_results, using from kg_results array")
-                
+
                 if kg_result_to_add:
                     citations.append({
                         "doc_id": kg_result_to_add.doc_id,

@@ -44,7 +44,7 @@ If you MUST make changes directly on AWS:
 
 ```bash
 # 1. SSH to AWS
-ssh -i "bootcamp.pem" ubuntu@54.190.74.93
+ssh -i "your-key.pem" ubuntu@54.190.74.93
 
 # 2. Make your changes
 cd /home/ubuntu/rag_lab
@@ -158,7 +158,7 @@ git commit -m "wip"
 
 ```bash
 # SSH to AWS
-ssh -i "bootcamp.pem" ubuntu@54.190.74.93
+ssh -i "your-key.pem" ubuntu@54.190.74.93
 
 # Check what changed
 cd /home/ubuntu/rag_lab
@@ -209,7 +209,7 @@ Visit: https://github.com/sandbreak80/rag_lab/commits/security
 
 ### **Check AWS Last Commit:**
 ```bash
-ssh -i "bootcamp.pem" ubuntu@54.190.74.93 \
+ssh -i "your-key.pem" ubuntu@54.190.74.93 \
   "cd /home/ubuntu/rag_lab && git log -1 --oneline"
 ```
 
@@ -227,13 +227,13 @@ git log -1 --oneline
 
 ### **Remove Backup Files on AWS:**
 ```bash
-ssh -i "bootcamp.pem" ubuntu@54.190.74.93 \
+ssh -i "your-key.pem" ubuntu@54.190.74.93 \
   "cd /home/ubuntu/rag_lab && find . -name '*.backup' -delete && find . -name '*.pre-*' -delete"
 ```
 
 ### **Reset AWS to GitHub State:**
 ```bash
-ssh -i "bootcamp.pem" ubuntu@54.190.74.93 \
+ssh -i "your-key.pem" ubuntu@54.190.74.93 \
   "cd /home/ubuntu/rag_lab && git fetch origin && git reset --hard origin/security"
 ```
 

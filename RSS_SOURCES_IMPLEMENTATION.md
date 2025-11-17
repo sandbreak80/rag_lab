@@ -120,16 +120,16 @@ Edges: +5,000-10,000
 cd /Users/bmstoner/code_projects/rag_lab
 
 # Copy new scraper
-scp -i /Users/bmstoner/Downloads/bootcamp.pem \
+scp -i /Users/bmstoner/Downloads/your-key.pem \
   services/research-agent/app/scrapers/rss_scraper.py \
   ubuntu@54.190.74.93:~/rag_lab/services/research-agent/app/scrapers/
 
 # Copy updated files
-scp -i /Users/bmstoner/Downloads/bootcamp.pem \
+scp -i /Users/bmstoner/Downloads/your-key.pem \
   services/research-agent/app/scrapers/__init__.py \
   ubuntu@54.190.74.93:~/rag_lab/services/research-agent/app/scrapers/
 
-scp -i /Users/bmstoner/Downloads/bootcamp.pem \
+scp -i /Users/bmstoner/Downloads/your-key.pem \
   services/research-agent/app/service.py \
   ubuntu@54.190.74.93:~/rag_lab/services/research-agent/app/
 ```
@@ -137,7 +137,7 @@ scp -i /Users/bmstoner/Downloads/bootcamp.pem \
 ### Step 2: Restart Research Agent
 
 ```bash
-ssh -i /Users/bmstoner/Downloads/bootcamp.pem ubuntu@54.190.74.93 \
+ssh -i /Users/bmstoner/Downloads/your-key.pem ubuntu@54.190.74.93 \
   "cd rag_lab && docker compose restart research-agent"
 ```
 
@@ -150,7 +150,7 @@ sleep 30
 ### Step 4: Verify All 31 Sources
 
 ```bash
-ssh -i /Users/bmstoner/Downloads/bootcamp.pem ubuntu@54.190.74.93 \
+ssh -i /Users/bmstoner/Downloads/your-key.pem ubuntu@54.190.74.93 \
   "curl -s http://localhost:8015/sources | jq '.sources | length'"
 
 # Expected output: 31
@@ -159,7 +159,7 @@ ssh -i /Users/bmstoner/Downloads/bootcamp.pem ubuntu@54.190.74.93 \
 ### Step 5: Trigger Massive Fetch 🚀
 
 ```bash
-ssh -i /Users/bmstoner/Downloads/bootcamp.pem ubuntu@54.190.74.93 \
+ssh -i /Users/bmstoner/Downloads/your-key.pem ubuntu@54.190.74.93 \
   "curl -X POST http://localhost:8015/trigger/all"
 
 # This will fetch 1,000+ articles!
@@ -169,12 +169,12 @@ ssh -i /Users/bmstoner/Downloads/bootcamp.pem ubuntu@54.190.74.93 \
 
 ```bash
 # Watch logs in real-time
-ssh -i /Users/bmstoner/Downloads/bootcamp.pem ubuntu@54.190.74.93 \
+ssh -i /Users/bmstoner/Downloads/your-key.pem ubuntu@54.190.74.93 \
   "docker logs -f rag-research-agent"
 
 # Check status every minute
 while true; do
-  ssh -i /Users/bmstoner/Downloads/bootcamp.pem ubuntu@54.190.74.93 \
+  ssh -i /Users/bmstoner/Downloads/your-key.pem ubuntu@54.190.74.93 \
     "curl -s http://localhost:8015/status | jq '.stats'"
   sleep 60
 done

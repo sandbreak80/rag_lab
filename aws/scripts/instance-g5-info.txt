@@ -28,7 +28,7 @@ SSH/Session Manager:
   aws ssm start-session --target i-0e36db8d358ef11ad
 
   # Traditional SSH
-  ssh -i bootcamp.pem ubuntu@44.244.69.169
+  ssh -i your-key.pem ubuntu@44.244.69.169
 
   # Port forwarding
   aws ssm start-session --target i-0e36db8d358ef11ad \
@@ -36,10 +36,10 @@ SSH/Session Manager:
       --parameters '{"portNumber":["3000"],"localPortNumber":["3000"]}'
 
 Monitor Setup Progress:
-  ssh -i bootcamp.pem ubuntu@44.244.69.169 "tail -f /var/log/cloud-init-output.log"
+  ssh -i your-key.pem ubuntu@44.244.69.169 "tail -f /var/log/cloud-init-output.log"
 
 Check Installation:
-  ssh -i bootcamp.pem ubuntu@44.244.69.169 "cat /home/ubuntu/deployment-info.txt"
+  ssh -i your-key.pem ubuntu@44.244.69.169 "cat /home/ubuntu/deployment-info.txt"
 
 vLLM Commands (after SSH):
   # Start vLLM server

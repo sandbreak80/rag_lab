@@ -235,7 +235,7 @@ These are straightforward:
 
 ### 4. **Run Full Suite** (5 min)
 ```bash
-ssh -i bootcamp.pem ubuntu@16.146.148.184
+ssh -i your-key.pem ubuntu@16.146.148.184
 cd /home/ubuntu/rag_lab
 docker compose -f tests/e2e/docker-compose.e2e.yml up --abort-on-container-exit
 ```

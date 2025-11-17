@@ -86,7 +86,7 @@ After this deployment, we'll test `terminate-cleanup.sh` to ensure it:
 ### Monitoring
 ```bash
 # SSH into instance
-ssh -i bootcamp.pem ubuntu@PUBLIC_IP
+ssh -i your-key.pem ubuntu@PUBLIC_IP
 
 # Monitor stage 2 progress
 tail -f /var/log/rag-lab-setup-stage2.log

@@ -23,7 +23,7 @@
 
 ```bash
 # SSH to AWS instance
-ssh -i ~/SynologyDrive/vcode_projects/bootcamp.pem ubuntu@16.146.148.184
+ssh -i ~/SynologyDrive/vcode_projects/your-key.pem ubuntu@16.146.148.184
 
 # Run deploy script
 cd /home/ubuntu/rag_lab
