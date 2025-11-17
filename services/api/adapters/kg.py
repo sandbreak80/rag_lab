@@ -32,11 +32,11 @@ async def search_kg_mock(
 ) -> list[KGSearchResult]:
     """
     Mock knowledge graph search.
-    
+
     Returns related documents based on graph relationships.
     """
     logger.info(f"Mock KG search: query_len={len(query)}, top_k={top_k}")
-    
+
     results = []
     for i in range(top_k):
         results.append(KGSearchResult(
@@ -51,7 +51,7 @@ async def search_kg_mock(
             },
             origin_tool="knowledge_graph"
         ))
-    
+
     return results
 
 
@@ -63,14 +63,14 @@ async def search_kg_real(
 ) -> list[KGSearchResult]:
     """
     Real knowledge graph search using KG service.
-    
+
     Finds related documents based on graph relationships from top vector results.
     """
     logger.info(f"KG search: query_len={len(query)}, top_k={top_k}, kg_url={kg_url}")
-    
+
     results = []
     related_docs = set()
-    
+
     try:
         # Get related documents for top 5 vector results
         for result in vector_results[:5]:
@@ -87,7 +87,7 @@ async def search_kg_real(
                         related_docs.update(related)
                 except Exception as e:
                     logger.warning(f"Failed to get KG related docs for {doc_id}: {e}")
-        
+
         # Convert related doc IDs to SearchResult format
         # In a real implementation, we'd fetch the actual content from vector DB
         # For now, create results from the doc IDs
@@ -104,13 +104,13 @@ async def search_kg_real(
                 },
                 origin_tool="knowledge_graph"
             ))
-        
+
         logger.info(f"KG search found {len(results)} related documents")
-        
+
     except Exception as e:
         logger.error(f"KG search error: {e}")
         # Return empty list on error
-    
+
     return results
 
 
@@ -122,13 +122,13 @@ async def search(
 ) -> list[KGSearchResult]:
     """
     Knowledge graph search entry point.
-    
+
     Args:
         query: Search query
         vector_results: Top vector search results to find relationships for
         top_k: Maximum number of KG results to return
         use_mock: Use mock implementation
-    
+
     Returns:
         List of KG search results
     """

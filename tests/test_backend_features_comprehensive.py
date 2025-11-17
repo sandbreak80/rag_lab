@@ -65,13 +65,13 @@ class FeatureTester:
             payload["enable_research"] = config["enable_research"]
         if "use_graph" in config:
             payload["use_graph"] = config["use_graph"]
-        
+
         # Pass other feature flags through filters dict
         feature_flags = {}
         for key, value in config.items():
             if key not in ["top_k", "web_search_enabled", "enable_research", "use_graph"]:
                 feature_flags[key] = value
-        
+
         if feature_flags:
             payload["filters"] = feature_flags
 
