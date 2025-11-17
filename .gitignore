@@ -68,3 +68,14 @@ frontend/.vite/
 tests/__pycache__/
 test_results.log
 toggle_validation_output.txt
+
+# Security - Private keys
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+id_rsa
+id_ed25519
+*.pub
