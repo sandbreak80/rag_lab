@@ -166,14 +166,14 @@ async def _run_ab_test_async(test_id: str, req: ABTestRequest):
             # Log config keys and critical values for debugging
             logger.info(f"🔍 config_to_rag_query: request_id={request_id}, config_keys={list(config.keys())}")
             logger.info(f"🔍 config values: model={config.get('model')}, temperature={config.get('temperature')}, maxTokens={config.get('maxTokens')}, contextWindow={config.get('contextWindow')}")
-            
+
             model = config.get("model")
             temperature = config.get("temperature")
             max_tokens = config.get("maxTokens") or config.get("max_tokens", 512)
             context_window = config.get("contextWindow") or config.get("context_window", 4096)
-            
+
             logger.info(f"🔍 Final values for {request_id}: model={model}, temperature={temperature}, max_tokens={max_tokens}, context_window={context_window}")
-            
+
             return RagQuery(
                 query=req.prompt,
                 user_id=req.user_id,
