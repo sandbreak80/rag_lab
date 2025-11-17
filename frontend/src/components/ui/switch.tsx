@@ -24,7 +24,7 @@ const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
         />
         <div
           className={cn(
-            'relative w-11 h-6 rounded-full transition-colors duration-200',
+            'relative w-11 h-6 rounded-full transition-colors duration-200 pointer-events-none',
             checked ? 'bg-primary' : 'bg-muted'
           )}
         >
@@ -32,7 +32,7 @@ const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
             className={cn(
               'absolute top-0.5 left-0.5 bg-background rounded-full h-5 w-5',
               'transition-transform duration-200 ease-in-out',
-              'shadow-sm',
+              'shadow-sm pointer-events-none',
               checked ? 'translate-x-5' : 'translate-x-0'
             )}
           />
