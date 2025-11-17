@@ -96,8 +96,8 @@
         "use_web_search": true,
         "top_k": 15,
         "rerank_top_k": 15,
-        "web_search_docs": 7,
-        "web_search_pages_per_doc": 3
+        "web_search_docs": 20,
+        "web_search_pages_per_doc": 5
       },
       "llm_config": {
         "model": "llama3.2:3b",
