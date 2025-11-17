@@ -253,8 +253,8 @@ export function MessageItem({ message }: MessageItemProps) {
                 onClick={() => setShowAllSources(!showAllSources)}
                 className="text-sm text-primary hover:text-primary/80 hover:underline transition-colors mt-2"
               >
-                {showAllSources 
-                  ? `Show less` 
+                {showAllSources
+                  ? `Show less`
                   : `Show ${message.sources.length - INITIAL_SOURCES_SHOWN} more source${message.sources.length - INITIAL_SOURCES_SHOWN > 1 ? 's' : ''}`
                 }
               </button>
