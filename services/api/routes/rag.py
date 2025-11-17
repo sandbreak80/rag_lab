@@ -251,12 +251,27 @@ async def rag_query(req: RagQuery):
                         t_search_end = time.perf_counter()
 
                         # Extract timings from search-service response
-                        perf_metrics = search_data.get("perf_metrics", {})
-                        all_timings = search_data.get("timings", {})
+                        # The search-service returns: {"results": [...], "metrics": {"timings": {...}, "perf_metrics": {...}}}
+                        metrics_data = search_data.get("metrics", {})
+                        perf_metrics = metrics_data.get("perf_metrics", {})
+                        all_timings = metrics_data.get("timings", {})
+                        
+                        # Fallback: also check top-level keys for backwards compatibility
+                        if not all_timings:
+                            all_timings = search_data.get("timings", {})
+                        if not perf_metrics:
+                            perf_metrics = search_data.get("perf_metrics", {})
 
+                        # Extract timings - TimingCollector returns milliseconds already
+                        # Use None if feature disabled, otherwise use actual timing (even if 0)
                         query_expansion_ms = round(all_timings.get("query_expansion", 0), 2) if req.use_query_expansion else None
                         bm25_ms = round(all_timings.get("bm25_search", 0), 2) if req.use_bm25 else None
                         hybrid_fusion_ms = round(all_timings.get("hybrid_fusion", 0), 2) if req.use_hybrid else None
+                        
+                        # Log extracted timings for debugging
+                        logger.info(f"Extracted timings from search-service: QE={query_expansion_ms}ms, BM25={bm25_ms}ms, Hybrid={hybrid_fusion_ms}ms")
+                        logger.info(f"Raw timings dict from search-service: {all_timings}")
+                        logger.info(f"Request config: use_query_expansion={req.use_query_expansion}, use_bm25={req.use_bm25}, use_hybrid={req.use_hybrid}")
 
                         # Get expanded query if query expansion was used
                         if req.use_query_expansion and perf_metrics.get("query_expanded"):
