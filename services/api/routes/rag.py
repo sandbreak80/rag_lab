@@ -402,9 +402,9 @@ async def rag_query(req: RagQuery):
                 # Now take TOPN, but ensure we have at least some web/KG if they were requested
                 # If we added web/KG results, make sure at least one of each type is in the final list
                 if results_to_add:
-                    # Separate by origin_tool
-                    web_in_top = [r for r in top_results[:TOPN] if r.origin_tool == "web_search"]
-                    kg_in_top = [r for r in top_results[:TOPN] if r.origin_tool == "knowledge_graph"]
+                    # Separate by origin_tool (check both variants for compatibility)
+                    web_in_top = [r for r in top_results[:TOPN] if r.origin_tool in ["web_search", "web"]]
+                    kg_in_top = [r for r in top_results[:TOPN] if r.origin_tool in ["knowledge_graph", "kg"]]
 
                     # If web was requested but not in top, add at least one
                     if req.web_search_enabled and len(web_in_top) == 0 and len(web_results) > 0:
@@ -436,9 +436,9 @@ async def rag_query(req: RagQuery):
             origin_tools_in_prompt = [r.origin_tool for r in top_results]
             logger.info(f"Top results for LLM prompt: {len(top_results)} results, origin_tools: {origin_tools_in_prompt}")
 
-            # Check if we need to require web/KG citations
-            has_web_in_prompt = any(r.origin_tool == "web_search" for r in top_results)
-            has_kg_in_prompt = any(r.origin_tool == "knowledge_graph" for r in top_results)
+            # Check if we need to require web/KG citations (check both variants for compatibility)
+            has_web_in_prompt = any(r.origin_tool in ["web_search", "web"] for r in top_results)
+            has_kg_in_prompt = any(r.origin_tool in ["knowledge_graph", "kg"] for r in top_results)
 
             messages = build_prompt_messages(
                 req.query,
@@ -482,14 +482,15 @@ async def rag_query(req: RagQuery):
             cited_origin_tools = {c.get("origin_tool") for c in citations}
 
             # Check if web/KG results exist in top_results or original arrays
-            web_in_top = any(r.origin_tool == "web_search" for r in top_results)
-            kg_in_top = any(r.origin_tool == "knowledge_graph" for r in top_results)
+            # Web results can have origin_tool="web" or "web_search" (check both for compatibility)
+            web_in_top = any(r.origin_tool in ["web_search", "web"] for r in top_results)
+            kg_in_top = any(r.origin_tool in ["knowledge_graph", "kg"] for r in top_results)
 
-            if req.web_search_enabled and "web_search" not in cited_origin_tools:
+            if req.web_search_enabled and "web_search" not in cited_origin_tools and "web" not in cited_origin_tools:
                 # Try to find web result in top_results first
                 web_result_to_add = None
                 for result in top_results:
-                    if result.origin_tool == "web_search":
+                    if result.origin_tool in ["web_search", "web"]:
                         web_result_to_add = result
                         break
 
@@ -618,7 +619,7 @@ async def rag_query(req: RagQuery):
             # ===================================================================
             # Verify origin_tool is present and immutable
             provenance_intact = all(
-                hasattr(r, 'origin_tool') and r.origin_tool in ["rag", "web_search", "research_agent"]
+                hasattr(r, 'origin_tool') and r.origin_tool in ["rag", "web_search", "web", "research_agent"]
                 for r in all_results
             )
             span.set_attribute("rag.provenance.origin_tool_immutable", provenance_intact)
@@ -681,7 +682,7 @@ async def rag_query(req: RagQuery):
                     "chunk_id": c["chunk_id"],
                     "score": c["score"],
                     "origin_tool": c["origin_tool"],
-                    "source_type": "rag" if c["origin_tool"] == "rag" else "web",
+                    "source_type": "rag" if c["origin_tool"] == "rag" else ("web" if c["origin_tool"] in ["web_search", "web"] else c["origin_tool"]),
                     "content": c["content"][:200] + "..." if len(c["content"]) > 200 else c["content"]
                 })
 
@@ -693,7 +694,7 @@ async def rag_query(req: RagQuery):
                         "doc_id": web_result.doc_id,
                         "chunk_id": getattr(web_result, 'chunk_id', f"web_{idx}"),
                         "score": web_result.score,
-                        "origin_tool": "web",
+                        "origin_tool": "web_search",  # Use consistent naming
                         "source_type": "web",
                         "title": getattr(web_result, 'title', ''),
                         "url": getattr(web_result, 'source_uri', ''),

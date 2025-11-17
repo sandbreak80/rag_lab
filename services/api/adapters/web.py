@@ -142,7 +142,7 @@ async def search_web_real(
                         "latency_ms": latency_ms,
                         "timeout_hit": timeout_hit
                     },
-                    origin_tool="web",  # Immutable
+                    origin_tool="web_search",  # Immutable - must match checks in rag.py
                     published_at=datetime.fromisoformat(hit["published_at"]) if hit.get("published_at") else datetime.now(timezone.utc),
                     is_primary=False  # External web sources are secondary by default
                 ))

@@ -215,19 +215,19 @@ else
     echo
     echo -e "${BLUE}💡 RECOMMENDATIONS:${NC}"
     echo
-    
+
     if [ -n "$UNPUSHED" ]; then
         echo "📤 Push local commits to GitHub:"
         echo "   git push origin ${LOCAL_BRANCH}"
         echo
     fi
-    
+
     if [ -n "$BEHIND" ]; then
         echo "📥 Pull latest from GitHub:"
         echo "   git pull origin ${LOCAL_BRANCH}"
         echo
     fi
-    
+
     if [ -n "$LOCAL_STATUS" ]; then
         echo "💾 Commit local changes:"
         echo "   git add ."
@@ -235,14 +235,14 @@ else
         echo "   git push origin ${LOCAL_BRANCH}"
         echo
     fi
-    
+
     if [ -n "$AWS_UNPUSHED" ]; then
         echo "📤 Push AWS commits to GitHub:"
         echo "   ssh -i \"$AWS_KEY\" ${AWS_USER}@${AWS_IP}"
         echo "   cd ${AWS_PATH} && git push origin ${AWS_BRANCH}"
         echo
     fi
-    
+
     if [ -n "$AWS_STATUS" ] && [ "$AWS_STATUS" != "N/A" ]; then
         echo "💾 Commit AWS changes:"
         echo "   ssh -i \"$AWS_KEY\" ${AWS_USER}@${AWS_IP}"
@@ -250,8 +250,8 @@ else
         echo "   git add . && git commit -m \"...\" && git push origin ${AWS_BRANCH}"
         echo
     fi
-    
+
     echo -e "${BLUE}📖 See docs/CODE_SYNC_WORKFLOW.md for detailed guidance${NC}"
-    
+
     exit 1
 fi
