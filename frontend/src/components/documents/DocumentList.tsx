@@ -107,19 +107,7 @@ export function DocumentList() {
     });
   }, [documents]);
 
-  // Calculate pagination
-  const totalPages = Math.ceil(userDocuments.length / DOCUMENTS_PER_PAGE);
-  const startIndex = (currentPage - 1) * DOCUMENTS_PER_PAGE;
-  const endIndex = startIndex + DOCUMENTS_PER_PAGE;
-  const paginatedDocuments = userDocuments.slice(startIndex, endIndex);
-
-  // Reset to page 1 if current page is out of bounds
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(1);
-    }
-  }, [currentPage, totalPages]);
-
+  // Early return for empty documents
   if (userDocuments.length === 0) {
     return (
       <Card>
@@ -133,6 +121,19 @@ export function DocumentList() {
       </Card>
     );
   }
+
+  // Calculate pagination (only when we have documents)
+  const totalPages = Math.ceil(userDocuments.length / DOCUMENTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * DOCUMENTS_PER_PAGE;
+  const endIndex = startIndex + DOCUMENTS_PER_PAGE;
+  const paginatedDocuments = userDocuments.slice(startIndex, endIndex);
+
+  // Reset to page 1 if current page is out of bounds
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
 
   return (
     <div className="space-y-4">
