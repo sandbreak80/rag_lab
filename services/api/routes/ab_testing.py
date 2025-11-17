@@ -178,6 +178,8 @@ async def _run_ab_test_async(test_id: str, req: ABTestRequest):
                 use_hybrid=config.get("useHybrid") if "useHybrid" in config else config.get("use_hybrid", False),
                 max_tokens=config.get("maxTokens") or config.get("max_tokens", 512),  # Pass max_tokens from config
                 context_window=config.get("contextWindow") or config.get("context_window", 4096),  # Pass context_window from config
+                model=config.get("model"),  # CRITICAL: Pass model from config (e.g., 'llama3.2:1b' vs 'gemma2:9b')
+                temperature=config.get("temperature"),  # CRITICAL: Pass temperature from config (e.g., 0.3 vs 0.3)
             )
 
         request_id_a = f"{test_id}_a"

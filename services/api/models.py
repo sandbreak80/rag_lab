@@ -27,6 +27,8 @@ class RagQuery(BaseModel):
     use_hybrid: bool = Field(False, description="Enable hybrid search (vector + BM25 fusion)")
     max_tokens: int = Field(512, ge=100, le=32768, description="Maximum tokens for LLM response generation")
     context_window: int = Field(4096, ge=1024, le=32768, description="Total context window size (input prompt + output response)")
+    model: str | None = Field(None, description="LLM model to use (e.g., 'llama3.1:8b', 'gemma2:9b')")
+    temperature: float | None = Field(None, ge=0.0, le=2.0, description="LLM temperature for response generation")
 
     class Config:
         schema_extra = {
