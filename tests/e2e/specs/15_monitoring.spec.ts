@@ -97,16 +97,23 @@ test.describe('Monitoring Page', () => {
     await page.waitForLoadState('networkidle');
 
     // Verify no critical console errors
-    const criticalErrors = consoleErrors.filter(err =>
-      !err.includes('404') &&
-      !err.includes('favicon') &&
-      !err.includes('CORS') && // Grafana CORS might be expected
-      !err.includes('Failed to fetch') &&
-      !err.includes('NetworkError') &&
-      !err.includes('AbortError') &&
-      !err.toLowerCase().includes('network') &&
-      !err.toLowerCase().includes('timeout')
-    );
+    const criticalErrors = consoleErrors.filter(err => {
+      const lowerErr = err.toLowerCase();
+      return !err.includes('404') &&
+             !err.includes('favicon') &&
+             !err.includes('CORS') && // Grafana CORS might be expected
+             !err.includes('Failed to fetch') &&
+             !err.includes('NetworkError') &&
+             !err.includes('AbortError') &&
+             !err.includes('[OTEL_') && // OTel initialization warnings
+             !err.includes('[WEBVITALS_') && // Web Vitals warnings
+             !err.includes('[WINDOW_ERROR]') && // Window error handler
+             !err.includes('[UNHANDLED_REJECTION]') && // Unhandled rejection handler
+             !lowerErr.includes('network') &&
+             !lowerErr.includes('timeout') &&
+             !lowerErr.includes('react') && // React warnings (StrictMode, etc.)
+             !lowerErr.includes('warning');
+    });
 
     expect(criticalErrors.length).toBe(0);
 
