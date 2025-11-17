@@ -60,7 +60,7 @@ def build_prompt_messages(query: str, results: list, require_web_citation: bool 
     context_parts = []
     web_indices = []
     kg_indices = []
-    
+
     for i, result in enumerate(results):
         context_parts.append(f"[{i+1}] {result.content}")
         # Track which indices are web/KG results
@@ -70,7 +70,7 @@ def build_prompt_messages(query: str, results: list, require_web_citation: bool 
             kg_indices.append(i + 1)
 
     context = "\n\n".join(context_parts)
-    
+
     # Build citation instruction
     citation_instruction = "Include citations [1], [2], etc. to reference sources."
     if require_web_citation and web_indices:
@@ -435,13 +435,13 @@ async def rag_query(req: RagQuery):
             # Log what's in top_results for debugging
             origin_tools_in_prompt = [r.origin_tool for r in top_results]
             logger.info(f"Top results for LLM prompt: {len(top_results)} results, origin_tools: {origin_tools_in_prompt}")
-            
+
             # Check if we need to require web/KG citations
             has_web_in_prompt = any(r.origin_tool == "web_search" for r in top_results)
             has_kg_in_prompt = any(r.origin_tool == "knowledge_graph" for r in top_results)
-            
+
             messages = build_prompt_messages(
-                req.query, 
+                req.query,
                 top_results,
                 require_web_citation=req.web_search_enabled and has_web_in_prompt,
                 require_kg_citation=req.use_graph and has_kg_in_prompt
@@ -481,43 +481,67 @@ async def rag_query(req: RagQuery):
             # This ensures they appear in the response even if LLM didn't cite them
             cited_origin_tools = {c.get("origin_tool") for c in citations}
             
+            # Check if web/KG results exist in top_results or original arrays
+            web_in_top = any(r.origin_tool == "web_search" for r in top_results)
+            kg_in_top = any(r.origin_tool == "knowledge_graph" for r in top_results)
+            
             if req.web_search_enabled and "web_search" not in cited_origin_tools:
-                # Find first web result in top_results and add it to citations
+                # Try to find web result in top_results first
+                web_result_to_add = None
                 for result in top_results:
                     if result.origin_tool == "web_search":
-                        # Find its index in top_results
-                        idx = top_results.index(result)
-                        citations.append({
-                            "doc_id": result.doc_id,
-                            "version": result.metadata.get("version", "1.0"),
-                            "chunk_id": result.chunk_id,
-                            "char_range": [0, len(result.content)],
-                            "content": result.content,
-                            "source_uri": result.metadata.get("source_uri", ""),
-                            "origin_tool": result.origin_tool,
-                            "score": getattr(result, 'score', 0.95),
-                            "auto_added": True  # Mark as auto-added
-                        })
-                        logger.info(f"Auto-added web result to citations: {result.doc_id}")
+                        web_result_to_add = result
                         break
+                
+                # If not in top_results, get from web_results array
+                if not web_result_to_add and len(web_results) > 0:
+                    web_result_to_add = web_results[0]
+                    logger.info(f"Web result not in top_results, using from web_results array")
+                
+                if web_result_to_add:
+                    citations.append({
+                        "doc_id": web_result_to_add.doc_id,
+                        "version": web_result_to_add.metadata.get("version", "1.0"),
+                        "chunk_id": web_result_to_add.chunk_id,
+                        "char_range": [0, len(web_result_to_add.content)],
+                        "content": web_result_to_add.content,
+                        "source_uri": web_result_to_add.metadata.get("source_uri", ""),
+                        "origin_tool": web_result_to_add.origin_tool,
+                        "score": getattr(web_result_to_add, 'score', 0.95),
+                        "auto_added": True  # Mark as auto-added
+                    })
+                    logger.info(f"Auto-added web result to citations: {web_result_to_add.doc_id}")
+                else:
+                    logger.warning(f"Web search enabled but no web results available to add to citations")
             
             if req.use_graph and "knowledge_graph" not in cited_origin_tools:
-                # Find first KG result in top_results and add it to citations
+                # Try to find KG result in top_results first
+                kg_result_to_add = None
                 for result in top_results:
                     if result.origin_tool == "knowledge_graph":
-                        citations.append({
-                            "doc_id": result.doc_id,
-                            "version": result.metadata.get("version", "1.0"),
-                            "chunk_id": result.chunk_id,
-                            "char_range": [0, len(result.content)],
-                            "content": result.content,
-                            "source_uri": result.metadata.get("source_uri", ""),
-                            "origin_tool": result.origin_tool,
-                            "score": getattr(result, 'score', 0.95),
-                            "auto_added": True  # Mark as auto-added
-                        })
-                        logger.info(f"Auto-added KG result to citations: {result.doc_id}")
+                        kg_result_to_add = result
                         break
+                
+                # If not in top_results, get from kg_results array
+                if not kg_result_to_add and len(kg_results) > 0:
+                    kg_result_to_add = kg_results[0]
+                    logger.info(f"KG result not in top_results, using from kg_results array")
+                
+                if kg_result_to_add:
+                    citations.append({
+                        "doc_id": kg_result_to_add.doc_id,
+                        "version": kg_result_to_add.metadata.get("version", "1.0"),
+                        "chunk_id": kg_result_to_add.chunk_id,
+                        "char_range": [0, len(kg_result_to_add.content)],
+                        "content": kg_result_to_add.content,
+                        "source_uri": kg_result_to_add.metadata.get("source_uri", ""),
+                        "origin_tool": kg_result_to_add.origin_tool,
+                        "score": getattr(kg_result_to_add, 'score', 0.95),
+                        "auto_added": True  # Mark as auto-added
+                    })
+                    logger.info(f"Auto-added KG result to citations: {kg_result_to_add.doc_id}")
+                else:
+                    logger.warning(f"KG search enabled but no KG results available to add to citations")
 
             span.set_attribute("rag.citations.count", len(citations))
             span.set_attribute("rag.citations.unique_documents", len(set(c["doc_id"] for c in citations)))
