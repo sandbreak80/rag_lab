@@ -70,7 +70,7 @@ async def grade_ab_responses(
         import random
         grading_temperature = 0.8  # Increased from 0.5 to 0.8 for more variation
         random_seed = random.randint(1000, 9999)
-        
+
         logger.info(f"Calling LLM for auto-grading with model={model}, temperature={grading_temperature}, seed={random_seed}")
         llm_response = await llm.generate(
             messages=messages,

@@ -1285,8 +1285,31 @@ if __name__ == '__main__':
     print(f"📊 Vector DB URL configured")
     print(f"🧮 Embedding Service URL configured")
 
-    # Load BM25 index
-    load_bm25_index()
+    # Load BM25 index (or build if it doesn't exist)
+    index_loaded = load_bm25_index()
+    
+    # Auto-build index if it doesn't exist and we have documents
+    if not index_loaded:
+        print("⚠️  BM25 index not found. Attempting to build on startup...")
+        try:
+            vector_db_url = os.getenv('VECTOR_DB_URL', 'http://vector-db:8005')
+            response = requests.get(f"{vector_db_url}/stats", timeout=10)
+            if response.status_code == 200:
+                stats = response.json()
+                total_chunks = stats.get('total_chunks', 0)
+                if total_chunks > 0:
+                    print(f"📚 Found {total_chunks} chunks in vector DB. Building BM25 index...")
+                    # Call build function directly (not via HTTP)
+                    build_bm25_index()
+                    # Reload after building
+                    load_bm25_index()
+                else:
+                    print("⚠️  No documents in vector DB. BM25 index will be built when documents are available.")
+            else:
+                print(f"⚠️  Could not check vector DB status (HTTP {response.status_code}). BM25 index will be built on first request.")
+        except Exception as e:
+            print(f"⚠️  Could not auto-build BM25 index on startup: {e}")
+            print("   You can build it manually via: POST /index/build")
 
     # Start server
     port = int(os.getenv('SERVICE_PORT', '8002'))
