@@ -59,6 +59,17 @@ scrape_configs:
           type: 'gpu-metrics'
 
   # ============================================================================
+  # GPU Metrics - NVIDIA SMI Exporter (Alternative, simpler)
+  # ============================================================================
+  - job_name: 'nvidia-exporter'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['nvidia-exporter:9401']
+        labels:
+          service: 'nvidia-exporter'
+          type: 'gpu-metrics'
+
+  # ============================================================================
   # System Metrics - Node Exporter (Ubuntu/EC2 Host)
   # ============================================================================
   - job_name: 'node-exporter'
