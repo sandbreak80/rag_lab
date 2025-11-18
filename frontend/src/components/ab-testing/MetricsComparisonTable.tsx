@@ -122,7 +122,7 @@ export function MetricsComparisonTable({
                 const isPromptSizeMetric = metric.key.includes('prompt_size');
                 const promptSizeA = metricsA?.stage_timings?.prompt_size;
                 const promptSizeB = metricsB?.stage_timings?.prompt_size;
-                
+
                 // Show warning if prompt doesn't fit
                 let warningA = '';
                 let warningB = '';
