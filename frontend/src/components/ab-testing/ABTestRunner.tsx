@@ -34,7 +34,7 @@ export function ABTestRunner({
     const pollInterval = setInterval(async () => {
                   try {
                     const result = await api.getABTestResult(testId);
-                    
+
                     // Check for error status
                     if (result.status === 'error') {
                       clearInterval(pollInterval);
