@@ -287,19 +287,19 @@ def parse_grading_result(response_text: str) -> dict[str, Any]:
         if json_match:
             json_str = json_match.group(0)
             logger.debug(f"Found JSON match: {json_str[:200]}...")
-            
+
             # Try to fix common JSON issues before parsing
             # Replace single quotes with double quotes (but be careful with apostrophes in text)
             # Only replace single quotes that are clearly property names or string delimiters
             json_str_fixed = json_str
-            
+
             # Fix single quotes around property names: 'key': -> "key":
             json_str_fixed = re.sub(r"'(\w+)':", r'"\1":', json_str_fixed)
             # Fix single quotes around string values: 'value' -> "value" (but not in the middle of words)
             json_str_fixed = re.sub(r":\s*'([^']*)'", r': "\1"', json_str_fixed)
             # Fix trailing commas before closing braces/brackets
             json_str_fixed = re.sub(r',(\s*[}\]])', r'\1', json_str_fixed)
-            
+
             try:
                 result = json.loads(json_str_fixed)
                 logger.debug("Successfully parsed JSON after fixing common issues")
@@ -380,23 +380,23 @@ def parse_grading_result(response_text: str) -> dict[str, Any]:
         error_pos = getattr(e, 'pos', None)
         error_line = getattr(e, 'lineno', None)
         error_col = getattr(e, 'colno', None)
-        
+
         logger.error(f"JSON parsing failed: {error_msg}")
         logger.error(f"Error position: pos={error_pos}, line={error_line}, col={error_col}")
-        
+
         # Log the problematic JSON section
         if error_pos is not None and error_pos < len(response_text):
             start = max(0, error_pos - 100)
             end = min(len(response_text), error_pos + 100)
             logger.error(f"Problematic JSON section (around error): {response_text[start:end]}")
-        
+
         # Log full response for debugging (truncated if too long)
         if len(response_text) < 2000:
             logger.error(f"Full response text: {response_text}")
         else:
             logger.error(f"Full response text (first 1000 chars): {response_text[:1000]}")
             logger.error(f"Full response text (last 1000 chars): {response_text[-1000:]}")
-        
+
         raise ValueError(
             f"Failed to parse JSON from LLM response. "
             f"Error: {error_msg} "
