@@ -759,18 +759,20 @@ async def rag_query(req: RagQuery):
                 # Check if model/temperature are set (not None) before using defaults
                 req_model = getattr(req, 'model', None)
                 req_temperature = getattr(req, 'temperature', None)
+                req_max_tokens = getattr(req, 'max_tokens', 512)
+                req_context_window = getattr(req, 'context_window', 4096)
 
                 llm_model = req_model if req_model is not None else "llama3.1:8b"
                 llm_temperature = req_temperature if req_temperature is not None else 0.7
 
-                logger.info(f"🔍 LLM call: req.model={req_model}, req.temperature={req_temperature}, using model={llm_model}, temperature={llm_temperature}, max_tokens={req.max_tokens}, context_window={req.context_window}")
+                logger.info(f"🔍 LLM call: req.model={req_model}, req.temperature={req_temperature}, using model={llm_model}, temperature={llm_temperature}, max_tokens={req_max_tokens}, context_window={req_context_window}")
 
                 llm_response = await llm.generate(
                     messages=messages,
                     model=llm_model,  # Use model from request (from preset config)
                     temperature=llm_temperature,  # Use temperature from request (from preset config)
-                    max_tokens=req.max_tokens,  # Use max_tokens from request (from preset config)
-                    context_window=req.context_window,  # Use context_window from request (from preset config)
+                    max_tokens=req_max_tokens,  # Use max_tokens from request (from preset config)
+                    context_window=req_context_window,  # Use context_window from request (from preset config)
                     use_mock=USE_MOCK_LLM
                 )
 
