@@ -20,11 +20,11 @@ The RAG Lab includes 6 quality presets, each designed for specific scenarios:
 **Use Case:** Quick answers, low latency requirements, minimal resource usage
 
 ### RAG Configuration
-- **Top-K Results:** 5
-- **Rerank Top-K:** 5
+- **Top-K Results:** 3
+- **Rerank Top-K:** 3
 - **Web Search:** Disabled
-- **Web Docs:** N/A
-- **Web Pages:** N/A
+- **Web Docs:** 0
+- **Web Pages:** 1
 - **Knowledge Graph:** Disabled
 - **Reranking:** Disabled
 - **Query Expansion:** Disabled
@@ -41,14 +41,14 @@ The RAG Lab includes 6 quality presets, each designed for specific scenarios:
 ### LLM Configuration
 - **Model:** `llama3.2:1b` (1 billion parameters - smallest, fastest)
 - **Temperature:** 0.5 (balanced creativity)
-- **Max Tokens:** 300 (short responses)
+- **Max Tokens:** 500 (moderate responses)
 - **Context Window:** 4,096 tokens
 
 ### Expected Performance
-- **Precision:** 70-75%
-- **Recall:** 60-70%
-- **Latency:** 50-100ms
-- **Use Case:** Simple queries, quick fact-checking, low-resource environments
+- **Precision:** 60-70%
+- **Recall:** 50-60%
+- **Latency:** 30-50ms
+- **Use Case:** Baseline measurement, minimal resource usage
 
 ### Resource Usage
 - **GPU Memory:** Minimal (~2GB)
@@ -62,35 +62,35 @@ The RAG Lab includes 6 quality presets, each designed for specific scenarios:
 **Use Case:** Quick responses with acceptable quality, moderate resource usage
 
 ### RAG Configuration
-- **Top-K Results:** 8
-- **Rerank Top-K:** 8
-- **Web Search:** Enabled
-- **Web Docs:** 10
-- **Web Pages:** 2
+- **Top-K Results:** 5
+- **Rerank Top-K:** 5
+- **Web Search:** Disabled
+- **Web Docs:** 0
+- **Web Pages:** 1
 - **Knowledge Graph:** Disabled
 - **Reranking:** Disabled
-- **Query Expansion:** Disabled
+- **Query Expansion:** Enabled
 - **BM25 Search:** Disabled
 - **Hybrid Search:** Disabled
 
 ### Intelligence Features
-- **Prompt Enhancement:** Enabled
+- **Prompt Enhancement:** Disabled
 - **Auto Model Routing:** Disabled
 - **Query Decomposition:** Disabled
 - **Self-RAG:** Disabled
 - **Show Reasoning Process:** Disabled
 
 ### LLM Configuration
-- **Model:** `llama3.2:3b` (3 billion parameters - fast with good quality)
-- **Temperature:** 0.5 (balanced creativity)
-- **Max Tokens:** 400 (moderate length responses)
+- **Model:** `llama3.2:1b` (1 billion parameters - smallest, fastest)
+- **Temperature:** 0.3 (focused, less creative)
+- **Max Tokens:** 300 (short responses)
 - **Context Window:** 8,192 tokens
 
 ### Expected Performance
-- **Precision:** 75-80%
-- **Recall:** 70-75%
-- **Latency:** 100-150ms
-- **Use Case:** General queries, quick research, moderate quality needs
+- **Precision:** 65-75%
+- **Recall:** 55-65%
+- **Latency:** 40-60ms
+- **Use Case:** Quick lookups, autocomplete, real-time search
 
 ### Resource Usage
 - **GPU Memory:** Low (~4GB)
@@ -106,33 +106,33 @@ The RAG Lab includes 6 quality presets, each designed for specific scenarios:
 ### RAG Configuration
 - **Top-K Results:** 10
 - **Rerank Top-K:** 10
-- **Web Search:** Enabled
-- **Web Docs:** 15
-- **Web Pages:** 3
-- **Knowledge Graph:** Enabled
-- **Reranking:** Enabled
+- **Web Search:** Disabled
+- **Web Docs:** 5
+- **Web Pages:** 2
+- **Knowledge Graph:** Disabled
+- **Reranking:** Disabled
 - **Query Expansion:** Enabled
 - **BM25 Search:** Enabled
 - **Hybrid Search:** Enabled
 
 ### Intelligence Features
 - **Prompt Enhancement:** Enabled
-- **Auto Model Routing:** Enabled
-- **Query Decomposition:** Enabled
+- **Auto Model Routing:** Disabled
+- **Query Decomposition:** Disabled
 - **Self-RAG:** Disabled
 - **Show Reasoning Process:** Enabled
 
 ### LLM Configuration
 - **Model:** `llama3.1:8b` (8 billion parameters - good quality/performance balance)
-- **Temperature:** 0.3 (more focused, less creative)
-- **Max Tokens:** 600 (detailed responses)
-- **Context Window:** 12,288 tokens
+- **Temperature:** 0.5 (balanced creativity)
+- **Max Tokens:** 500 (moderate responses)
+- **Context Window:** 16,384 tokens
 
 ### Expected Performance
-- **Precision:** 80-85%
-- **Recall:** 75-80%
-- **Latency:** 150-200ms
-- **Use Case:** General purpose, most queries, recommended starting point
+- **Precision:** 85-90%
+- **Recall:** 80-85%
+- **Latency:** 100-150ms
+- **Use Case:** General purpose, daily use, most applications
 
 ### Resource Usage
 - **GPU Memory:** Medium (~8GB)
@@ -196,10 +196,10 @@ With **Top-K: 15** and **Context Window: 24,576 tokens**:
 
 ### RAG Configuration
 - **Top-K Results:** 20
-- **Rerank Top-K:** 20
+- **Rerank Top-K:** 10
 - **Web Search:** Enabled
-- **Web Docs:** 25
-- **Web Pages:** 5
+- **Web Docs:** 20
+- **Web Pages:** 8
 - **Knowledge Graph:** Enabled
 - **Reranking:** Enabled
 - **Query Expansion:** Enabled
@@ -215,15 +215,25 @@ With **Top-K: 15** and **Context Window: 24,576 tokens**:
 
 ### LLM Configuration
 - **Model:** `qwen2.5:14b` (14 billion parameters - highest quality)
-- **Temperature:** 0.2 (very focused, minimal creativity)
+- **Temperature:** 0.1 (very focused, minimal creativity)
 - **Max Tokens:** 1,500 (very comprehensive responses)
 - **Context Window:** 32,768 tokens (maximum context)
 
 ### Expected Performance
-- **Precision:** 92-97%
-- **Recall:** 88-95%
-- **Latency:** 300-500ms
-- **Use Case:** Critical analysis, research papers, comprehensive reports
+- **Precision:** 95-98%
+- **Recall:** 90-95%
+- **Latency:** 5-30 minutes (hardware dependent)
+- **Use Case:** 🎓 Quality benchmark - NOT for production use
+
+### Notes
+🎓 **LEARNING POINTS:**
+1. Maximum quality comes at extreme latency cost (5-30 min vs < 1s for Balanced)
+2. Start during break/lunch - demonstrates why this approach is impractical for interactive use
+3. Useful for establishing quality ceiling on your hardware
+4. Cancel button stops UI but Ollama continues processing (single LLM limitation)
+5. Production systems need: streaming, request queuing, or multiple LLM instances
+6. Compare Maximum results with Balanced/Production to see if extra quality is worth the wait
+7. Students should determine their own optimal preset based on quality/latency needs
 
 ### Resource Usage
 - **GPU Memory:** Very High (~16GB)
@@ -247,10 +257,10 @@ With **Top-K: 20** and **Context Window: 32,768 tokens**:
 - **Top-K Results:** 12
 - **Rerank Top-K:** 12
 - **Web Search:** Enabled
-- **Web Docs:** 15
+- **Web Docs:** 10
 - **Web Pages:** 3
 - **Knowledge Graph:** Enabled
-- **Reranking:** Enabled
+- **Reranking:** Disabled
 - **Query Expansion:** Enabled
 - **BM25 Search:** Enabled
 - **Hybrid Search:** Enabled
@@ -258,21 +268,24 @@ With **Top-K: 20** and **Context Window: 32,768 tokens**:
 ### Intelligence Features
 - **Prompt Enhancement:** Enabled
 - **Auto Model Routing:** Enabled
-- **Query Decomposition:** Enabled
+- **Query Decomposition:** Disabled
 - **Self-RAG:** Disabled
 - **Show Reasoning Process:** Disabled (for cleaner production responses)
 
 ### LLM Configuration
-- **Model:** `gemma2:9b` (9 billion parameters - good quality, reliable)
+- **Model:** `mistral:7b` (7 billion parameters - good quality, reliable)
 - **Temperature:** 0.3 (focused, consistent)
-- **Max Tokens:** 800 (detailed but concise)
-- **Context Window:** 16,384 tokens
+- **Max Tokens:** 1,000 (detailed responses)
+- **Context Window:** 20,480 tokens
 
 ### Expected Performance
-- **Precision:** 85-90%
-- **Recall:** 80-85%
-- **Latency:** 180-250ms
-- **Use Case:** Production systems, consistent quality, reliable performance
+- **Precision:** 92-96%
+- **Recall:** 88-93%
+- **Latency:** 250-350ms
+- **Use Case:** Production deployments, API services, world-class RAG
+
+### Notes
+This is your take-home configuration. Excellent quality with acceptable latency. Scalable and production-ready.
 
 ### Resource Usage
 - **GPU Memory:** Medium-High (~10GB)
@@ -285,26 +298,26 @@ With **Top-K: 20** and **Context Window: 32,768 tokens**:
 
 | Preset | Top-K | Context Window | Model | Max Tokens | Latency | Precision | GPU Memory |
 |--------|-------|----------------|-------|------------|---------|-----------|------------|
-| Minimal | 5 | 4,096 | llama3.2:1b | 300 | 50-100ms | 70-75% | ~2GB |
-| Fast | 8 | 8,192 | llama3.2:3b | 400 | 100-150ms | 75-80% | ~4GB |
-| Balanced | 10 | 12,288 | llama3.1:8b | 600 | 150-200ms | 80-85% | ~8GB |
+| Minimal | 3 | 4,096 | llama3.2:1b | 500 | 30-50ms | 60-70% | ~2GB |
+| Fast | 5 | 8,192 | llama3.2:1b | 300 | 40-60ms | 65-75% | ~2GB |
+| Balanced | 10 | 16,384 | llama3.1:8b | 500 | 100-150ms | 85-90% | ~8GB |
 | Quality | 15 | 24,576 | qwen2.5:14b | 1,000 | 200-300ms | 90-95% | ~14GB |
-| Maximum | 20 | 32,768 | qwen2.5:14b | 1,500 | 300-500ms | 92-97% | ~16GB |
-| Production | 12 | 16,384 | gemma2:9b | 800 | 180-250ms | 85-90% | ~10GB |
+| Maximum | 20 | 32,768 | qwen2.5:14b | 1,500 | 5-30 min | 95-98% | ~16GB |
+| Production | 12 | 20,480 | mistral:7b | 1,000 | 250-350ms | 92-96% | ~7GB |
 
 ## Feature Comparison
 
 | Feature | Minimal | Fast | Balanced | Quality | Maximum | Production |
 |---------|---------|------|----------|---------|---------|------------|
-| Web Search | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Knowledge Graph | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Reranking | ❌ | ❌ | ✅ | ❌* | ✅ | ✅ |
-| Query Expansion | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Web Search | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Knowledge Graph | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Reranking | ❌ | ❌ | ❌ | ❌* | ✅ | ❌ |
+| Query Expansion | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | BM25 Search | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
 | Hybrid Search | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Prompt Enhancement | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Auto Model Routing | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Query Decomposition | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Prompt Enhancement | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Auto Model Routing | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Query Decomposition | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
 | Self-RAG | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | Show Reasoning | ❌ | ❌ | ✅ | ✅ | ✅ | ❌ |
 
@@ -366,7 +379,16 @@ With **Top-K: 20** and **Context Window: 32,768 tokens**:
 - **Estimated Prompt Size:** ~10,000-12,000 tokens
 - **Utilization:** ~30-37%
 - **Available for Response:** ~20,000-22,000 tokens
-- **Status:** ✅ Comfortable margin
+- **Status:** ✅ Comfortable margin (but latency is 5-30 minutes!)
+
+### Production Preset Example:
+- **Context Window:** 20,480 tokens
+- **Top-K:** 12 documents
+- **Average Chunk Size:** ~450 tokens (target)
+- **Estimated Prompt Size:** ~6,000-7,000 tokens
+- **Utilization:** ~30-35%
+- **Available for Response:** ~13,000-14,000 tokens
+- **Status:** ✅ Comfortable margin with good latency
 
 ## Notes
 
