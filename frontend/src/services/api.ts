@@ -432,6 +432,11 @@ class ApiClient {
     return response.data;
   }
 
+  async gradeABTest(testId: string): Promise<{ test_id: string; status: string; message: string }> {
+    const response = await this.client.post(`/v1/ab-testing/grade/${testId}`);
+    return response.data;
+  }
+
   async gradeABResponses(request: {
     prompt: string;
     response_a: string;

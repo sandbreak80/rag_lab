@@ -23,7 +23,7 @@ export function ABTestRunner({
   setIsRunning
 }: ABTestRunnerProps) {
   const [runParallel, setRunParallel] = React.useState(false); // Default to sequential to avoid VRAM issues
-  const [autoGrade, setAutoGrade] = React.useState(true);
+  const [autoGrade, setAutoGrade] = React.useState(false); // Default to false to show responses immediately
   const [testId, setTestId] = React.useState<string | null>(null);
   const [statusMessage, setStatusMessage] = React.useState<string>('');
 
