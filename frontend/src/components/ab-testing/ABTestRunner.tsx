@@ -34,11 +34,7 @@ export function ABTestRunner({
     const pollInterval = setInterval(async () => {
                   try {
                     const result = await api.getABTestResult(testId);
-                    if (result.status === 'running') {
-                      setStatusMessage(result.message || 'Test is running...');
-                      return;
-                    }
-
+                    
                     // Check for error status
                     if (result.status === 'error') {
                       clearInterval(pollInterval);
@@ -48,13 +44,28 @@ export function ABTestRunner({
                       return;
                     }
 
-                    // Test completed successfully
-                    clearInterval(pollInterval);
-                    setIsRunning(false);
-                    console.log('✅ A/B Test completed! Result:', result);
-                    console.log('✅ Calling onResults with:', result);
-                    onResults(result);
-                    console.log('✅ onResults called');
+                    // Check if results are ready (has result_a and result_b, or status is 'completed')
+                    // Don't wait for grader_result - show responses immediately!
+                    if (result.result_a && result.result_b) {
+                      // Results are ready - show them immediately (grading may still be running)
+                      clearInterval(pollInterval);
+                      setIsRunning(false);
+                      setStatusMessage('Responses ready!');
+                      console.log('✅ A/B Test responses ready! Result:', result);
+                      console.log('✅ Calling onResults with:', result);
+                      onResults(result);
+                      console.log('✅ onResults called');
+                      return;
+                    }
+
+                    // Still running - update status message
+                    if (result.status === 'running') {
+                      setStatusMessage(result.message || 'Test is running...');
+                      return;
+                    }
+
+                    // If we get here, results might not be ready yet
+                    setStatusMessage('Waiting for responses...');
                   } catch (error: any) {
                     console.error('Error polling for results:', error);
                     const errorMessage = error?.response?.data?.detail || error?.response?.data?.error || error?.message || 'Unknown error';
