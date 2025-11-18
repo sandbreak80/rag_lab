@@ -20,7 +20,7 @@ async def grade_ab_responses(
     sources_b: list[dict[str, Any]],
     config_a: dict[str, Any],
     config_b: dict[str, Any],
-    model: str = "mistral:7b"  # Use larger model for better evaluation quality
+    model: str = "llama3.2:3b"  # Use smaller model to avoid GPU memory issues (mistral:7b needs 4GB+ GPU)
 ) -> dict[str, Any]:
     """
     Grade two responses using LLM-as-judge.
@@ -76,13 +76,33 @@ async def grade_ab_responses(
         logger.info(f"Response B preview: {response_b[:100]}...")
 
         # Auto-grader needs larger context window for long prompts (2 responses + sources)
-        # Use 8192 context window to accommodate full responses and detailed evaluation
+        # Use 4096 context window (llama3.2:3b supports up to 128K, but we'll use 4096 to be safe)
+        # Truncate responses if needed to fit within context window
+        max_response_length = 1500  # Truncate each response to ~1500 chars to fit in context
+        response_a_truncated = response_a[:max_response_length] + "..." if len(response_a) > max_response_length else response_a
+        response_b_truncated = response_b[:max_response_length] + "..." if len(response_b) > max_response_length else response_b
+        
+        # Rebuild prompt with truncated responses
+        grading_prompt = build_grading_prompt(
+            prompt, response_a_truncated, response_b_truncated, sources_a, sources_b
+        )
+        messages = [
+            {
+                "role": "system",
+                "content": "You are an expert RAG evaluator. Evaluate responses objectively and return structured JSON. IMPORTANT: If responses are identical or both are error messages, you must still provide different scores if there are ANY differences (e.g., response length, structure, source count). Do not return identical scores unless the responses are truly identical in every way."
+            },
+            {
+                "role": "user",
+                "content": grading_prompt
+            }
+        ]
+        
         llm_response = await llm.generate(
             messages=messages,
             model=model,
             temperature=grading_temperature,  # 0.5 to prevent copying while maintaining consistency
             max_tokens=2000,  # Increased from 1500 for more detailed evaluation
-            context_window=8192,  # Larger context window for auto-grader (handles 2 full responses + sources)
+            context_window=4096,  # Use 4096 to avoid GPU memory issues (llama3.2:3b can handle this)
             use_mock=False  # Use real LLM for grading
         )
 
@@ -96,7 +116,7 @@ async def grade_ab_responses(
         # Check if response is empty or error message
         if not raw_llm_output or len(raw_llm_output.strip()) == 0:
             raise ValueError(f"LLM returned empty response for auto-grading. Model: {model}, Response length: {len(raw_llm_output)}")
-        
+
         if "unable to generate" in raw_llm_output.lower() or "technical issue" in raw_llm_output.lower():
             raise ValueError(f"LLM returned error response for auto-grading: {raw_llm_output[:200]}")
 
@@ -214,7 +234,7 @@ def parse_grading_result(response_text: str) -> dict[str, Any]:
     """Parse JSON from LLM response"""
     if not response_text or len(response_text.strip()) == 0:
         raise ValueError("Cannot parse empty response text")
-    
+
     try:
         # Try to extract JSON from response
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
