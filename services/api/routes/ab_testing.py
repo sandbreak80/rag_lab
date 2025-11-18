@@ -304,7 +304,7 @@ async def _run_ab_test_async(test_id: str, req: ABTestRequest):
             result_dict_for_redis["grader_result"] = grader_result
             result_dict_for_redis["winner"] = winner
             result_dict_for_redis["grading_duration_ms"] = grading_duration_ms
-            
+
             redis_client = get_redis_client()
             if redis_client:
                 result_json = json.dumps(result_dict_for_redis)
@@ -327,19 +327,6 @@ async def _run_ab_test_async(test_id: str, req: ABTestRequest):
             winner=winner,
             grading_duration_ms=grading_duration_ms
         )
-
-        # Store in Redis (use result_dict_for_redis which includes configs)
-        redis_client = get_redis_client()
-        if redis_client:
-            result_json = json.dumps(result_dict_for_redis)
-            redis_client.setex(
-                f"ab_test:result:{test_id}",
-                AB_TEST_CACHE_TTL,
-                result_json
-            )
-            logger.info(f"✅ Stored A/B test result in Redis: test_id={test_id}, TTL={AB_TEST_CACHE_TTL}s")
-        else:
-            logger.warning(f"⚠️  Redis unavailable, cannot store A/B test result: test_id={test_id}")
 
     except Exception as e:
         import traceback
