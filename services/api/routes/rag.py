@@ -679,12 +679,53 @@ async def rag_query(req: RagQuery):
                 require_kg_citation=req.use_graph and has_kg_in_prompt
             )
 
-            # Estimate prompt token count (rough: ~4 chars per token)
-            total_prompt_chars = sum(len(m.get("content", "")) for m in messages)
-            estimated_prompt_tokens = total_prompt_chars // 4
-            logger.info(f"Prompt size: ~{estimated_prompt_tokens} tokens (estimated from {total_prompt_chars} chars), context_window={req.context_window}, max_tokens={req.max_tokens}")
-            if estimated_prompt_tokens > req.context_window * 0.8:
-                logger.warning(f"⚠️  Prompt is ~{estimated_prompt_tokens} tokens, which is >80% of context_window={req.context_window}. Response may be truncated!")
+            # Estimate prompt token count and validate against context window
+            from ..pipeline.tokenizer import count_tokens
+            
+            # Calculate token counts for each message component
+            system_prompt_tokens = count_tokens(messages[0].get("content", "")) if messages else 0
+            user_query_tokens = count_tokens(messages[-1].get("content", "")) if len(messages) > 1 else 0
+            total_prompt_tokens = sum(count_tokens(m.get("content", "")) for m in messages)
+            
+            # Calculate available tokens for response
+            available_for_response = req.context_window - total_prompt_tokens
+            prompt_utilization_pct = (total_prompt_tokens / req.context_window) * 100 if req.context_window > 0 else 0
+            
+            # Calculate retrieved document tokens (approximate from top_results)
+            retrieved_docs_tokens = sum(count_tokens(r.content) for r in top_results) if top_results else 0
+            
+            logger.info(f"📊 Prompt Size Analysis:")
+            logger.info(f"   System prompt: ~{system_prompt_tokens} tokens")
+            logger.info(f"   User query: ~{user_query_tokens} tokens")
+            logger.info(f"   Retrieved documents ({len(top_results)} docs): ~{retrieved_docs_tokens} tokens")
+            logger.info(f"   Total prompt: ~{total_prompt_tokens} tokens ({prompt_utilization_pct:.1f}% of {req.context_window} context window)")
+            logger.info(f"   Available for response: ~{available_for_response} tokens (max_tokens={req.max_tokens})")
+            
+            # Validation and warnings
+            if total_prompt_tokens > req.context_window:
+                logger.error(f"❌ CRITICAL: Prompt ({total_prompt_tokens} tokens) EXCEEDS context window ({req.context_window} tokens)! Response will be truncated!")
+            elif total_prompt_tokens > req.context_window * 0.9:
+                logger.warning(f"⚠️  WARNING: Prompt ({total_prompt_tokens} tokens) is >90% of context window ({req.context_window} tokens). Response may be severely truncated!")
+            elif total_prompt_tokens > req.context_window * 0.8:
+                logger.warning(f"⚠️  WARNING: Prompt ({total_prompt_tokens} tokens) is >80% of context window ({req.context_window} tokens). Response may be truncated!")
+            
+            if available_for_response < req.max_tokens:
+                logger.warning(f"⚠️  WARNING: Available tokens for response ({available_for_response}) is less than max_tokens ({req.max_tokens}). Response will be truncated!")
+            
+            # Store in metrics for A/B testing and monitoring
+            prompt_size_metrics = {
+                "prompt_tokens_estimated": total_prompt_tokens,
+                "system_prompt_tokens": system_prompt_tokens,
+                "user_query_tokens": user_query_tokens,
+                "retrieved_docs_tokens": retrieved_docs_tokens,
+                "retrieved_docs_count": len(top_results),
+                "context_window": req.context_window,
+                "max_tokens": req.max_tokens,
+                "available_for_response": available_for_response,
+                "prompt_utilization_pct": round(prompt_utilization_pct, 1),
+                "prompt_fits": total_prompt_tokens <= req.context_window,
+                "response_fits": available_for_response >= req.max_tokens
+            }
 
             with tracer.start_as_current_span("synthesis_v1") as synth_span:
                 # Use model and temperature from request if provided, otherwise use defaults
