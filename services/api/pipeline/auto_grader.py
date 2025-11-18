@@ -75,11 +75,14 @@ async def grade_ab_responses(
         logger.info(f"Response A preview: {response_a[:100]}...")
         logger.info(f"Response B preview: {response_b[:100]}...")
 
+        # Auto-grader needs larger context window for long prompts (2 responses + sources)
+        # Use 8192 context window to accommodate full responses and detailed evaluation
         llm_response = await llm.generate(
             messages=messages,
             model=model,
             temperature=grading_temperature,  # 0.5 to prevent copying while maintaining consistency
             max_tokens=2000,  # Increased from 1500 for more detailed evaluation
+            context_window=8192,  # Larger context window for auto-grader (handles 2 full responses + sources)
             use_mock=False  # Use real LLM for grading
         )
 
