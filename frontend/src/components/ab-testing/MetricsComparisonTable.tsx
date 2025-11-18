@@ -62,6 +62,15 @@ export function MetricsComparisonTable({
     { key: 'tokens_in', label: 'Tokens In', higherIsBetter: false },
     { key: 'tokens_out', label: 'Tokens Out', higherIsBetter: false },
     { key: 'total_tokens', label: 'Total Tokens', higherIsBetter: false },
+    // Prompt size metrics (critical for context window validation)
+    { key: 'stage_timings.prompt_size.prompt_tokens_estimated', label: 'Prompt Tokens (Estimated)', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.prompt_size.system_prompt_tokens', label: 'System Prompt Tokens', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.prompt_size.retrieved_docs_tokens', label: 'Retrieved Docs Tokens', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.prompt_size.retrieved_docs_count', label: 'Retrieved Docs Count', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.prompt_size.context_window', label: 'Context Window', higherIsBetter: true, nested: true },
+    { key: 'stage_timings.prompt_size.max_tokens', label: 'Max Tokens', higherIsBetter: true, nested: true },
+    { key: 'stage_timings.prompt_size.available_for_response', label: 'Available for Response', higherIsBetter: true, nested: true },
+    { key: 'stage_timings.prompt_size.prompt_utilization_pct', label: 'Prompt Utilization (%)', higherIsBetter: false, nested: true },
     // Service timings
     { key: 'stage_timings.acl_ms', label: 'ACL/Authorization (ms)', higherIsBetter: false, nested: true },
     { key: 'stage_timings.embedding_ms', label: 'Embedding Generation (ms)', higherIsBetter: false, nested: true },
@@ -109,11 +118,42 @@ export function MetricsComparisonTable({
                   ? getWinner(valA, valB, metric.higherIsBetter)
                   : '';
 
+                // Check for prompt size warnings
+                const isPromptSizeMetric = metric.key.includes('prompt_size');
+                const promptSizeA = metricsA?.stage_timings?.prompt_size;
+                const promptSizeB = metricsB?.stage_timings?.prompt_size;
+                
+                // Show warning if prompt doesn't fit
+                let warningA = '';
+                let warningB = '';
+                if (isPromptSizeMetric && metric.key.includes('prompt_utilization_pct')) {
+                  if (promptSizeA && !promptSizeA.prompt_fits) {
+                    warningA = ' ⚠️ Exceeds context window!';
+                  } else if (promptSizeA && promptSizeA.prompt_utilization_pct > 90) {
+                    warningA = ' ⚠️ >90%';
+                  } else if (promptSizeA && promptSizeA.prompt_utilization_pct > 80) {
+                    warningA = ' ⚠️ >80%';
+                  }
+                  if (promptSizeB && !promptSizeB.prompt_fits) {
+                    warningB = ' ⚠️ Exceeds context window!';
+                  } else if (promptSizeB && promptSizeB.prompt_utilization_pct > 90) {
+                    warningB = ' ⚠️ >90%';
+                  } else if (promptSizeB && promptSizeB.prompt_utilization_pct > 80) {
+                    warningB = ' ⚠️ >80%';
+                  }
+                }
+
                 return (
                   <tr key={metric.key} className="border-b">
                     <td className="p-2">{metric.label}</td>
-                    <td className="text-right p-2">{formatValue(valA, metric.key)}</td>
-                    <td className="text-right p-2">{formatValue(valB, metric.key)}</td>
+                    <td className="text-right p-2">
+                      {formatValue(valA, metric.key)}
+                      {warningA && <span className="text-orange-600 text-xs ml-1">{warningA}</span>}
+                    </td>
+                    <td className="text-right p-2">
+                      {formatValue(valB, metric.key)}
+                      {warningB && <span className="text-orange-600 text-xs ml-1">{warningB}</span>}
+                    </td>
                     <td className="text-center p-2">
                       {winner && (
                         <span className={`px-2 py-1 rounded text-xs ${
