@@ -6,6 +6,7 @@ import logging
 import json
 import re
 import hashlib
+import httpx
 from typing import Any, Optional
 from ..adapters import llm
 
@@ -20,7 +21,7 @@ async def grade_ab_responses(
     sources_b: list[dict[str, Any]],
     config_a: dict[str, Any],
     config_b: dict[str, Any],
-    model: str = "llama3.2:3b"  # Use smaller model to avoid GPU memory issues (mistral:7b needs 4GB+ GPU)
+    model: str = "mistral:7b"  # Use larger model for better evaluation quality
 ) -> dict[str, Any]:
     """
     Grade two responses using LLM-as-judge.
@@ -75,8 +76,42 @@ async def grade_ab_responses(
         logger.info(f"Response A preview: {response_a[:100]}...")
         logger.info(f"Response B preview: {response_b[:100]}...")
 
+        # Unload large models (like qwen2.5:14b) to free GPU memory for auto-grader
+        # This allows us to use mistral:7b for better grading quality
+        ollama_url = "http://ollama:11434"
+        models_to_unload = ["qwen2.5:14b", "gemma2:9b"]  # Large models that might be loaded
+        unloaded_models = []
+        
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                # Check which models are currently loaded
+                ps_response = await client.get(f"{ollama_url}/api/ps")
+                if ps_response.status_code == 200:
+                    loaded_models = ps_response.json().get("models", [])
+                    loaded_model_names = [m.get("name", "") for m in loaded_models]
+                    
+                    # Unload large models that might conflict
+                    for model_name in models_to_unload:
+                        if model_name in loaded_model_names:
+                            logger.info(f"Unloading {model_name} to free GPU memory for auto-grader")
+                            try:
+                                # Ollama doesn't have a direct unload API, but we can trigger it by
+                                # making a request that will cause it to unload when memory is needed
+                                # Actually, we can use the /api/generate endpoint with keep_alive=0 to unload
+                                unload_response = await client.post(
+                                    f"{ollama_url}/api/generate",
+                                    json={"model": model_name, "prompt": "", "keep_alive": "0"},
+                                    timeout=5.0
+                                )
+                                if unload_response.status_code in [200, 400]:  # 400 is OK if model not loaded
+                                    unloaded_models.append(model_name)
+                                    logger.info(f"Successfully unloaded {model_name}")
+                            except Exception as e:
+                                logger.warning(f"Failed to unload {model_name}: {e}")
+        except Exception as e:
+            logger.warning(f"Failed to check/unload models: {e}. Continuing with auto-grading...")
+
         # Auto-grader needs larger context window for long prompts (2 responses + sources)
-        # Use 4096 context window (llama3.2:3b supports up to 128K, but we'll use 4096 to be safe)
         # Truncate responses if needed to fit within context window
         max_response_length = 1500  # Truncate each response to ~1500 chars to fit in context
         response_a_truncated = response_a[:max_response_length] + "..." if len(response_a) > max_response_length else response_a
@@ -97,14 +132,20 @@ async def grade_ab_responses(
             }
         ]
         
-        llm_response = await llm.generate(
-            messages=messages,
-            model=model,
-            temperature=grading_temperature,  # 0.5 to prevent copying while maintaining consistency
-            max_tokens=2000,  # Increased from 1500 for more detailed evaluation
-            context_window=4096,  # Use 4096 to avoid GPU memory issues (llama3.2:3b can handle this)
-            use_mock=False  # Use real LLM for grading
-        )
+        try:
+            llm_response = await llm.generate(
+                messages=messages,
+                model=model,
+                temperature=grading_temperature,  # 0.5 to prevent copying while maintaining consistency
+                max_tokens=2000,  # Increased from 1500 for more detailed evaluation
+                context_window=8192,  # Larger context window for auto-grader (handles 2 full responses + sources)
+                use_mock=False  # Use real LLM for grading
+            )
+        finally:
+            # Note: We don't reload the models automatically - Ollama will handle memory management
+            # If needed, the models will be reloaded on next use
+            if unloaded_models:
+                logger.info(f"Auto-grading complete. Unloaded models: {unloaded_models} (will be reloaded on next use)")
 
         logger.info(f"LLM response received: {len(llm_response.text)} chars")
         logger.info(f"LLM response preview: {llm_response.text[:200]}...")
