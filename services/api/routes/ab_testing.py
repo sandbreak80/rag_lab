@@ -299,7 +299,23 @@ async def _run_ab_test_async(test_id: str, req: ABTestRequest):
                 grading_duration_ms = (time.perf_counter() - grading_start_time) * 1000 if grading_start_time else None
                 # Don't fail the whole test if grading fails
 
-        # Build result
+        # Update Redis with grading results (if auto_grade was enabled)
+        if req.auto_grade and grader_result is not None:
+            result_dict_for_redis["grader_result"] = grader_result
+            result_dict_for_redis["winner"] = winner
+            result_dict_for_redis["grading_duration_ms"] = grading_duration_ms
+            
+            redis_client = get_redis_client()
+            if redis_client:
+                result_json = json.dumps(result_dict_for_redis)
+                redis_client.setex(
+                    f"ab_test:result:{test_id}",
+                    AB_TEST_CACHE_TTL,
+                    result_json
+                )
+                logger.info(f"✅ Updated A/B test result with grading: test_id={test_id}")
+
+        # Build result object (for return value, though we're using Redis for storage)
         result = ABTestResult(
             test_id=test_id,
             prompt=req.prompt,
@@ -309,7 +325,7 @@ async def _run_ab_test_async(test_id: str, req: ABTestRequest):
             metrics_b=metrics_b,
             grader_result=grader_result,
             winner=winner,
-            grading_duration_ms=grading_duration_ms  # Add grading duration to result
+            grading_duration_ms=grading_duration_ms
         )
 
         # Store in Redis (use result_dict_for_redis which includes configs)
