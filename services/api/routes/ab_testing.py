@@ -94,7 +94,7 @@ class ABTestRequest(BaseModel):
     config_a: dict[str, Any] = Field(..., description="Configuration A (RAGConfig)")
     config_b: dict[str, Any] = Field(..., description="Configuration B (RAGConfig)")
     run_parallel: bool = Field(False, description="Run queries in parallel (default: False to avoid VRAM issues)")
-    auto_grade: bool = Field(True, description="Automatically grade responses")
+    auto_grade: bool = Field(False, description="Automatically grade responses (default: False to show responses immediately)")
     user_id: str = Field("ab_test_user", description="User ID for queries")
     groups: list[str] = Field(default_factory=list, description="User groups")
 
@@ -109,6 +109,7 @@ class ABTestResult(BaseModel):
     metrics_b: dict[str, Any]
     grader_result: Optional[dict[str, Any]] = None
     winner: Optional[str] = None  # "A", "B", or "tie"
+    grading_duration_ms: Optional[float] = None  # Time taken for grading in milliseconds
 
 
 class GradeRequest(BaseModel):
@@ -232,33 +233,43 @@ async def _run_ab_test_async(test_id: str, req: ABTestRequest):
         metrics_a = result_a.metrics if hasattr(result_a, 'metrics') else {}
         metrics_b = result_b.metrics if hasattr(result_b, 'metrics') else {}
 
-        # Auto-grade if requested
+        # Auto-grade if requested (but don't block on it - return results first)
         grader_result = None
         winner = None
+        grading_start_time = None
+        grading_duration_ms = None
 
         if req.auto_grade:
+            import time
+            grading_start_time = time.perf_counter()
             logger.info(f"Starting LLM auto-grading for test_id={test_id}")
-            grader_result = await grade_ab_responses(
-                prompt=req.prompt,
-                response_a=result_a.answer,
-                response_b=result_b.answer,
-                sources_a=result_a.sources or [],
-                sources_b=result_b.sources or [],
-                config_a=req.config_a,
-                config_b=req.config_b
-            )
+            try:
+                grader_result = await grade_ab_responses(
+                    prompt=req.prompt,
+                    response_a=result_a.answer,
+                    response_b=result_b.answer,
+                    sources_a=result_a.sources or [],
+                    sources_b=result_b.sources or [],
+                    config_a=req.config_a,
+                    config_b=req.config_b
+                )
 
-            # Determine winner
-            if grader_result:
-                score_a = grader_result.get("response_a", {}).get("overall_score", 0)
-                score_b = grader_result.get("response_b", {}).get("overall_score", 0)
-                if abs(score_a - score_b) < 0.05:
-                    winner = "tie"
-                elif score_a > score_b:
-                    winner = "A"
-                else:
-                    winner = "B"
-            logger.info(f"LLM auto-grading completed: winner={winner}")
+                # Determine winner
+                if grader_result:
+                    score_a = grader_result.get("response_a", {}).get("overall_score", 0)
+                    score_b = grader_result.get("response_b", {}).get("overall_score", 0)
+                    if abs(score_a - score_b) < 0.05:
+                        winner = "tie"
+                    elif score_a > score_b:
+                        winner = "A"
+                    else:
+                        winner = "B"
+                grading_duration_ms = (time.perf_counter() - grading_start_time) * 1000
+                logger.info(f"LLM auto-grading completed: winner={winner}, duration={grading_duration_ms:.1f}ms")
+            except Exception as e:
+                logger.error(f"Auto-grading failed: {e}", exc_info=True)
+                grading_duration_ms = (time.perf_counter() - grading_start_time) * 1000 if grading_start_time else None
+                # Don't fail the whole test if grading fails
 
         # Build result
         result = ABTestResult(
@@ -269,14 +280,14 @@ async def _run_ab_test_async(test_id: str, req: ABTestRequest):
             metrics_a=metrics_a,
             metrics_b=metrics_b,
             grader_result=grader_result,
-            winner=winner
+            winner=winner,
+            grading_duration_ms=grading_duration_ms  # Add grading duration to result
         )
 
-        # Store in Redis
+        # Store in Redis (use result_dict_for_redis which includes configs)
         redis_client = get_redis_client()
         if redis_client:
-            result_dict = result.model_dump(mode='json')
-            result_json = json.dumps(result_dict)
+            result_json = json.dumps(result_dict_for_redis)
             redis_client.setex(
                 f"ab_test:result:{test_id}",
                 AB_TEST_CACHE_TTL,

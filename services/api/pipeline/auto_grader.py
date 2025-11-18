@@ -81,7 +81,7 @@ async def grade_ab_responses(
         ollama_url = "http://ollama:11434"
         models_to_unload = ["qwen2.5:14b", "gemma2:9b"]  # Large models that might be loaded
         unloaded_models = []
-        
+
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 # Check which models are currently loaded
@@ -89,7 +89,7 @@ async def grade_ab_responses(
                 if ps_response.status_code == 200:
                     loaded_models = ps_response.json().get("models", [])
                     loaded_model_names = [m.get("name", "") for m in loaded_models]
-                    
+
                     # Unload large models that might conflict
                     for model_name in models_to_unload:
                         if model_name in loaded_model_names:
@@ -116,7 +116,7 @@ async def grade_ab_responses(
         max_response_length = 1500  # Truncate each response to ~1500 chars to fit in context
         response_a_truncated = response_a[:max_response_length] + "..." if len(response_a) > max_response_length else response_a
         response_b_truncated = response_b[:max_response_length] + "..." if len(response_b) > max_response_length else response_b
-        
+
         # Rebuild prompt with truncated responses
         grading_prompt = build_grading_prompt(
             prompt, response_a_truncated, response_b_truncated, sources_a, sources_b
@@ -131,7 +131,7 @@ async def grade_ab_responses(
                 "content": grading_prompt
             }
         ]
-        
+
         try:
             llm_response = await llm.generate(
                 messages=messages,
