@@ -689,8 +689,11 @@ async def rag_query(req: RagQuery):
                 total_prompt_tokens = sum(count_tokens(m.get("content", "")) for m in messages)
 
                 # Calculate available tokens for response
-                available_for_response = req.context_window - total_prompt_tokens
-                prompt_utilization_pct = (total_prompt_tokens / req.context_window) * 100 if req.context_window > 0 else 0
+                # Use getattr with defaults in case attributes don't exist
+                context_window = getattr(req, 'context_window', 4096)
+                max_tokens = getattr(req, 'max_tokens', 512)
+                available_for_response = context_window - total_prompt_tokens
+                prompt_utilization_pct = (total_prompt_tokens / context_window) * 100 if context_window > 0 else 0
 
                 # Calculate retrieved document tokens (approximate from top_results)
                 retrieved_docs_tokens = sum(count_tokens(r.content) for r in top_results) if top_results else 0
@@ -699,19 +702,19 @@ async def rag_query(req: RagQuery):
                 logger.info(f"   System prompt: ~{system_prompt_tokens} tokens")
                 logger.info(f"   User query: ~{user_query_tokens} tokens")
                 logger.info(f"   Retrieved documents ({len(top_results)} docs): ~{retrieved_docs_tokens} tokens")
-                logger.info(f"   Total prompt: ~{total_prompt_tokens} tokens ({prompt_utilization_pct:.1f}% of {req.context_window} context window)")
-                logger.info(f"   Available for response: ~{available_for_response} tokens (max_tokens={req.max_tokens})")
+                logger.info(f"   Total prompt: ~{total_prompt_tokens} tokens ({prompt_utilization_pct:.1f}% of {context_window} context window)")
+                logger.info(f"   Available for response: ~{available_for_response} tokens (max_tokens={max_tokens})")
 
                 # Validation and warnings
-                if total_prompt_tokens > req.context_window:
-                    logger.error(f"❌ CRITICAL: Prompt ({total_prompt_tokens} tokens) EXCEEDS context window ({req.context_window} tokens)! Response will be truncated!")
-                elif total_prompt_tokens > req.context_window * 0.9:
-                    logger.warning(f"⚠️  WARNING: Prompt ({total_prompt_tokens} tokens) is >90% of context window ({req.context_window} tokens). Response may be severely truncated!")
-                elif total_prompt_tokens > req.context_window * 0.8:
-                    logger.warning(f"⚠️  WARNING: Prompt ({total_prompt_tokens} tokens) is >80% of context window ({req.context_window} tokens). Response may be truncated!")
+                if total_prompt_tokens > context_window:
+                    logger.error(f"❌ CRITICAL: Prompt ({total_prompt_tokens} tokens) EXCEEDS context window ({context_window} tokens)! Response will be truncated!")
+                elif total_prompt_tokens > context_window * 0.9:
+                    logger.warning(f"⚠️  WARNING: Prompt ({total_prompt_tokens} tokens) is >90% of context window ({context_window} tokens). Response may be severely truncated!")
+                elif total_prompt_tokens > context_window * 0.8:
+                    logger.warning(f"⚠️  WARNING: Prompt ({total_prompt_tokens} tokens) is >80% of context window ({context_window} tokens). Response may be truncated!")
 
-                if available_for_response < req.max_tokens:
-                    logger.warning(f"⚠️  WARNING: Available tokens for response ({available_for_response}) is less than max_tokens ({req.max_tokens}). Response will be truncated!")
+                if available_for_response < max_tokens:
+                    logger.warning(f"⚠️  WARNING: Available tokens for response ({available_for_response}) is less than max_tokens ({max_tokens}). Response will be truncated!")
 
                 # Store in metrics for A/B testing and monitoring
                 prompt_size_metrics = {
@@ -720,25 +723,28 @@ async def rag_query(req: RagQuery):
                     "user_query_tokens": user_query_tokens,
                     "retrieved_docs_tokens": retrieved_docs_tokens,
                     "retrieved_docs_count": len(top_results),
-                    "context_window": req.context_window,
-                    "max_tokens": req.max_tokens,
+                    "context_window": context_window,
+                    "max_tokens": max_tokens,
                     "available_for_response": available_for_response,
                     "prompt_utilization_pct": round(prompt_utilization_pct, 1),
-                    "prompt_fits": total_prompt_tokens <= req.context_window,
-                    "response_fits": available_for_response >= req.max_tokens
+                    "prompt_fits": total_prompt_tokens <= context_window,
+                    "response_fits": available_for_response >= max_tokens
                 }
             except Exception as e:
                 logger.error(f"❌ Failed to calculate prompt size analysis: {e}", exc_info=True)
                 # Set defaults to avoid breaking the rest of the code
+                # Use getattr with defaults in case attributes don't exist
+                context_window = getattr(req, 'context_window', 4096)
+                max_tokens = getattr(req, 'max_tokens', 512)
                 prompt_size_metrics = {
                     "prompt_tokens_estimated": 0,
                     "system_prompt_tokens": 0,
                     "user_query_tokens": 0,
                     "retrieved_docs_tokens": 0,
                     "retrieved_docs_count": len(top_results),
-                    "context_window": req.context_window,
-                    "max_tokens": req.max_tokens,
-                    "available_for_response": req.context_window,
+                    "context_window": context_window,
+                    "max_tokens": max_tokens,
+                    "available_for_response": context_window,
                     "prompt_utilization_pct": 0,
                     "prompt_fits": True,
                     "response_fits": True,
