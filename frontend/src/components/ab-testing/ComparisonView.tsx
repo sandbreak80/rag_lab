@@ -55,7 +55,7 @@ export function ComparisonView({
           clearInterval(pollInterval);
           setIsGrading(false);
           setGradingStatus('');
-          
+
           // Update the parent component with new results
           // This will trigger a re-render with the updated grader_result
           window.location.reload(); // Simple approach - could be improved with state management
@@ -179,8 +179,8 @@ export function ComparisonView({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button 
-              onClick={handleRunComparison} 
+            <Button
+              onClick={handleRunComparison}
               disabled={isGrading}
               className="w-full"
             >
