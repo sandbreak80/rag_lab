@@ -680,76 +680,52 @@ async def rag_query(req: RagQuery):
             )
 
             # Estimate prompt token count and validate against context window
-            try:
-                from ..pipeline.tokenizer import count_tokens
+            from ..pipeline.tokenizer import count_tokens
 
-                # Calculate token counts for each message component
-                system_prompt_tokens = count_tokens(messages[0].get("content", "")) if messages else 0
-                user_query_tokens = count_tokens(messages[-1].get("content", "")) if len(messages) > 1 else 0
-                total_prompt_tokens = sum(count_tokens(m.get("content", "")) for m in messages)
+            # Calculate token counts for each message component
+            system_prompt_tokens = count_tokens(messages[0].get("content", "")) if messages else 0
+            user_query_tokens = count_tokens(messages[-1].get("content", "")) if len(messages) > 1 else 0
+            total_prompt_tokens = sum(count_tokens(m.get("content", "")) for m in messages)
 
-                # Calculate available tokens for response
-                # Use getattr with defaults in case attributes don't exist
-                context_window = getattr(req, 'context_window', 4096)
-                max_tokens = getattr(req, 'max_tokens', 512)
-                available_for_response = context_window - total_prompt_tokens
-                prompt_utilization_pct = (total_prompt_tokens / context_window) * 100 if context_window > 0 else 0
+            # Calculate available tokens for response
+            available_for_response = req.context_window - total_prompt_tokens
+            prompt_utilization_pct = (total_prompt_tokens / req.context_window) * 100 if req.context_window > 0 else 0
 
-                # Calculate retrieved document tokens (approximate from top_results)
-                retrieved_docs_tokens = sum(count_tokens(r.content) for r in top_results) if top_results else 0
+            # Calculate retrieved document tokens (approximate from top_results)
+            retrieved_docs_tokens = sum(count_tokens(r.content) for r in top_results) if top_results else 0
 
-                logger.info(f"📊 Prompt Size Analysis:")
-                logger.info(f"   System prompt: ~{system_prompt_tokens} tokens")
-                logger.info(f"   User query: ~{user_query_tokens} tokens")
-                logger.info(f"   Retrieved documents ({len(top_results)} docs): ~{retrieved_docs_tokens} tokens")
-                logger.info(f"   Total prompt: ~{total_prompt_tokens} tokens ({prompt_utilization_pct:.1f}% of {context_window} context window)")
-                logger.info(f"   Available for response: ~{available_for_response} tokens (max_tokens={max_tokens})")
+            logger.info(f"📊 Prompt Size Analysis:")
+            logger.info(f"   System prompt: ~{system_prompt_tokens} tokens")
+            logger.info(f"   User query: ~{user_query_tokens} tokens")
+            logger.info(f"   Retrieved documents ({len(top_results)} docs): ~{retrieved_docs_tokens} tokens")
+            logger.info(f"   Total prompt: ~{total_prompt_tokens} tokens ({prompt_utilization_pct:.1f}% of {req.context_window} context window)")
+            logger.info(f"   Available for response: ~{available_for_response} tokens (max_tokens={req.max_tokens})")
 
-                # Validation and warnings
-                if total_prompt_tokens > context_window:
-                    logger.error(f"❌ CRITICAL: Prompt ({total_prompt_tokens} tokens) EXCEEDS context window ({context_window} tokens)! Response will be truncated!")
-                elif total_prompt_tokens > context_window * 0.9:
-                    logger.warning(f"⚠️  WARNING: Prompt ({total_prompt_tokens} tokens) is >90% of context window ({context_window} tokens). Response may be severely truncated!")
-                elif total_prompt_tokens > context_window * 0.8:
-                    logger.warning(f"⚠️  WARNING: Prompt ({total_prompt_tokens} tokens) is >80% of context window ({context_window} tokens). Response may be truncated!")
+            # Validation and warnings
+            if total_prompt_tokens > req.context_window:
+                logger.error(f"❌ CRITICAL: Prompt ({total_prompt_tokens} tokens) EXCEEDS context window ({req.context_window} tokens)! Response will be truncated!")
+            elif total_prompt_tokens > req.context_window * 0.9:
+                logger.warning(f"⚠️  WARNING: Prompt ({total_prompt_tokens} tokens) is >90% of context window ({req.context_window} tokens). Response may be severely truncated!")
+            elif total_prompt_tokens > req.context_window * 0.8:
+                logger.warning(f"⚠️  WARNING: Prompt ({total_prompt_tokens} tokens) is >80% of context window ({req.context_window} tokens). Response may be truncated!")
 
-                if available_for_response < max_tokens:
-                    logger.warning(f"⚠️  WARNING: Available tokens for response ({available_for_response}) is less than max_tokens ({max_tokens}). Response will be truncated!")
+            if available_for_response < req.max_tokens:
+                logger.warning(f"⚠️  WARNING: Available tokens for response ({available_for_response}) is less than max_tokens ({req.max_tokens}). Response will be truncated!")
 
-                # Store in metrics for A/B testing and monitoring
-                prompt_size_metrics = {
-                    "prompt_tokens_estimated": total_prompt_tokens,
-                    "system_prompt_tokens": system_prompt_tokens,
-                    "user_query_tokens": user_query_tokens,
-                    "retrieved_docs_tokens": retrieved_docs_tokens,
-                    "retrieved_docs_count": len(top_results),
-                    "context_window": context_window,
-                    "max_tokens": max_tokens,
-                    "available_for_response": available_for_response,
-                    "prompt_utilization_pct": round(prompt_utilization_pct, 1),
-                    "prompt_fits": total_prompt_tokens <= context_window,
-                    "response_fits": available_for_response >= max_tokens
-                }
-            except Exception as e:
-                logger.error(f"❌ Failed to calculate prompt size analysis: {e}", exc_info=True)
-                # Set defaults to avoid breaking the rest of the code
-                # Use getattr with defaults in case attributes don't exist
-                context_window = getattr(req, 'context_window', 4096)
-                max_tokens = getattr(req, 'max_tokens', 512)
-                prompt_size_metrics = {
-                    "prompt_tokens_estimated": 0,
-                    "system_prompt_tokens": 0,
-                    "user_query_tokens": 0,
-                    "retrieved_docs_tokens": 0,
-                    "retrieved_docs_count": len(top_results),
-                    "context_window": context_window,
-                    "max_tokens": max_tokens,
-                    "available_for_response": context_window,
-                    "prompt_utilization_pct": 0,
-                    "prompt_fits": True,
-                    "response_fits": True,
-                    "error": str(e)
-                }
+            # Store in metrics for A/B testing and monitoring
+            prompt_size_metrics = {
+                "prompt_tokens_estimated": total_prompt_tokens,
+                "system_prompt_tokens": system_prompt_tokens,
+                "user_query_tokens": user_query_tokens,
+                "retrieved_docs_tokens": retrieved_docs_tokens,
+                "retrieved_docs_count": len(top_results),
+                "context_window": req.context_window,
+                "max_tokens": req.max_tokens,
+                "available_for_response": available_for_response,
+                "prompt_utilization_pct": round(prompt_utilization_pct, 1),
+                "prompt_fits": total_prompt_tokens <= req.context_window,
+                "response_fits": available_for_response >= req.max_tokens
+            }
 
             # Add to stage_timings for visibility in A/B testing
             stage_timings["prompt_size"] = prompt_size_metrics
@@ -759,20 +735,18 @@ async def rag_query(req: RagQuery):
                 # Check if model/temperature are set (not None) before using defaults
                 req_model = getattr(req, 'model', None)
                 req_temperature = getattr(req, 'temperature', None)
-                req_max_tokens = getattr(req, 'max_tokens', 512)
-                req_context_window = getattr(req, 'context_window', 4096)
 
                 llm_model = req_model if req_model is not None else "llama3.1:8b"
                 llm_temperature = req_temperature if req_temperature is not None else 0.7
 
-                logger.info(f"🔍 LLM call: req.model={req_model}, req.temperature={req_temperature}, using model={llm_model}, temperature={llm_temperature}, max_tokens={req_max_tokens}, context_window={req_context_window}")
+                logger.info(f"🔍 LLM call: req.model={req_model}, req.temperature={req_temperature}, using model={llm_model}, temperature={llm_temperature}, max_tokens={req.max_tokens}, context_window={req.context_window}")
 
                 llm_response = await llm.generate(
                     messages=messages,
                     model=llm_model,  # Use model from request (from preset config)
                     temperature=llm_temperature,  # Use temperature from request (from preset config)
-                    max_tokens=req_max_tokens,  # Use max_tokens from request (from preset config)
-                    context_window=req_context_window,  # Use context_window from request (from preset config)
+                    max_tokens=req.max_tokens,  # Use max_tokens from request (from preset config)
+                    context_window=req.context_window,  # Use context_window from request (from preset config)
                     use_mock=USE_MOCK_LLM
                 )
 
