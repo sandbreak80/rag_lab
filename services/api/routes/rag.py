@@ -726,7 +726,7 @@ async def rag_query(req: RagQuery):
                 "prompt_fits": total_prompt_tokens <= req.context_window,
                 "response_fits": available_for_response >= req.max_tokens
             }
-            
+
             # Add to stage_timings for visibility in A/B testing
             stage_timings["prompt_size"] = prompt_size_metrics
 
