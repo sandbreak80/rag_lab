@@ -90,6 +90,13 @@ async def grade_ab_responses(
         # Store raw LLM response for debugging/transparency
         raw_llm_output = llm_response.text
 
+        # Check if response is empty or error message
+        if not raw_llm_output or len(raw_llm_output.strip()) == 0:
+            raise ValueError(f"LLM returned empty response for auto-grading. Model: {model}, Response length: {len(raw_llm_output)}")
+        
+        if "unable to generate" in raw_llm_output.lower() or "technical issue" in raw_llm_output.lower():
+            raise ValueError(f"LLM returned error response for auto-grading: {raw_llm_output[:200]}")
+
         # Parse JSON from response
         result = parse_grading_result(raw_llm_output)
 
@@ -202,13 +209,20 @@ Output JSON only:
 
 def parse_grading_result(response_text: str) -> dict[str, Any]:
     """Parse JSON from LLM response"""
+    if not response_text or len(response_text.strip()) == 0:
+        raise ValueError("Cannot parse empty response text")
+    
     try:
         # Try to extract JSON from response
         json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
         if json_match:
             result = json.loads(json_match.group(0))
         else:
-            result = json.loads(response_text)
+            # If no JSON found, try parsing the whole response
+            if response_text.strip().startswith('{'):
+                result = json.loads(response_text)
+            else:
+                raise ValueError(f"No JSON found in response. Response preview: {response_text[:200]}")
 
         # Validate structure
         if "response_a" not in result or "response_b" not in result:
