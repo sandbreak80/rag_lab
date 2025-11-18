@@ -272,25 +272,65 @@ Output JSON only:
 
 
 def parse_grading_result(response_text: str) -> dict[str, Any]:
-    """Parse JSON from LLM response"""
+    """Parse JSON from LLM response with robust error handling"""
     if not response_text or len(response_text.strip()) == 0:
         raise ValueError("Cannot parse empty response text")
 
+    # Log the raw response for debugging
+    logger.debug(f"Parsing grading result. Response length: {len(response_text)}")
+    logger.debug(f"Response preview (first 500 chars): {response_text[:500]}")
+
     try:
-        # Try to extract JSON from response
-        json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+        # Strategy 1: Try to find JSON object in response (most common case)
+        # Look for opening brace followed by content and closing brace
+        json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response_text, re.DOTALL)
         if json_match:
-            result = json.loads(json_match.group(0))
+            json_str = json_match.group(0)
+            logger.debug(f"Found JSON match: {json_str[:200]}...")
+            
+            # Try to fix common JSON issues before parsing
+            # Replace single quotes with double quotes (but be careful with apostrophes in text)
+            # Only replace single quotes that are clearly property names or string delimiters
+            json_str_fixed = json_str
+            
+            # Fix single quotes around property names: 'key': -> "key":
+            json_str_fixed = re.sub(r"'(\w+)':", r'"\1":', json_str_fixed)
+            # Fix single quotes around string values: 'value' -> "value" (but not in the middle of words)
+            json_str_fixed = re.sub(r":\s*'([^']*)'", r': "\1"', json_str_fixed)
+            # Fix trailing commas before closing braces/brackets
+            json_str_fixed = re.sub(r',(\s*[}\]])', r'\1', json_str_fixed)
+            
+            try:
+                result = json.loads(json_str_fixed)
+                logger.debug("Successfully parsed JSON after fixing common issues")
+            except json.JSONDecodeError as e:
+                logger.warning(f"JSON parsing failed after fixes. Error: {e}. Trying original...")
+                # Try original if fixes didn't work
+                result = json.loads(json_str)
         else:
-            # If no JSON found, try parsing the whole response
+            # Strategy 2: Try parsing the whole response if it starts with {
             if response_text.strip().startswith('{'):
-                result = json.loads(response_text)
+                logger.debug("No JSON match found, trying to parse entire response")
+                result = json.loads(response_text.strip())
             else:
-                raise ValueError(f"No JSON found in response. Response preview: {response_text[:200]}")
+                # Strategy 3: Try to find JSON using more aggressive regex
+                # Look for content between first { and last }
+                first_brace = response_text.find('{')
+                last_brace = response_text.rfind('}')
+                if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+                    json_str = response_text[first_brace:last_brace + 1]
+                    logger.debug(f"Extracted JSON using brace positions: {json_str[:200]}...")
+                    # Apply same fixes
+                    json_str = re.sub(r"'(\w+)':", r'"\1":', json_str)
+                    json_str = re.sub(r":\s*'([^']*)'", r': "\1"', json_str)
+                    json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
+                    result = json.loads(json_str)
+                else:
+                    raise ValueError(f"No JSON found in response. Response preview: {response_text[:500]}")
 
         # Validate structure
         if "response_a" not in result or "response_b" not in result:
-            raise ValueError("Missing response_a or response_b in result")
+            raise ValueError(f"Missing response_a or response_b in result. Keys found: {list(result.keys())}")
 
         # Normalize structure - ensure scores are nested
         for key in ["response_a", "response_b"]:
@@ -334,8 +374,38 @@ def parse_grading_result(response_text: str) -> dict[str, Any]:
 
         return result
 
+    except json.JSONDecodeError as e:
+        # Log detailed error information for debugging
+        error_msg = str(e)
+        error_pos = getattr(e, 'pos', None)
+        error_line = getattr(e, 'lineno', None)
+        error_col = getattr(e, 'colno', None)
+        
+        logger.error(f"JSON parsing failed: {error_msg}")
+        logger.error(f"Error position: pos={error_pos}, line={error_line}, col={error_col}")
+        
+        # Log the problematic JSON section
+        if error_pos is not None and error_pos < len(response_text):
+            start = max(0, error_pos - 100)
+            end = min(len(response_text), error_pos + 100)
+            logger.error(f"Problematic JSON section (around error): {response_text[start:end]}")
+        
+        # Log full response for debugging (truncated if too long)
+        if len(response_text) < 2000:
+            logger.error(f"Full response text: {response_text}")
+        else:
+            logger.error(f"Full response text (first 1000 chars): {response_text[:1000]}")
+            logger.error(f"Full response text (last 1000 chars): {response_text[-1000:]}")
+        
+        raise ValueError(
+            f"Failed to parse JSON from LLM response. "
+            f"Error: {error_msg} "
+            f"(line {error_line}, column {error_col}). "
+            f"Response preview: {response_text[:500]}"
+        ) from e
     except Exception as e:
-        logger.error(f"Failed to parse grading result: {e}")
+        logger.error(f"Failed to parse grading result: {e}", exc_info=True)
+        logger.error(f"Response text (first 500 chars): {response_text[:500]}")
         raise
 
 
