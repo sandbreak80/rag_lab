@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "private": true,
-  "version": "2.1.0-prompt-editor",
+  "version": "2.2.0-prompt-size-analysis",
   "type": "module",
   "scripts": {
     "dev": "vite",

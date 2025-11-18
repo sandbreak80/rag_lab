@@ -9,6 +9,7 @@ import asyncio
 import json
 import os
 import time
+import sys
 from uuid import uuid4
 import redis
 
@@ -160,34 +161,60 @@ AB_TEST_CACHE_TTL = 30 * 60  # 30 minutes
 async def _run_ab_test_async(test_id: str, req: ABTestRequest):
     """Background task to run A/B test and store results in Redis"""
     try:
-        logger.info(f"A/B test background task started: test_id={test_id}, parallel={req.run_parallel}")
+        # Log to both logger and stderr (background tasks may not preserve logger context)
+        print(f"[AB_TEST] Background task started: test_id={test_id}, parallel={req.run_parallel}", file=sys.stderr, flush=True)
+        print(f"[AB_TEST] Config A type: {type(req.config_a)}, Config B type: {type(req.config_b)}", file=sys.stderr, flush=True)
+        print(f"[AB_TEST] Config A present: {req.config_a is not None}, Config B present: {req.config_b is not None}", file=sys.stderr, flush=True)
+
+        logger.info(f"[AB_TEST] Background task started: test_id={test_id}, parallel={req.run_parallel}")
+        logger.info(f"[AB_TEST] Config A type: {type(req.config_a)}, Config B type: {type(req.config_b)}")
+        logger.info(f"[AB_TEST] Config A present: {req.config_a is not None}, Config B present: {req.config_b is not None}")
 
         # Convert configs to RagQuery objects
         def config_to_rag_query(config: dict[str, Any], request_id: str) -> RagQuery:
             # Log config keys and critical values for debugging
-            logger.info(f"🔍 config_to_rag_query: request_id={request_id}, config_keys={list(config.keys())}")
-            logger.info(f"🔍 config values: model={config.get('model')}, temperature={config.get('temperature')}, maxTokens={config.get('maxTokens')}, contextWindow={config.get('contextWindow')}")
+            # Log to both logger and stderr
+            config_keys_str = str(list(config.keys()))
+            config_vals_str = f"model={config.get('model')}, temperature={config.get('temperature')}, maxTokens={config.get('maxTokens')}, contextWindow={config.get('contextWindow')}"
+            print(f"[AB_TEST_CONFIG] request_id={request_id}, config_keys={config_keys_str}", file=sys.stderr, flush=True)
+            print(f"[AB_TEST_CONFIG] config values: {config_vals_str}", file=sys.stderr, flush=True)
+
+            logger.info(f"[AB_TEST_CONFIG] request_id={request_id}, config_keys={list(config.keys())}")
+            logger.info(f"[AB_TEST_CONFIG] config values: model={config.get('model')}, temperature={config.get('temperature')}, maxTokens={config.get('maxTokens')}, contextWindow={config.get('contextWindow')}")
 
             model = config.get("model")
             temperature = config.get("temperature")
             max_tokens = config.get("maxTokens") or config.get("max_tokens", 512)
             context_window = config.get("contextWindow") or config.get("context_window", 4096)
+            top_k = config.get("topK") or config.get("top_k", 10)
+            use_query_expansion = config.get("useQueryExpansion") if "useQueryExpansion" in config else config.get("use_query_expansion", False)
+            use_bm25 = config.get("useBM25") if "useBM25" in config else config.get("use_bm25", False)
+            use_hybrid = config.get("useHybrid") if "useHybrid" in config else config.get("use_hybrid", False)
+            use_graph = config.get("useGraph") if "useGraph" in config else config.get("use_graph", False)
+            use_web_search = config.get("useWebSearch") if "useWebSearch" in config else config.get("web_search_enabled", True)
 
-            logger.info(f"🔍 Final values for {request_id}: model={model}, temperature={temperature}, max_tokens={max_tokens}, context_window={context_window}")
+            # Log to both logger and stderr
+            final_vals_str = f"model={model}, temperature={temperature}, max_tokens={max_tokens}, context_window={context_window}, top_k={top_k}"
+            features_str = f"QE={use_query_expansion}, BM25={use_bm25}, Hybrid={use_hybrid}, Graph={use_graph}, Web={use_web_search}"
+            print(f"[AB_TEST_CONFIG] Final values for {request_id}: {final_vals_str}", file=sys.stderr, flush=True)
+            print(f"[AB_TEST_CONFIG] Features for {request_id}: {features_str}", file=sys.stderr, flush=True)
+
+            logger.info(f"[AB_TEST_CONFIG] Final values for {request_id}: model={model}, temperature={temperature}, max_tokens={max_tokens}, context_window={context_window}, top_k={top_k}")
+            logger.info(f"[AB_TEST_CONFIG] Features for {request_id}: QE={use_query_expansion}, BM25={use_bm25}, Hybrid={use_hybrid}, Graph={use_graph}, Web={use_web_search}")
 
             return RagQuery(
                 query=req.prompt,
                 user_id=req.user_id,
                 groups=req.groups,
                 request_id=request_id,
-                top_k=config.get("topK") or config.get("top_k", 10),
-                web_search_enabled=config.get("useWebSearch") if "useWebSearch" in config else config.get("web_search_enabled", True),
+                top_k=top_k,
+                web_search_enabled=use_web_search,
                 web_search_docs=config.get("webSearchDocs") or config.get("web_search_docs", 20),
-                use_graph=config.get("useGraph") if "useGraph" in config else config.get("use_graph", False),
+                use_graph=use_graph,
                 enable_research=config.get("useResearchAgent") if "useResearchAgent" in config else config.get("enable_research", False),
-                use_query_expansion=config.get("useQueryExpansion") if "useQueryExpansion" in config else config.get("use_query_expansion", False),
-                use_bm25=config.get("useBM25") if "useBM25" in config else config.get("use_bm25", False),
-                use_hybrid=config.get("useHybrid") if "useHybrid" in config else config.get("use_hybrid", False),
+                use_query_expansion=use_query_expansion,
+                use_bm25=use_bm25,
+                use_hybrid=use_hybrid,
                 max_tokens=max_tokens,  # Pass max_tokens from config
                 context_window=context_window,  # Pass context_window from config
                 model=model,  # CRITICAL: Pass model from config (e.g., 'llama3.2:1b' vs 'gemma2:9b')
@@ -197,7 +224,12 @@ async def _run_ab_test_async(test_id: str, req: ABTestRequest):
         request_id_a = f"{test_id}_a"
         request_id_b = f"{test_id}_b"
 
+        logger.info(f"[AB_TEST_CONFIG] About to convert config A for {request_id_a}")
+        logger.info(f"[AB_TEST_CONFIG] Config A keys: {list(req.config_a.keys()) if req.config_a else 'None'}")
         query_a = config_to_rag_query(req.config_a, request_id_a)
+
+        logger.info(f"[AB_TEST_CONFIG] About to convert config B for {request_id_b}")
+        logger.info(f"[AB_TEST_CONFIG] Config B keys: {list(req.config_b.keys()) if req.config_b else 'None'}")
         query_b = config_to_rag_query(req.config_b, request_id_b)
 
         # Run queries
@@ -233,6 +265,36 @@ async def _run_ab_test_async(test_id: str, req: ABTestRequest):
         metrics_a = result_a.metrics if hasattr(result_a, 'metrics') else {}
         metrics_b = result_b.metrics if hasattr(result_b, 'metrics') else {}
 
+        # Extract config details for debugging
+        config_a_details = {
+            "model": req.config_a.get("model") if req.config_a else None,
+            "temperature": req.config_a.get("temperature") if req.config_a else None,
+            "maxTokens": req.config_a.get("maxTokens") or req.config_a.get("max_tokens") if req.config_a else None,
+            "contextWindow": req.config_a.get("contextWindow") or req.config_a.get("context_window") if req.config_a else None,
+            "topK": req.config_a.get("topK") or req.config_a.get("top_k") if req.config_a else None,
+            "useQueryExpansion": req.config_a.get("useQueryExpansion") or req.config_a.get("use_query_expansion") if req.config_a else None,
+            "useBM25": req.config_a.get("useBM25") or req.config_a.get("use_bm25") if req.config_a else None,
+            "useHybrid": req.config_a.get("useHybrid") or req.config_a.get("use_hybrid") if req.config_a else None,
+            "useGraph": req.config_a.get("useGraph") or req.config_a.get("use_graph") if req.config_a else None,
+            "useWebSearch": req.config_a.get("useWebSearch") or req.config_a.get("web_search_enabled") if req.config_a else None,
+        }
+        config_b_details = {
+            "model": req.config_b.get("model") if req.config_b else None,
+            "temperature": req.config_b.get("temperature") if req.config_b else None,
+            "maxTokens": req.config_b.get("maxTokens") or req.config_b.get("max_tokens") if req.config_b else None,
+            "contextWindow": req.config_b.get("contextWindow") or req.config_b.get("context_window") if req.config_b else None,
+            "topK": req.config_b.get("topK") or req.config_b.get("top_k") if req.config_b else None,
+            "useQueryExpansion": req.config_b.get("useQueryExpansion") or req.config_b.get("use_query_expansion") if req.config_b else None,
+            "useBM25": req.config_b.get("useBM25") or req.config_b.get("use_bm25") if req.config_b else None,
+            "useHybrid": req.config_b.get("useHybrid") or req.config_b.get("use_hybrid") if req.config_b else None,
+            "useGraph": req.config_b.get("useGraph") or req.config_b.get("use_graph") if req.config_b else None,
+            "useWebSearch": req.config_b.get("useWebSearch") or req.config_b.get("web_search_enabled") if req.config_b else None,
+        }
+
+        # Also log to stdout/stderr directly (bypasses logger issues in background tasks)
+        print(f"[AB_TEST_CONFIG] Config A: {config_a_details}", file=sys.stderr, flush=True)
+        print(f"[AB_TEST_CONFIG] Config B: {config_b_details}", file=sys.stderr, flush=True)
+
         # Store results IMMEDIATELY (before grading) so frontend can show responses
         # This allows users to see responses right away, then run grading separately
         result_dict_for_redis = {
@@ -247,6 +309,8 @@ async def _run_ab_test_async(test_id: str, req: ABTestRequest):
             "grading_duration_ms": None,
             "config_a": req.config_a,  # Store configs for later grading
             "config_b": req.config_b,
+            "config_a_details": config_a_details,  # Store parsed config details for debugging
+            "config_b_details": config_b_details,  # Store parsed config details for debugging
             "status": "completed"  # Mark as completed (responses are ready)
         }
 
@@ -359,16 +423,51 @@ async def run_ab_test(req: ABTestRequest, background_tasks: BackgroundTasks):
     Tests can take 5+ minutes, so we use async execution with Redis storage.
     """
     test_id = uuid4().hex
+
+    # Extract and log config details IMMEDIATELY (before background task)
+    # This ensures we can see the configs even if background task logging fails
+    config_a_details = {
+        "model": req.config_a.get("model") if req.config_a else None,
+        "temperature": req.config_a.get("temperature") if req.config_a else None,
+        "maxTokens": req.config_a.get("maxTokens") or req.config_a.get("max_tokens") if req.config_a else None,
+        "contextWindow": req.config_a.get("contextWindow") or req.config_a.get("context_window") if req.config_a else None,
+        "topK": req.config_a.get("topK") or req.config_a.get("top_k") if req.config_a else None,
+        "useQueryExpansion": req.config_a.get("useQueryExpansion") or req.config_a.get("use_query_expansion") if req.config_a else None,
+        "useBM25": req.config_a.get("useBM25") or req.config_a.get("use_bm25") if req.config_a else None,
+        "useHybrid": req.config_a.get("useHybrid") or req.config_a.get("use_hybrid") if req.config_a else None,
+        "useGraph": req.config_a.get("useGraph") or req.config_a.get("use_graph") if req.config_a else None,
+        "useWebSearch": req.config_a.get("useWebSearch") or req.config_a.get("web_search_enabled") if req.config_a else None,
+    }
+    config_b_details = {
+        "model": req.config_b.get("model") if req.config_b else None,
+        "temperature": req.config_b.get("temperature") if req.config_b else None,
+        "maxTokens": req.config_b.get("maxTokens") or req.config_b.get("max_tokens") if req.config_b else None,
+        "contextWindow": req.config_b.get("contextWindow") or req.config_b.get("context_window") if req.config_b else None,
+        "topK": req.config_b.get("topK") or req.config_b.get("top_k") if req.config_b else None,
+        "useQueryExpansion": req.config_b.get("useQueryExpansion") or req.config_b.get("use_query_expansion") if req.config_b else None,
+        "useBM25": req.config_b.get("useBM25") or req.config_b.get("use_bm25") if req.config_b else None,
+        "useHybrid": req.config_b.get("useHybrid") or req.config_b.get("use_hybrid") if req.config_b else None,
+        "useGraph": req.config_b.get("useGraph") or req.config_b.get("use_graph") if req.config_b else None,
+        "useWebSearch": req.config_b.get("useWebSearch") or req.config_b.get("web_search_enabled") if req.config_b else None,
+    }
+
+    # Log immediately (before background task)
+    print(f"[AB_TEST_CONFIG] Test {test_id} - Config A: {config_a_details}", file=sys.stderr, flush=True)
+    print(f"[AB_TEST_CONFIG] Test {test_id} - Config B: {config_b_details}", file=sys.stderr, flush=True)
     logger.info(f"A/B test initiated: test_id={test_id}, parallel={req.run_parallel}, auto_grade={req.auto_grade}")
+    logger.info(f"Config A: {config_a_details}")
+    logger.info(f"Config B: {config_b_details}")
 
     # Start background task
     background_tasks.add_task(_run_ab_test_async, test_id, req)
 
-    # Return immediately with test_id
+    # Return immediately with test_id AND config details for verification
     return {
         "test_id": test_id,
         "status": "running",
-        "message": "A/B test started. Poll /result/{test_id} for results."
+        "message": "A/B test started. Poll /result/{test_id} for results.",
+        "config_a": config_a_details,  # Include configs in response for immediate verification
+        "config_b": config_b_details
     }
 
 
@@ -378,6 +477,7 @@ async def get_ab_test_result(test_id: str):
     Get A/B test result by test_id.
 
     Returns the result if available, or {"status": "running"} if still processing.
+    Includes config_a_details and config_b_details for verification.
     """
     redis_client = get_redis_client()
     if redis_client:
@@ -397,7 +497,38 @@ async def get_ab_test_result(test_id: str):
                 # Check if results are ready (has result_a and result_b, or status is 'completed')
                 if result_dict.get("status") == "completed" or ("result_a" in result_dict and "result_b" in result_dict):
                     # Results are ready - return them (even if grading not done yet)
-                    return result_dict
+                    # Ensure config details are included
+                    response = result_dict.copy()
+                    if "config_a_details" not in response and "config_a" in response:
+                        # Extract details from full config if details not stored
+                        config_a = response.get("config_a", {})
+                        response["config_a_details"] = {
+                            "model": config_a.get("model"),
+                            "temperature": config_a.get("temperature"),
+                            "maxTokens": config_a.get("maxTokens") or config_a.get("max_tokens"),
+                            "contextWindow": config_a.get("contextWindow") or config_a.get("context_window"),
+                            "topK": config_a.get("topK") or config_a.get("top_k"),
+                            "useQueryExpansion": config_a.get("useQueryExpansion") or config_a.get("use_query_expansion"),
+                            "useBM25": config_a.get("useBM25") or config_a.get("use_bm25"),
+                            "useHybrid": config_a.get("useHybrid") or config_a.get("use_hybrid"),
+                            "useGraph": config_a.get("useGraph") or config_a.get("use_graph"),
+                            "useWebSearch": config_a.get("useWebSearch") or config_a.get("web_search_enabled"),
+                        }
+                    if "config_b_details" not in response and "config_b" in response:
+                        config_b = response.get("config_b", {})
+                        response["config_b_details"] = {
+                            "model": config_b.get("model"),
+                            "temperature": config_b.get("temperature"),
+                            "maxTokens": config_b.get("maxTokens") or config_b.get("max_tokens"),
+                            "contextWindow": config_b.get("contextWindow") or config_b.get("context_window"),
+                            "topK": config_b.get("topK") or config_b.get("top_k"),
+                            "useQueryExpansion": config_b.get("useQueryExpansion") or config_b.get("use_query_expansion"),
+                            "useBM25": config_b.get("useBM25") or config_b.get("use_bm25"),
+                            "useHybrid": config_b.get("useHybrid") or config_b.get("use_hybrid"),
+                            "useGraph": config_b.get("useGraph") or config_b.get("use_graph"),
+                            "useWebSearch": config_b.get("useWebSearch") or config_b.get("web_search_enabled"),
+                        }
+                    return response
                 # Otherwise, still running
                 return {
                     "test_id": test_id,
@@ -434,20 +565,29 @@ async def run_ab_test_sync(req: ABTestRequest):
         temperature = config.get("temperature")
         max_tokens = config.get("maxTokens") or config.get("max_tokens", 512)
         context_window = config.get("contextWindow") or config.get("context_window", 4096)
+        top_k = config.get("topK") or config.get("top_k", 10)
+        use_query_expansion = config.get("useQueryExpansion") if "useQueryExpansion" in config else config.get("use_query_expansion", False)
+        use_bm25 = config.get("useBM25") if "useBM25" in config else config.get("use_bm25", False)
+        use_hybrid = config.get("useHybrid") if "useHybrid" in config else config.get("use_hybrid", False)
+        use_graph = config.get("useGraph") if "useGraph" in config else config.get("use_graph", False)
+        use_web_search = config.get("useWebSearch") if "useWebSearch" in config else config.get("web_search_enabled", True)
+
+        logger.info(f"[AB_TEST_CONFIG] Final values for {request_id}: model={model}, temperature={temperature}, max_tokens={max_tokens}, context_window={context_window}, top_k={top_k}")
+        logger.info(f"[AB_TEST_CONFIG] Features for {request_id}: QE={use_query_expansion}, BM25={use_bm25}, Hybrid={use_hybrid}, Graph={use_graph}, Web={use_web_search}")
 
         return RagQuery(
             query=req.prompt,
             user_id=req.user_id,
             groups=req.groups,
             request_id=request_id,
-            top_k=config.get("topK") or config.get("top_k", 10),
-            web_search_enabled=config.get("useWebSearch") if "useWebSearch" in config else config.get("web_search_enabled", True),
+            top_k=top_k,
+            web_search_enabled=use_web_search,
             web_search_docs=config.get("webSearchDocs") or config.get("web_search_docs", 20),
-            use_graph=config.get("useGraph") if "useGraph" in config else config.get("use_graph", False),
+            use_graph=use_graph,
             enable_research=config.get("useResearchAgent") if "useResearchAgent" in config else config.get("enable_research", False),
-            use_query_expansion=config.get("useQueryExpansion") if "useQueryExpansion" in config else config.get("use_query_expansion", False),
-            use_bm25=config.get("useBM25") if "useBM25" in config else config.get("use_bm25", False),
-            use_hybrid=config.get("useHybrid") if "useHybrid" in config else config.get("use_hybrid", False),
+            use_query_expansion=use_query_expansion,
+            use_bm25=use_bm25,
+            use_hybrid=use_hybrid,
             max_tokens=max_tokens,  # CRITICAL: Pass max_tokens from config
             context_window=context_window,  # CRITICAL: Pass context_window from config
             model=model,  # CRITICAL: Pass model from config
@@ -457,7 +597,12 @@ async def run_ab_test_sync(req: ABTestRequest):
     request_id_a = f"{test_id}_a"
     request_id_b = f"{test_id}_b"
 
+    logger.info(f"[AB_TEST_CONFIG] About to convert config A for {request_id_a}")
+    logger.info(f"[AB_TEST_CONFIG] Config A keys: {list(req.config_a.keys()) if req.config_a else 'None'}")
     query_a = config_to_rag_query(req.config_a, request_id_a)
+
+    logger.info(f"[AB_TEST_CONFIG] About to convert config B for {request_id_b}")
+    logger.info(f"[AB_TEST_CONFIG] Config B keys: {list(req.config_b.keys()) if req.config_b else 'None'}")
     query_b = config_to_rag_query(req.config_b, request_id_b)
 
     try:
