@@ -233,7 +233,35 @@ async def _run_ab_test_async(test_id: str, req: ABTestRequest):
         metrics_a = result_a.metrics if hasattr(result_a, 'metrics') else {}
         metrics_b = result_b.metrics if hasattr(result_b, 'metrics') else {}
 
-        # Auto-grade if requested (but don't block on it - return results first)
+        # Store results IMMEDIATELY (before grading) so frontend can show responses
+        # This allows users to see responses right away, then run grading separately
+        result_dict_for_redis = {
+            "test_id": test_id,
+            "prompt": req.prompt,
+            "result_a": result_a.model_dump(mode='json') if hasattr(result_a, 'model_dump') else result_a.__dict__,
+            "result_b": result_b.model_dump(mode='json') if hasattr(result_b, 'model_dump') else result_b.__dict__,
+            "metrics_a": metrics_a,
+            "metrics_b": metrics_b,
+            "grader_result": None,  # Will be filled if auto_grade is enabled
+            "winner": None,
+            "grading_duration_ms": None,
+            "config_a": req.config_a,  # Store configs for later grading
+            "config_b": req.config_b,
+            "status": "completed"  # Mark as completed (responses are ready)
+        }
+
+        # Store results immediately in Redis (frontend can now show responses)
+        redis_client = get_redis_client()
+        if redis_client:
+            result_json = json.dumps(result_dict_for_redis)
+            redis_client.setex(
+                f"ab_test:result:{test_id}",
+                AB_TEST_CACHE_TTL,
+                result_json
+            )
+            logger.info(f"✅ Stored A/B test results (responses ready): test_id={test_id}")
+
+        # Auto-grade if requested (but don't block - results are already stored)
         grader_result = None
         winner = None
         grading_start_time = None
