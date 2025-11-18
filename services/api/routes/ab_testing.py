@@ -391,7 +391,16 @@ async def get_ab_test_result(test_id: str):
                         "error": result_dict["error"],
                         "message": f"Test failed: {result_dict['error']}"
                     }
-                return result_dict
+                # Check if results are ready (has result_a and result_b, or status is 'completed')
+                if result_dict.get("status") == "completed" or ("result_a" in result_dict and "result_b" in result_dict):
+                    # Results are ready - return them (even if grading not done yet)
+                    return result_dict
+                # Otherwise, still running
+                return {
+                    "test_id": test_id,
+                    "status": "running",
+                    "message": result_dict.get("message", "Test is still running...")
+                }
         except Exception as e:
             error_msg = str(e) if e else "Unknown error"
             logger.error(f"Error retrieving A/B test result: {error_msg}", exc_info=True)
