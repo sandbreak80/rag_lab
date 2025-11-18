@@ -35,7 +35,8 @@ async def generate_mock(
     messages: list[dict[str, str]],
     model: str = "mock-llm",
     temperature: float = 0.7,
-    max_tokens: int = 512
+    max_tokens: int = 512,
+    context_window: int = 4096  # Accept but ignore for mock
 ) -> LLMResponse:
     """
     Mock LLM generation with deterministic output.
