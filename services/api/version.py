@@ -2,7 +2,7 @@
 Version information for RAG API v1
 """
 
-__version__ = "2.1.0-prompt-editor"
+__version__ = "2.2.0-prompt-size-analysis"
 __service__ = "rag-api-v1"
 __build_date__ = "2025-11-17"
 

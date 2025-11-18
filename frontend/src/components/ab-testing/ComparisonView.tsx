@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { RAGConfig } from '@/types/config';
 import { MetricsComparisonTable } from './MetricsComparisonTable';
 import { AutoGraderResults } from './AutoGraderResults';
+import { PromptSizeAnalysis } from './PromptSizeAnalysis';
 
 interface ComparisonViewProps {
   testResults: any;
@@ -147,6 +148,12 @@ export function ComparisonView({
           </CardContent>
         </Card>
       </div>
+
+      {/* Prompt Size Analysis */}
+      <PromptSizeAnalysis
+        metricsA={metrics_a}
+        metricsB={metrics_b}
+      />
 
       {/* Metrics Comparison */}
       <MetricsComparisonTable

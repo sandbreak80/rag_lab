@@ -63,10 +63,11 @@ export function MetricsComparisonTable({
     { key: 'tokens_out', label: 'Tokens Out', higherIsBetter: false },
     { key: 'total_tokens', label: 'Total Tokens', higherIsBetter: false },
     // Prompt size metrics (critical for context window validation)
-    { key: 'stage_timings.prompt_size.prompt_tokens_estimated', label: 'Prompt Tokens (Estimated)', higherIsBetter: false, nested: true },
     { key: 'stage_timings.prompt_size.system_prompt_tokens', label: 'System Prompt Tokens', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.prompt_size.user_query_tokens', label: 'User Query Tokens', higherIsBetter: false, nested: true },
     { key: 'stage_timings.prompt_size.retrieved_docs_tokens', label: 'Retrieved Docs Tokens', higherIsBetter: false, nested: true },
     { key: 'stage_timings.prompt_size.retrieved_docs_count', label: 'Retrieved Docs Count', higherIsBetter: false, nested: true },
+    { key: 'stage_timings.prompt_size.prompt_tokens_estimated', label: 'Total Prompt Tokens', higherIsBetter: false, nested: true },
     { key: 'stage_timings.prompt_size.context_window', label: 'Context Window', higherIsBetter: true, nested: true },
     { key: 'stage_timings.prompt_size.max_tokens', label: 'Max Tokens', higherIsBetter: true, nested: true },
     { key: 'stage_timings.prompt_size.available_for_response', label: 'Available for Response', higherIsBetter: true, nested: true },
