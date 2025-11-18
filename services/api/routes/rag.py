@@ -681,26 +681,26 @@ async def rag_query(req: RagQuery):
 
             # Estimate prompt token count and validate against context window
             from ..pipeline.tokenizer import count_tokens
-            
+
             # Calculate token counts for each message component
             system_prompt_tokens = count_tokens(messages[0].get("content", "")) if messages else 0
             user_query_tokens = count_tokens(messages[-1].get("content", "")) if len(messages) > 1 else 0
             total_prompt_tokens = sum(count_tokens(m.get("content", "")) for m in messages)
-            
+
             # Calculate available tokens for response
             available_for_response = req.context_window - total_prompt_tokens
             prompt_utilization_pct = (total_prompt_tokens / req.context_window) * 100 if req.context_window > 0 else 0
-            
+
             # Calculate retrieved document tokens (approximate from top_results)
             retrieved_docs_tokens = sum(count_tokens(r.content) for r in top_results) if top_results else 0
-            
+
             logger.info(f"📊 Prompt Size Analysis:")
             logger.info(f"   System prompt: ~{system_prompt_tokens} tokens")
             logger.info(f"   User query: ~{user_query_tokens} tokens")
             logger.info(f"   Retrieved documents ({len(top_results)} docs): ~{retrieved_docs_tokens} tokens")
             logger.info(f"   Total prompt: ~{total_prompt_tokens} tokens ({prompt_utilization_pct:.1f}% of {req.context_window} context window)")
             logger.info(f"   Available for response: ~{available_for_response} tokens (max_tokens={req.max_tokens})")
-            
+
             # Validation and warnings
             if total_prompt_tokens > req.context_window:
                 logger.error(f"❌ CRITICAL: Prompt ({total_prompt_tokens} tokens) EXCEEDS context window ({req.context_window} tokens)! Response will be truncated!")
@@ -708,10 +708,10 @@ async def rag_query(req: RagQuery):
                 logger.warning(f"⚠️  WARNING: Prompt ({total_prompt_tokens} tokens) is >90% of context window ({req.context_window} tokens). Response may be severely truncated!")
             elif total_prompt_tokens > req.context_window * 0.8:
                 logger.warning(f"⚠️  WARNING: Prompt ({total_prompt_tokens} tokens) is >80% of context window ({req.context_window} tokens). Response may be truncated!")
-            
+
             if available_for_response < req.max_tokens:
                 logger.warning(f"⚠️  WARNING: Available tokens for response ({available_for_response}) is less than max_tokens ({req.max_tokens}). Response will be truncated!")
-            
+
             # Store in metrics for A/B testing and monitoring
             prompt_size_metrics = {
                 "prompt_tokens_estimated": total_prompt_tokens,
@@ -726,6 +726,9 @@ async def rag_query(req: RagQuery):
                 "prompt_fits": total_prompt_tokens <= req.context_window,
                 "response_fits": available_for_response >= req.max_tokens
             }
+            
+            # Add to stage_timings for visibility in A/B testing
+            stage_timings["prompt_size"] = prompt_size_metrics
 
             with tracer.start_as_current_span("synthesis_v1") as synth_span:
                 # Use model and temperature from request if provided, otherwise use defaults
