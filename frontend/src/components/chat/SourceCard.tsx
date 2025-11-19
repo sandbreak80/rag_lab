@@ -10,7 +10,7 @@ interface SourceCardProps {
 
 export function SourceCard({ source, index }: SourceCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   // Use source_type if available (backend's simplified display type), otherwise check origin_tool
   const sourceTypeRaw = source.source_type || source.source;
   const isWebSource = sourceTypeRaw === 'web' || source.origin_tool === 'web_search' || source.origin_tool === 'web';
@@ -24,7 +24,7 @@ export function SourceCard({ source, index }: SourceCardProps) {
   const sourceType = isResearchSource ? 'Research' : (isWebSource ? 'Web' : 'RAG');
   const iconBgColor = isResearchSource ? 'bg-purple-500/10' : (isWebSource ? 'bg-blue-500/10' : 'bg-primary/10');
   const iconColor = isResearchSource ? 'text-purple-500' : (isWebSource ? 'text-blue-500' : 'text-primary');
-  
+
   // Check if chunk text is long enough to warrant expand/collapse
   const shouldShowExpand = chunkText.length > 200;
 
