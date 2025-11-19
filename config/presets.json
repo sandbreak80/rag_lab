@@ -123,7 +123,7 @@
         "model": "qwen2.5:14b",
         "temperature": 0.3,
         "max_tokens": 1000,
-        "context_window": 24576
+        "context_window": 20480
       },
       "expected_metrics": {
         "precision": "90-95%",
@@ -190,7 +190,7 @@
         "model": "mistral:7b",
         "temperature": 0.3,
         "max_tokens": 1000,
-        "context_window": 20480
+        "context_window": 16384
       },
       "expected_metrics": {
         "precision": "92-96%",
