@@ -145,12 +145,12 @@ export function ComparisonView({
           <CardHeader>
             <CardTitle>Configuration A</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-visible">
             <div className="space-y-4">
-              <div>
+              <div className="overflow-visible">
                 <h4 className="font-semibold mb-2">Response</h4>
-                <div className="max-h-none overflow-visible">
-                  <p className="text-sm whitespace-pre-wrap break-words">{result_a.answer}</p>
+                <div className="max-h-none overflow-visible min-h-0">
+                  <p className="text-sm whitespace-pre-wrap break-words overflow-visible">{result_a.answer}</p>
                 </div>
               </div>
               <div>
@@ -170,16 +170,16 @@ export function ComparisonView({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="overflow-visible">
           <CardHeader>
             <CardTitle>Configuration B</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-visible">
             <div className="space-y-4">
-              <div>
+              <div className="overflow-visible">
                 <h4 className="font-semibold mb-2">Response</h4>
-                <div className="max-h-none overflow-visible">
-                  <p className="text-sm whitespace-pre-wrap break-words">{result_b.answer}</p>
+                <div className="max-h-none overflow-visible min-h-0">
+                  <p className="text-sm whitespace-pre-wrap break-words overflow-visible">{result_b.answer}</p>
                 </div>
               </div>
               <div>
