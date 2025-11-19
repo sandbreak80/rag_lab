@@ -25,7 +25,7 @@ export function VersionFooter() {
           </>
         )}
         <button
-          onClick={() => window.open('/api/version', '_blank')}
+          onClick={() => window.open('/version', '_blank')}
           className="ml-1 px-1 hover:text-foreground transition-colors"
           title="View all service versions"
         >

@@ -2,7 +2,7 @@
 Version information for RAG API v1
 """
 
-__version__ = "2.3.0-cost-comparison"
+__version__ = "2.5.0-chunk-display"
 __service__ = "rag-api-v1"
 __build_date__ = "2025-11-17"
 

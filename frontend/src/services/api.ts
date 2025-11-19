@@ -257,6 +257,7 @@ class ApiClient {
   }
 
   async getVersions(): Promise<any> {
+    // API Gateway aggregates versions from all services
     const response = await this.client.get('/version');
     return response.data;
   }
