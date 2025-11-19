@@ -712,6 +712,11 @@ async def rag_query(req: RagQuery):
             if available_for_response < req.max_tokens:
                 logger.warning(f"⚠️  WARNING: Available tokens for response ({available_for_response}) is less than max_tokens ({req.max_tokens}). Response will be truncated!")
 
+            # Calculate embedding tokens (tokens from chunks that were embedded for retrieval)
+            # This approximates the tokens that went through the embedding model
+            # We use retrieved_docs_tokens as a proxy since those chunks were embedded before retrieval
+            embedding_tokens_estimated = retrieved_docs_tokens  # Approximation: embedded chunks = retrieved chunks
+
             # Store in metrics for A/B testing and monitoring
             prompt_size_metrics = {
                 "prompt_tokens_estimated": total_prompt_tokens,
@@ -719,6 +724,7 @@ async def rag_query(req: RagQuery):
                 "user_query_tokens": user_query_tokens,
                 "retrieved_docs_tokens": retrieved_docs_tokens,
                 "retrieved_docs_count": len(top_results),
+                "embedding_tokens_estimated": embedding_tokens_estimated,  # For cost calculation
                 "context_window": req.context_window,
                 "max_tokens": req.max_tokens,
                 "available_for_response": available_for_response,

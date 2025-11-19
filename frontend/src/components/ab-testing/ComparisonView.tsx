@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { RAGConfig } from '@/types/config';
 import { MetricsComparisonTable } from './MetricsComparisonTable';
 import { AutoGraderResults } from './AutoGraderResults';
+import { CostComparisonTable } from './CostComparisonTable';
 import { PromptSizeAnalysis } from './PromptSizeAnalysis';
 import { api } from '@/services/api';
 
@@ -173,6 +174,12 @@ export function ComparisonView({
         metricsB={metrics_b}
         configA={configA}
         configB={configB}
+      />
+
+      {/* Cost Comparison */}
+      <CostComparisonTable
+        metricsA={metrics_a}
+        metricsB={metrics_b}
       />
 
       {/* Auto-Grader Results */}
