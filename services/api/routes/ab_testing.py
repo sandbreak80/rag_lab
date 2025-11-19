@@ -688,6 +688,129 @@ async def run_ab_test_sync(req: ABTestRequest):
         raise HTTPException(status_code=500, detail=f"A/B test failed: {str(e)}")
 
 
+@router.post("/grade/{test_id}")
+async def grade_ab_test(test_id: str, background_tasks: BackgroundTasks):
+    """
+    Trigger auto-grading for an existing A/B test result.
+    
+    Retrieves the test result from Redis, runs grading, and updates the result.
+    """
+    redis_client = get_redis_client()
+    if not redis_client:
+        raise HTTPException(status_code=503, detail="Redis service unavailable")
+
+    # Retrieve existing test result from Redis
+    result_json = redis_client.get(f"ab_test:result:{test_id}")
+    if not result_json:
+        raise HTTPException(status_code=404, detail=f"Test result {test_id} not found or expired.")
+
+    result_dict = json.loads(result_json)
+    
+    # Check if grading already completed
+    if result_dict.get("grader_result") is not None:
+        return {
+            "test_id": test_id,
+            "status": "completed",
+            "message": "Grading already completed."
+        }
+
+    # Check if we have the required data
+    if not result_dict.get("result_a") or not result_dict.get("result_b"):
+        raise HTTPException(
+            status_code=400,
+            detail="Test results are incomplete. Cannot grade without both responses."
+        )
+
+    # Extract data for grading
+    prompt = result_dict.get("prompt")
+    result_a = result_dict.get("result_a", {})
+    result_b = result_dict.get("result_b", {})
+    config_a = result_dict.get("config_a", {})
+    config_b = result_dict.get("config_b", {})
+
+    if not prompt or not result_a.get("answer") or not result_b.get("answer"):
+        raise HTTPException(
+            status_code=400,
+            detail="Missing required data for grading (prompt or responses)."
+        )
+
+    # Start grading in background task
+    async def _grade_test_async():
+        """Background task to grade the test and update Redis"""
+        try:
+            import time
+            grading_start_time = time.perf_counter()
+            logger.info(f"Starting LLM auto-grading for test_id={test_id}")
+            
+            grader_result = await grade_ab_responses(
+                prompt=prompt,
+                response_a=result_a.get("answer", ""),
+                response_b=result_b.get("answer", ""),
+                sources_a=result_a.get("sources", []) or [],
+                sources_b=result_b.get("sources", []) or [],
+                config_a=config_a,
+                config_b=config_b
+            )
+
+            # Determine winner
+            winner = None
+            if grader_result:
+                score_a = grader_result.get("response_a", {}).get("overall_score", 0)
+                score_b = grader_result.get("response_b", {}).get("overall_score", 0)
+                if abs(score_a - score_b) < 0.05:
+                    winner = "tie"
+                elif score_a > score_b:
+                    winner = "A"
+                else:
+                    winner = "B"
+            
+            grading_duration_ms = (time.perf_counter() - grading_start_time) * 1000
+            logger.info(f"LLM auto-grading completed for test_id={test_id}: winner={winner}, duration={grading_duration_ms:.1f}ms")
+
+            # Update Redis with grading results
+            updated_result_dict = result_dict.copy()
+            updated_result_dict["grader_result"] = grader_result
+            updated_result_dict["winner"] = winner
+            updated_result_dict["grading_duration_ms"] = grading_duration_ms
+            updated_result_dict["status"] = "graded"
+
+            redis_client = get_redis_client()
+            if redis_client:
+                result_json = json.dumps(updated_result_dict)
+                redis_client.setex(
+                    f"ab_test:result:{test_id}",
+                    AB_TEST_CACHE_TTL,
+                    result_json
+                )
+                logger.info(f"✅ Updated A/B test result with grading: test_id={test_id}")
+            else:
+                logger.warning(f"⚠️  Redis unavailable, cannot update A/B test result with grading: test_id={test_id}")
+
+        except Exception as e:
+            logger.error(f"Auto-grading failed for test_id={test_id}: {e}", exc_info=True)
+            # Update Redis with error
+            error_result_dict = result_dict.copy()
+            error_result_dict["grader_result"] = {"error": str(e), "status": "error"}
+            error_result_dict["status"] = "grading_failed"
+            
+            redis_client = get_redis_client()
+            if redis_client:
+                result_json = json.dumps(error_result_dict)
+                redis_client.setex(
+                    f"ab_test:result:{test_id}",
+                    AB_TEST_CACHE_TTL,
+                    result_json
+                )
+
+    background_tasks.add_task(_grade_test_async)
+
+    return {
+        "test_id": test_id,
+        "status": "grading",
+        "message": "Auto-grading started. Poll /result/{test_id} for updated results."
+    }
+
+
 @router.post("/grade")
 async def grade_responses(req: GradeRequest):
     """
