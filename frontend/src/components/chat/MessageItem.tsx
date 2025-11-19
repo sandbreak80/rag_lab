@@ -245,7 +245,7 @@ export function MessageItem({ message }: MessageItemProps) {
             </h4>
             <div className="grid gap-2">
               {(showAllSources ? message.sources : message.sources.slice(0, INITIAL_SOURCES_SHOWN)).map((source, index) => (
-                <div key={index} data-testid={TID.Chat.SourceItem(index + 1)}>
+                <div key={`${source.file_name}-${source.chunk_text?.substring(0, 20)}-${index}`} data-testid={TID.Chat.SourceItem(index + 1)}>
                   <SourceCard source={source} index={index + 1} />
                 </div>
               ))}
