@@ -6,6 +6,7 @@ import { RAGConfig } from '@/types/config';
 import { MetricsComparisonTable } from './MetricsComparisonTable';
 import { AutoGraderResults } from './AutoGraderResults';
 import { PromptSizeAnalysis } from './PromptSizeAnalysis';
+import { api } from '@/services/api';
 
 interface ComparisonViewProps {
   testResults: any;
@@ -20,7 +21,6 @@ export function ComparisonView({
 }: ComparisonViewProps) {
   const [isGrading, setIsGrading] = React.useState(false);
   const [gradingStatus, setGradingStatus] = React.useState<string>('');
-  const { api } = require('@/services/api');
 
   console.log('🔍 ComparisonView: testResults:', testResults);
 
@@ -30,6 +30,18 @@ export function ComparisonView({
   }
 
   const { result_a, result_b, metrics_a, metrics_b, grader_result, winner, grading_duration_ms, test_id } = testResults;
+
+  // Validate that we have the required data
+  if (!result_a || !result_b) {
+    console.error('⚠️ ComparisonView: Missing result_a or result_b', { result_a: !!result_a, result_b: !!result_b });
+    return (
+      <div className="text-muted-foreground p-4">
+        <p>Results are still loading or incomplete.</p>
+        <p className="text-xs mt-2">result_a: {result_a ? 'present' : 'missing'}, result_b: {result_b ? 'present' : 'missing'}</p>
+        {test_id && <p className="text-xs">Test ID: {test_id}</p>}
+      </div>
+    );
+  }
 
   const handleRunComparison = async () => {
     if (!test_id) {
