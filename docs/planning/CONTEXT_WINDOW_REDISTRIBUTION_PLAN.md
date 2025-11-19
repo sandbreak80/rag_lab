@@ -43,7 +43,7 @@
 2. **GPU memory safety**: Quality preset now has ~5GB headroom (vs ~4.5GB)
 3. **Clear differentiation**: Quality (20K) vs Maximum (24K) - 4K difference
 4. **Production stability**: Lower context window reduces memory pressure
-5. **Model-appropriate**: 
+5. **Model-appropriate**:
    - Small models (1B): 4K-8K
    - Medium models (7B-8B): 16K
    - Large models (14B): 20K-24K

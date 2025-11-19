@@ -1,0 +1,17 @@
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="2.0674520000000003">
+<testsuite name="19_version_check.spec.ts" timestamp="2025-11-19T00:52:11.926Z" hostname="chromium" tests="1" failures="0" skipped="0" time="1.57" errors="0">
+<testcase name="Version Check › should display correct version in bottom right corner" classname="19_version_check.spec.ts" time="1.57">
+<system-out>
+<![CDATA[Version displayed on page: UI: v2.0.0-sources-fix
+Extracted version: 2.0.0-sources-fix
+Full footer text: Neural VaultEducational RAG LabModel:llama3.2:3bChunks:1,399Documents:96Graph Nodes:590LoginSign UpChatDocumentsResearch AgentPromptsA/B TestingGPU MonitorSettingsMetricsMonitoringPrompt LogsLab GuideLearning HubFeedbackChatAsk questions about your documentsClear ChatFiltersShow💬Start a conversationAsk questions about your uploaded documents📊 Baseline Prompts for Performance Testing:🟢 LowSimple concept, low detail🟡 MediumMulti-part, medium detail🔴 HighComplex research, high detailPress Enter to send, Shift+Enter for new lineUI: v2.0.0-sources-fixⓘ
+]]>
+</system-out>
+<system-err>
+<![CDATA[(node:2069199) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+]]>
+</system-err>
+</testcase>
+</testsuite>
+</testsuites>
