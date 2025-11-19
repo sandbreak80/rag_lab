@@ -19,14 +19,24 @@ export function SourceCard({ source, index }: SourceCardProps) {
   const title = source.metadata?.title || source.title || source.file_name;
   const engine = source.metadata?.engine;
   const chunkText = source.chunk_text || '';
+  
+  // Debug: Log chunk text length for troubleshooting
+  if (chunkText.length > 0) {
+    console.log(`[SourceCard ${index}] chunk_text length: ${chunkText.length}, preview: ${chunkText.substring(0, 50)}...`);
+  }
 
   // Determine source type for display
   const sourceType = isResearchSource ? 'Research' : (isWebSource ? 'Web' : 'RAG');
   const iconBgColor = isResearchSource ? 'bg-purple-500/10' : (isWebSource ? 'bg-blue-500/10' : 'bg-primary/10');
   const iconColor = isResearchSource ? 'text-purple-500' : (isWebSource ? 'text-blue-500' : 'text-primary');
-
+  
   // Check if chunk text is long enough to warrant expand/collapse
   const shouldShowExpand = chunkText.length > 200;
+  
+  // Debug: Log expand button visibility
+  if (shouldShowExpand) {
+    console.log(`[SourceCard ${index}] Will show expand button (chunk length: ${chunkText.length})`);
+  }
 
   return (
     <Card className="bg-background" data-testid="source-item" data-origin={source.origin_tool || (isWebSource ? 'web' : 'rag')}>
