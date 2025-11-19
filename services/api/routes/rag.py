@@ -1010,7 +1010,7 @@ async def rag_query(req: RagQuery):
                     "score": result.score,
                     "origin_tool": result.origin_tool,
                     "source_type": "rag" if result.origin_tool == "rag" else ("web" if result.origin_tool in ["web_search", "web"] else result.origin_tool),
-                    "content": result.content[:200] + "..." if len(result.content) > 200 else result.content,
+                    "content": result.content,  # Return full chunk content - frontend will handle display
                     "title": getattr(result, 'title', ''),
                     "url": getattr(result, 'source_uri', ''),
                     "cited": was_cited,  # Mark which ones LLM actually used
