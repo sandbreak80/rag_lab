@@ -232,6 +232,14 @@ def get_version():
             except:
                 all_versions['services'][name] = {'service': name, 'version': 'unavailable'}
 
+        # Also include RAG API v1 version (main API service)
+        try:
+            rag_api_response = requests.get("http://rag-api-v1:8080/version", timeout=5)
+            if rag_api_response.status_code == 200:
+                all_versions['services']['rag_api_v1'] = rag_api_response.json()
+        except:
+            all_versions['services']['rag_api_v1'] = {'service': 'rag-api-v1', 'version': 'unavailable'}
+
         return jsonify(all_versions)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
