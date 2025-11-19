@@ -19,7 +19,7 @@ export function SourceCard({ source, index }: SourceCardProps) {
   const title = source.metadata?.title || source.title || source.file_name;
   const engine = source.metadata?.engine;
   const chunkText = source.chunk_text || '';
-  
+
   // Debug: Log chunk text length for troubleshooting
   if (chunkText.length > 0) {
     console.log(`[SourceCard ${index}] chunk_text length: ${chunkText.length}, preview: ${chunkText.substring(0, 50)}...`);
@@ -29,11 +29,11 @@ export function SourceCard({ source, index }: SourceCardProps) {
   const sourceType = isResearchSource ? 'Research' : (isWebSource ? 'Web' : 'RAG');
   const iconBgColor = isResearchSource ? 'bg-purple-500/10' : (isWebSource ? 'bg-blue-500/10' : 'bg-primary/10');
   const iconColor = isResearchSource ? 'text-purple-500' : (isWebSource ? 'text-blue-500' : 'text-primary');
-  
+
   // Check if chunk text is long enough to warrant expand/collapse
   // Lowered threshold to 100 chars for better visibility during development
   const shouldShowExpand = chunkText.length > 100;
-  
+
   // Debug: Log expand button visibility
   if (chunkText.length > 0) {
     console.log(`[SourceCard ${index}] chunk length: ${chunkText.length}, shouldShowExpand: ${shouldShowExpand}`);
@@ -93,15 +93,23 @@ export function SourceCard({ source, index }: SourceCardProps) {
             )}
 
             <div className="space-y-1">
-              <p className={`text-xs text-muted-foreground whitespace-pre-wrap break-words ${
-                shouldShowExpand && !isExpanded ? 'line-clamp-3' : ''
-              }`}>
+              <p 
+                className={`text-xs text-muted-foreground whitespace-pre-wrap break-words ${
+                  shouldShowExpand && !isExpanded ? 'line-clamp-3' : ''
+                }`}
+                style={isExpanded ? { maxHeight: 'none', overflow: 'visible' } : {}}
+              >
                 {chunkText}
               </p>
               {shouldShowExpand && (
                 <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="text-xs text-primary hover:text-primary/80 hover:underline flex items-center gap-1 transition-colors"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log(`[SourceCard ${index}] Toggling expand: ${isExpanded} → ${!isExpanded}`);
+                    setIsExpanded(!isExpanded);
+                  }}
+                  className="text-xs text-primary hover:text-primary/80 hover:underline flex items-center gap-1 transition-colors mt-1"
                 >
                   {isExpanded ? (
                     <>
