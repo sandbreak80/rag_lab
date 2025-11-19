@@ -13,12 +13,14 @@ interface ComparisonViewProps {
   testResults: any;
   configA: RAGConfig | null;
   configB: RAGConfig | null;
+  onResultsUpdate?: (updatedResults: any) => void;
 }
 
 export function ComparisonView({
   testResults,
   configA,
-  configB
+  configB,
+  onResultsUpdate
 }: ComparisonViewProps) {
   const [isGrading, setIsGrading] = React.useState(false);
   const [gradingStatus, setGradingStatus] = React.useState<string>('');
@@ -63,20 +65,26 @@ export function ComparisonView({
         try {
           const result = await api.getABTestResult(test_id);
           console.log('🔍 Polling result:', { status: result.status, has_grader_result: !!result.grader_result });
-          
+
           // Check if grading is complete (has grader_result or status is 'graded')
           if (result.grader_result || result.status === 'graded') {
             // Grading completed
             clearInterval(pollInterval);
             setIsGrading(false);
             setGradingStatus('');
-            console.log('✅ Grading completed, reloading page...');
+            console.log('✅ Grading completed, updating results...');
+            
             // Update the parent component with new results
-            // This will trigger a re-render with the updated grader_result
-            window.location.reload(); // Simple approach - could be improved with state management
+            if (onResultsUpdate) {
+              onResultsUpdate(result);
+            } else {
+              // Fallback: reload if no callback provided
+              console.warn('⚠️ No onResultsUpdate callback, reloading page...');
+              window.location.reload();
+            }
             return;
           }
-          
+
           // Check if grading failed
           if (result.status === 'grading_failed' || (result.grader_result && result.grader_result.error)) {
             clearInterval(pollInterval);

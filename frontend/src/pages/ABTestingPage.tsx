@@ -155,6 +155,7 @@ export function ABTestingPage() {
               testResults={testResults}
               configA={configA}
               configB={configB}
+              onResultsUpdate={setTestResults}
             />
           </CardContent>
         </Card>
