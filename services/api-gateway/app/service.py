@@ -212,6 +212,7 @@ def health_check():
     return jsonify(health.get_health())
 
 @app.route('/version', methods=['GET'])
+@app.route('/api/version', methods=['GET'])  # Also handle /api/version for nginx routing
 def get_version():
     """Version endpoint - aggregates versions from all services"""
     try:
