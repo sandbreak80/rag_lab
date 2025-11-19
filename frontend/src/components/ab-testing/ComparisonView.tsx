@@ -73,7 +73,7 @@ export function ComparisonView({
             setIsGrading(false);
             setGradingStatus('');
             console.log('✅ Grading completed, updating results...');
-            
+
             // Update the parent component with new results
             if (onResultsUpdate) {
               onResultsUpdate(result);
@@ -149,7 +149,9 @@ export function ComparisonView({
             <div className="space-y-4">
               <div>
                 <h4 className="font-semibold mb-2">Response</h4>
-                <p className="text-sm whitespace-pre-wrap">{result_a.answer}</p>
+                <div className="max-h-none overflow-visible">
+                  <p className="text-sm whitespace-pre-wrap break-words">{result_a.answer}</p>
+                </div>
               </div>
               <div>
                 <h4 className="font-semibold mb-2">Sources ({result_a.sources?.length || 0})</h4>
@@ -176,7 +178,9 @@ export function ComparisonView({
             <div className="space-y-4">
               <div>
                 <h4 className="font-semibold mb-2">Response</h4>
-                <p className="text-sm whitespace-pre-wrap">{result_b.answer}</p>
+                <div className="max-h-none overflow-visible">
+                  <p className="text-sm whitespace-pre-wrap break-words">{result_b.answer}</p>
+                </div>
               </div>
               <div>
                 <h4 className="font-semibold mb-2">Sources ({result_b.sources?.length || 0})</h4>
