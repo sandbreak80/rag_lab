@@ -183,6 +183,34 @@ async def generate_real(
             cost_usd=0.0,
             temperature=temperature
         )
+    except httpx.HTTPStatusError as e:
+        # HTTP error from Ollama (e.g., 500 Internal Server Error)
+        error_msg = str(e) if str(e) else repr(e)
+        status_code = e.response.status_code if e.response else "unknown"
+        logger.error(f"LLM generation failed (HTTP {status_code}): {error_msg}")
+        
+        # Try to get error details from Ollama response
+        error_detail = "Unknown error"
+        try:
+            if e.response:
+                error_body = e.response.json() if e.response.content else {}
+                error_detail = error_body.get("error", {}).get("message", str(e)) if isinstance(error_body.get("error"), dict) else error_body.get("error", str(e))
+        except:
+            error_detail = str(e)
+        
+        logger.error(f"Ollama error detail: {error_detail}")
+        
+        # Return a more informative error message
+        return LLMResponse(
+            text=f"I apologize, but I'm unable to generate a response at this time. The LLM service returned an error (HTTP {status_code}): {error_detail}. This may happen if the model doesn't support the requested context window size ({context_window} tokens) or if there's insufficient GPU memory. Please try a smaller context window or a different model.",
+            model=model,
+            provider="ollama",
+            tokens_in=0,
+            tokens_out=0,
+            tokens_total=0,
+            cost_usd=0.0,
+            temperature=temperature
+        )
     except Exception as e:
         import traceback
         error_traceback = traceback.format_exc()
@@ -192,7 +220,7 @@ async def generate_real(
         logger.error(f"Full traceback: {error_traceback}")
         # Fallback to error response
         return LLMResponse(
-            text="I apologize, but I'm unable to generate a response at this time due to a technical issue.",
+            text=f"I apologize, but I'm unable to generate a response at this time due to a technical issue: {error_type}: {error_msg}",
             model=model,
             provider="ollama",
             tokens_in=0,
