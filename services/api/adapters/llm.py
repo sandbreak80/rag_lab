@@ -105,18 +105,41 @@ async def generate_real(
         # Auto-grader prompts are very long (2 full responses + sources), so increase timeout
         # Increase timeout for larger models or when context window is large (likely auto-grader)
         timeout_seconds = 300.0 if "14b" in model.lower() or "9b" in model.lower() else (120.0 if context_window >= 8192 else 30.0)
+        
+        # CRITICAL: Unload model after each query to free GPU VRAM
+        # We use keep_alive: 0 to ensure model is unloaded immediately after response
         async with httpx.AsyncClient(timeout=timeout_seconds) as cx:
-            response = await cx.post(
-                f"{ollama_url}/api/chat",
-                json={
-                    "model": model,
-                    "messages": messages,
-                    "stream": False,
-                    "options": ollama_options
-                }
-            )
-            response.raise_for_status()
-            data = response.json()
+            try:
+                response = await cx.post(
+                    f"{ollama_url}/api/chat",
+                    json={
+                        "model": model,
+                        "messages": messages,
+                        "stream": False,
+                        "keep_alive": "0",  # CRITICAL: Unload model immediately after query to free GPU VRAM
+                        "options": ollama_options
+                    }
+                )
+                response.raise_for_status()
+                data = response.json()
+            finally:
+                # Explicitly unload the model to ensure GPU VRAM is freed
+                # This is a safety measure in case keep_alive didn't work
+                try:
+                    unload_response = await cx.post(
+                        f"{ollama_url}/api/generate",
+                        json={
+                            "model": model,
+                            "prompt": "",
+                            "keep_alive": "0"
+                        },
+                        timeout=5.0
+                    )
+                    if unload_response.status_code in [200, 400]:  # 400 is OK if model not loaded
+                        logger.debug(f"Successfully unloaded model {model} from GPU VRAM")
+                except Exception as unload_error:
+                    # Don't fail the request if unloading fails - it's just cleanup
+                    logger.warning(f"Failed to explicitly unload model {model}: {unload_error}")
 
         latency_ms = (time.perf_counter() - t0) * 1000
 
@@ -188,7 +211,7 @@ async def generate_real(
         error_msg = str(e) if str(e) else repr(e)
         status_code = e.response.status_code if e.response else "unknown"
         logger.error(f"LLM generation failed (HTTP {status_code}): {error_msg}")
-        
+
         # Try to get error details from Ollama response
         error_detail = "Unknown error"
         try:
@@ -197,9 +220,9 @@ async def generate_real(
                 error_detail = error_body.get("error", {}).get("message", str(e)) if isinstance(error_body.get("error"), dict) else error_body.get("error", str(e))
         except:
             error_detail = str(e)
-        
+
         logger.error(f"Ollama error detail: {error_detail}")
-        
+
         # Return a more informative error message
         return LLMResponse(
             text=f"I apologize, but I'm unable to generate a response at this time. The LLM service returned an error (HTTP {status_code}): {error_detail}. This may happen if the model doesn't support the requested context window size ({context_window} tokens) or if there's insufficient GPU memory. Please try a smaller context window or a different model.",
