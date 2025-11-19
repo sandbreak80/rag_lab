@@ -95,3 +95,31 @@ If any of these occur, **STOP and FIX**:
 
 **Remember: If you haven't tested it, it's not done.**
 
+## Deployment Workflow
+
+**CRITICAL: Never copy files directly into containers or EC2 instances!**
+
+1. **Always commit changes to git first**
+2. **Push to remote repository**
+3. **Pull on the target server (EC2)**
+4. **Rebuild containers using docker compose**
+
+**NEVER:**
+- ❌ Use `scp` to copy files to EC2
+- ❌ Use `docker cp` to copy files into containers
+- ❌ Edit files directly on EC2 or in containers
+- ❌ Skip git commits
+
+**ALWAYS:**
+- ✅ Commit all changes to git
+- ✅ Push to remote repository
+- ✅ Pull on target server: `git pull origin <branch>`
+- ✅ Rebuild containers: `docker compose build --no-cache <service>`
+- ✅ Restart services: `docker compose up -d <service>`
+
+This ensures:
+- Version control tracks all changes
+- Deployments are reproducible
+- No manual file copying errors
+- Consistent state across environments
+
