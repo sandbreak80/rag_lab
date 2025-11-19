@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Source } from '../../types/chat';
 import { Card, CardContent } from '../ui/card';
-import { FileText, Globe, ExternalLink, Sparkles } from 'lucide-react';
+import { FileText, Globe, ExternalLink, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface SourceCardProps {
   source: Source;
@@ -9,6 +9,8 @@ interface SourceCardProps {
 }
 
 export function SourceCard({ source, index }: SourceCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   // Use source_type if available (backend's simplified display type), otherwise check origin_tool
   const sourceTypeRaw = source.source_type || source.source;
   const isWebSource = sourceTypeRaw === 'web' || source.origin_tool === 'web_search' || source.origin_tool === 'web';
@@ -16,11 +18,15 @@ export function SourceCard({ source, index }: SourceCardProps) {
   const url = source.metadata?.url || source.url;
   const title = source.metadata?.title || source.title || source.file_name;
   const engine = source.metadata?.engine;
+  const chunkText = source.chunk_text || '';
 
   // Determine source type for display
   const sourceType = isResearchSource ? 'Research' : (isWebSource ? 'Web' : 'RAG');
   const iconBgColor = isResearchSource ? 'bg-purple-500/10' : (isWebSource ? 'bg-blue-500/10' : 'bg-primary/10');
   const iconColor = isResearchSource ? 'text-purple-500' : (isWebSource ? 'text-blue-500' : 'text-primary');
+  
+  // Check if chunk text is long enough to warrant expand/collapse
+  const shouldShowExpand = chunkText.length > 200;
 
   return (
     <Card className="bg-background" data-testid="source-item" data-origin={source.origin_tool || (isWebSource ? 'web' : 'rag')}>
@@ -75,9 +81,31 @@ export function SourceCard({ source, index }: SourceCardProps) {
               </h4>
             )}
 
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {source.chunk_text}
-            </p>
+            <div className="space-y-1">
+              <p className={`text-xs text-muted-foreground whitespace-pre-wrap break-words ${
+                shouldShowExpand && !isExpanded ? 'line-clamp-3' : ''
+              }`}>
+                {chunkText}
+              </p>
+              {shouldShowExpand && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="text-xs text-primary hover:text-primary/80 hover:underline flex items-center gap-1 transition-colors"
+                >
+                  {isExpanded ? (
+                    <>
+                      <ChevronUp className="h-3 w-3" />
+                      Show less
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-3 w-3" />
+                      Show full chunk
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
 
             {source.metadata && Object.keys(source.metadata).length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">

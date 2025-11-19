@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { RAGConfig } from '@/types/config';
 import { MetricsComparisonTable } from './MetricsComparisonTable';
 import { AutoGraderResults } from './AutoGraderResults';
@@ -14,6 +14,65 @@ interface ComparisonViewProps {
   configA: RAGConfig | null;
   configB: RAGConfig | null;
   onResultsUpdate?: (updatedResults: any) => void;
+}
+
+// Component to display individual chunks with expand/collapse
+function ChunkDisplay({ source, index }: { source: any; index: number }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const chunkText = source.content || source.chunk_text || '';
+  const shouldShowExpand = chunkText.length > 300;
+  const displayText = shouldShowExpand && !isExpanded ? chunkText.substring(0, 300) + '...' : chunkText;
+
+  return (
+    <Card className="bg-muted/30">
+      <CardContent className="p-3">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-semibold text-primary">Chunk {index}</span>
+              <span className="text-xs text-muted-foreground">•</span>
+              <span className="text-xs font-medium truncate">{source.doc_id || source.title || 'Unknown'}</span>
+              {source.score !== undefined && (
+                <>
+                  <span className="text-xs text-muted-foreground">•</span>
+                  <span className="text-xs font-medium text-primary">Score: {source.score.toFixed(3)}</span>
+                </>
+              )}
+              {source.cited && (
+                <>
+                  <span className="text-xs text-muted-foreground">•</span>
+                  <span className="text-xs font-medium text-green-600 dark:text-green-400">Cited</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="space-y-1">
+          <p className="text-xs text-foreground whitespace-pre-wrap break-words leading-relaxed">
+            {displayText}
+          </p>
+          {shouldShowExpand && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-xs text-primary hover:text-primary/80 hover:underline flex items-center gap-1 transition-colors mt-1"
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="h-3 w-3" />
+                  Show less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-3 w-3" />
+                  Show full chunk ({chunkText.length} chars)
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export function ComparisonView({
@@ -154,16 +213,11 @@ export function ComparisonView({
                 </div>
               </div>
               <div>
-                <h4 className="font-semibold mb-2">Sources ({result_a.sources?.length || 0})</h4>
-                <div className="text-xs text-muted-foreground">
-                  {result_a.sources?.slice(0, 5).map((s: any, i: number) => (
-                    <div key={i} className="mb-1">
-                      {i + 1}. {s.doc_id || s.title || 'Unknown'} (Score: {s.score?.toFixed(3)})
-                    </div>
+                <h4 className="font-semibold mb-3">Retrieved Chunks ({result_a.sources?.length || 0})</h4>
+                <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                  {result_a.sources?.map((s: any, i: number) => (
+                    <ChunkDisplay key={i} source={s} index={i + 1} />
                   ))}
-                  {result_a.sources && result_a.sources.length > 5 && (
-                    <div>... and {result_a.sources.length - 5} more</div>
-                  )}
                 </div>
               </div>
             </div>
@@ -183,16 +237,11 @@ export function ComparisonView({
                 </div>
               </div>
               <div>
-                <h4 className="font-semibold mb-2">Sources ({result_b.sources?.length || 0})</h4>
-                <div className="text-xs text-muted-foreground">
-                  {result_b.sources?.slice(0, 5).map((s: any, i: number) => (
-                    <div key={i} className="mb-1">
-                      {i + 1}. {s.doc_id || s.title || 'Unknown'} (Score: {s.score?.toFixed(3)})
-                    </div>
+                <h4 className="font-semibold mb-3">Retrieved Chunks ({result_b.sources?.length || 0})</h4>
+                <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                  {result_b.sources?.map((s: any, i: number) => (
+                    <ChunkDisplay key={i} source={s} index={i + 1} />
                   ))}
-                  {result_b.sources && result_b.sources.length > 5 && (
-                    <div>... and {result_b.sources.length - 5} more</div>
-                  )}
                 </div>
               </div>
             </div>
