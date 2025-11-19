@@ -2,7 +2,7 @@
 Version information for RAG API v1
 """
 
-__version__ = "2.2.0-ab-testing"
+__version__ = "2.3.0-cost-comparison"
 __service__ = "rag-api-v1"
 __build_date__ = "2025-11-17"
 
