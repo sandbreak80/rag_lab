@@ -62,19 +62,45 @@ export function ComparisonView({
       const pollInterval = setInterval(async () => {
         try {
           const result = await api.getABTestResult(test_id);
-          if (result.status === 'grading') {
+          console.log('🔍 Polling result:', { status: result.status, has_grader_result: !!result.grader_result });
+          
+          // Check if grading is complete (has grader_result or status is 'graded')
+          if (result.grader_result || result.status === 'graded') {
+            // Grading completed
+            clearInterval(pollInterval);
+            setIsGrading(false);
+            setGradingStatus('');
+            console.log('✅ Grading completed, reloading page...');
+            // Update the parent component with new results
+            // This will trigger a re-render with the updated grader_result
+            window.location.reload(); // Simple approach - could be improved with state management
+            return;
+          }
+          
+          // Check if grading failed
+          if (result.status === 'grading_failed' || (result.grader_result && result.grader_result.error)) {
+            clearInterval(pollInterval);
+            setIsGrading(false);
+            setGradingStatus('');
+            const errorMsg = result.grader_result?.error || result.error || 'Grading failed';
+            alert(`Grading failed: ${errorMsg}`);
+            return;
+          }
+
+          // Still grading - update status
+          if (result.status === 'grading' || result.status === 'running') {
             setGradingStatus(result.message || 'Grading in progress...');
             return;
           }
 
-          // Grading completed
-          clearInterval(pollInterval);
-          setIsGrading(false);
-          setGradingStatus('');
+          // If status is 'completed' but no grader_result yet, we're still waiting
+          if (result.status === 'completed' && !result.grader_result) {
+            setGradingStatus('Grading in progress...');
+            return;
+          }
 
-          // Update the parent component with new results
-          // This will trigger a re-render with the updated grader_result
-          window.location.reload(); // Simple approach - could be improved with state management
+          // If we have a status but it's not one we recognize, log it
+          console.log('⚠️ Unknown status:', result.status);
         } catch (error: any) {
           console.error('Error polling for grading results:', error);
           clearInterval(pollInterval);
