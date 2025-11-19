@@ -156,7 +156,7 @@
         "model": "qwen2.5:14b",
         "temperature": 0.1,
         "max_tokens": 1500,
-        "context_window": 32768
+        "context_window": 24576
       },
       "expected_metrics": {
         "precision": "95-98%",
@@ -164,7 +164,7 @@
         "latency": "5-30 minutes (hardware dependent)",
         "use_case": "🎓 Quality benchmark - NOT for production use"
       },
-      "notes": "🎓 LEARNING POINTS:\n1. Maximum quality comes at extreme latency cost (5-30 min vs < 1s for Balanced)\n2. Start during break/lunch - demonstrates why this approach is impractical for interactive use\n3. Useful for establishing quality ceiling on your hardware\n4. Cancel button stops UI but Ollama continues processing (single LLM limitation)\n5. Production systems need: streaming, request queuing, or multiple LLM instances\n6. Compare Maximum results with Balanced/Production to see if extra quality is worth the wait\n7. Students should determine their own optimal preset based on quality/latency needs"
+      "notes": "🎓 LEARNING POINTS:\n1. Maximum quality comes at extreme latency cost (5-30 min vs < 1s for Balanced)\n2. Start during break/lunch - demonstrates why this approach is impractical for interactive use\n3. Useful for establishing quality ceiling on your hardware\n4. Cancel button stops UI but Ollama continues processing (single LLM limitation)\n5. Production systems need: streaming, request queuing, or multiple LLM instances\n6. Compare Maximum results with Balanced/Production to see if extra quality is worth the wait\n7. Students should determine their own optimal preset based on quality/latency needs\n8. Context window reduced to 24576 (from 32768) due to GPU memory constraints with qwen2.5:14b"
     },
     "production": {
       "name": "Production (Optimized)",
