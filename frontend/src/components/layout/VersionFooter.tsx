@@ -16,11 +16,11 @@ export function VersionFooter() {
         <span className="font-mono">
           UI: v{packageJson.version}
         </span>
-        {versions?.gateway?.version && (
+        {(versions?.services?.rag_api_v1?.version || versions?.gateway?.version) && (
           <>
             <span>•</span>
             <span className="font-mono">
-              API: v{versions.gateway.version}
+              API: v{versions?.services?.rag_api_v1?.version || versions?.gateway?.version}
             </span>
           </>
         )}
