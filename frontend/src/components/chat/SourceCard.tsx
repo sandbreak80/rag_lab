@@ -31,11 +31,12 @@ export function SourceCard({ source, index }: SourceCardProps) {
   const iconColor = isResearchSource ? 'text-purple-500' : (isWebSource ? 'text-blue-500' : 'text-primary');
   
   // Check if chunk text is long enough to warrant expand/collapse
-  const shouldShowExpand = chunkText.length > 200;
+  // Lowered threshold to 100 chars for better visibility during development
+  const shouldShowExpand = chunkText.length > 100;
   
   // Debug: Log expand button visibility
-  if (shouldShowExpand) {
-    console.log(`[SourceCard ${index}] Will show expand button (chunk length: ${chunkText.length})`);
+  if (chunkText.length > 0) {
+    console.log(`[SourceCard ${index}] chunk length: ${chunkText.length}, shouldShowExpand: ${shouldShowExpand}`);
   }
 
   return (
