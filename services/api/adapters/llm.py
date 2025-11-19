@@ -105,7 +105,7 @@ async def generate_real(
         # Auto-grader prompts are very long (2 full responses + sources), so increase timeout
         # Increase timeout for larger models or when context window is large (likely auto-grader)
         timeout_seconds = 300.0 if "14b" in model.lower() or "9b" in model.lower() else (120.0 if context_window >= 8192 else 30.0)
-        
+
         # CRITICAL: Unload model after each query to free GPU VRAM
         # We use keep_alive: 0 to ensure model is unloaded immediately after response
         async with httpx.AsyncClient(timeout=timeout_seconds) as cx:

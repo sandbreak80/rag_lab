@@ -692,7 +692,7 @@ async def run_ab_test_sync(req: ABTestRequest):
 async def grade_ab_test(test_id: str, background_tasks: BackgroundTasks):
     """
     Trigger auto-grading for an existing A/B test result.
-    
+
     Retrieves the test result from Redis, runs grading, and updates the result.
     """
     redis_client = get_redis_client()
@@ -705,7 +705,7 @@ async def grade_ab_test(test_id: str, background_tasks: BackgroundTasks):
         raise HTTPException(status_code=404, detail=f"Test result {test_id} not found or expired.")
 
     result_dict = json.loads(result_json)
-    
+
     # Check if grading already completed
     if result_dict.get("grader_result") is not None:
         return {
@@ -741,7 +741,7 @@ async def grade_ab_test(test_id: str, background_tasks: BackgroundTasks):
             import time
             grading_start_time = time.perf_counter()
             logger.info(f"Starting LLM auto-grading for test_id={test_id}")
-            
+
             grader_result = await grade_ab_responses(
                 prompt=prompt,
                 response_a=result_a.get("answer", ""),
@@ -763,7 +763,7 @@ async def grade_ab_test(test_id: str, background_tasks: BackgroundTasks):
                     winner = "A"
                 else:
                     winner = "B"
-            
+
             grading_duration_ms = (time.perf_counter() - grading_start_time) * 1000
             logger.info(f"LLM auto-grading completed for test_id={test_id}: winner={winner}, duration={grading_duration_ms:.1f}ms")
 
@@ -792,7 +792,7 @@ async def grade_ab_test(test_id: str, background_tasks: BackgroundTasks):
             error_result_dict = result_dict.copy()
             error_result_dict["grader_result"] = {"error": str(e), "status": "error"}
             error_result_dict["status"] = "grading_failed"
-            
+
             redis_client = get_redis_client()
             if redis_client:
                 result_json = json.dumps(error_result_dict)
