@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Source } from '../../types/chat';
 import { Card, CardContent } from '../ui/card';
 import { FileText, Globe, ExternalLink, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
@@ -9,7 +9,13 @@ interface SourceCardProps {
 }
 
 export function SourceCard({ source, index }: SourceCardProps) {
+  // Use a unique key based on source to ensure state is isolated per card
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Reset expanded state when source changes (in case component is reused)
+  useEffect(() => {
+    setIsExpanded(false);
+  }, [source.chunk_text]);
 
   // Use source_type if available (backend's simplified display type), otherwise check origin_tool
   const sourceTypeRaw = source.source_type || source.source;
@@ -93,7 +99,7 @@ export function SourceCard({ source, index }: SourceCardProps) {
             )}
 
             <div className="space-y-1">
-              <p 
+              <p
                 className={`text-xs text-muted-foreground whitespace-pre-wrap break-words ${
                   shouldShowExpand && !isExpanded ? 'line-clamp-3' : ''
                 }`}
